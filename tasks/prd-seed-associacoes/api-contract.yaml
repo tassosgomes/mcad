@@ -1,0 +1,220 @@
+openapi: 3.1.0
+
+info:
+  title: "Cadastro API — Associações"
+  description: |
+    API read-only para consulta das associações de gestão coletiva do ECAD.
+
+    **Contrato gerado a partir do PRD:** `tasks/prd-seed-associacoes/prd.md`
+    **Data de geração:** 2026-03-29
+
+    ## Premissas Adotadas
+    - Sem autenticação (PoC sem auth entre serviços — Non-Goal do Vision Doc)
+    - Sem paginação (apenas 7 registros fixos)
+    - Dados imutáveis — apenas endpoints GET expostos
+    - Verbos de escrita (POST, PUT, PATCH, DELETE) retornam 405 Method Not Allowed
+    - Erros seguem RFC 7807 (ProblemDetails)
+    - Campos JSON em camelCase
+  version: "1.0.0"
+  contact:
+    name: "Time de Plataforma ECAD"
+
+servers:
+  - url: http://localhost:5001/api/v1
+    description: Desenvolvimento local (cadastro-api)
+
+tags:
+  - name: Associações
+    description: "Consulta das 7 associações de gestão coletiva do ECAD (dados read-only)"
+
+paths:
+
+  /associacoes:
+    get:
+      summary: Listar todas as associações
+      description: |
+        Retorna a lista completa das 7 associações de gestão coletiva do ECAD.
+        Dados pré-cadastrados (seed) e imutáveis.
+        Sem paginação — retorna sempre os 7 registros.
+      operationId: listarAssociacoes
+      tags:
+        - Associações
+      responses:
+        "200":
+          description: Lista de associações retornada com sucesso
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AssociacaoResponse"
+              example:
+                - id: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+                  sigla: "ABRAMUS"
+                  nome: "Associação Brasileira de Música e Artes"
+                  cnpj: "50.997.063/0001-32"
+                - id: "b2c3d4e5-f6a7-8901-bcde-f12345678901"
+                  sigla: "AMAR"
+                  nome: "Associação de Músicos, Arranjadores e Regentes"
+                  cnpj: "30.713.325/0001-82"
+                - id: "c3d4e5f6-a7b8-9012-cdef-123456789012"
+                  sigla: "ASSIM"
+                  nome: "Associação de Intérpretes e Músicos"
+                  cnpj: "43.985.563/0001-99"
+                - id: "d4e5f6a7-b8c9-0123-defa-234567890123"
+                  sigla: "SBACEM"
+                  nome: "Sociedade Brasileira de Autores, Compositores e Escritores de Música"
+                  cnpj: "33.780.222/0001-23"
+                - id: "e5f6a7b8-c9d0-1234-efab-345678901234"
+                  sigla: "SICAM"
+                  nome: "Sociedade Independente de Compositores e Autores Musicais"
+                  cnpj: "62.092.010/0001-51"
+                - id: "f6a7b8c9-d0e1-2345-fabc-456789012345"
+                  sigla: "SOCINPRO"
+                  nome: "Sociedade Brasileira de Administração e Proteção de Direitos Intelectuais"
+                  cnpj: "33.748.146/0001-79"
+                - id: "a7b8c9d0-e1f2-3456-abcd-567890123456"
+                  sigla: "UBC"
+                  nome: "União Brasileira de Compositores"
+                  cnpj: "33.576.166/0001-00"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+      x-frontend-notes: "Tabela simples sem paginação, filtros ou busca. Apenas 7 registros fixos."
+      x-backend-notes: |
+        Query com AsNoTracking. Sem cache necessário — volume mínimo.
+        Verbos POST, PUT, PATCH, DELETE devem retornar 405 Method Not Allowed.
+
+  /associacoes/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: ID único da associação (UUID)
+        schema:
+          type: string
+          format: uuid
+          example: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+
+    get:
+      summary: Buscar associação por ID
+      description: |
+        Retorna os dados de uma associação específica pelo seu ID.
+      operationId: buscarAssociacaoPorId
+      tags:
+        - Associações
+      responses:
+        "200":
+          description: Associação encontrada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AssociacaoResponse"
+              example:
+                id: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+                sigla: "ABRAMUS"
+                nome: "Associação Brasileira de Música e Artes"
+                cnpj: "50.997.063/0001-32"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+      x-frontend-notes: |
+        Usado internamente pelo dropdown de associações no cadastro de titulares (F02).
+        Verbos POST, PUT, PATCH, DELETE devem retornar 405 Method Not Allowed.
+
+components:
+
+  responses:
+    NotFound:
+      description: Recurso não encontrado
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ProblemDetails"
+          example:
+            type: "https://tools.ietf.org/html/rfc7231#section-6.5.4"
+            title: "Resource Not Found"
+            status: 404
+            detail: "Associação with ID 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx' was not found"
+            instance: "/api/v1/associacoes/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+
+    InternalServerError:
+      description: Erro interno do servidor
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ProblemDetails"
+          example:
+            type: "https://tools.ietf.org/html/rfc7231#section-6.6.1"
+            title: "Internal Server Error"
+            status: 500
+            detail: "An unexpected error occurred"
+            instance: "/api/v1/associacoes"
+            traceId: "0HN4B2E8M0T0K:00000001"
+
+  schemas:
+
+    AssociacaoResponse:
+      type: object
+      description: "Representa uma associação de gestão coletiva do ECAD"
+      required:
+        - id
+        - sigla
+        - nome
+        - cnpj
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Identificador único da associação
+          example: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+        sigla:
+          type: string
+          maxLength: 20
+          description: Sigla da associação (ex. ABRAMUS, UBC)
+          example: "ABRAMUS"
+        nome:
+          type: string
+          maxLength: 200
+          description: Nome completo da associação
+          example: "Associação Brasileira de Música e Artes"
+        cnpj:
+          type: string
+          pattern: "^\\d{2}\\.\\d{3}\\.\\d{3}/\\d{4}-\\d{2}$"
+          description: CNPJ da associação no formato XX.XXX.XXX/XXXX-XX
+          example: "50.997.063/0001-32"
+
+    ProblemDetails:
+      type: object
+      description: "Formato de erro RFC 7807 (ProblemDetails)"
+      required:
+        - type
+        - title
+        - status
+      properties:
+        type:
+          type: string
+          format: uri
+          description: URI de referência do tipo de erro
+          example: "https://tools.ietf.org/html/rfc7231#section-6.5.4"
+        title:
+          type: string
+          description: Título curto do erro
+          example: "Resource Not Found"
+        status:
+          type: integer
+          description: HTTP status code
+          example: 404
+        detail:
+          type: string
+          description: Descrição detalhada do erro
+          example: "Associação with ID '...' was not found"
+        instance:
+          type: string
+          description: Path da requisição que gerou o erro
+          example: "/api/v1/associacoes/..."
+        traceId:
+          type: string
+          nullable: true
+          description: ID de rastreamento (presente em erros 5xx)
+          example: "0HN4B2E8M0T0K:00000001"

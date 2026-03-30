@@ -1,0 +1,14 @@
+.page {
+  padding: var(--space-6) var(--space-8);
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+@media (max-width: 767px) {
+  .page {
+    padding: var(--space-4);
+  }
+}

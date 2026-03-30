@@ -1,0 +1,89 @@
+using Cadastro.API.Endpoints;
+using Cadastro.API.Infrastructure;
+using Cadastro.Application.Associacoes.Queries;
+using Cadastro.Application.Common.CQRS;
+using Cadastro.Domain.Interfaces;
+using Cadastro.Infra.Data;
+using Cadastro.Infra.Repositories;
+using Microsoft.EntityFrameworkCore;
+
+var builder = WebApplication.CreateBuilder(args);
+
+// ─── Connection String (lida de variáveis de ambiente) ─────────────────
+var dbHost     = Environment.GetEnvironmentVariable("CADASTRO_DB_HOST")     ?? "localhost";
+var dbPort     = Environment.GetEnvironmentVariable("CADASTRO_DB_PORT")     ?? "5432";
+var dbName     = Environment.GetEnvironmentVariable("CADASTRO_DB_NAME")     ?? "mcad";
+var dbSchema   = Environment.GetEnvironmentVariable("CADASTRO_DB_SCHEMA")   ?? "cadastro";
+var dbUser     = Environment.GetEnvironmentVariable("CADASTRO_DB_USER")     ?? "cadastro_svc";
+var dbPassword = Environment.GetEnvironmentVariable("CADASTRO_DB_PASSWORD") ?? string.Empty;
+
+var connectionString =
+    $"Host={dbHost};Port={dbPort};Database={dbName};Username={dbUser};Password={dbPassword};Search Path={dbSchema}";
+
+// ─── DbContext (EF Core + PostgreSQL) ─────────────────────────────────
+builder.Services.AddDbContext<CadastroDbContext>(options =>
+    options.UseNpgsql(connectionString, npgsql =>
+        npgsql.MigrationsHistoryTable("__EFMigrationsHistory", "cadastro")));
+
+// ─── Repository ────────────────────────────────────────────────────────
+builder.Services.AddScoped<IAssociacaoRepository, AssociacaoRepository>();
+
+// ─── CQRS — Dispatcher + Handlers (via Scrutor) ───────────────────────
+builder.Services.AddScoped<IDispatcher, Dispatcher>();
+builder.Services.Scan(scan => scan
+    .FromAssemblyOf<GetAssociacoesQuery>()
+    .AddClasses(c => c.AssignableTo(typeof(IQueryHandler<,>)))
+    .AsImplementedInterfaces()
+    .WithScopedLifetime());
+
+// ─── Health Checks ─────────────────────────────────────────────────────
+builder.Services.AddHealthChecks();
+
+// ─── CORS (frontend dev em localhost:5173) ─────────────────────────────
+builder.Services.AddCors(options =>
+    options.AddDefaultPolicy(policy =>
+        policy
+            .WithOrigins("http://localhost:5173")
+            .AllowAnyHeader()
+            .AllowAnyMethod()));
+
+// ─── Exception Handler (GlobalExceptionHandler → ProblemDetails) ───────
+builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
+builder.Services.AddProblemDetails();
+
+// ─── Logging estruturado ───────────────────────────────────────────────
+builder.Logging.AddConsole();
+
+var app = builder.Build();
+
+// ─── Middleware pipeline ───────────────────────────────────────────────
+app.UseExceptionHandler();
+app.UseCors();
+
+// ─── Aplicar migrations + confirmar seed no startup ───────────────────
+using (var scope = app.Services.CreateScope())
+{
+    var context = scope.ServiceProvider.GetRequiredService<CadastroDbContext>();
+    try
+    {
+        context.Database.Migrate();
+        var count = context.Associacoes.Count();
+        app.Logger.LogInformation("Startup: {Count} associações no banco de dados", count);
+    }
+    catch (Exception ex)
+    {
+        app.Logger.LogWarning(ex, "Não foi possível aplicar migrations. Banco de dados pode não estar acessível.");
+    }
+}
+
+// ─── Endpoints ────────────────────────────────────────────────────────
+app.MapAssociacaoEndpoints();
+
+// ─── Health Check ─────────────────────────────────────────────────────
+app.MapHealthChecks("/health");
+
+app.Logger.LogInformation("Cadastro API iniciada na porta 5001");
+app.Run();
+
+// Expõe a classe Program para WebApplicationFactory nos testes de integração
+public partial class Program { }

@@ -1,0 +1,167 @@
+/* ============================================================
+ * global.css — MCAD Design System "Circuit Core Dark"
+ * Fonte de verdade: frontend/DESIGN.md
+ * ============================================================ */
+
+/* ─── Reset Mínimo ─────────────────────────────────────────── */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* ─── Design Tokens (CSS Variables) ────────────────────────── */
+:root {
+  /* ─── Superfícies (Hierarquia de Profundidade) ─── */
+  --color-bg-floor:       #0c0e14;  /* Level 0 — Shell profundo */
+  --color-bg-primary:     #111319;  /* Level 1 — Workspace principal */
+  --color-bg-secondary:   #191b22;  /* Level 1.5 — Variação sutil */
+  --color-bg-surface:     #1e1f26;  /* Level 2 — Sidebar, áreas secundárias */
+  --color-bg-elevated:    #282a30;  /* Level 3 — Cards, superfícies interativas */
+  --color-bg-highest:     #33343b;  /* Level 4 — Tooltips, popovers */
+
+  /* ─── Texto ─── */
+  --color-text-primary:   #e2e2eb;  /* Alta ênfase */
+  --color-text-secondary: #c3c6d7;  /* Média ênfase */
+  --color-text-muted:     #8d90a0;  /* Baixa ênfase / placeholders */
+
+  /* ─── Acento (Azul Corporativo) ─── */
+  --color-accent:           #3B82F6;               /* Ações primárias */
+  --color-accent-hover:     #2563EB;               /* Hover state */
+  --color-accent-light:     #adc6ff;               /* Texto sobre fundo escuro */
+  --color-accent-container: #0f69dc;               /* Container de acento */
+  --color-accent-subtle:    rgba(59, 130, 246, 0.12); /* Background sutil */
+
+  /* ─── Bordas ─── */
+  --color-border:         #434655;  /* Borda sutil (outline_variant) */
+  --color-border-visible: #8d90a0;  /* Borda visível (outline) */
+
+  /* ─── Status ─── */
+  --color-success:          #22c55e;
+  --color-warning:          #eab308;
+  --color-error:            #ef4444;
+  --color-error-container:  #93000a;
+
+  /* ─── Secundário ─── */
+  --color-secondary:           #c3c5dc;
+  --color-secondary-container: #45485b;
+
+  /* ─── Tipografia ─── */
+  --font-display: 'DM Sans', 'Manrope', sans-serif;
+  --font-body:    'IBM Plex Sans', 'Inter', sans-serif;
+  --font-mono:    'JetBrains Mono', monospace;
+
+  /* ─── Escala Tipográfica ─── */
+  --text-xs:   0.75rem;   /* 12px */
+  --text-sm:   0.875rem;  /* 14px */
+  --text-base: 1rem;      /* 16px */
+  --text-lg:   1.125rem;  /* 18px */
+  --text-xl:   1.25rem;   /* 20px */
+  --text-2xl:  1.5rem;    /* 24px */
+  --text-3xl:  2rem;      /* 32px */
+
+  /* ─── Espaçamento ─── */
+  --space-1:   0.25rem;   /* 4px */
+  --space-2:   0.5rem;    /* 8px */
+  --space-3:   0.75rem;   /* 12px */
+  --space-4:   1rem;      /* 16px */
+  --space-6:   1.5rem;    /* 24px */
+  --space-8:   2rem;      /* 32px */
+  --space-12:  3rem;      /* 48px */
+  --space-16:  4rem;      /* 64px */
+
+  /* ─── Bordas e Raios ─── */
+  --radius-sm: 4px;       /* chips, badges */
+  --radius-md: 6px;       /* botões, inputs */
+  --radius-lg: 12px;      /* cards, modais */
+
+  /* ─── Elevação e Transições ─── */
+  --shadow-sm:   0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-md:   0 4px 12px rgba(0, 0, 0, 0.4);
+  --shadow-blue: 0 4px 12px rgba(59, 130, 246, 0.05);
+
+  --transition-fast: 150ms ease;
+  --transition-base: 250ms ease;
+}
+
+/* ─── Base Styles ───────────────────────────────────────────── */
+html {
+  font-size: 16px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  font-family: var(--font-body);
+  background-color: var(--color-bg-floor);
+  color: var(--color-text-primary);
+  line-height: 1.5;
+  min-height: 100vh;
+}
+
+/* ─── Typography Defaults ───────────────────────────────────── */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--color-text-primary);
+  line-height: 1.25;
+}
+
+h1 { font-size: var(--text-3xl); }
+h2 { font-size: var(--text-2xl); }
+h3 { font-size: var(--text-xl); }
+
+p {
+  font-size: var(--text-base);
+  color: var(--color-text-secondary);
+}
+
+a {
+  color: var(--color-accent-light);
+  text-decoration: none;
+  transition: color var(--transition-fast);
+}
+
+a:hover {
+  color: var(--color-accent);
+}
+
+/* ─── Scrollbar Estilizada (Dark Theme) ─────────────────────── */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-bg-primary);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-border-visible);
+}
+
+/* ─── Root Container ────────────────────────────────────────── */
+#root {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ─── Utility: Node Chip (siglas de associações) ────────────── */
+.node-chip {
+  font-family: var(--font-mono);
+  background: var(--color-secondary-container);
+  border-radius: var(--radius-sm);
+  padding: var(--space-1) var(--space-2);
+  font-size: var(--text-sm);
+  letter-spacing: 0.02em;
+  color: var(--color-text-primary);
+  display: inline-block;
+}

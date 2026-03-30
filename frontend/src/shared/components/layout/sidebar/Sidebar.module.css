@@ -1,0 +1,130 @@
+.sidebar {
+  background-color: var(--color-bg-surface);
+  border-right: 1px solid var(--color-border);
+  grid-area: sidebar;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  z-index: 9;
+}
+
+.overlay {
+  display: none;
+}
+
+@media (max-width: 767px) {
+  .sidebar {
+    position: fixed;
+    top: 56px;
+    left: 0;
+    bottom: 0;
+    width: 260px;
+    transform: translateX(-100%);
+    transition: transform 0.3s ease;
+  }
+  
+  .sidebar.open {
+    transform: translateX(0);
+  }
+  
+  .overlay {
+    display: block;
+    position: fixed;
+    top: 56px;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+    z-index: 8;
+  }
+  
+  .overlay.open {
+    opacity: 1;
+    pointer-events: auto;
+  }
+}
+
+.nav {
+  display: flex;
+  flex-direction: column;
+  padding: 16px 12px;
+  gap: 8px;
+}
+
+.group {
+  display: flex;
+  flex-direction: column;
+}
+
+.groupButton {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 8px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--color-text-secondary);
+  border-radius: var(--radius-md);
+  transition: all 0.2s ease;
+}
+
+.groupButton:hover:not(.disabled) {
+  background-color: var(--color-bg-neutral-hover);
+  color: var(--color-text-primary);
+}
+
+.groupButton.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.groupHeader {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.groupLabel {
+  font-weight: 500;
+  font-size: 0.875rem;
+}
+
+.chevron {
+  transition: transform 0.2s ease;
+}
+
+.chevron.open {
+  transform: rotate(180deg);
+}
+
+.links {
+  display: flex;
+  flex-direction: column;
+  padding-left: 38px;
+  margin-top: 4px;
+}
+
+.link {
+  padding: 8px;
+  text-decoration: none;
+  color: var(--color-text-secondary);
+  font-size: 0.875rem;
+  border-radius: var(--radius-sm);
+  transition: all 0.2s ease;
+}
+
+.link:hover {
+  color: var(--color-text-primary);
+  background-color: var(--color-bg-neutral-hover);
+}
+
+.link.active {
+  color: var(--color-text-primary);
+  background-color: var(--color-accent-subtle);
+  font-weight: 500;
+}

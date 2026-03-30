@@ -1,0 +1,29 @@
+using Cadastro.Domain.Entities;
+using Cadastro.Infra.Data.Configurations;
+using Microsoft.EntityFrameworkCore;
+
+namespace Cadastro.Infra.Data;
+
+/// <summary>
+/// DbContext do domínio Cadastro — isolado no schema PostgreSQL "cadastro".
+/// Aplica todas as configurações via Fluent API (nenhum atributo de anotação).
+/// </summary>
+public class CadastroDbContext : DbContext
+{
+    public DbSet<Associacao> Associacoes => Set<Associacao>();
+
+    public CadastroDbContext(DbContextOptions<CadastroDbContext> options) : base(options)
+    {
+    }
+
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        // Schema isolado para o domínio Cadastro (Schema-per-Service)
+        modelBuilder.HasDefaultSchema("cadastro");
+
+        // Aplicar configurações via Fluent API
+        modelBuilder.ApplyConfiguration(new AssociacaoConfiguration());
+
+        base.OnModelCreating(modelBuilder);
+    }
+}
