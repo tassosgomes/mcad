@@ -1,4 +1,4 @@
-using FluentAssertions;
+using AwesomeAssertions;
 using Cadastro.Application.Associacoes.Queries;
 using Cadastro.Domain.Entities;
 using Cadastro.Domain.Interfaces;
@@ -23,7 +23,7 @@ public class GetAssociacoesQueryHandlerTests
         // Arrange
         var associacoes = new List<Associacao>
         {
-            new(Guid.NewGuid(), "ABRAMUS", "Associação Brasileira de Música e Artes", "50.997.063/0001-32")
+            new(Guid.NewGuid(), "Associação Brasileira de Música e Artes", "ABRAMUS", "50.997.063/0001-32")
         };
         _mockRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(associacoes);

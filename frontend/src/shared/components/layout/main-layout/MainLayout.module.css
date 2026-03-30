@@ -13,9 +13,12 @@
 .content {
   grid-area: content;
   overflow-y: auto;
+  overflow-x: hidden;
   background-color: var(--color-bg-primary);
   display: flex;
   flex-direction: column;
+  padding: 2.5rem 2rem;
+  min-width: 0;
 }
 
 @media (max-width: 767px) {

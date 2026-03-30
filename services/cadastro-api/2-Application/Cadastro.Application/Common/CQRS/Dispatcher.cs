@@ -27,4 +27,24 @@ public class Dispatcher : IDispatcher
         var task = (Task<TResult>)handleMethod.Invoke(handler, [query, cancellationToken])!;
         return await task;
     }
+
+    /// <summary>
+    /// Despacha um command para o ICommandHandler correspondente via DI.
+    /// Adicionado em F02 — primeira feature com operações de escrita.
+    /// </summary>
+    public async Task<TResult> SendAsync<TResult>(ICommand<TResult> command, CancellationToken cancellationToken = default)
+    {
+        var handlerType = typeof(ICommandHandler<,>).MakeGenericType(command.GetType(), typeof(TResult));
+        var handler = _serviceProvider.GetService(handlerType)
+            ?? throw new InvalidOperationException(
+                $"No handler registered for command type {command.GetType().Name}.");
+
+        var handleMethod = handlerType.GetMethod("HandleAsync")
+            ?? throw new InvalidOperationException(
+                $"Method 'HandleAsync' not found in handler for {command.GetType().Name}.");
+
+        var task = (Task<TResult>)handleMethod.Invoke(handler, [command, cancellationToken])!;
+        return await task;
+    }
 }
+

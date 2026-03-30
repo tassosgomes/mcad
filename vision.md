@@ -116,7 +116,7 @@ Analytics     ──consome de──→ Todos os domínios (eventos de todos os 
 - **BI/Dashboards:** Metabase
 - **Orquestração local:** Docker Compose — zero infraestrutura para rodar o demo
 - **Integrações obrigatórias:** Nenhuma externa — sistema auto-contido
-- **Autenticação:** Não implementada nesta versão (será coberta pelas bibliotecas de plataforma)
+- **Autenticação:** Keycloak externo (já existente) como IDP centralizado. Frontend via Authorization Code + PKCE com `oidc-client-ts`. Backend valida JWT via JWKS. Detalhes em `docs/architecture/auth-plan.md`
 
 ### Restrições de Negócio (Business Constraints)
 - **Prazo:** Sem prazo fixo — milestones definidos por fase do roadmap
@@ -137,7 +137,7 @@ Analytics     ──consome de──→ Todos os domínios (eventos de todos os 
 - **Não cobrirá 100% das rubricas e regras do Regulamento** — apenas o suficiente para demonstrar os padrões
 - **Não atingirá escala de produção** — não precisa processar bilhões de execuções/ano
 - **Não incluirá app mobile**
-- **Não implementará autenticação/autorização** entre serviços nesta versão
+- **Não implementará autorização granular** (ex: Analista X só edita titulares da sua associação) — apenas role-based (Analista vs Consultor)
 - **Não terá integração com sistemas externos** — é auto-contido
 - **Não gerará pagamentos reais** — o ciclo termina no demonstrativo de créditos
 
@@ -201,6 +201,7 @@ Analytics     ──consome de──→ Todos os domínios (eventos de todos os 
 | Versão | Data | Autor | Alterações |
 |---|---|---|---|
 | 1.0 | 2026-03-29 | Discovery com IA | Versão inicial — 4 domínios identificados, roadmap em 4 fases, restrições e glossário definidos |
+| 1.1 | 2026-03-30 | Decisão arquitetural | Auth adicionada: Keycloak externo, JWT, OIDC PKCE. Removido non-goal de "sem autenticação". Plano em `docs/architecture/auth-plan.md` |
 
 ---
 

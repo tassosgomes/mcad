@@ -74,7 +74,7 @@ ABRAMUS, AMAR, ASSIM, SBACEM, SICAM, SOCINPRO, UBC
 | # | Feature | Descrição | Prioridade | Status | PRD |
 |---|---|---|---|---|---|
 | F01 | Seed de Associações | Carga inicial das 7 associações de gestão coletiva. Dados não editáveis pelo usuário. | Must Have | `prd-ready` | `tasks/prd-seed-associacoes/prd.md` |
-| F02 | Gestão de Titulares | CRUD de titulares (PF/PJ) com CPF/CNPJ, CAE/IPI, vínculo a associação e categorias. Um titular pode acumular categorias autorais e conexas. | Must Have | `planned` | — |
+| F02 | Gestão de Titulares | CRUD de titulares (PF/PJ) com CPF/CNPJ, CAE/IPI, vínculo a associação e categorias. Um titular pode acumular categorias autorais e conexas. | Must Have | `prd-ready` | `tasks/prd-gestao-titulares/prd.md` |
 | F03 | Gestão de Obras Musicais | CRUD de obras com ISWC, título, tipo (MUSICAL, LITEROMUSICAL, VERSAO, POT_POURRI), gênero e validação de unicidade (título + titulares). | Must Have | `planned` | — |
 | F04 | Titularidades Autorais | Vinculação de titulares a obras com categoria e percentual. Validação obrigatória: soma = 100%. | Must Have | `planned` | — |
 | F05 | Gestão de Fonogramas | CRUD de fonogramas com ISRC, vínculo à obra, país de origem, datas. Exige ao menos um Produtor Fonográfico. | Must Have | `planned` | — |

@@ -1,7 +1,8 @@
 using System.Net;
 using System.Net.Http.Json;
-using FluentAssertions;
+using AwesomeAssertions;
 using Cadastro.Application.Associacoes.Queries;
+using Cadastro.Application.Associacoes.Responses;
 using Cadastro.IntegrationTests.Fixtures;
 
 namespace Cadastro.IntegrationTests;
@@ -21,7 +22,7 @@ public class AssociacaoEndpointsTests : IClassFixture<CadastroApiFactory>
         var response = await _client.GetAsync("/api/v1/associacoes");
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
-        var content = await response.Content.ReadFromJsonAsync<List<AssociacaoDto>>();
+        var content = await response.Content.ReadFromJsonAsync<List<AssociacaoResponse>>();
         
         content.Should().NotBeNull();
         content!.Should().HaveCount(7);
@@ -31,13 +32,13 @@ public class AssociacaoEndpointsTests : IClassFixture<CadastroApiFactory>
     [Fact]
     public async Task Get_AssociacaoById_WhenExists_Returns200()
     {
-        var listResponse = await _client.GetFromJsonAsync<List<AssociacaoDto>>("/api/v1/associacoes");
+        var listResponse = await _client.GetFromJsonAsync<List<AssociacaoResponse>>("/api/v1/associacoes");
         var existingId = listResponse!.First().Id;
 
         var response = await _client.GetAsync($"/api/v1/associacoes/{existingId}");
         
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var content = await response.Content.ReadFromJsonAsync<AssociacaoDto>();
+        var content = await response.Content.ReadFromJsonAsync<AssociacaoResponse>();
         content.Should().NotBeNull();
         content!.Id.Should().Be(existingId);
     }

@@ -1,8 +1,8 @@
-using FluentAssertions;
+using AwesomeAssertions;
 using Cadastro.Application.Associacoes.Queries;
 using Cadastro.Domain.Entities;
 using Cadastro.Domain.Interfaces;
-using Cadastro.Domain.Exceptions;
+using Cadastro.Application.Common.Exceptions;
 using Moq;
 
 namespace Cadastro.UnitTests.Associacoes;
@@ -23,7 +23,7 @@ public class GetAssociacaoByIdQueryHandlerTests
     {
         // Arrange
         var id = Guid.NewGuid();
-        var associacao = new Associacao(id, "ABRAMUS", "Associação Brasileira", "50.997.063/0001-32");
+        var associacao = new Associacao(id, "Associação Brasileira", "ABRAMUS", "50.997.063/0001-32");
         
         _mockRepo.Setup(r => r.GetByIdAsync(id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(associacao);

@@ -7,4 +7,11 @@ namespace Cadastro.Application.Common.CQRS;
 public interface IDispatcher
 {
     Task<TResult> QueryAsync<TResult>(IQuery<TResult> query, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Despacha um command para o handler correspondente.
+    /// Adicionado em F02 — primeira feature com operações de escrita.
+    /// </summary>
+    Task<TResult> SendAsync<TResult>(ICommand<TResult> command, CancellationToken cancellationToken = default);
 }
+

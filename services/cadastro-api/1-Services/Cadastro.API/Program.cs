@@ -2,10 +2,14 @@ using Cadastro.API.Endpoints;
 using Cadastro.API.Infrastructure;
 using Cadastro.Application.Associacoes.Queries;
 using Cadastro.Application.Common.CQRS;
+using Cadastro.Application.Titulares.Commands;
 using Cadastro.Domain.Interfaces;
 using Cadastro.Infra.Data;
 using Cadastro.Infra.Repositories;
+using FluentValidation;
 using Microsoft.EntityFrameworkCore;
+
+DotEnvLoader.LoadIfPresent();
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -27,6 +31,7 @@ builder.Services.AddDbContext<CadastroDbContext>(options =>
 
 // ─── Repository ────────────────────────────────────────────────────────
 builder.Services.AddScoped<IAssociacaoRepository, AssociacaoRepository>();
+builder.Services.AddScoped<ITitularRepository, TitularRepository>();
 
 // ─── CQRS — Dispatcher + Handlers (via Scrutor) ───────────────────────
 builder.Services.AddScoped<IDispatcher, Dispatcher>();
@@ -35,6 +40,14 @@ builder.Services.Scan(scan => scan
     .AddClasses(c => c.AssignableTo(typeof(IQueryHandler<,>)))
     .AsImplementedInterfaces()
     .WithScopedLifetime());
+builder.Services.Scan(scan => scan
+    .FromAssemblyOf<CriarTitularCommand>()
+    .AddClasses(c => c.AssignableTo(typeof(ICommandHandler<,>)))
+    .AsImplementedInterfaces()
+    .WithScopedLifetime());
+
+// ─── FluentValidation — Validators ────────────────────────────────────
+builder.Services.AddValidatorsFromAssemblyContaining<CriarTitularCommandValidator>();
 
 // ─── Health Checks ─────────────────────────────────────────────────────
 builder.Services.AddHealthChecks();
@@ -78,6 +91,7 @@ using (var scope = app.Services.CreateScope())
 
 // ─── Endpoints ────────────────────────────────────────────────────────
 app.MapAssociacaoEndpoints();
+app.MapTitularEndpoints();
 
 // ─── Health Check ─────────────────────────────────────────────────────
 app.MapHealthChecks("/health");
@@ -87,3 +101,62 @@ app.Run();
 
 // Expõe a classe Program para WebApplicationFactory nos testes de integração
 public partial class Program { }
+
+internal static class DotEnvLoader
+{
+    public static void LoadIfPresent()
+    {
+        foreach (var candidate in GetCandidates())
+        {
+            if (!File.Exists(candidate))
+            {
+                continue;
+            }
+
+            foreach (var rawLine in File.ReadLines(candidate))
+            {
+                var line = rawLine.Trim();
+                if (string.IsNullOrWhiteSpace(line) || line.StartsWith('#'))
+                {
+                    continue;
+                }
+
+                var separatorIndex = line.IndexOf('=');
+                if (separatorIndex <= 0)
+                {
+                    continue;
+                }
+
+                var key = line[..separatorIndex].Trim();
+                if (string.IsNullOrWhiteSpace(key) || Environment.GetEnvironmentVariable(key) is not null)
+                {
+                    continue;
+                }
+
+                var value = line[(separatorIndex + 1)..].Trim().Trim('"');
+                Environment.SetEnvironmentVariable(key, value);
+            }
+
+            return;
+        }
+    }
+
+    private static IEnumerable<string> GetCandidates()
+    {
+        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var root in new[] { Directory.GetCurrentDirectory(), AppContext.BaseDirectory })
+        {
+            var directory = new DirectoryInfo(root);
+            while (directory is not null)
+            {
+                var candidate = Path.Combine(directory.FullName, ".env");
+                if (seen.Add(candidate))
+                {
+                    yield return candidate;
+                }
+
+                directory = directory.Parent;
+            }
+        }
+    }
+}

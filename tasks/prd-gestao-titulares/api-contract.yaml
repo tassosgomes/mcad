@@ -1,0 +1,593 @@
+openapi: 3.1.0
+
+info:
+  title: "Cadastro API — Titulares"
+  description: |
+    API CRUD para gestão de titulares de direitos autorais e conexos do ECAD.
+
+    **Contrato gerado a partir do PRD:** `tasks/prd-gestao-titulares/prd.md`
+    **Data de geração:** 2026-03-30
+
+    ## Premissas Adotadas
+    - Autenticação JWT Bearer planejada (aplicação retroativa) — endpoints já declaram security scheme
+    - Paginação server-side: page/size (default page=1, size=20)
+    - Ordenação server-side: campo + direção (default: nome ASC)
+    - Filtros server-side: nome (parcial), documento (parcial), associação (exata), status (exato)
+    - CPF/CNPJ armazenado sem formatação; formatado na exibição pelo frontend
+    - CNPJ suporta formato alfanumérico (nova regra RFB)
+    - Erros seguem RFC 7807 (ProblemDetails)
+    - Campos JSON em camelCase
+  version: "1.0.0"
+  contact:
+    name: "Time de Plataforma ECAD"
+
+servers:
+  - url: http://localhost:5001/api/v1
+    description: Desenvolvimento local (cadastro-api)
+
+security:
+  - BearerAuth: []
+
+tags:
+  - name: Titulares
+    description: "Gestão de titulares de direitos autorais e conexos"
+
+paths:
+
+  /titulares:
+    get:
+      summary: Listar titulares com paginação e filtros
+      description: |
+        Retorna lista paginada de titulares com filtros e ordenação server-side.
+        Filtros são combinados com AND. Busca por nome e documento é parcial e case-insensitive.
+      operationId: listarTitulares
+      tags:
+        - Titulares
+      parameters:
+        - name: page
+          in: query
+          description: Número da página (começa em 1)
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+            example: 1
+        - name: size
+          in: query
+          description: Itens por página (máx 100)
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+            example: 20
+        - name: sort
+          in: query
+          description: "Campo de ordenação. Prefixo `-` para DESC. Campos: `nome`, `associacao`, `status`"
+          schema:
+            type: string
+            default: "nome"
+            example: "-nome"
+        - name: nome
+          in: query
+          description: Filtro por nome (parcial, case-insensitive)
+          schema:
+            type: string
+            example: "djavan"
+        - name: documento
+          in: query
+          description: Filtro por CPF/CNPJ (parcial, apenas alfanuméricos)
+          schema:
+            type: string
+            example: "12345678"
+        - name: associacaoId
+          in: query
+          description: Filtro por ID da associação (exato)
+          schema:
+            type: string
+            format: uuid
+            example: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+        - name: status
+          in: query
+          description: Filtro por status (exato)
+          schema:
+            type: string
+            enum: [ATIVO, FALECIDO, TRANSFERINDO]
+            example: "ATIVO"
+      responses:
+        "200":
+          description: Lista paginada de titulares
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TitularListResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+      x-frontend-notes: |
+        Debounce de 300ms nos campos de texto (nome, documento).
+        Filtros de associação e status como dropdowns.
+        Colunas clicáveis para alternar ordenação (toggle ASC/DESC via prefixo `-`).
+      x-backend-notes: |
+        Índices recomendados: nome (trigram para ILIKE), documento, associacao_id, status.
+        Filtro por documento deve ignorar formatação (comparar apenas alfanuméricos).
+
+    post:
+      summary: Criar novo titular
+      description: |
+        Cria um titular pessoa física (PF) ou pessoa jurídica (PJ).
+        CPF/CNPJ é validado algoritmicamente e deve ser único no sistema.
+        CNPJ suporta formato alfanumérico (nova regra RFB).
+        Associação é obrigatória.
+      operationId: criarTitular
+      tags:
+        - Titulares
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CriarTitularRequest"
+      responses:
+        "201":
+          description: Titular criado com sucesso
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TitularResponse"
+          headers:
+            Location:
+              description: URL do recurso criado
+              schema:
+                type: string
+                example: "/api/v1/titulares/f47ac10b-58cc-4372-a567-0e02b2c3d479"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+      x-frontend-notes: |
+        Validação inline do CPF/CNPJ ao perder foco do campo.
+        Campo tipo (PF/PJ) alterna entre máscara de CPF e CNPJ.
+        Após sucesso, redirecionar para listagem com toast de confirmação.
+      x-backend-notes: |
+        CPF e CNPJ como Value Objects com validação encapsulada.
+        CNPJ alfanumérico: módulo 11 com conversão ASCII-48 (ver docs/validacoes/cnpj.md).
+        Armazenar documento sem formatação (apenas alfanuméricos).
+
+  /titulares/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: ID único do titular (UUID)
+        schema:
+          type: string
+          format: uuid
+          example: "f47ac10b-58cc-4372-a567-0e02b2c3d479"
+
+    get:
+      summary: Buscar titular por ID
+      description: |
+        Retorna os dados completos de um titular específico.
+      operationId: buscarTitularPorId
+      tags:
+        - Titulares
+      responses:
+        "200":
+          description: Titular encontrado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TitularResponse"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+    put:
+      summary: Atualizar titular
+      description: |
+        Atualiza os dados editáveis de um titular: nome, nacionalidade, associação, status, CAE/IPI.
+        O tipo (PF/PJ) e o documento (CPF/CNPJ) NÃO podem ser alterados.
+      operationId: atualizarTitular
+      tags:
+        - Titulares
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AtualizarTitularRequest"
+      responses:
+        "200":
+          description: Titular atualizado com sucesso
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TitularResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+      x-frontend-notes: |
+        Campos tipo e documento devem ser exibidos mas desabilitados (read-only).
+      x-backend-notes: |
+        Ignorar campos tipo e documento se enviados no body — não atualizar.
+
+    delete:
+      summary: Excluir titular
+      description: |
+        Exclui um titular permanentemente.
+        Rejeita a exclusão se o titular possuir vínculos com obras (titularidade autoral) ou fonogramas (participação conexa).
+      operationId: excluirTitular
+      tags:
+        - Titulares
+      responses:
+        "204":
+          description: Titular excluído com sucesso
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/ConflictVinculo"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+      x-backend-notes: |
+        Verificar vínculos em titularidades_autorais e participacoes_conexas antes de excluir.
+        Retornar 409 com detalhes se houver vínculos.
+
+components:
+
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: "Token JWT obtido via Keycloak (Authorization Code + PKCE). Aplicação retroativa — endpoints funcionam sem auth durante desenvolvimento."
+
+  responses:
+    BadRequest:
+      description: Requisição inválida — erro de validação de campos
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ProblemDetails"
+          example:
+            type: "https://tools.ietf.org/html/rfc7231#section-6.5.1"
+            title: "Validation Error"
+            status: 400
+            detail: "Um ou mais campos são inválidos"
+            errors:
+              - field: "nome"
+                message: "Nome é obrigatório"
+
+    NotFound:
+      description: Recurso não encontrado
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ProblemDetails"
+          example:
+            type: "https://tools.ietf.org/html/rfc7231#section-6.5.4"
+            title: "Resource Not Found"
+            status: 404
+            detail: "Titular com ID 'f47ac10b-58cc-4372-a567-0e02b2c3d479' não foi encontrado"
+
+    Conflict:
+      description: Conflito — documento já cadastrado
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ProblemDetails"
+          example:
+            type: "https://tools.ietf.org/html/rfc7231#section-6.5.8"
+            title: "Conflict"
+            status: 409
+            detail: "Já existe um titular cadastrado com este CPF: 123.456.789-09"
+
+    ConflictVinculo:
+      description: Conflito — titular possui vínculos que impedem exclusão
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ProblemDetails"
+          example:
+            type: "https://tools.ietf.org/html/rfc7231#section-6.5.8"
+            title: "Conflict"
+            status: 409
+            detail: "Titular não pode ser excluído pois possui vínculos com obras ou fonogramas"
+
+    UnprocessableEntity:
+      description: Erro de regra de negócio
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ProblemDetails"
+          example:
+            type: "https://tools.ietf.org/html/rfc7231#section-6.5.1"
+            title: "Unprocessable Entity"
+            status: 422
+            detail: "CPF inválido"
+
+    InternalServerError:
+      description: Erro interno do servidor
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ProblemDetails"
+          example:
+            type: "https://tools.ietf.org/html/rfc7231#section-6.6.1"
+            title: "Internal Server Error"
+            status: 500
+            detail: "An unexpected error occurred"
+            traceId: "0HN4B2E8M0T0K:00000001"
+
+  schemas:
+
+    TitularResponse:
+      type: object
+      description: "Representa um titular de direitos autorais/conexos no sistema"
+      required:
+        - id
+        - nome
+        - tipo
+        - documento
+        - nacionalidade
+        - associacao
+        - status
+        - criadoEm
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Identificador único do titular
+          example: "f47ac10b-58cc-4372-a567-0e02b2c3d479"
+        nome:
+          type: string
+          maxLength: 200
+          description: Nome completo (PF) ou razão social (PJ)
+          example: "Djavan Caetano Viana"
+        tipo:
+          type: string
+          enum: [PF, PJ]
+          description: |
+            Tipo de pessoa:
+            - `PF`: Pessoa Física (CPF)
+            - `PJ`: Pessoa Jurídica (CNPJ)
+          example: "PF"
+        documento:
+          type: string
+          description: "CPF (11 chars) ou CNPJ (14 chars alfanumérico) — armazenado sem formatação"
+          example: "12345678909"
+        documentoFormatado:
+          type: string
+          description: "CPF ou CNPJ formatado para exibição. CPF: 000.000.000-00. CNPJ numérico: 00.000.000/0001-00. CNPJ alfanumérico: A1.B2C.3D4/1A2B-99"
+          example: "123.456.789-09"
+        nacionalidade:
+          type: string
+          maxLength: 100
+          description: Nacionalidade (texto livre)
+          example: "Brasileira"
+        caeIpi:
+          type: string
+          maxLength: 20
+          nullable: true
+          description: "Código internacional CAE/IPI (opcional)"
+          example: "123456789"
+        associacao:
+          $ref: "#/components/schemas/AssociacaoResumo"
+        status:
+          type: string
+          enum: [ATIVO, FALECIDO, TRANSFERINDO]
+          description: |
+            Status do titular:
+            - `ATIVO`: Titular ativo no sistema
+            - `FALECIDO`: Titular falecido (informativo, não impacta regras do Cadastro)
+            - `TRANSFERINDO`: Titular em processo de transferência entre associações
+          example: "ATIVO"
+        criadoEm:
+          type: string
+          format: date-time
+          description: Data de criação (ISO 8601)
+          example: "2026-03-30T14:30:00Z"
+        atualizadoEm:
+          type: string
+          format: date-time
+          description: Data da última atualização (ISO 8601)
+          example: "2026-03-30T14:30:00Z"
+
+    AssociacaoResumo:
+      type: object
+      description: "Resumo da associação vinculada ao titular"
+      required:
+        - id
+        - sigla
+        - nome
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+        sigla:
+          type: string
+          example: "ABRAMUS"
+        nome:
+          type: string
+          example: "Associação Brasileira de Música e Artes"
+
+    CriarTitularRequest:
+      type: object
+      description: "Dados para criação de um novo titular"
+      required:
+        - nome
+        - tipo
+        - documento
+        - nacionalidade
+        - associacaoId
+      properties:
+        nome:
+          type: string
+          minLength: 1
+          maxLength: 200
+          description: Nome completo (PF) ou razão social (PJ)
+          example: "Djavan Caetano Viana"
+        tipo:
+          type: string
+          enum: [PF, PJ]
+          description: "Tipo de pessoa. PF exige CPF válido, PJ exige CNPJ válido."
+          example: "PF"
+        documento:
+          type: string
+          minLength: 11
+          maxLength: 14
+          description: "CPF (11 dígitos) ou CNPJ (14 caracteres alfanuméricos). Enviar sem formatação."
+          example: "12345678909"
+        nacionalidade:
+          type: string
+          minLength: 1
+          maxLength: 100
+          description: Nacionalidade (texto livre)
+          example: "Brasileira"
+        associacaoId:
+          type: string
+          format: uuid
+          description: ID da associação de gestão coletiva
+          example: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+        caeIpi:
+          type: string
+          maxLength: 20
+          nullable: true
+          description: "Código internacional CAE/IPI (opcional)"
+          example: "123456789"
+
+    AtualizarTitularRequest:
+      type: object
+      description: "Dados editáveis de um titular. Tipo e documento NÃO são alteráveis."
+      required:
+        - nome
+        - nacionalidade
+        - associacaoId
+        - status
+      properties:
+        nome:
+          type: string
+          minLength: 1
+          maxLength: 200
+          description: Nome completo (PF) ou razão social (PJ)
+          example: "Djavan Caetano Viana"
+        nacionalidade:
+          type: string
+          minLength: 1
+          maxLength: 100
+          description: Nacionalidade (texto livre)
+          example: "Brasileira"
+        associacaoId:
+          type: string
+          format: uuid
+          description: ID da associação de gestão coletiva
+          example: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+        status:
+          type: string
+          enum: [ATIVO, FALECIDO, TRANSFERINDO]
+          description: Status do titular
+          example: "ATIVO"
+        caeIpi:
+          type: string
+          maxLength: 20
+          nullable: true
+          description: "Código internacional CAE/IPI (opcional)"
+          example: "123456789"
+
+    TitularListResponse:
+      type: object
+      required:
+        - data
+        - pagination
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/TitularResponse"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+
+    Pagination:
+      type: object
+      required:
+        - page
+        - size
+        - total
+        - totalPages
+      properties:
+        page:
+          type: integer
+          description: Página atual
+          example: 1
+        size:
+          type: integer
+          description: Itens por página
+          example: 20
+        total:
+          type: integer
+          description: Total de itens
+          example: 142
+        totalPages:
+          type: integer
+          description: Total de páginas
+          example: 8
+
+    ProblemDetails:
+      type: object
+      description: "Formato de erro RFC 7807 (ProblemDetails)"
+      required:
+        - type
+        - title
+        - status
+      properties:
+        type:
+          type: string
+          format: uri
+          description: URI de referência do tipo de erro
+          example: "https://tools.ietf.org/html/rfc7231#section-6.5.4"
+        title:
+          type: string
+          description: Título curto do erro
+          example: "Resource Not Found"
+        status:
+          type: integer
+          description: HTTP status code
+          example: 404
+        detail:
+          type: string
+          description: Descrição detalhada do erro
+          example: "Titular com ID '...' não foi encontrado"
+        instance:
+          type: string
+          description: Path da requisição que gerou o erro
+          example: "/api/v1/titulares/..."
+        traceId:
+          type: string
+          nullable: true
+          description: ID de rastreamento (presente em erros 5xx)
+          example: "0HN4B2E8M0T0K:00000001"
+        errors:
+          type: array
+          nullable: true
+          description: Detalhes de validação por campo (presente em erros 400)
+          items:
+            type: object
+            properties:
+              field:
+                type: string
+                example: "nome"
+              message:
+                type: string
+                example: "Nome é obrigatório"

@@ -108,6 +108,86 @@ namespace Cadastro.Infra.Data.Migrations
                             Sigla = "UBC"
                         });
                 });
+
+            modelBuilder.Entity("Cadastro.Domain.Entities.Titular", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("AssociacaoId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("AtualizadoEm")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("CaeIpi")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("CaeIpi");
+
+                    b.Property<string>("Cnpj")
+                        .HasMaxLength(14)
+                        .HasColumnType("character varying(14)")
+                        .HasColumnName("Cnpj");
+
+                    b.Property<string>("Cpf")
+                        .HasMaxLength(11)
+                        .HasColumnType("character varying(11)")
+                        .HasColumnName("Cpf");
+
+                    b.Property<DateTime>("CriadoEm")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Nacionalidade")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("Nome")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("VARCHAR(15)");
+
+                    b.Property<string>("Tipo")
+                        .IsRequired()
+                        .HasColumnType("VARCHAR(2)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AssociacaoId")
+                        .HasDatabaseName("ix_titulares_associacao");
+
+                    b.HasIndex("Cnpj")
+                        .IsUnique()
+                        .HasDatabaseName("uq_titulares_cnpj")
+                        .HasFilter("\"Cnpj\" IS NOT NULL");
+
+                    b.HasIndex("Cpf")
+                        .IsUnique()
+                        .HasDatabaseName("uq_titulares_cpf")
+                        .HasFilter("\"Cpf\" IS NOT NULL");
+
+                    b.HasIndex("Status")
+                        .HasDatabaseName("ix_titulares_status");
+
+                    b.ToTable("titulares", "cadastro");
+                });
+
+            modelBuilder.Entity("Cadastro.Domain.Entities.Titular", b =>
+                {
+                    b.HasOne("Cadastro.Domain.Entities.Associacao", "Associacao")
+                        .WithMany()
+                        .HasForeignKey("AssociacaoId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Associacao");
+                });
 #pragma warning restore 612, 618
         }
     }

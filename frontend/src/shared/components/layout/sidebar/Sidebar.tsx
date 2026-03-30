@@ -10,10 +10,7 @@ const navigation = [
     basePath: '/cadastro',
     children: [
       { label: 'Associações', path: '/cadastro/associacoes' },
-      // Futuras features (F02+):
-      // { label: 'Titulares', path: '/cadastro/titulares' },
-      // { label: 'Obras', path: '/cadastro/obras' },
-      // { label: 'Fonogramas', path: '/cadastro/fonogramas' },
+      { label: 'Titulares', path: '/cadastro/titulares' },
     ],
   },
   // Fases futuras (desabilitados):
