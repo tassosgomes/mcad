@@ -1,0 +1,17 @@
+using Cadastro.Domain.Enums;
+
+namespace Cadastro.Application.Obras.Responses;
+
+public record ObraResponse(
+    Guid Id,
+    string Titulo,
+    string? Subtitulo,
+    string Tipo,
+    string? Genero,
+    string? Iswc,
+    string Status,
+    bool DominioPublico,
+    Guid? ObraDepuradaParaId,
+    DateTime CriadoEm,
+    DateTime AtualizadoEm
+);
