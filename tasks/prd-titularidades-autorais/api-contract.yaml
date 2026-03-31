@@ -1,0 +1,493 @@
+openapi: 3.1.0
+
+info:
+  title: "Cadastro API — Titularidades Autorais"
+  description: |
+    API para gestão de titularidades autorais — sub-recurso de Obras Musicais.
+    Gerencia o vínculo entre titulares e obras com categoria (Autor/Editor) e percentual.
+
+    **Contrato gerado a partir do PRD:** `tasks/prd-titularidades-autorais/prd.md`
+    **Data de geração:** 2026-03-31
+
+    ## Premissas Adotadas
+    - Titularidades são sub-recurso de Obras: `/api/v1/obras/{obraId}/titularidades`
+    - Percentuais com 4 casas decimais (Decimal, não Float)
+    - Soma pode ser temporariamente != 100% (obra permanece PENDENTE)
+    - Alteração em obra LIBERADA dispara depuração (mesma regra de F03)
+    - Erros seguem RFC 7807 (ProblemDetails)
+    - Campos JSON em camelCase
+  version: "1.0.0"
+  contact:
+    name: "Time de Plataforma ECAD"
+
+servers:
+  - url: http://localhost:5001/api/v1
+    description: Desenvolvimento local (cadastro-api)
+
+security:
+  - BearerAuth: []
+
+tags:
+  - name: Titularidades Autorais
+    description: "Vínculo titular ↔ obra com categoria e percentual"
+  - name: Busca de Titulares
+    description: "Autocomplete de titulares para seleção"
+
+paths:
+
+  /obras/{obraId}/titularidades:
+    parameters:
+      - name: obraId
+        in: path
+        required: true
+        description: ID da obra musical
+        schema:
+          type: string
+          format: uuid
+          example: "d1e2f3a4-b5c6-7890-abcd-ef1234567890"
+
+    get:
+      summary: Listar titularidades de uma obra
+      description: |
+        Retorna todas as titularidades autorais de uma obra com a soma atual dos percentuais.
+        Inclui dados resumidos de cada titular (nome, tipo, documento).
+      operationId: listarTitularidades
+      tags:
+        - Titularidades Autorais
+      responses:
+        "200":
+          description: Titularidades da obra
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TitularidadesResponse"
+              example:
+                obraId: "d1e2f3a4-b5c6-7890-abcd-ef1234567890"
+                titularidades:
+                  - id: "aaa11111-1111-1111-1111-111111111111"
+                    titular:
+                      id: "f47ac10b-58cc-4372-a567-0e02b2c3d479"
+                      nome: "Djavan Caetano Viana"
+                      tipo: "PF"
+                      documentoFormatado: "123.456.789-09"
+                    categoria: "AUTOR"
+                    percentual: 60.0000
+                  - id: "bbb22222-2222-2222-2222-222222222222"
+                    titular:
+                      id: "c83de1a2-45ff-4890-bcde-012345678901"
+                      nome: "Editora Musical ABC Ltda"
+                      tipo: "PJ"
+                      documentoFormatado: "12.345.678/0001-90"
+                    categoria: "EDITOR"
+                    percentual: 40.0000
+                somaPercentual: 100.0000
+                somaCompleta: true
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+      x-frontend-notes: |
+        Exibir soma no rodapé da tabela com indicador de cor:
+        - Verde (somaCompleta=true, soma=100%)
+        - Amarelo (soma < 100%)
+        - Vermelho (soma > 100%)
+        Documentos em font-mono. Badges PF/PJ nos titulares.
+
+    post:
+      summary: Adicionar titularidade à obra
+      description: |
+        Vincula um titular existente à obra com categoria e percentual.
+
+        **Validações:**
+        - Categoria EDITOR exige titular PJ (RN-11)
+        - Mesmo titular + mesma categoria não pode ser duplicado
+        - Mesmo titular com categorias diferentes é permitido (RN-07)
+
+        **Depuração:**
+        - Se a obra tem status LIBERADO, retorna 409 `DEPURACAO_NECESSARIA`
+        - Frontend deve confirmar via POST /obras/{id}/depurar com titularidades atualizadas
+      operationId: adicionarTitularidade
+      tags:
+        - Titularidades Autorais
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdicionarTitularidadeRequest"
+      responses:
+        "201":
+          description: Titularidade adicionada com sucesso
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TitularidadesResponse"
+          headers:
+            Location:
+              schema:
+                type: string
+                example: "/api/v1/obras/d1e2f3a4-.../titularidades/aaa11111-..."
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/ConflictDepuracao"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+      x-frontend-notes: |
+        Se 409 com code DEPURACAO_NECESSARIA, exibir modal de depuração.
+        Após 201, atualizar a soma exibida no rodapé.
+      x-backend-notes: |
+        Verificar status da obra ANTES de persistir.
+        Validar titular PJ para Editor.
+        Retornar TitularidadesResponse completo (com soma atualizada).
+
+  /obras/{obraId}/titularidades/{id}:
+    parameters:
+      - name: obraId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: id
+        in: path
+        required: true
+        description: ID da titularidade
+        schema:
+          type: string
+          format: uuid
+
+    put:
+      summary: Editar percentual de titularidade
+      description: |
+        Altera o percentual de uma titularidade existente.
+        Categoria NÃO é editável (remover + readicionar para mudar).
+        Em obra LIBERADA, retorna 409 `DEPURACAO_NECESSARIA`.
+      operationId: editarTitularidade
+      tags:
+        - Titularidades Autorais
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EditarTitularidadeRequest"
+      responses:
+        "200":
+          description: Titularidade atualizada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TitularidadesResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/ConflictDepuracao"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+    delete:
+      summary: Remover titularidade da obra
+      description: |
+        Remove o vínculo titular ↔ obra. Soma pode ficar < 100% após remoção.
+        Em obra LIBERADA, retorna 409 `DEPURACAO_NECESSARIA`.
+      operationId: removerTitularidade
+      tags:
+        - Titularidades Autorais
+      responses:
+        "200":
+          description: Titularidade removida — retorna titularidades atualizadas com nova soma
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TitularidadesResponse"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/ConflictDepuracao"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+      x-frontend-notes: |
+        DELETE retorna 200 com body (não 204) para que o frontend atualize a soma sem request adicional.
+
+  /titulares/busca:
+    get:
+      summary: Autocomplete de titulares
+      description: |
+        Busca titulares por nome ou documento (parcial, case-insensitive) para uso no autocomplete
+        de seleção ao adicionar titularidade. Retorna máximo 10 resultados.
+      operationId: buscarTitularesAutocomplete
+      tags:
+        - Busca de Titulares
+      parameters:
+        - name: q
+          in: query
+          required: true
+          description: Termo de busca (nome ou CPF/CNPJ, mínimo 2 caracteres)
+          schema:
+            type: string
+            minLength: 2
+            example: "djavan"
+        - name: limit
+          in: query
+          description: Máximo de resultados
+          schema:
+            type: integer
+            default: 10
+            maximum: 20
+            example: 10
+      responses:
+        "200":
+          description: Titulares encontrados
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TitularResumoResponse"
+              example:
+                - id: "f47ac10b-58cc-4372-a567-0e02b2c3d479"
+                  nome: "Djavan Caetano Viana"
+                  tipo: "PF"
+                  documentoFormatado: "123.456.789-09"
+                  associacaoSigla: "ABRAMUS"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+      x-frontend-notes: |
+        Debounce de 300ms no input. Mínimo 2 caracteres para disparar busca.
+        Exibir resultados em dropdown com nome + tipo badge + documento mono.
+
+components:
+
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  responses:
+    BadRequest:
+      description: Erro de validação
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ProblemDetails"
+          example:
+            type: "https://tools.ietf.org/html/rfc7231#section-6.5.1"
+            title: "Validation Error"
+            status: 400
+            detail: "Percentual deve ser maior que 0"
+
+    NotFound:
+      description: Recurso não encontrado
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ProblemDetails"
+          example:
+            type: "https://tools.ietf.org/html/rfc7231#section-6.5.4"
+            title: "Resource Not Found"
+            status: 404
+            detail: "Obra não encontrada"
+
+    ConflictDepuracao:
+      description: Obra LIBERADA — alteração requer depuração
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ProblemDetails"
+          example:
+            type: "https://tools.ietf.org/html/rfc7231#section-6.5.8"
+            title: "Depuração Necessária"
+            status: 409
+            detail: "Alterar titulares de uma obra LIBERADA requer depuração"
+            code: "DEPURACAO_NECESSARIA"
+
+    UnprocessableEntity:
+      description: Regra de negócio violada
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ProblemDetails"
+          example:
+            type: "https://tools.ietf.org/html/rfc7231#section-6.5.1"
+            title: "Unprocessable Entity"
+            status: 422
+            detail: "A categoria Editor exige titular Pessoa Jurídica"
+
+    InternalServerError:
+      description: Erro interno
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ProblemDetails"
+          example:
+            type: "https://tools.ietf.org/html/rfc7231#section-6.6.1"
+            title: "Internal Server Error"
+            status: 500
+            detail: "An unexpected error occurred"
+
+  schemas:
+
+    TitularidadesResponse:
+      type: object
+      description: "Lista de titularidades de uma obra com soma dos percentuais"
+      required:
+        - obraId
+        - titularidades
+        - somaPercentual
+        - somaCompleta
+      properties:
+        obraId:
+          type: string
+          format: uuid
+          example: "d1e2f3a4-b5c6-7890-abcd-ef1234567890"
+        titularidades:
+          type: array
+          items:
+            $ref: "#/components/schemas/TitularidadeItem"
+        somaPercentual:
+          type: number
+          format: decimal
+          description: "Soma atual dos percentuais (4 casas decimais)"
+          example: 100.0000
+        somaCompleta:
+          type: boolean
+          description: "true se soma == 100.0000"
+          example: true
+
+    TitularidadeItem:
+      type: object
+      required:
+        - id
+        - titular
+        - categoria
+        - percentual
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: ID da titularidade (vínculo)
+          example: "aaa11111-1111-1111-1111-111111111111"
+        titular:
+          $ref: "#/components/schemas/TitularResumoResponse"
+        categoria:
+          type: string
+          enum: [AUTOR, EDITOR]
+          description: |
+            Categoria autoral:
+            - `AUTOR`: Autor/Compositor (PF)
+            - `EDITOR`: Editora (obrigatoriamente PJ)
+          example: "AUTOR"
+        percentual:
+          type: number
+          format: decimal
+          description: "Percentual com 4 casas decimais (0.0001 a 100.0000)"
+          example: 60.0000
+
+    TitularResumoResponse:
+      type: object
+      required:
+        - id
+        - nome
+        - tipo
+        - documentoFormatado
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "f47ac10b-58cc-4372-a567-0e02b2c3d479"
+        nome:
+          type: string
+          example: "Djavan Caetano Viana"
+        tipo:
+          type: string
+          enum: [PF, PJ]
+          example: "PF"
+        documentoFormatado:
+          type: string
+          example: "123.456.789-09"
+        associacaoSigla:
+          type: string
+          description: "Sigla da associação (presente apenas no autocomplete)"
+          example: "ABRAMUS"
+
+    AdicionarTitularidadeRequest:
+      type: object
+      required:
+        - titularId
+        - categoria
+        - percentual
+      properties:
+        titularId:
+          type: string
+          format: uuid
+          description: ID do titular existente
+          example: "f47ac10b-58cc-4372-a567-0e02b2c3d479"
+        categoria:
+          type: string
+          enum: [AUTOR, EDITOR]
+          example: "AUTOR"
+        percentual:
+          type: number
+          format: decimal
+          minimum: 0.0001
+          maximum: 100.0000
+          description: "Percentual com até 4 casas decimais"
+          example: 60.0000
+
+    EditarTitularidadeRequest:
+      type: object
+      description: "Apenas o percentual é editável. Categoria é imutável."
+      required:
+        - percentual
+      properties:
+        percentual:
+          type: number
+          format: decimal
+          minimum: 0.0001
+          maximum: 100.0000
+          example: 75.0000
+
+    ProblemDetails:
+      type: object
+      required:
+        - type
+        - title
+        - status
+      properties:
+        type:
+          type: string
+          format: uri
+        title:
+          type: string
+        status:
+          type: integer
+        detail:
+          type: string
+        instance:
+          type: string
+        code:
+          type: string
+          nullable: true
+        traceId:
+          type: string
+          nullable: true
+        errors:
+          type: array
+          nullable: true
+          items:
+            type: object
+            properties:
+              field:
+                type: string
+              message:
+                type: string
