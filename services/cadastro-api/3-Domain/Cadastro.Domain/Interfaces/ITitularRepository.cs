@@ -48,4 +48,7 @@ public interface ITitularRepository
 
     /// <summary>Persiste todas as mudanças pendentes no contexto.</summary>
     Task SaveChangesAsync(CancellationToken cancellationToken);
+
+    /// <summary>Busca titulares por nome ou documento para autocomplete.</summary>
+    Task<IEnumerable<Titular>> BuscarParaAutocompleteAsync(string q, int limit, CancellationToken cancellationToken);
 }

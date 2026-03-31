@@ -140,4 +140,28 @@ public class TitularRepository : ITitularRepository
     {
         await _context.SaveChangesAsync(cancellationToken);
     }
+
+    public async Task<IEnumerable<Titular>> BuscarParaAutocompleteAsync(string q, int limit, CancellationToken cancellationToken)
+    {
+        var likeQ = $"%{q.ToUpperInvariant()}%";
+        var likeNome = $"%{q}%";
+        
+        var matchingIds = await _context.Database
+            .SqlQuery<Guid>($"""
+                SELECT "Id" AS "Value" FROM cadastro.titulares
+                WHERE "Nome" ILIKE {likeNome} OR "Cpf" LIKE {likeQ} OR "Cnpj" LIKE {likeQ}
+                LIMIT {limit}
+                """)
+            .ToListAsync(cancellationToken);
+
+        // A query via IDs pode retornar fora de ordem comparada ao ILIKE.
+        // Como o Limit já foi aplicado no DB, apenas buscamos as entidades e ordenamos por Nome no C#.
+        var resultado = await _context.Titulares
+            .AsNoTracking()
+            .Include(t => t.Associacao)
+            .Where(t => matchingIds.Contains(t.Id))
+            .ToListAsync(cancellationToken);
+
+        return resultado.OrderBy(t => t.Nome);
+    }
 }
