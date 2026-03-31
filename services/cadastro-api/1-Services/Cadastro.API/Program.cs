@@ -8,6 +8,7 @@ using Cadastro.Infra.Data;
 using Cadastro.Infra.Repositories;
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
+using Polly;
 
 DotEnvLoader.LoadIfPresent();
 
@@ -32,6 +33,14 @@ builder.Services.AddDbContext<CadastroDbContext>(options =>
 // ─── Repository ────────────────────────────────────────────────────────
 builder.Services.AddScoped<IAssociacaoRepository, AssociacaoRepository>();
 builder.Services.AddScoped<ITitularRepository, TitularRepository>();
+builder.Services.AddScoped<IObraRepository, ObraRepository>();
+
+// ─── HttpClient + Polly ────────────────────────────────────────────────
+builder.Services.AddHttpClient<IIswcService, Cadastro.Infra.ExternalServices.IswcService>(client =>
+{
+    client.BaseAddress = new Uri("https://iswc.tasso.dev.br/");
+    client.Timeout = TimeSpan.FromSeconds(10);
+}).AddTransientHttpErrorPolicy(p => p.RetryAsync(2));
 
 // ─── CQRS — Dispatcher + Handlers (via Scrutor) ───────────────────────
 builder.Services.AddScoped<IDispatcher, Dispatcher>();
@@ -92,6 +101,7 @@ using (var scope = app.Services.CreateScope())
 // ─── Endpoints ────────────────────────────────────────────────────────
 app.MapAssociacaoEndpoints();
 app.MapTitularEndpoints();
+app.MapObraEndpoints();
 
 // ─── Health Check ─────────────────────────────────────────────────────
 app.MapHealthChecks("/health");

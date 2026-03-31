@@ -41,6 +41,8 @@ public class GlobalExceptionHandler : IExceptionHandler
             ConflictException => (StatusCodes.Status409Conflict, "Conflict"),
             Cadastro.Application.Common.Exceptions.ValidationException => (StatusCodes.Status400BadRequest, "Validation Error"),
             DomainException => (StatusCodes.Status422UnprocessableEntity, "Unprocessable Entity"),
+            ExternalServiceException => (StatusCodes.Status502BadGateway, "Bad Gateway"),
+            DepuracaoNecessariaException => (StatusCodes.Status409Conflict, "Depuração Necessária"),
             _ => (StatusCodes.Status500InternalServerError, "Internal Server Error")
         };
         var problemDetails = new ProblemDetails
@@ -50,6 +52,11 @@ public class GlobalExceptionHandler : IExceptionHandler
             Detail = exception.Message,
             Instance = httpContext.Request.Path
         };
+
+        if (exception is DepuracaoNecessariaException depException)
+        {
+            problemDetails.Extensions["code"] = depException.Code;
+        }
 
         httpContext.Response.StatusCode = statusCode;
         await httpContext.Response.WriteAsJsonAsync(problemDetails, cancellationToken);
