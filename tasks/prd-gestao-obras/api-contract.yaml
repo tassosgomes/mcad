@@ -1,0 +1,786 @@
+openapi: 3.1.0
+
+info:
+  title: "Cadastro API — Obras Musicais"
+  description: |
+    API CRUD para gestão de obras musicais do ECAD, incluindo integração com API de ISWC
+    e mecanismo de depuração para obras liberadas.
+
+    **Contrato gerado a partir do PRD:** `tasks/prd-gestao-obras/prd.md`
+    **Data de geração:** 2026-03-30
+
+    ## Premissas Adotadas
+    - Autenticação JWT Bearer planejada (aplicação retroativa)
+    - Paginação server-side: page/size (default page=1, size=20)
+    - Ordenação server-side: campo + direção (prefixo `-` para DESC, default: titulo ASC)
+    - ISWC obtido exclusivamente via API externa (não editável manualmente)
+    - Depuração: obra LIBERADA com alteração de título/titulares gera nova obra automaticamente
+    - Erros seguem RFC 7807 (ProblemDetails)
+    - Campos JSON em camelCase
+  version: "1.0.0"
+  contact:
+    name: "Time de Plataforma ECAD"
+
+servers:
+  - url: http://localhost:5001/api/v1
+    description: Desenvolvimento local (cadastro-api)
+
+security:
+  - BearerAuth: []
+
+tags:
+  - name: Obras
+    description: "Gestão de obras musicais — CRUD, ISWC e depuração"
+
+paths:
+
+  /obras:
+    get:
+      summary: Listar obras com paginação e filtros
+      description: |
+        Retorna lista paginada de obras musicais com filtros e ordenação server-side.
+        Inclui obras com todos os status (PENDENTE, LIBERADO, BLOQUEADO, DOMINIO_PUBLICO, DEPURADA).
+      operationId: listarObras
+      tags:
+        - Obras
+      parameters:
+        - name: page
+          in: query
+          description: Número da página (começa em 1)
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+            example: 1
+        - name: size
+          in: query
+          description: Itens por página (máx 100)
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+            example: 20
+        - name: sort
+          in: query
+          description: "Campo de ordenação. Prefixo `-` para DESC. Campos: `titulo`, `tipo`, `status`"
+          schema:
+            type: string
+            default: "titulo"
+            example: "-titulo"
+        - name: titulo
+          in: query
+          description: Filtro por título (parcial, case-insensitive)
+          schema:
+            type: string
+            example: "meu bem"
+        - name: iswc
+          in: query
+          description: Filtro por ISWC (parcial)
+          schema:
+            type: string
+            example: "T-336"
+        - name: tipo
+          in: query
+          description: Filtro por tipo de obra (exato)
+          schema:
+            type: string
+            enum: [MUSICAL, LITEROMUSICAL, VERSAO, POT_POURRI]
+            example: "LITEROMUSICAL"
+        - name: status
+          in: query
+          description: Filtro por status (exato)
+          schema:
+            type: string
+            enum: [PENDENTE, LIBERADO, BLOQUEADO, DOMINIO_PUBLICO, DEPURADA]
+            example: "PENDENTE"
+        - name: genero
+          in: query
+          description: Filtro por gênero (parcial, case-insensitive)
+          schema:
+            type: string
+            example: "MPB"
+      responses:
+        "200":
+          description: Lista paginada de obras
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ObraListResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+      x-frontend-notes: |
+        Debounce de 300ms nos campos de texto (titulo, iswc, genero).
+        Badge de status: PENDENTE (warning), LIBERADO (success), BLOQUEADO (error), DOMINIO_PUBLICO (muted), DEPURADA (secondary).
+        Obras DEPURADAS mostram link para nova obra (obraDepuradaParaId).
+      x-backend-notes: |
+        Índices recomendados: titulo (trigram para ILIKE), iswc, tipo, status.
+
+    post:
+      summary: Criar nova obra musical
+      description: |
+        Cria uma obra musical com status PENDENTE (rascunho).
+        ISWC não é informado na criação — será obtido posteriormente via endpoint dedicado.
+      operationId: criarObra
+      tags:
+        - Obras
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CriarObraRequest"
+      responses:
+        "201":
+          description: Obra criada com sucesso (status PENDENTE)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ObraResponse"
+          headers:
+            Location:
+              description: URL do recurso criado
+              schema:
+                type: string
+                example: "/api/v1/obras/d1e2f3a4-b5c6-7890-abcd-ef1234567890"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /obras/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: ID único da obra (UUID)
+        schema:
+          type: string
+          format: uuid
+          example: "d1e2f3a4-b5c6-7890-abcd-ef1234567890"
+
+    get:
+      summary: Buscar obra por ID
+      description: |
+        Retorna os dados completos de uma obra, incluindo `obraDepuradaParaId` se o status for DEPURADA.
+      operationId: buscarObraPorId
+      tags:
+        - Obras
+      responses:
+        "200":
+          description: Obra encontrada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ObraResponse"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+    put:
+      summary: Atualizar obra musical
+      description: |
+        Atualiza dados editáveis da obra.
+
+        **Regras de depuração:**
+        - Se a obra tem status PENDENTE: edição livre de todos os campos.
+        - Se a obra tem status LIBERADO e o título foi alterado: o sistema retorna 409 indicando
+          que a operação requer depuração. O frontend deve confirmar via `POST /obras/{id}/depurar`.
+        - Campos subtitulo, tipo e genero podem ser editados em obra LIBERADA sem depuração.
+        - Obras DEPURADA e DOMINIO_PUBLICO não podem ser editadas (retorna 409).
+
+        ISWC nunca é aceito neste endpoint.
+      operationId: atualizarObra
+      tags:
+        - Obras
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AtualizarObraRequest"
+      responses:
+        "200":
+          description: Obra atualizada com sucesso
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ObraResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/ConflictDepuracao"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+      x-frontend-notes: |
+        Se receber 409 com code DEPURACAO_NECESSARIA, exibir modal de confirmação e chamar POST /obras/{id}/depurar.
+        Campos ISWC sempre disabled. Status DEPURADA: todos os campos disabled.
+
+    delete:
+      summary: Excluir obra musical
+      description: |
+        Exclui uma obra permanentemente.
+        Rejeita se: a obra tiver fonogramas ou titularidades vinculados, ou se status for DEPURADA.
+      operationId: excluirObra
+      tags:
+        - Obras
+      responses:
+        "204":
+          description: Obra excluída com sucesso
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/ConflictVinculo"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /obras/{id}/iswc:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: ID da obra para obter ISWC
+        schema:
+          type: string
+          format: uuid
+          example: "d1e2f3a4-b5c6-7890-abcd-ef1234567890"
+
+    post:
+      summary: Obter ISWC via API externa
+      description: |
+        Chama a API externa `https://iswc.tasso.dev.br/` para obter o código ISWC da obra.
+
+        **Pré-requisitos:**
+        - Obra deve ter status PENDENTE (sem ISWC)
+        - Obra deve ter ao menos um titular autoral vinculado (F04)
+
+        **Dados enviados à API externa:**
+        - `work_title`: título da obra
+        - `authors`: nomes de todos os titulares autorais
+        - `association_code`: sigla da associação do titular com maior percentual (empate → primeiro)
+
+        **Comportamento:**
+        - Sucesso: ISWC salvo na obra, retorna obra atualizada
+        - API indisponível: retorna 502 com mensagem amigável
+        - ISWC já existe em outra obra: retorna 409
+      operationId: obterIswc
+      tags:
+        - Obras
+      responses:
+        "200":
+          description: ISWC obtido e salvo com sucesso
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ObraResponse"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/ConflictIswc"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+        "502":
+          $ref: "#/components/responses/BadGateway"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+      x-frontend-notes: |
+        Botão "Obter ISWC" com loading spinner. Desabilitado se: sem titulares, já tem ISWC, ou status != PENDENTE.
+        Toast de sucesso ou erro conforme response.
+      x-backend-notes: |
+        Timeout de 10s na chamada à API externa. Tratar timeout como 502.
+        Selecionar associação: titular com maior percentual na titularidade autoral, empate → primeiro por ordem.
+
+  /obras/{id}/depurar:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: ID da obra a depurar
+        schema:
+          type: string
+          format: uuid
+          example: "d1e2f3a4-b5c6-7890-abcd-ef1234567890"
+
+    post:
+      summary: Depurar obra e criar nova versão
+      description: |
+        Depura uma obra LIBERADA: a obra original torna-se imutável (status DEPURADA)
+        e uma nova obra é criada automaticamente com os dados atualizados.
+
+        **Pré-requisitos:**
+        - Obra deve ter status LIBERADO
+
+        **Dados do request:**
+        - Novos valores para os campos que motivaram a depuração (título e/ou outros campos editáveis)
+
+        **Comportamento:**
+        1. Obra original → status DEPURADA, imutável, recebe `obraDepuradaParaId` apontando para nova obra
+        2. Nova obra criada → status PENDENTE, sem ISWC, sem fonogramas, com dados atualizados
+        3. Retorna a nova obra criada
+      operationId: depurarObra
+      tags:
+        - Obras
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DepurarObraRequest"
+      responses:
+        "201":
+          description: Obra depurada e nova obra criada com sucesso
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DepuracaoResponse"
+          headers:
+            Location:
+              description: URL da nova obra criada
+              schema:
+                type: string
+                example: "/api/v1/obras/e2f3a4b5-c6d7-8901-bcde-f12345678901"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/ConflictStatusInvalido"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+      x-frontend-notes: |
+        Chamado após confirmação do modal "Esta alteração irá depurar a obra atual...".
+        Após sucesso, redirecionar para a nova obra.
+
+  /obras/{id}/dominio-publico:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+
+    put:
+      summary: Marcar/desmarcar obra como Domínio Público
+      description: |
+        Altera a flag de Domínio Público da obra.
+        Disponível apenas para obras com status PENDENTE ou LIBERADO (não DEPURADA).
+      operationId: alterarDominioPublico
+      tags:
+        - Obras
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DominioPublicoRequest"
+      responses:
+        "200":
+          description: Status de Domínio Público atualizado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ObraResponse"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/ConflictStatusInvalido"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+components:
+
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: "Token JWT via Keycloak (aplicação retroativa)"
+
+  responses:
+    BadRequest:
+      description: Requisição inválida — erro de validação
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ProblemDetails"
+          example:
+            type: "https://tools.ietf.org/html/rfc7231#section-6.5.1"
+            title: "Validation Error"
+            status: 400
+            detail: "Um ou mais campos são inválidos"
+            errors:
+              - field: "titulo"
+                message: "Título é obrigatório"
+
+    NotFound:
+      description: Recurso não encontrado
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ProblemDetails"
+          example:
+            type: "https://tools.ietf.org/html/rfc7231#section-6.5.4"
+            title: "Resource Not Found"
+            status: 404
+            detail: "Obra com ID 'd1e2f3a4-...' não foi encontrada"
+
+    ConflictDepuracao:
+      description: Alteração requer depuração — obra LIBERADA com mudança de título/titulares
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ProblemDetails"
+          example:
+            type: "https://tools.ietf.org/html/rfc7231#section-6.5.8"
+            title: "Depuração Necessária"
+            status: 409
+            detail: "Esta obra está LIBERADA. Alterar o título requer depuração — a obra atual será marcada como DEPURADA e uma nova obra será criada."
+            code: "DEPURACAO_NECESSARIA"
+
+    ConflictVinculo:
+      description: Obra possui vínculos que impedem exclusão
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ProblemDetails"
+          example:
+            type: "https://tools.ietf.org/html/rfc7231#section-6.5.8"
+            title: "Conflict"
+            status: 409
+            detail: "Obra não pode ser excluída pois possui fonogramas ou titularidades vinculados"
+
+    ConflictIswc:
+      description: ISWC já existe em outra obra
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ProblemDetails"
+          example:
+            type: "https://tools.ietf.org/html/rfc7231#section-6.5.8"
+            title: "Conflict"
+            status: 409
+            detail: "O ISWC 'T-336305833-4' já está atribuído a outra obra"
+
+    ConflictStatusInvalido:
+      description: Operação não permitida para o status atual da obra
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ProblemDetails"
+          example:
+            type: "https://tools.ietf.org/html/rfc7231#section-6.5.8"
+            title: "Conflict"
+            status: 409
+            detail: "Operação não permitida para obras com status DEPURADA"
+
+    UnprocessableEntity:
+      description: Pré-requisitos não atendidos
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ProblemDetails"
+          example:
+            type: "https://tools.ietf.org/html/rfc7231#section-6.5.1"
+            title: "Unprocessable Entity"
+            status: 422
+            detail: "Obra deve ter ao menos um titular autoral vinculado para obter ISWC"
+
+    BadGateway:
+      description: API externa indisponível
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ProblemDetails"
+          example:
+            type: "https://tools.ietf.org/html/rfc7231#section-6.6.3"
+            title: "Bad Gateway"
+            status: 502
+            detail: "Não foi possível obter o ISWC neste momento. Por favor, tente novamente mais tarde."
+
+    InternalServerError:
+      description: Erro interno do servidor
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ProblemDetails"
+          example:
+            type: "https://tools.ietf.org/html/rfc7231#section-6.6.1"
+            title: "Internal Server Error"
+            status: 500
+            detail: "An unexpected error occurred"
+            traceId: "0HN4B2E8M0T0K:00000001"
+
+  schemas:
+
+    ObraResponse:
+      type: object
+      description: "Representa uma obra musical no sistema"
+      required:
+        - id
+        - titulo
+        - tipo
+        - status
+        - criadoEm
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: ID único da obra
+          example: "d1e2f3a4-b5c6-7890-abcd-ef1234567890"
+        titulo:
+          type: string
+          maxLength: 300
+          description: Título da obra musical
+          example: "Meu Bem Querer"
+        subtitulo:
+          type: string
+          maxLength: 300
+          nullable: true
+          description: Subtítulo (opcional)
+          example: null
+        tipo:
+          type: string
+          enum: [MUSICAL, LITEROMUSICAL, VERSAO, POT_POURRI]
+          description: |
+            Tipo da obra:
+            - `MUSICAL`: Instrumental (sem letra)
+            - `LITEROMUSICAL`: Com letra
+            - `VERSAO`: Tradução/adaptação
+            - `POT_POURRI`: Medley de obras
+          example: "LITEROMUSICAL"
+        genero:
+          type: string
+          maxLength: 100
+          nullable: true
+          description: Gênero musical (texto livre)
+          example: "MPB"
+        iswc:
+          type: string
+          nullable: true
+          description: "International Standard Musical Work Code (obtido via API, não editável)"
+          example: "T-336305833-4"
+        status:
+          type: string
+          enum: [PENDENTE, LIBERADO, BLOQUEADO, DOMINIO_PUBLICO, DEPURADA]
+          description: |
+            Status da obra:
+            - `PENDENTE`: Rascunho — aguardando titularidades e ISWC
+            - `LIBERADO`: Dados completos, pronta para distribuição
+            - `BLOQUEADO`: Bloqueada por pendência ou conflito
+            - `DOMINIO_PUBLICO`: Sem proteção patrimonial (flag manual)
+            - `DEPURADA`: Imutável — foi substituída por nova versão
+          example: "PENDENTE"
+        dominioPublico:
+          type: boolean
+          description: Flag de Domínio Público
+          example: false
+        obraDepuradaParaId:
+          type: string
+          format: uuid
+          nullable: true
+          description: "ID da nova obra criada após depuração (preenchido apenas se status = DEPURADA)"
+          example: null
+        criadoEm:
+          type: string
+          format: date-time
+          description: Data de criação (ISO 8601)
+          example: "2026-03-30T14:30:00Z"
+        atualizadoEm:
+          type: string
+          format: date-time
+          description: Data da última atualização
+          example: "2026-03-30T14:30:00Z"
+
+    CriarObraRequest:
+      type: object
+      description: "Dados para criação de uma nova obra musical"
+      required:
+        - titulo
+        - tipo
+      properties:
+        titulo:
+          type: string
+          minLength: 1
+          maxLength: 300
+          description: Título da obra
+          example: "Meu Bem Querer"
+        subtitulo:
+          type: string
+          maxLength: 300
+          nullable: true
+          description: Subtítulo (opcional)
+          example: null
+        tipo:
+          type: string
+          enum: [MUSICAL, LITEROMUSICAL, VERSAO, POT_POURRI]
+          description: Tipo da obra
+          example: "LITEROMUSICAL"
+        genero:
+          type: string
+          maxLength: 100
+          nullable: true
+          description: Gênero musical (texto livre, opcional)
+          example: "MPB"
+
+    AtualizarObraRequest:
+      type: object
+      description: "Dados editáveis de uma obra. ISWC não é aceito."
+      required:
+        - titulo
+        - tipo
+      properties:
+        titulo:
+          type: string
+          minLength: 1
+          maxLength: 300
+          description: Título da obra
+          example: "Meu Bem Querer (Remix)"
+        subtitulo:
+          type: string
+          maxLength: 300
+          nullable: true
+          description: Subtítulo
+          example: null
+        tipo:
+          type: string
+          enum: [MUSICAL, LITEROMUSICAL, VERSAO, POT_POURRI]
+          description: Tipo da obra
+          example: "LITEROMUSICAL"
+        genero:
+          type: string
+          maxLength: 100
+          nullable: true
+          description: Gênero musical
+          example: "MPB"
+
+    DepurarObraRequest:
+      type: object
+      description: "Dados atualizados para a nova obra gerada pela depuração"
+      required:
+        - titulo
+        - tipo
+      properties:
+        titulo:
+          type: string
+          minLength: 1
+          maxLength: 300
+          description: Título da nova obra (pode ser o título alterado)
+          example: "Meu Bem Querer (Remix)"
+        subtitulo:
+          type: string
+          maxLength: 300
+          nullable: true
+          example: null
+        tipo:
+          type: string
+          enum: [MUSICAL, LITEROMUSICAL, VERSAO, POT_POURRI]
+          example: "LITEROMUSICAL"
+        genero:
+          type: string
+          maxLength: 100
+          nullable: true
+          example: "MPB"
+
+    DepuracaoResponse:
+      type: object
+      description: "Resultado da depuração — contém obra depurada e nova obra criada"
+      required:
+        - obraDepurada
+        - novaObra
+      properties:
+        obraDepurada:
+          $ref: "#/components/schemas/ObraResponse"
+        novaObra:
+          $ref: "#/components/schemas/ObraResponse"
+
+    DominioPublicoRequest:
+      type: object
+      required:
+        - dominioPublico
+      properties:
+        dominioPublico:
+          type: boolean
+          description: "true para marcar, false para desmarcar"
+          example: true
+
+    ObraListResponse:
+      type: object
+      required:
+        - data
+        - pagination
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/ObraResponse"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+
+    Pagination:
+      type: object
+      required:
+        - page
+        - size
+        - total
+        - totalPages
+      properties:
+        page:
+          type: integer
+          example: 1
+        size:
+          type: integer
+          example: 20
+        total:
+          type: integer
+          example: 85
+        totalPages:
+          type: integer
+          example: 5
+
+    ProblemDetails:
+      type: object
+      description: "RFC 7807 ProblemDetails"
+      required:
+        - type
+        - title
+        - status
+      properties:
+        type:
+          type: string
+          format: uri
+          example: "https://tools.ietf.org/html/rfc7231#section-6.5.4"
+        title:
+          type: string
+          example: "Resource Not Found"
+        status:
+          type: integer
+          example: 404
+        detail:
+          type: string
+          example: "Obra com ID '...' não foi encontrada"
+        instance:
+          type: string
+          example: "/api/v1/obras/..."
+        traceId:
+          type: string
+          nullable: true
+          example: "0HN4B2E8M0T0K:00000001"
+        code:
+          type: string
+          nullable: true
+          description: "Código de erro para lógica no frontend (ex: DEPURACAO_NECESSARIA)"
+          example: null
+        errors:
+          type: array
+          nullable: true
+          items:
+            type: object
+            properties:
+              field:
+                type: string
+              message:
+                type: string
