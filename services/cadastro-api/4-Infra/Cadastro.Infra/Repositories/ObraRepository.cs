@@ -98,7 +98,8 @@ public class ObraRepository : IObraRepository
 
     public async Task<bool> PossuiVinculosAsync(Guid obraId, CancellationToken ct)
     {
-        return await _context.TitularidadesAutorais.AnyAsync(t => t.ObraId == obraId, ct);
+        return await _context.TitularidadesAutorais.AnyAsync(t => t.ObraId == obraId, ct) ||
+               await _context.Fonogramas.AnyAsync(f => f.ObraId == obraId, ct);
     }
 
     public async Task SaveChangesAsync(CancellationToken ct)
