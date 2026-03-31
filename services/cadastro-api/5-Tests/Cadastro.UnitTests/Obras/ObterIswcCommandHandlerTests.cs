@@ -14,13 +14,15 @@ public class ObterIswcCommandHandlerTests
 {
     private readonly Mock<IObraRepository> _repoMock;
     private readonly Mock<IIswcService> _iswcMock;
+    private readonly Mock<ITitularidadeRepository> _titularidadeRepoMock;
     private readonly ObterIswcCommandHandler _handler;
 
     public ObterIswcCommandHandlerTests()
     {
         _repoMock = new Mock<IObraRepository>();
         _iswcMock = new Mock<IIswcService>();
-        _handler = new ObterIswcCommandHandler(_repoMock.Object, _iswcMock.Object);
+        _titularidadeRepoMock = new Mock<ITitularidadeRepository>();
+        _handler = new ObterIswcCommandHandler(_repoMock.Object, _iswcMock.Object, _titularidadeRepoMock.Object);
     }
 
     [Fact]
@@ -28,8 +30,9 @@ public class ObterIswcCommandHandlerTests
     {
         var obra = ObraMusical.Criar("Teste", TipoObra.Musical);
         _repoMock.Setup(r => r.GetByIdAsync(obra.Id, It.IsAny<CancellationToken>())).ReturnsAsync(obra);
+        _titularidadeRepoMock.Setup(r => r.GetByObraIdAsync(obra.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<TitularidadeAutoral>());
 
-        // the handler currently forces hasTitulares = false, so it throws DomainException
         var command = new ObterIswcCommand(obra.Id);
         var act = () => _handler.HandleAsync(command, CancellationToken.None);
         

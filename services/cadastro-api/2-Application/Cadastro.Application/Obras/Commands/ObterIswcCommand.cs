@@ -14,11 +14,16 @@ public class ObterIswcCommandHandler : ICommandHandler<ObterIswcCommand, ObraRes
 {
     private readonly IObraRepository _repository;
     private readonly IIswcService _iswcService;
+    private readonly ITitularidadeRepository _titularidadeRepository;
 
-    public ObterIswcCommandHandler(IObraRepository repository, IIswcService iswcService)
+    public ObterIswcCommandHandler(
+        IObraRepository repository,
+        IIswcService iswcService,
+        ITitularidadeRepository titularidadeRepository)
     {
         _repository = repository;
         _iswcService = iswcService;
+        _titularidadeRepository = titularidadeRepository;
     }
 
     public async Task<ObraResponse> HandleAsync(ObterIswcCommand request, CancellationToken cancellationToken)
@@ -29,14 +34,23 @@ public class ObterIswcCommandHandler : ICommandHandler<ObterIswcCommand, ObraRes
         if (obra.Status != StatusObra.Pendente)
             throw new DomainException("ISWC só pode ser solicitado para obras PENDENTES.");
 
-        // Placeholder for F04 titularidades check
-        // Até F04, o endpoint de ISWC pode retornar 422 "sem titulares" intencionalmente.
-        bool hasTitulares = obra.Titulo != "Sem Titular";
-        if (!hasTitulares)
+        var titularidades = (await _titularidadeRepository.GetByObraIdAsync(request.Id, cancellationToken)).ToList();
+        
+        if (!titularidades.Any())
             throw new DomainException("A obra deve ter titulares autorais para obter ISWC.");
 
-        var associacaoSigla = "ABRAMUS"; // placeholder
-        var autores = new[] { "Autor Placeholder" }; // placeholder
+        var autores = titularidades
+            .Where(t => t.Categoria == CategoriaAutoral.Autor)
+            .Select(t => t.Titular.Nome)
+            .Distinct()
+            .ToArray();
+
+        var maiorTitularidade = titularidades
+            .OrderByDescending(t => t.Percentual)
+            .ThenBy(t => t.CriadoEm)
+            .First();
+
+        var associacaoSigla = maiorTitularidade.Titular.Associacao?.Sigla ?? "UNKNOWN";
 
         var iswc = await _iswcService.ObterIswcAsync(obra.Titulo, autores, associacaoSigla, cancellationToken);
 

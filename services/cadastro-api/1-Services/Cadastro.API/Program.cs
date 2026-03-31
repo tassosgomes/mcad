@@ -34,6 +34,7 @@ builder.Services.AddDbContext<CadastroDbContext>(options =>
 builder.Services.AddScoped<IAssociacaoRepository, AssociacaoRepository>();
 builder.Services.AddScoped<ITitularRepository, TitularRepository>();
 builder.Services.AddScoped<IObraRepository, ObraRepository>();
+builder.Services.AddScoped<ITitularidadeRepository, TitularidadeRepository>();
 
 // ─── HttpClient + Polly ────────────────────────────────────────────────
 builder.Services.AddHttpClient<IIswcService, Cadastro.Infra.ExternalServices.IswcService>(client =>
@@ -102,6 +103,7 @@ using (var scope = app.Services.CreateScope())
 app.MapAssociacaoEndpoints();
 app.MapTitularEndpoints();
 app.MapObraEndpoints();
+app.MapTitularidadeEndpoints();
 
 // ─── Health Check ─────────────────────────────────────────────────────
 app.MapHealthChecks("/health");
