@@ -41,3 +41,9 @@
   background: var(--color-secondary-container);
   color: var(--color-secondary);
 }
+
+.error {
+  background: rgba(239, 68, 68, 0.15);
+  color: var(--color-error);
+}
+

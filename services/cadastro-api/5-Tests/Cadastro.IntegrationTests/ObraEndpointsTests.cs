@@ -4,6 +4,7 @@ using AwesomeAssertions;
 using Cadastro.API.Endpoints;
 using Cadastro.Application.Obras.Commands;
 using Cadastro.Application.Obras.Responses;
+using Cadastro.Application.Titulares.Responses;
 using Cadastro.Domain.Interfaces;
 using Cadastro.IntegrationTests.Fixtures;
 using Microsoft.AspNetCore.TestHost;
@@ -33,6 +34,35 @@ public class ObraEndpointsTests : IClassFixture<CadastroApiFactory>
                 services.AddScoped<IIswcService>(_ => _mockIswcService.Object);
             });
         }).CreateClient();
+    }
+
+    private static string GerarCpfValido()
+    {
+        var rng = new Random();
+        var num = new int[9];
+        for (int i = 0; i < 9; i++) num[i] = rng.Next(0, 9);
+        var sum1 = 0;
+        for (int i = 0; i < 9; i++) sum1 += num[i] * (10 - i);
+        var r1 = sum1 % 11 < 2 ? 0 : 11 - (sum1 % 11);
+        var sum2 = 0;
+        for (int i = 0; i < 9; i++) sum2 += num[i] * (11 - i);
+        sum2 += r1 * 2;
+        var r2 = sum2 % 11 < 2 ? 0 : 11 - (sum2 % 11);
+        return $"{string.Join("", num)}{r1}{r2}";
+    }
+
+    private async Task SeedTitularidadeParaIswcAsync(Guid obraId, string? cpf = null)
+    {
+        cpf = cpf ?? GerarCpfValido();
+        var assocResponse = await _client.GetFromJsonAsync<dynamic[]>("/api/v1/associacoes");
+        var assocId = Guid.Parse(assocResponse![0].GetProperty("id").GetString()!);
+
+        var requestTitular = new Cadastro.Application.Titulares.Commands.CriarTitularCommand($"Titular {cpf}", "PF", cpf, "BR", assocId, null);
+        var resTitular = await _client.PostAsJsonAsync("/api/v1/titulares", requestTitular);
+        var titular = await resTitular.Content.ReadFromJsonAsync<TitularResponse>();
+
+        var cmdTitularidade = new AdicionarTitularidadeRequest(titular!.Id, "AUTOR", 100.0m);
+        await _client.PostAsJsonAsync($"/api/v1/obras/{obraId}/titularidades", cmdTitularidade);
     }
 
     [Fact]
@@ -104,6 +134,8 @@ public class ObraEndpointsTests : IClassFixture<CadastroApiFactory>
         _mockIswcService.Setup(s => s.ObterIswcAsync(It.IsAny<string>(), It.IsAny<IEnumerable<string>>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync($"T-{Guid.NewGuid().ToString().Substring(0, 8)}");
 
+        await SeedTitularidadeParaIswcAsync(created!.Id);
+
         var response = await _client.PostAsync($"/api/v1/obras/{created!.Id}/iswc", null);
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
@@ -131,6 +163,8 @@ public class ObraEndpointsTests : IClassFixture<CadastroApiFactory>
         _mockIswcService.Setup(s => s.ObterIswcAsync(It.IsAny<string>(), It.IsAny<IEnumerable<string>>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
              .ReturnsAsync($"T-{Guid.NewGuid().ToString().Substring(0, 8)}");
 
+        await SeedTitularidadeParaIswcAsync(created!.Id);
+
         var iswcRes = await _client.PostAsync($"/api/v1/obras/{created!.Id}/iswc", null); // Set Liberada
         var iswcBody = await iswcRes.Content.ReadAsStringAsync();
         if(!iswcRes.IsSuccessStatusCode) throw new Exception("ISWC Failed: " + iswcBody);
@@ -154,6 +188,7 @@ public class ObraEndpointsTests : IClassFixture<CadastroApiFactory>
 
         _mockIswcService.Setup(s => s.ObterIswcAsync(It.IsAny<string>(), It.IsAny<IEnumerable<string>>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync($"T-{Guid.NewGuid().ToString().Substring(0, 8)}");
+        await SeedTitularidadeParaIswcAsync(created!.Id);
         var iswcRes = await _client.PostAsync($"/api/v1/obras/{created!.Id}/iswc", null);
         iswcRes.EnsureSuccessStatusCode();
 
@@ -186,6 +221,7 @@ public class ObraEndpointsTests : IClassFixture<CadastroApiFactory>
         var created = await postRes.Content.ReadFromJsonAsync<ObraResponse>();
         _mockIswcService.Setup(s => s.ObterIswcAsync(It.IsAny<string>(), It.IsAny<IEnumerable<string>>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
              .ReturnsAsync($"T-{Guid.NewGuid().ToString().Substring(0, 8)}");
+        await SeedTitularidadeParaIswcAsync(created!.Id);
         var iswcRes = await _client.PostAsync($"/api/v1/obras/{created!.Id}/iswc", null);
         iswcRes.EnsureSuccessStatusCode();
         

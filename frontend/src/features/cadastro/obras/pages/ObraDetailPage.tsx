@@ -16,6 +16,7 @@ import { DepuracaoBanner } from '../components/DepuracaoBanner';
 import { DepuracaoModal } from '../components/DepuracaoModal';
 import { DominioPublicoToggle } from '../components/DominioPublicoToggle';
 import { DeleteObraModal } from '../components/DeleteObraModal';
+import { TitularidadesSection, useTitularidades } from '@features/cadastro/titularidades';
 import type { AtualizarObraRequest, DepurarObraRequest } from '../types/obra';
 import styles from './ObraDetailPage.module.css';
 
@@ -36,9 +37,15 @@ export function ObraDetailPage() {
   const updateMutation = useUpdateObra();
   const deleteMutation = useDeleteObra();
 
+  // F04 — Titularidades: temTitulares real para IswcSection
+  const { data: titularidadesData } = useTitularidades(id ?? '');
+  const temTitulares = (titularidadesData?.titularidades.length ?? 0) > 0;
+
   // Modals state
   const [depuracaoData, setDepuracaoData] = useState<DepurarObraRequest | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  // Depuração disparada pelas Titularidades (F04)
+  const [showDepuracaoModalForTitularidades, setShowDepuracaoModalForTitularidades] = useState(false);
 
   async function handleSubmit(data: AtualizarObraRequest) {
     if (!obra) return;
@@ -124,9 +131,17 @@ export function ObraDetailPage() {
               isSubmitting={updateMutation.isPending}
             />
           </div>
+
+          {/* F04 — Seção Titulares Autorais */}
+          <TitularidadesSection
+            obraId={obra.id}
+            obraStatus={obra.status}
+            onDepuracaoRequired={() => setShowDepuracaoModalForTitularidades(true)}
+          />
         </div>
         <div className={styles.rightCol}>
-          <IswcSection obra={obra} temTitulares={true} />
+          {/* F04 — temTitulares real (não mais placeholder) */}
+          <IswcSection obra={obra} temTitulares={temTitulares} />
           
           {(obra.status === 'PENDENTE' || obra.status === 'LIBERADO' || obra.status === 'DOMINIO_PUBLICO') && (
             <div className={styles.rightPanel}>
@@ -142,6 +157,19 @@ export function ObraDetailPage() {
         onClose={() => setDepuracaoData(null)}
         obraId={obra.id}
         updatedData={depuracaoData}
+      />
+
+      {/* F04 — Depuração disparada por alteração de titularidades */}
+      <DepuracaoModal
+        isOpen={showDepuracaoModalForTitularidades}
+        onClose={() => setShowDepuracaoModalForTitularidades(false)}
+        obraId={obra.id}
+        updatedData={{
+          titulo: obra.titulo,
+          tipo: obra.tipo,
+          subtitulo: obra.subtitulo || null,
+          genero: obra.genero || null,
+        }}
       />
 
       <DeleteObraModal

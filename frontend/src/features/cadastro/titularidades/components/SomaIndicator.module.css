@@ -1,0 +1,28 @@
+.indicator {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  background: var(--color-bg-elevated);
+  border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+}
+
+.label {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.hint {
+  font-size: var(--text-xs);
+  color: var(--color-warning);
+  font-family: var(--font-mono);
+}
+
+.hintError {
+  font-size: var(--text-xs);
+  color: var(--color-error);
+  font-family: var(--font-mono);
+}

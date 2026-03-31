@@ -41,3 +41,9 @@ export async function apiDelete(path: string): Promise<void> {
   if (!response.ok) return handleError(response, path);
   // 204 No Content — nothing to parse
 }
+
+export async function apiDeleteWithBody<T>(path: string): Promise<T> {
+  const response = await fetch(`${BASE_URL}${path}`, { method: 'DELETE' });
+  if (!response.ok) return handleError(response, path);
+  return response.json() as Promise<T>;
+}
