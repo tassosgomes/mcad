@@ -35,7 +35,7 @@ Endpoints, testes backend, componentes frontend, páginas e rotas.
 - [x] 3.0 Infra: IswcService (HttpClient + Polly) + Exceptions
 - [x] 4.0 Application: Queries (Listar + GetById) + Responses
 - [x] 5.0 Application: Commands CRUD (Criar, Atualizar, Excluir) + Validators
-- [ ] 6.0 Application: Commands Especiais (ObterIswc, Depurar, AlterarDominioPublico)
+- [x] 6.0 Application: Commands Especiais (ObterIswc, Depurar, AlterarDominioPublico)
 - [ ] 7.0 API: ObraEndpoints (8 endpoints) + Program.cs + GlobalExceptionHandler
 - [ ] 8.0 Testes Unitários: Entidade + Handlers + IswcService
 - [ ] 9.0 Testes Integração: Endpoints completos
