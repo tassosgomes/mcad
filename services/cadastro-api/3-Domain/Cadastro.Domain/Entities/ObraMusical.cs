@@ -66,6 +66,7 @@ public class ObraMusical
             throw new DomainException("Obra já possui ISWC");
 
         Iswc = iswc ?? throw new ArgumentNullException(nameof(iswc));
+        Status = StatusObra.Liberado;
         AtualizadoEm = DateTime.UtcNow;
     }
 

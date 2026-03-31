@@ -43,7 +43,7 @@ public class ListarObrasQueryHandler : IQueryHandler<ListarObrasQuery, ObraListR
         Tipo: vToTipoObra(o.Tipo),
         Genero: o.Genero,
         Iswc: o.Iswc,
-        Status: o.Status.ToString().ToUpperInvariant(),
+        Status: vToStatusObra(o.Status),
         DominioPublico: o.DominioPublico,
         ObraDepuradaParaId: o.ObraDepuradaParaId,
         CriadoEm: o.CriadoEm,
@@ -53,5 +53,10 @@ public class ListarObrasQueryHandler : IQueryHandler<ListarObrasQuery, ObraListR
     private static string vToTipoObra(Cadastro.Domain.Enums.TipoObra t)
     {
         return t == Cadastro.Domain.Enums.TipoObra.PotPourri ? "POT_POURRI" : t.ToString().ToUpperInvariant();
+    }
+
+    private static string vToStatusObra(Cadastro.Domain.Enums.StatusObra s)
+    {
+        return s == Cadastro.Domain.Enums.StatusObra.DominioPublico ? "DOMINIO_PUBLICO" : s.ToString().ToUpperInvariant();
     }
 }
