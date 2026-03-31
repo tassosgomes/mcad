@@ -1,0 +1,15 @@
+namespace Cadastro.Application.Fonogramas.Responses;
+
+public record FonogramaResponse(
+    Guid Id,
+    string Isrc,
+    string IsrcFormatado,
+    ObraResumoResponse Obra,
+    string PaisOrigem,
+    DateOnly? DataGravacao,
+    DateOnly? DataLancamento,
+    string Status,
+    Guid? FonogramaDepuradoParaId,
+    DateTime CriadoEm,
+    DateTime AtualizadoEm
+);
