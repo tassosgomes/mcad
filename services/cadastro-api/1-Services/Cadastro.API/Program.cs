@@ -35,6 +35,7 @@ builder.Services.AddScoped<IAssociacaoRepository, AssociacaoRepository>();
 builder.Services.AddScoped<ITitularRepository, TitularRepository>();
 builder.Services.AddScoped<IObraRepository, ObraRepository>();
 builder.Services.AddScoped<ITitularidadeRepository, TitularidadeRepository>();
+builder.Services.AddScoped<IFonogramaRepository, FonogramaRepository>();
 
 // ─── HttpClient + Polly ────────────────────────────────────────────────
 builder.Services.AddHttpClient<IIswcService, Cadastro.Infra.ExternalServices.IswcService>(client =>
@@ -104,6 +105,7 @@ app.MapAssociacaoEndpoints();
 app.MapTitularEndpoints();
 app.MapObraEndpoints();
 app.MapTitularidadeEndpoints();
+app.MapFonogramaEndpoints();
 
 // ─── Health Check ─────────────────────────────────────────────────────
 app.MapHealthChecks("/health");
