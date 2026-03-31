@@ -133,10 +133,7 @@ public class TitularRepository : ITitularRepository
 
     public async Task<bool> PossuiVinculosAsync(Guid titularId, CancellationToken cancellationToken)
     {
-        // Placeholder: retorna false até que tabelas de vínculo (F04/F06) sejam criadas.
-        // Será implementado com Any() em titularidades_autorais e participacoes_conexas.
-        await Task.CompletedTask;
-        return false;
+        return await _context.TitularidadesAutorais.AnyAsync(t => t.TitularId == titularId, cancellationToken);
     }
 
     public async Task SaveChangesAsync(CancellationToken cancellationToken)

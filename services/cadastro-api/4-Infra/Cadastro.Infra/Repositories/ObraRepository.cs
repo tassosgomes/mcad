@@ -98,9 +98,7 @@ public class ObraRepository : IObraRepository
 
     public async Task<bool> PossuiVinculosAsync(Guid obraId, CancellationToken ct)
     {
-        // Retorna false inicialmente. Na F04 e F05 será implementada a verificação real.
-        await Task.CompletedTask;
-        return false;
+        return await _context.TitularidadesAutorais.AnyAsync(t => t.ObraId == obraId, ct);
     }
 
     public async Task SaveChangesAsync(CancellationToken ct)
