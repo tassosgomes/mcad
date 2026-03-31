@@ -2,6 +2,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\3-Domain\Cadastro.Domain\Cadastro.Domain.csproj" />
+    <ProjectReference Include="..\..\2-Application\Cadastro.Application\Cadastro.Application.csproj" />
   </ItemGroup>
 
   <ItemGroup>
