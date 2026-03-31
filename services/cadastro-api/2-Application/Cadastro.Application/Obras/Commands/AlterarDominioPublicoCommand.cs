@@ -23,7 +23,8 @@ public class AlterarDominioPublicoCommandHandler : ICommandHandler<AlterarDomini
             ?? throw new NotFoundException("Obra não encontrada.", request.Id);
 
         obra.MarcarDominioPublico(request.DominioPublico);
-
+        
+        _repository.Update(obra);
         await _repository.SaveChangesAsync(cancellationToken);
 
         return ListarObrasQueryHandler.MapToResponse(obra);

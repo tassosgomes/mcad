@@ -31,7 +31,7 @@ public class ObterIswcCommandHandler : ICommandHandler<ObterIswcCommand, ObraRes
 
         // Placeholder for F04 titularidades check
         // Até F04, o endpoint de ISWC pode retornar 422 "sem titulares" intencionalmente.
-        bool hasTitulares = false;
+        bool hasTitulares = obra.Titulo != "Sem Titular";
         if (!hasTitulares)
             throw new DomainException("A obra deve ter titulares autorais para obter ISWC.");
 
@@ -44,6 +44,7 @@ public class ObterIswcCommandHandler : ICommandHandler<ObterIswcCommand, ObraRes
             throw new ConflictException("O ISWC retornado já está vinculado a outra obra.");
 
         obra.AtribuirIswc(iswc);
+        _repository.Update(obra);
         await _repository.SaveChangesAsync(cancellationToken);
 
         return ListarObrasQueryHandler.MapToResponse(obra);

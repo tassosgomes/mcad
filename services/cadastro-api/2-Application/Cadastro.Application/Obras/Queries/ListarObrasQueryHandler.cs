@@ -23,8 +23,8 @@ public class ListarObrasQueryHandler : IQueryHandler<ListarObrasQuery, ObraListR
             Sort: query.Sort,
             Titulo: query.Titulo,
             Iswc: query.Iswc,
-            Tipo: query.Tipo,
-            Status: query.Status,
+            Tipo: ParseTipo(query.Tipo),
+            Status: ParseStatus(query.Status),
             Genero: query.Genero);
 
         var (items, total) = await _repository.ListarAsync(filtro, cancellationToken);
@@ -59,4 +59,18 @@ public class ListarObrasQueryHandler : IQueryHandler<ListarObrasQuery, ObraListR
     {
         return s == Cadastro.Domain.Enums.StatusObra.DominioPublico ? "DOMINIO_PUBLICO" : s.ToString().ToUpperInvariant();
     }
+
+    private static Cadastro.Domain.Enums.TipoObra? ParseTipo(string? value) => value switch
+    {
+        null or "" => null,
+        "POT_POURRI" => Cadastro.Domain.Enums.TipoObra.PotPourri,
+        _ => Enum.TryParse<Cadastro.Domain.Enums.TipoObra>(value, ignoreCase: true, out var v) ? v : null
+    };
+
+    private static Cadastro.Domain.Enums.StatusObra? ParseStatus(string? value) => value switch
+    {
+        null or "" => null,
+        "DOMINIO_PUBLICO" => Cadastro.Domain.Enums.StatusObra.DominioPublico,
+        _ => Enum.TryParse<Cadastro.Domain.Enums.StatusObra>(value, ignoreCase: true, out var v) ? v : null
+    };
 }

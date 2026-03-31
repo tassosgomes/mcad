@@ -18,7 +18,7 @@ public class IswcService : IIswcService
         try
         {
             var request = new { work_title = titulo, authors = autores.ToArray(), association_code = associacaoSigla };
-            var response = await _httpClient.PostAsJsonAsync("", request, ct);
+            var response = await _httpClient.PostAsJsonAsync("api/iswc", request, ct);
 
             if (!response.IsSuccessStatusCode)
             {

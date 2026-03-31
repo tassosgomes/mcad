@@ -32,6 +32,7 @@ public class DepurarObraCommandHandler : ICommandHandler<DepurarObraCommand, Dep
 
         obraOriginal.Depurar(novaObra.Id);
 
+        _repository.Update(obraOriginal);
         await _repository.AddAsync(novaObra, cancellationToken);
         await _repository.SaveChangesAsync(cancellationToken);
 

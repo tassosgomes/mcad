@@ -11,6 +11,7 @@ const navigation = [
     children: [
       { label: 'Associações', path: '/cadastro/associacoes' },
       { label: 'Titulares', path: '/cadastro/titulares' },
+      { label: 'Obras', path: '/cadastro/obras' },
     ],
   },
   // Fases futuras (desabilitados):
