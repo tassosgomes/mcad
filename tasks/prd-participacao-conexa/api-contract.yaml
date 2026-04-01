@@ -1,0 +1,450 @@
+openapi: 3.1.0
+
+info:
+  title: "Cadastro API — Participações Conexas"
+  description: |
+    API para gestão de participações conexas — sub-recurso de Fonogramas.
+    Gerencia o vínculo entre titulares e fonogramas com categorias conexas
+    (Intérprete, Produtor Fonográfico, Músico Executante) e cálculo automático de percentuais.
+
+    **Contrato gerado a partir do PRD:** `tasks/prd-participacao-conexa/prd.md`
+    **Data de geração:** 2026-04-01
+
+    ## Premissas Adotadas
+    - Participações são sub-recurso: `/api/v1/fonogramas/{fonogramaId}/participacoes`
+    - Percentuais calculados via endpoint dedicado POST /calcular (não automático)
+    - Ajuste manual de intérpretes/produtores permitido; músicos sempre igualitários
+    - Recálculo sobrescreve ajustes (backend não preserva)
+    - Depuração em fonograma LIBERADO (reutiliza POST /fonogramas/{id}/depurar)
+    - Erros: RFC 7807 ProblemDetails
+  version: "1.0.0"
+  contact:
+    name: "Time de Plataforma ECAD"
+
+servers:
+  - url: http://localhost:5001/api/v1
+    description: Desenvolvimento local (cadastro-api)
+
+security:
+  - BearerAuth: []
+
+tags:
+  - name: Participações Conexas
+    description: "Vínculo titular ↔ fonograma com categoria conexa e percentual calculado"
+
+paths:
+
+  /fonogramas/{fonogramaId}/participacoes:
+    parameters:
+      - name: fonogramaId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+
+    get:
+      summary: Listar participações de um fonograma
+      description: |
+        Retorna todas as participações conexas do fonograma com percentuais (se calculados)
+        e soma total. Se percentuais não calculados, retorna `percentual: null` e `somaCalculada: false`.
+      operationId: listarParticipacoes
+      tags:
+        - Participações Conexas
+      responses:
+        "200":
+          description: Participações do fonograma
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ParticipacoesResponse"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+      x-frontend-notes: |
+        Seção na FonogramaDetailPage. Se somaCalculada=false, exibir "—" nos percentuais e "Pendente" na soma.
+        Músicos com ícone cadeado (não editáveis). Intérpretes/Produtores editáveis inline.
+
+    post:
+      summary: Adicionar participante conexo
+      description: |
+        Adiciona um titular como participante do fonograma com categoria conexa.
+        Percentual NÃO é definido na adição — será calculado via POST /calcular.
+        Mesmo titular com categorias diferentes é permitido (RN-07).
+        Em fonograma LIBERADO, retorna 409 DEPURACAO_NECESSARIA.
+      operationId: adicionarParticipacao
+      tags:
+        - Participações Conexas
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdicionarParticipacaoRequest"
+      responses:
+        "201":
+          description: Participante adicionado (sem percentual — aguardando cálculo)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ParticipacoesResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/ConflictDepuracao"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /fonogramas/{fonogramaId}/participacoes/{id}:
+    parameters:
+      - name: fonogramaId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: id
+        in: path
+        required: true
+        description: ID da participação
+        schema:
+          type: string
+          format: uuid
+
+    put:
+      summary: Ajustar percentual de participação
+      description: |
+        Ajuste manual do percentual de um Intérprete ou Produtor.
+        Músicos NÃO podem ter percentual editado (retorna 422).
+        Em fonograma LIBERADO, retorna 409 DEPURACAO_NECESSARIA.
+      operationId: ajustarPercentualParticipacao
+      tags:
+        - Participações Conexas
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AjustarPercentualRequest"
+      responses:
+        "200":
+          description: Percentual ajustado — retorna participações atualizadas
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ParticipacoesResponse"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/ConflictDepuracao"
+        "422":
+          $ref: "#/components/responses/UnprocessableMusico"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+    delete:
+      summary: Remover participante conexo
+      description: |
+        Remove o vínculo titular ↔ fonograma. Percentuais ficam desatualizados (requer recálculo).
+        Em fonograma LIBERADO, retorna 409 DEPURACAO_NECESSARIA.
+      operationId: removerParticipacao
+      tags:
+        - Participações Conexas
+      responses:
+        "200":
+          description: Participante removido — retorna participações atualizadas
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ParticipacoesResponse"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/ConflictDepuracao"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+      x-frontend-notes: |
+        DELETE retorna 200 com body (mesmo padrão de titularidades F04).
+        Após remoção, marcar percentuais como desatualizados.
+
+  /fonogramas/{fonogramaId}/participacoes/calcular:
+    parameters:
+      - name: fonogramaId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+
+    post:
+      summary: Calcular percentuais automaticamente
+      description: |
+        Calcula (ou recalcula) os percentuais de todas as participações conforme regras:
+
+        **Com músico executante:**
+        - Intérpretes: 43,7% dividido igualmente entre N intérpretes
+        - Produtores: 41,7% dividido igualmente entre N produtores
+        - Músicos: 14,6% dividido igualmente entre N músicos
+
+        **Sem músico executante:**
+        - Intérpretes: 50% dividido igualmente entre N intérpretes
+        - Produtores: 50% dividido igualmente entre N produtores
+
+        **Arredondamento (RN-12):** truncar 4 casas, diferença atribuída ao primeiro de cada fatia.
+
+        **Pré-requisitos:** mínimo 1 Intérprete + 1 Produtor.
+
+        **ATENÇÃO:** Sobrescreve ajustes manuais anteriores. Frontend deve alertar o usuário.
+        Em fonograma LIBERADO, retorna 409 DEPURACAO_NECESSARIA.
+      operationId: calcularPercentuais
+      tags:
+        - Participações Conexas
+      responses:
+        "200":
+          description: Percentuais calculados com sucesso
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ParticipacoesResponse"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/ConflictDepuracao"
+        "422":
+          $ref: "#/components/responses/UnprocessableComposicao"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+      x-frontend-notes: |
+        Botão "Calcular" (primary). Desabilitado se < 1 intérprete ou < 1 produtor (tooltip).
+        Se já tem percentuais, exibir alerta "Ajustes manuais serão perdidos" ANTES de chamar.
+      x-backend-notes: |
+        Algoritmo de cálculo no Domain Layer.
+        Arredondamento: truncar 4 casas para cada participante, somar truncados,
+        diferença (total fatia - soma truncados) atribuída ao primeiro de cada fatia.
+
+components:
+
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  responses:
+    BadRequest:
+      description: Erro de validação
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ProblemDetails"
+
+    NotFound:
+      description: Recurso não encontrado
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ProblemDetails"
+
+    ConflictDepuracao:
+      description: Fonograma LIBERADO — alteração requer depuração
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ProblemDetails"
+          example:
+            type: "https://tools.ietf.org/html/rfc7231#section-6.5.8"
+            title: "Depuração Necessária"
+            status: 409
+            detail: "Alterar participações de um fonograma LIBERADO requer depuração"
+            code: "DEPURACAO_NECESSARIA"
+
+    UnprocessableEntity:
+      description: Regra de negócio violada
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ProblemDetails"
+
+    UnprocessableMusico:
+      description: Músico não editável manualmente
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ProblemDetails"
+          example:
+            type: "https://tools.ietf.org/html/rfc7231#section-6.5.1"
+            title: "Unprocessable Entity"
+            status: 422
+            detail: "Percentual de Músico Executante não pode ser editado manualmente — é sempre igualitário"
+
+    UnprocessableComposicao:
+      description: Composição incompleta para calcular
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ProblemDetails"
+          example:
+            type: "https://tools.ietf.org/html/rfc7231#section-6.5.1"
+            title: "Unprocessable Entity"
+            status: 422
+            detail: "Fonograma deve ter ao menos 1 Intérprete e 1 Produtor Fonográfico para calcular percentuais"
+
+    InternalServerError:
+      description: Erro interno
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ProblemDetails"
+
+  schemas:
+
+    ParticipacoesResponse:
+      type: object
+      description: "Lista de participações de um fonograma com soma e status de cálculo"
+      required:
+        - fonogramaId
+        - participacoes
+        - somaPercentual
+        - somaCalculada
+      properties:
+        fonogramaId:
+          type: string
+          format: uuid
+        participacoes:
+          type: array
+          items:
+            $ref: "#/components/schemas/ParticipacaoItem"
+        somaPercentual:
+          type: number
+          format: decimal
+          nullable: true
+          description: "Soma dos percentuais (null se não calculados)"
+          example: 100.0000
+        somaCalculada:
+          type: boolean
+          description: "true se percentuais foram calculados"
+          example: true
+        percentuaisDesatualizados:
+          type: boolean
+          description: "true se composição mudou após último cálculo"
+          example: false
+
+    ParticipacaoItem:
+      type: object
+      required:
+        - id
+        - titular
+        - categoria
+      properties:
+        id:
+          type: string
+          format: uuid
+        titular:
+          $ref: "#/components/schemas/TitularResumoResponse"
+        categoria:
+          type: string
+          enum: [INTERPRETE, PRODUTOR_FONOGRAFICO, MUSICO_EXECUTANTE]
+          description: |
+            - `INTERPRETE`: Artista principal (43,7% ou 50%)
+            - `PRODUTOR_FONOGRAFICO`: Responsável pela gravação (41,7% ou 50%)
+            - `MUSICO_EXECUTANTE`: Músico acompanhante (14,6% ÷ N, não editável)
+        percentual:
+          type: number
+          format: decimal
+          nullable: true
+          description: "Percentual com 4 casas decimais (null se ainda não calculado)"
+          example: 43.7000
+        editavel:
+          type: boolean
+          description: "true para Intérprete/Produtor, false para Músico"
+          example: true
+
+    TitularResumoResponse:
+      type: object
+      required:
+        - id
+        - nome
+        - tipo
+        - documentoFormatado
+      properties:
+        id:
+          type: string
+          format: uuid
+        nome:
+          type: string
+          example: "Djavan Caetano Viana"
+        tipo:
+          type: string
+          enum: [PF, PJ]
+        documentoFormatado:
+          type: string
+          example: "123.456.789-09"
+
+    AdicionarParticipacaoRequest:
+      type: object
+      required:
+        - titularId
+        - categoria
+      properties:
+        titularId:
+          type: string
+          format: uuid
+          description: ID do titular existente
+        categoria:
+          type: string
+          enum: [INTERPRETE, PRODUTOR_FONOGRAFICO, MUSICO_EXECUTANTE]
+          description: Categoria conexa
+
+    AjustarPercentualRequest:
+      type: object
+      description: "Ajuste manual. Apenas para INTERPRETE e PRODUTOR_FONOGRAFICO."
+      required:
+        - percentual
+      properties:
+        percentual:
+          type: number
+          format: decimal
+          minimum: 0.0001
+          maximum: 100.0000
+          description: "Novo percentual (4 casas decimais)"
+          example: 30.0000
+
+    ProblemDetails:
+      type: object
+      required:
+        - type
+        - title
+        - status
+      properties:
+        type:
+          type: string
+          format: uri
+        title:
+          type: string
+        status:
+          type: integer
+        detail:
+          type: string
+        instance:
+          type: string
+        code:
+          type: string
+          nullable: true
+        traceId:
+          type: string
+          nullable: true
+        errors:
+          type: array
+          nullable: true
+          items:
+            type: object
+            properties:
+              field:
+                type: string
+              message:
+                type: string

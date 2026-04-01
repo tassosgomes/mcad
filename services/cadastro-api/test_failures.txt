@@ -1,0 +1,388 @@
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+  Cadastro.Domain -> /home/tsgomes/mcad/services/cadastro-api/3-Domain/Cadastro.Domain/bin/Debug/net8.0/Cadastro.Domain.dll
+  Cadastro.Application -> /home/tsgomes/mcad/services/cadastro-api/2-Application/Cadastro.Application/bin/Debug/net8.0/Cadastro.Application.dll
+  Cadastro.UnitTests -> /home/tsgomes/mcad/services/cadastro-api/5-Tests/Cadastro.UnitTests/bin/Debug/net8.0/Cadastro.UnitTests.dll
+Test run for /home/tsgomes/mcad/services/cadastro-api/5-Tests/Cadastro.UnitTests/bin/Debug/net8.0/Cadastro.UnitTests.dll (.NETCoreApp,Version=v8.0)
+Microsoft (R) Test Execution Command Line Tool Version 17.8.0 (x64)
+Copyright (c) Microsoft Corporation.  All rights reserved.
+
+Starting test execution, please wait...
+A total of 1 test files matched the specified pattern.
+[xUnit.net 00:00:00.00] xUnit.net VSTest Adapter v3.1.4+50e68bbb8b (64-bit .NET 8.0.25)
+[xUnit.net 00:00:00.15]   Discovering: Cadastro.UnitTests
+[xUnit.net 00:00:00.28]   Discovered:  Cadastro.UnitTests
+[xUnit.net 00:00:00.36]   Starting:    Cadastro.UnitTests
+     Warning:
+     The component "Fluent Assertions" is governed by the rules defined in the Xceed License Agreement and
+     the Xceed Fluent Assertions Community License. You may use Fluent Assertions free of charge for
+     non-commercial use only. An active subscription is required to use Fluent Assertions for commercial use.
+
+     Please contact Xceed Sales mailto:sales@xceed.com to acquire a subscription at a very low cost.
+
+     A paid commercial license supports the development and continued increasing support of
+     Fluent Assertions users under both commercial and community licenses. Help us
+     keep Fluent Assertions at the forefront of unit testing.
+
+     For more information, visit https://xceed.com/products/unit-testing/fluent-assertions/
+  Passed Cadastro.UnitTests.Titularidades.TitularidadeAutoralTests.AlterarPercentual_ValorValido_DeveAtualizar [27 ms]
+  Passed Cadastro.UnitTests.ValueObjects.CnpjTests.Create_ComCnpjAlfanumericoValido_DeveRetornarCnpjEConverterUpper [36 ms]
+  Passed Cadastro.UnitTests.ValueObjects.CnpjTests.Create_ComCnpjNumericoValido_DeveRetornarCnpj [< 1 ms]
+  Passed Cadastro.UnitTests.Titularidades.TitularidadeAutoralTests.Criar_PercentualInvalido_DeveLancarDomainException(percentual: -1) [24 ms]
+  Passed Cadastro.UnitTests.Titularidades.TitularidadeAutoralTests.Criar_PercentualInvalido_DeveLancarDomainException(percentual: 100.0001) [< 1 ms]
+  Passed Cadastro.UnitTests.ValueObjects.CnpjTests.Create_ComTamanhoIncorreto_DeveLancarDomainException [19 ms]
+  Passed Cadastro.UnitTests.Titularidades.TitularidadeAutoralTests.Criar_PercentualInvalido_DeveLancarDomainException(percentual: 0) [< 1 ms]
+  Passed Cadastro.UnitTests.ValueObjects.CnpjTests.Create_ComCnpjComMascara_DeveLimparMascara [< 1 ms]
+  Passed Cadastro.UnitTests.ValueObjects.CnpjTests.Formatado_DeveRetornarCnpjComMascara [< 1 ms]
+  Passed Cadastro.UnitTests.ValueObjects.CnpjTests.Formatado_CnpjAlfanumerico_DeveRetornarCnpjComMascara [< 1 ms]
+  Passed Cadastro.UnitTests.ValueObjects.CnpjTests.Create_ComDigitosVerificadoresNaoNumericos_DeveLancarDomainException [< 1 ms]
+  Passed Cadastro.UnitTests.Titularidades.TitularidadeAutoralTests.Criar_ValoresValidos_DeveCriarInstancia [2 ms]
+  Passed Cadastro.UnitTests.Titularidades.TitularidadeAutoralTests.AlterarPercentual_ValorInvalido_DeveLancarDomainException [1 ms]
+  Passed Cadastro.UnitTests.Titulares.ExcluirTitularCommandHandlerTests.HandleAsync_ComTitularInexistente_DeveLancarNotFoundException [138 ms]
+  Passed Cadastro.UnitTests.Associacoes.GetAssociacoesQueryHandlerTests.HandleAsync_ReturnsAllAssociacoes_MappedToResponse [140 ms]
+  Passed Cadastro.UnitTests.Obras.DepurarObraCommandHandlerTests.HandleAsync_Pendente_DeveLancarConflictException [74 ms]
+  Passed Cadastro.UnitTests.Associacoes.GetAssociacoesQueryHandlerTests.HandleAsync_WhenNoData_ReturnsEmptyList [8 ms]
+  Passed Cadastro.UnitTests.Titularidades.ListarTitularidadesHandlerTests.HandleAsync_ObraSemTitulares_DeveRetornarSomaZero [153 ms]
+  Passed Cadastro.UnitTests.Titularidades.ListarTitularidadesHandlerTests.HandleAsync_ProcessoValido_DeveRetornarResponse [10 ms]
+  Passed Cadastro.UnitTests.Fonogramas.ExcluirFonogramaCommandHandlerTests.Handle_FonogramaPendente_DeveExcluir [96 ms]
+  Passed Cadastro.UnitTests.Fonogramas.CriarFonogramaCommandHandlerTests.Handle_ComDadosValidos_DeveRetornarCriado [165 ms]
+  Passed Cadastro.UnitTests.Titulares.ExcluirTitularCommandHandlerTests.HandleAsync_ComTitularValidoEsemVinculos_DeveExcluir [26 ms]
+  Passed Cadastro.UnitTests.Fonogramas.CriarFonogramaCommandHandlerTests.Handle_ComIsrcDuplicado_DeveLancarConflictException [16 ms]
+  Passed Cadastro.UnitTests.Fonogramas.ExcluirFonogramaCommandHandlerTests.Handle_FonogramaNaoEncontrado_DeveLancarNotFoundException [17 ms]
+  Passed Cadastro.UnitTests.Obras.DepurarObraCommandHandlerTests.HandleAsync_Liberada_DeveDepurarOriginalECriarNovaTransacional [41 ms]
+  Passed Cadastro.UnitTests.Titulares.ExcluirTitularCommandHandlerTests.HandleAsync_ComTitularComVinculos_DeveLancarConflictException [19 ms]
+  Passed Cadastro.UnitTests.Fonogramas.CriarFonogramaCommandHandlerTests.Handle_ObraNaoEncontrada_DeveLancarNotFoundException [5 ms]
+  Passed Cadastro.UnitTests.Titularidades.AdicionarTitularidadeHandlerTests.HandleAsync_ObraNaoEncontrada_DeveLancarNotFoundException [23 ms]
+  Passed Cadastro.UnitTests.Fonogramas.ExcluirFonogramaCommandHandlerTests.Handle_FonogramaLiberado_DeveLancarConflictException [8 ms]
+  Passed Cadastro.UnitTests.Obras.CriarObraCommandHandlerTests.HandleAsync_DeveCriarObraNoRepositorioERetornarPendente [8 ms]
+  Passed Cadastro.UnitTests.Obras.AlterarDominioPublicoCommandHandlerTests.HandleAsync_RemoverDP_RestauraPendente [7 ms]
+  Passed Cadastro.UnitTests.ValueObjects.CpfTests.Create_ComDigitoVerificadorIncorreto_DeveLancarDomainException [2 ms]
+  Passed Cadastro.UnitTests.ValueObjects.CpfTests.Create_ComCpfComMascara_DeveLimparApenasNumeros [< 1 ms]
+  Passed Cadastro.UnitTests.ValueObjects.CpfTests.Create_ComSequenciasDeNumerosIguais_DeveLancarDomainException(cpfInvalido: "11111111111") [1 ms]
+  Passed Cadastro.UnitTests.ValueObjects.CpfTests.Create_ComSequenciasDeNumerosIguais_DeveLancarDomainException(cpfInvalido: "00000000000") [< 1 ms]
+  Passed Cadastro.UnitTests.ValueObjects.CpfTests.Create_ComTamanhoIncorreto_DeveLancarDomainException(cpfInvalido: "") [< 1 ms]
+  Passed Cadastro.UnitTests.ValueObjects.CpfTests.Create_ComTamanhoIncorreto_DeveLancarDomainException(cpfInvalido: "123456789012") [< 1 ms]
+  Passed Cadastro.UnitTests.ValueObjects.CpfTests.Create_ComTamanhoIncorreto_DeveLancarDomainException(cpfInvalido: null) [< 1 ms]
+  Passed Cadastro.UnitTests.ValueObjects.CpfTests.Create_ComTamanhoIncorreto_DeveLancarDomainException(cpfInvalido: "1234567890") [< 1 ms]
+  Passed Cadastro.UnitTests.ValueObjects.CpfTests.Create_ComCpfValido_DeveRetornarCpf [< 1 ms]
+  Passed Cadastro.UnitTests.ValueObjects.CpfTests.Formatado_DeveRetornarCpfComMascara [< 1 ms]
+  Passed Cadastro.UnitTests.Obras.AlterarDominioPublicoCommandHandlerTests.HandleAsync_MarcarComoDP_MudaStatus [7 ms]
+  Passed Cadastro.UnitTests.ValueObjects.IsrcTests.Create_ComIsrcValidoSemHifens_DeveRetornarISRC [1 ms]
+  Passed Cadastro.UnitTests.ValueObjects.IsrcTests.Create_ComIsrcValidoComHifens_DeveRetornarISRCUnificado [< 1 ms]
+  Passed Cadastro.UnitTests.Titularidades.AdicionarTitularidadeHandlerTests.HandleAsync_ProcessoValido_DeveRetornarResponse [18 ms]
+  Passed Cadastro.UnitTests.Titulares.ListarTitularesQueryHandlerTests.HandleAsync_ComListaVazia_DeveRetornarTotalZero [20 ms]
+  Passed Cadastro.UnitTests.Titulares.CriarTitularCommandHandlerTests.HandleAsync_ComCpfInvalido_DevePropagarDomainException [28 ms]
+  Passed Cadastro.UnitTests.Titularidades.AdicionarTitularidadeHandlerTests.HandleAsync_Duplicata_DeveLancarConflictException [7 ms]
+  Passed Cadastro.UnitTests.Titularidades.RemoverTitularidadeHandlerTests.HandleAsync_ProcessoValido_DeveRetornarResponse [15 ms]
+  Passed Cadastro.UnitTests.Titularidades.AdicionarTitularidadeHandlerTests.HandleAsync_ObraDepurada_DeveLancarDomainException [4 ms]
+  Passed Cadastro.UnitTests.Titulares.ListarTitularesQueryHandlerTests.HandleAsync_DeveRetornarTitularesPaginadosETransacionarMapeamento [6 ms]
+  Passed Cadastro.UnitTests.Titulares.CriarTitularCommandHandlerTests.HandleAsync_ComAssociacaoInexistente_DeveLancarNotFoundException [6 ms]
+  Passed Cadastro.UnitTests.Titularidades.RemoverTitularidadeHandlerTests.HandleAsync_ObraLiberada_DeveLancarDepuracaoNecessariaException [3 ms]
+  Passed Cadastro.UnitTests.UnitTest1.Test1 [< 1 ms]
+  Passed Cadastro.UnitTests.Titularidades.AdicionarTitularidadeHandlerTests.HandleAsync_ObraLiberada_DeveLancarDepuracaoNecessariaException [2 ms]
+  Passed Cadastro.UnitTests.Obras.AtualizarObraCommandHandlerTests.HandleAsync_ObraLiberada_TituloDiferente_DeveLancarDepuracaoNecessaria [6 ms]
+  Passed Cadastro.UnitTests.Obras.ExcluirObraCommandHandlerTests.HandleAsync_ObrasDepuradas_LancaConflictException [5 ms]
+  Passed Cadastro.UnitTests.Titularidades.AdicionarTitularidadeHandlerTests.HandleAsync_EditorENaoPJ_DeveLancarDomainException [5 ms]
+  Passed Cadastro.UnitTests.Obras.AtualizarObraCommandHandlerTests.HandleAsync_ObraPendente_TituloDiferente_DeveAtualizarLivremente [5 ms]
+  Passed Cadastro.UnitTests.Obras.ExcluirObraCommandHandlerTests.HandleAsync_DeveExcluirSSemVinculos [6 ms]
+  Passed Cadastro.UnitTests.Titulares.CriarTitularCommandHandlerTests.HandleAsync_ComPfValido_DeveCriarERetornarTitular [16 ms]
+  Passed Cadastro.UnitTests.Obras.AtualizarObraCommandHandlerTests.HandleAsync_ObraDepurada_DeveLancarDomainException [5 ms]
+  Passed Cadastro.UnitTests.Fonogramas.DepurarFonogramaCommandHandlerTests.Handle_NaoLiberado_DeveLancarConflictException [9 ms]
+  Passed Cadastro.UnitTests.Obras.ExcluirObraCommandHandlerTests.HandleAsync_PossuiVinculos_LancaConflictException [5 ms]
+  Passed Cadastro.UnitTests.Titulares.CriarTitularCommandHandlerTests.HandleAsync_ComDocumentoDuplicado_DeveLancarConflictException [3 ms]
+  Passed Cadastro.UnitTests.Obras.AtualizarObraCommandHandlerTests.HandleAsync_ObraLiberada_GeneroDiferenteTituloIgual_DeveAtualizarSemDepurar [3 ms]
+  Passed Cadastro.UnitTests.ValueObjects.CaeIpiTests.Create_ComValorVazio_DeveLancarDomainException [4 ms]
+  Passed Cadastro.UnitTests.Fonogramas.DepurarFonogramaCommandHandlerTests.Handle_DeveDepurarFonograma_QuandoLiberado [8 ms]
+  Passed Cadastro.UnitTests.ValueObjects.CaeIpiTests.Create_ComValorValido_DeveRetornarCaeIpi [2 ms]
+  Passed Cadastro.UnitTests.ValueObjects.CaeIpiTests.Create_ComValorMaiorQue20Caracteres_DeveLancarDomainException [< 1 ms]
+  Passed Cadastro.UnitTests.ValueObjects.CaeIpiTests.Create_DeveRemoverEspacosEmBrancoDasPontas [< 1 ms]
+  Passed Cadastro.UnitTests.Titularidades.BuscarTitularesHandlerTests.HandleAsync_QueryMenosDeDoisCaracteres_DeveRetornarVazio [9 ms]
+  Passed Cadastro.UnitTests.Fonogramas.FonogramaTests.RequerDepuracao_FonogramaLiberadoEIsrcDiferente_RetornaTrue [< 1 ms]
+  Passed Cadastro.UnitTests.Associacoes.GetAssociacaoByIdQueryHandlerTests.HandleAsync_WhenFound_ReturnsMappedAssociacao [5 ms]
+  Passed Cadastro.UnitTests.Titularidades.BuscarTitularesHandlerTests.HandleAsync_NenhumResultado_DeveRetornarVazio [3 ms]
+  Passed Cadastro.UnitTests.Obras.ObterIswcCommandHandlerTests.HandleAsync_Pendente_SemTitulares_DeveLancarDomainException422 [11 ms]
+  Passed Cadastro.UnitTests.Titularidades.BuscarTitularesHandlerTests.HandleAsync_TemResultado_DeveRetornarLista [9 ms]
+  Passed Cadastro.UnitTests.Obras.ObterIswcCommandHandlerTests.HandleAsync_NaoPendente_DeveLancarDomainException [9 ms]
+  Passed Cadastro.UnitTests.Associacoes.GetAssociacaoByIdQueryHandlerTests.HandleAsync_WhenNotFound_ThrowsNotFoundException [10 ms]
+  Passed Cadastro.UnitTests.Obras.ObraMusicalTests.RequerDepuracao_DeveRetornarVerdadeiroSeLiberadoETituloDiferente [< 1 ms]
+  Passed Cadastro.UnitTests.Obras.ObraMusicalTests.Criar_DeveRetornarObraComStatusPendente [1 ms]
+  Passed Cadastro.UnitTests.Obras.ObraMusicalTests.Atualizar_DeveAtualizarPropriedades [< 1 ms]
+  Passed Cadastro.UnitTests.Obras.ObraMusicalTests.MarcarDominioPublico_Pendente_DeveMudarStatus [< 1 ms]
+  Passed Cadastro.UnitTests.Obras.ObraMusicalTests.AtribuirIswc_ObraNaoPendente_DeveLancarException [1 ms]
+  Passed Cadastro.UnitTests.Obras.ObraMusicalTests.Atualizar_ComStatusDepurada_DeveLancarDomainException [< 1 ms]
+  Passed Cadastro.UnitTests.Obras.ObraMusicalTests.Depurar_NaoLiberado_DeveLancarException [< 1 ms]
+  Passed Cadastro.UnitTests.Obras.ObraMusicalTests.MarcarDominioPublico_Desmarcar_DeveRestaurarStatus [< 1 ms]
+[xUnit.net 00:00:00.70]       Expected exception message to match the equivalent of "Apenas fonogramas liberados podem ser depurados.", but "Apenas fonogramas LIBERADOS podem ser depurados" does not.
+[xUnit.net 00:00:00.70]       Stack Trace:
+[xUnit.net 00:00:00.71]            at AwesomeAssertions.Execution.LateBoundTestFramework.Throw(String message)
+[xUnit.net 00:00:00.71]            at AwesomeAssertions.Execution.DefaultAssertionStrategy.HandleFailure(String message)
+[xUnit.net 00:00:00.71]            at AwesomeAssertions.Execution.AssertionScope.AddPreFormattedFailure(String formattedFailureMessage)
+[xUnit.net 00:00:00.71]            at AwesomeAssertions.Execution.AssertionChain.FailWith(Func`1 getFailureReason)
+[xUnit.net 00:00:00.71]            at AwesomeAssertions.Execution.AssertionChain.FailWith(Func`1 getFailureReason)
+[xUnit.net 00:00:00.71]            at AwesomeAssertions.Execution.AssertionChain.FailWith(String message)
+[xUnit.net 00:00:00.71]            at AwesomeAssertions.Specialized.ExceptionAssertions`1.AssertExceptionMessage(IEnumerable`1 messages, String expectation, String because, Object[] becauseArgs)
+[xUnit.net 00:00:00.71]            at AwesomeAssertions.Specialized.ExceptionAssertions`1.WithMessage(String expectedWildcardPattern, String because, Object[] becauseArgs)
+[xUnit.net 00:00:00.71]         /home/tsgomes/mcad/services/cadastro-api/5-Tests/Cadastro.UnitTests/Fonogramas/FonogramaTests.cs(105,0): at Cadastro.UnitTests.Fonogramas.FonogramaTests.Depurar_FonogramaNaoLiberado_DeveLancarDomainException()
+[xUnit.net 00:00:00.71]            at System.RuntimeMethodHandle.InvokeMethod(Object target, Void** arguments, Signature sig, Boolean isConstructor)
+[xUnit.net 00:00:00.71]            at System.Reflection.MethodBaseInvoker.InvokeWithNoArgs(Object obj, BindingFlags invokeAttr)
+[xUnit.net 00:00:00.71]       Expected exception message to match the equivalent of "ISRC no formato inválido.", but "ISRC deve seguir formato CC-XXX-YY-NNNNN (12 caracteres alfanuméricos)" does not.
+[xUnit.net 00:00:00.71]       Stack Trace:
+[xUnit.net 00:00:00.71]            at AwesomeAssertions.Execution.LateBoundTestFramework.Throw(String message)
+[xUnit.net 00:00:00.71]            at AwesomeAssertions.Execution.DefaultAssertionStrategy.HandleFailure(String message)
+[xUnit.net 00:00:00.71]            at AwesomeAssertions.Execution.AssertionScope.AddPreFormattedFailure(String formattedFailureMessage)
+[xUnit.net 00:00:00.71]            at AwesomeAssertions.Execution.AssertionChain.FailWith(Func`1 getFailureReason)
+[xUnit.net 00:00:00.71]            at AwesomeAssertions.Execution.AssertionChain.FailWith(Func`1 getFailureReason)
+[xUnit.net 00:00:00.71]            at AwesomeAssertions.Execution.AssertionChain.FailWith(String message)
+[xUnit.net 00:00:00.71]            at AwesomeAssertions.Specialized.ExceptionAssertions`1.AssertExceptionMessage(IEnumerable`1 messages, String expectation, String because, Object[] becauseArgs)
+[xUnit.net 00:00:00.71]            at AwesomeAssertions.Specialized.ExceptionAssertions`1.WithMessage(String expectedWildcardPattern, String because, Object[] becauseArgs)
+[xUnit.net 00:00:00.71]         /home/tsgomes/mcad/services/cadastro-api/5-Tests/Cadastro.UnitTests/ValueObjects/IsrcTests.cs(45,0): at Cadastro.UnitTests.ValueObjects.IsrcTests.Create_ComFomatoIsrcInvalido_DeveLancarDomainException(String isrcInvalido)
+[xUnit.net 00:00:00.71]            at System.RuntimeMethodHandle.InvokeMethod(Object target, Void** arguments, Signature sig, Boolean isConstructor)
+[xUnit.net 00:00:00.71]            at System.Reflection.MethodBaseInvoker.InvokeDirectByRefWithFewArgs(Object obj, Span`1 copyOfArgs, BindingFlags invokeAttr)
+[xUnit.net 00:00:00.71]       Expected exception message to match the equivalent of "Fonogramas depurados não podem ser editados.", but "Fonogramas depurados não podem ser editados" does not.
+[xUnit.net 00:00:00.71]       Stack Trace:
+[xUnit.net 00:00:00.71]            at AwesomeAssertions.Execution.LateBoundTestFramework.Throw(String message)
+[xUnit.net 00:00:00.71]            at AwesomeAssertions.Execution.DefaultAssertionStrategy.HandleFailure(String message)
+[xUnit.net 00:00:00.71]            at AwesomeAssertions.Execution.AssertionScope.AddPreFormattedFailure(String formattedFailureMessage)
+[xUnit.net 00:00:00.71]            at AwesomeAssertions.Execution.AssertionChain.FailWith(Func`1 getFailureReason)
+[xUnit.net 00:00:00.71]            at AwesomeAssertions.Execution.AssertionChain.FailWith(Func`1 getFailureReason)
+[xUnit.net 00:00:00.71]            at AwesomeAssertions.Execution.AssertionChain.FailWith(String message)
+[xUnit.net 00:00:00.71]            at AwesomeAssertions.Specialized.ExceptionAssertions`1.AssertExceptionMessage(IEnumerable`1 messages, String expectation, String because, Object[] becauseArgs)
+[xUnit.net 00:00:00.71]            at AwesomeAssertions.Specialized.ExceptionAssertions`1.WithMessage(String expectedWildcardPattern, String because, Object[] becauseArgs)
+[xUnit.net 00:00:00.71]            at AwesomeAssertions.ExceptionAssertionsExtensions.WithMessage[TException](Task`1 task, String expectedWildcardPattern, String because, Object[] becauseArgs)
+[xUnit.net 00:00:00.71]         /home/tsgomes/mcad/services/cadastro-api/5-Tests/Cadastro.UnitTests/Fonogramas/AtualizarFonogramaCommandHandlerTests.cs(96,0): at Cadastro.UnitTests.Fonogramas.AtualizarFonogramaCommandHandlerTests.Handle_FonogramaDepurado_DeveLancarDomainExceptionOuSemelhante_AoRequererEdicao()
+[xUnit.net 00:00:00.71]         --- End of stack trace from previous location ---
+  Passed Cadastro.UnitTests.Obras.ObraMusicalTests.RequerDepuracao_DeveRetornarFalsoSePendente [< 1 ms]
+  Passed Cadastro.UnitTests.Obras.ObraMusicalTests.AtribuirIswc_DeveAtribuirEAtualizarStatusParaLiberado [< 1 ms]
+  Passed Cadastro.UnitTests.Titularidades.EditarTitularidadeHandlerTests.HandleAsync_ObraLiberada_DeveLancarDepuracaoNecessariaException [6 ms]
+  Failed Cadastro.UnitTests.Fonogramas.FonogramaTests.Depurar_FonogramaNaoLiberado_DeveLancarDomainException [20 ms]
+  Error Message:
+   Expected exception message to match the equivalent of "Apenas fonogramas liberados podem ser depurados.", but "Apenas fonogramas LIBERADOS podem ser depurados" does not.
+  Stack Trace:
+     at AwesomeAssertions.Execution.LateBoundTestFramework.Throw(String message)
+   at AwesomeAssertions.Execution.DefaultAssertionStrategy.HandleFailure(String message)
+   at AwesomeAssertions.Execution.AssertionScope.AddPreFormattedFailure(String formattedFailureMessage)
+   at AwesomeAssertions.Execution.AssertionChain.FailWith(Func`1 getFailureReason)
+   at AwesomeAssertions.Execution.AssertionChain.FailWith(Func`1 getFailureReason)
+   at AwesomeAssertions.Execution.AssertionChain.FailWith(String message)
+   at AwesomeAssertions.Specialized.ExceptionAssertions`1.AssertExceptionMessage(IEnumerable`1 messages, String expectation, String because, Object[] becauseArgs)
+   at AwesomeAssertions.Specialized.ExceptionAssertions`1.WithMessage(String expectedWildcardPattern, String because, Object[] becauseArgs)
+   at Cadastro.UnitTests.Fonogramas.FonogramaTests.Depurar_FonogramaNaoLiberado_DeveLancarDomainException() in /home/tsgomes/mcad/services/cadastro-api/5-Tests/Cadastro.UnitTests/Fonogramas/FonogramaTests.cs:line 105
+   at System.RuntimeMethodHandle.InvokeMethod(Object target, Void** arguments, Signature sig, Boolean isConstructor)
+   at System.Reflection.MethodBaseInvoker.InvokeWithNoArgs(Object obj, BindingFlags invokeAttr)
+  Failed Cadastro.UnitTests.ValueObjects.IsrcTests.Create_ComFomatoIsrcInvalido_DeveLancarDomainException(isrcInvalido: "") [66 ms]
+  Error Message:
+   Expected exception message to match the equivalent of "ISRC no formato inválido.", but "ISRC deve seguir formato CC-XXX-YY-NNNNN (12 caracteres alfanuméricos)" does not.
+  Stack Trace:
+     at AwesomeAssertions.Execution.LateBoundTestFramework.Throw(String message)
+   at AwesomeAssertions.Execution.DefaultAssertionStrategy.HandleFailure(String message)
+   at AwesomeAssertions.Execution.AssertionScope.AddPreFormattedFailure(String formattedFailureMessage)
+   at AwesomeAssertions.Execution.AssertionChain.FailWith(Func`1 getFailureReason)
+   at AwesomeAssertions.Execution.AssertionChain.FailWith(Func`1 getFailureReason)
+   at AwesomeAssertions.Execution.AssertionChain.FailWith(String message)
+   at AwesomeAssertions.Specialized.ExceptionAssertions`1.AssertExceptionMessage(IEnumerable`1 messages, String expectation, String because, Object[] becauseArgs)
+   at AwesomeAssertions.Specialized.ExceptionAssertions`1.WithMessage(String expectedWildcardPattern, String because, Object[] becauseArgs)
+   at Cadastro.UnitTests.ValueObjects.IsrcTests.Create_ComFomatoIsrcInvalido_DeveLancarDomainException(String isrcInvalido) in /home/tsgomes/mcad/services/cadastro-api/5-Tests/Cadastro.UnitTests/ValueObjects/IsrcTests.cs:line 45
+   at System.RuntimeMethodHandle.InvokeMethod(Object target, Void** arguments, Signature sig, Boolean isConstructor)
+   at System.Reflection.MethodBaseInvoker.InvokeDirectByRefWithFewArgs(Object obj, Span`1 copyOfArgs, BindingFlags invokeAttr)
+  Failed Cadastro.UnitTests.Fonogramas.AtualizarFonogramaCommandHandlerTests.Handle_FonogramaDepurado_DeveLancarDomainExceptionOuSemelhante_AoRequererEdicao [122 ms]
+  Error Message:
+   Expected exception message to match the equivalent of "Fonogramas depurados não podem ser editados.", but "Fonogramas depurados não podem ser editados" does not.
+  Stack Trace:
+     at AwesomeAssertions.Execution.LateBoundTestFramework.Throw(String message)
+   at AwesomeAssertions.Execution.DefaultAssertionStrategy.HandleFailure(String message)
+   at AwesomeAssertions.Execution.AssertionScope.AddPreFormattedFailure(String formattedFailureMessage)
+   at AwesomeAssertions.Execution.AssertionChain.FailWith(Func`1 getFailureReason)
+   at AwesomeAssertions.Execution.AssertionChain.FailWith(Func`1 getFailureReason)
+   at AwesomeAssertions.Execution.AssertionChain.FailWith(String message)
+   at AwesomeAssertions.Specialized.ExceptionAssertions`1.AssertExceptionMessage(IEnumerable`1 messages, String expectation, String because, Object[] becauseArgs)
+   at AwesomeAssertions.Specialized.ExceptionAssertions`1.WithMessage(String expectedWildcardPattern, String because, Object[] becauseArgs)
+   at AwesomeAssertions.ExceptionAssertionsExtensions.WithMessage[TException](Task`1 task, String expectedWildcardPattern, String because, Object[] becauseArgs)
+   at Cadastro.UnitTests.Fonogramas.AtualizarFonogramaCommandHandlerTests.Handle_FonogramaDepurado_DeveLancarDomainExceptionOuSemelhante_AoRequererEdicao() in /home/tsgomes/mcad/services/cadastro-api/5-Tests/Cadastro.UnitTests/Fonogramas/AtualizarFonogramaCommandHandlerTests.cs:line 96
+--- End of stack trace from previous location ---
+[xUnit.net 00:00:00.71]       Expected exception message to match the equivalent of "ISRC no formato inválido.", but "ISRC deve seguir formato CC-XXX-YY-NNNNN (12 caracteres alfanuméricos)" does not.
+[xUnit.net 00:00:00.71]       Stack Trace:
+[xUnit.net 00:00:00.71]            at AwesomeAssertions.Execution.LateBoundTestFramework.Throw(String message)
+[xUnit.net 00:00:00.71]            at AwesomeAssertions.Execution.DefaultAssertionStrategy.HandleFailure(String message)
+[xUnit.net 00:00:00.71]            at AwesomeAssertions.Execution.AssertionScope.AddPreFormattedFailure(String formattedFailureMessage)
+[xUnit.net 00:00:00.71]            at AwesomeAssertions.Execution.AssertionChain.FailWith(Func`1 getFailureReason)
+[xUnit.net 00:00:00.71]            at AwesomeAssertions.Execution.AssertionChain.FailWith(Func`1 getFailureReason)
+[xUnit.net 00:00:00.71]            at AwesomeAssertions.Execution.AssertionChain.FailWith(String message)
+[xUnit.net 00:00:00.71]            at AwesomeAssertions.Specialized.ExceptionAssertions`1.AssertExceptionMessage(IEnumerable`1 messages, String expectation, String because, Object[] becauseArgs)
+[xUnit.net 00:00:00.71]            at AwesomeAssertions.Specialized.ExceptionAssertions`1.WithMessage(String expectedWildcardPattern, String because, Object[] becauseArgs)
+[xUnit.net 00:00:00.71]         /home/tsgomes/mcad/services/cadastro-api/5-Tests/Cadastro.UnitTests/ValueObjects/IsrcTests.cs(45,0): at Cadastro.UnitTests.ValueObjects.IsrcTests.Create_ComFomatoIsrcInvalido_DeveLancarDomainException(String isrcInvalido)
+[xUnit.net 00:00:00.71]            at InvokeStub_IsrcTests.Create_ComFomatoIsrcInvalido_DeveLancarDomainException(Object, Span`1)
+[xUnit.net 00:00:00.71]            at System.Reflection.MethodBaseInvoker.InvokeWithOneArg(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)
+[xUnit.net 00:00:00.71]       Expected exception message to match the equivalent of "ISRC no formato inválido.", but "ISRC deve seguir formato CC-XXX-YY-NNNNN (12 caracteres alfanuméricos)" does not.
+[xUnit.net 00:00:00.71]       Stack Trace:
+[xUnit.net 00:00:00.71]            at AwesomeAssertions.Execution.LateBoundTestFramework.Throw(String message)
+[xUnit.net 00:00:00.71]            at AwesomeAssertions.Execution.DefaultAssertionStrategy.HandleFailure(String message)
+[xUnit.net 00:00:00.71]            at AwesomeAssertions.Execution.AssertionScope.AddPreFormattedFailure(String formattedFailureMessage)
+[xUnit.net 00:00:00.71]            at AwesomeAssertions.Execution.AssertionChain.FailWith(Func`1 getFailureReason)
+[xUnit.net 00:00:00.71]            at AwesomeAssertions.Execution.AssertionChain.FailWith(Func`1 getFailureReason)
+[xUnit.net 00:00:00.71]            at AwesomeAssertions.Execution.AssertionChain.FailWith(String message)
+[xUnit.net 00:00:00.71]            at AwesomeAssertions.Specialized.ExceptionAssertions`1.AssertExceptionMessage(IEnumerable`1 messages, String expectation, String because, Object[] becauseArgs)
+[xUnit.net 00:00:00.71]            at AwesomeAssertions.Specialized.ExceptionAssertions`1.WithMessage(String expectedWildcardPattern, String because, Object[] becauseArgs)
+[xUnit.net 00:00:00.71]         /home/tsgomes/mcad/services/cadastro-api/5-Tests/Cadastro.UnitTests/ValueObjects/IsrcTests.cs(45,0): at Cadastro.UnitTests.ValueObjects.IsrcTests.Create_ComFomatoIsrcInvalido_DeveLancarDomainException(String isrcInvalido)
+[xUnit.net 00:00:00.71]            at InvokeStub_IsrcTests.Create_ComFomatoIsrcInvalido_DeveLancarDomainException(Object, Span`1)
+[xUnit.net 00:00:00.71]            at System.Reflection.MethodBaseInvoker.InvokeWithOneArg(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)
+[xUnit.net 00:00:00.71]       Expected exception message to match the equivalent of "ISRC no formato inválido.", but "ISRC deve seguir formato CC-XXX-YY-NNNNN (12 caracteres alfanuméricos)" does not.
+[xUnit.net 00:00:00.71]       Stack Trace:
+[xUnit.net 00:00:00.71]            at AwesomeAssertions.Execution.LateBoundTestFramework.Throw(String message)
+[xUnit.net 00:00:00.71]            at AwesomeAssertions.Execution.DefaultAssertionStrategy.HandleFailure(String message)
+[xUnit.net 00:00:00.71]            at AwesomeAssertions.Execution.AssertionScope.AddPreFormattedFailure(String formattedFailureMessage)
+[xUnit.net 00:00:00.71]            at AwesomeAssertions.Execution.AssertionChain.FailWith(Func`1 getFailureReason)
+[xUnit.net 00:00:00.71]            at AwesomeAssertions.Execution.AssertionChain.FailWith(Func`1 getFailureReason)
+[xUnit.net 00:00:00.71]            at AwesomeAssertions.Execution.AssertionChain.FailWith(String message)
+[xUnit.net 00:00:00.71]            at AwesomeAssertions.Specialized.ExceptionAssertions`1.AssertExceptionMessage(IEnumerable`1 messages, String expectation, String because, Object[] becauseArgs)
+[xUnit.net 00:00:00.71]            at AwesomeAssertions.Specialized.ExceptionAssertions`1.WithMessage(String expectedWildcardPattern, String because, Object[] becauseArgs)
+[xUnit.net 00:00:00.71]         /home/tsgomes/mcad/services/cadastro-api/5-Tests/Cadastro.UnitTests/ValueObjects/IsrcTests.cs(45,0): at Cadastro.UnitTests.ValueObjects.IsrcTests.Create_ComFomatoIsrcInvalido_DeveLancarDomainException(String isrcInvalido)
+[xUnit.net 00:00:00.71]            at InvokeStub_IsrcTests.Create_ComFomatoIsrcInvalido_DeveLancarDomainException(Object, Span`1)
+[xUnit.net 00:00:00.71]            at System.Reflection.MethodBaseInvoker.InvokeWithOneArg(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)
+[xUnit.net 00:00:00.71]       Expected exception message to match the equivalent of "ISRC no formato inválido.", but "ISRC deve seguir formato CC-XXX-YY-NNNNN (12 caracteres alfanuméricos)" does not.
+[xUnit.net 00:00:00.71]       Stack Trace:
+[xUnit.net 00:00:00.71]            at AwesomeAssertions.Execution.LateBoundTestFramework.Throw(String message)
+[xUnit.net 00:00:00.71]            at AwesomeAssertions.Execution.DefaultAssertionStrategy.HandleFailure(String message)
+[xUnit.net 00:00:00.71]            at AwesomeAssertions.Execution.AssertionScope.AddPreFormattedFailure(String formattedFailureMessage)
+[xUnit.net 00:00:00.71]            at AwesomeAssertions.Execution.AssertionChain.FailWith(Func`1 getFailureReason)
+[xUnit.net 00:00:00.71]            at AwesomeAssertions.Execution.AssertionChain.FailWith(Func`1 getFailureReason)
+[xUnit.net 00:00:00.71]            at AwesomeAssertions.Execution.AssertionChain.FailWith(String message)
+[xUnit.net 00:00:00.71]            at AwesomeAssertions.Specialized.ExceptionAssertions`1.AssertExceptionMessage(IEnumerable`1 messages, String expectation, String because, Object[] becauseArgs)
+[xUnit.net 00:00:00.71]            at AwesomeAssertions.Specialized.ExceptionAssertions`1.WithMessage(String expectedWildcardPattern, String because, Object[] becauseArgs)
+[xUnit.net 00:00:00.71]         /home/tsgomes/mcad/services/cadastro-api/5-Tests/Cadastro.UnitTests/ValueObjects/IsrcTests.cs(45,0): at Cadastro.UnitTests.ValueObjects.IsrcTests.Create_ComFomatoIsrcInvalido_DeveLancarDomainException(String isrcInvalido)
+[xUnit.net 00:00:00.71]            at InvokeStub_IsrcTests.Create_ComFomatoIsrcInvalido_DeveLancarDomainException(Object, Span`1)
+[xUnit.net 00:00:00.71]            at System.Reflection.MethodBaseInvoker.InvokeWithOneArg(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)
+  Passed Cadastro.UnitTests.Fonogramas.FonogramaTests.Depurar_FonogramaValido_DeveMudarStatusEDefinirFk [1 ms]
+  Failed Cadastro.UnitTests.ValueObjects.IsrcTests.Create_ComFomatoIsrcInvalido_DeveLancarDomainException(isrcInvalido: "BR-XYZ-23-0000") [1 ms]
+  Error Message:
+   Expected exception message to match the equivalent of "ISRC no formato inválido.", but "ISRC deve seguir formato CC-XXX-YY-NNNNN (12 caracteres alfanuméricos)" does not.
+  Stack Trace:
+     at AwesomeAssertions.Execution.LateBoundTestFramework.Throw(String message)
+   at AwesomeAssertions.Execution.DefaultAssertionStrategy.HandleFailure(String message)
+   at AwesomeAssertions.Execution.AssertionScope.AddPreFormattedFailure(String formattedFailureMessage)
+   at AwesomeAssertions.Execution.AssertionChain.FailWith(Func`1 getFailureReason)
+   at AwesomeAssertions.Execution.AssertionChain.FailWith(Func`1 getFailureReason)
+   at AwesomeAssertions.Execution.AssertionChain.FailWith(String message)
+   at AwesomeAssertions.Specialized.ExceptionAssertions`1.AssertExceptionMessage(IEnumerable`1 messages, String expectation, String because, Object[] becauseArgs)
+   at AwesomeAssertions.Specialized.ExceptionAssertions`1.WithMessage(String expectedWildcardPattern, String because, Object[] becauseArgs)
+   at Cadastro.UnitTests.ValueObjects.IsrcTests.Create_ComFomatoIsrcInvalido_DeveLancarDomainException(String isrcInvalido) in /home/tsgomes/mcad/services/cadastro-api/5-Tests/Cadastro.UnitTests/ValueObjects/IsrcTests.cs:line 45
+   at InvokeStub_IsrcTests.Create_ComFomatoIsrcInvalido_DeveLancarDomainException(Object, Span`1)
+   at System.Reflection.MethodBaseInvoker.InvokeWithOneArg(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)
+  Failed Cadastro.UnitTests.ValueObjects.IsrcTests.Create_ComFomatoIsrcInvalido_DeveLancarDomainException(isrcInvalido: "BR-XYZ-23-000012") [1 ms]
+  Error Message:
+   Expected exception message to match the equivalent of "ISRC no formato inválido.", but "ISRC deve seguir formato CC-XXX-YY-NNNNN (12 caracteres alfanuméricos)" does not.
+  Stack Trace:
+     at AwesomeAssertions.Execution.LateBoundTestFramework.Throw(String message)
+   at AwesomeAssertions.Execution.DefaultAssertionStrategy.HandleFailure(String message)
+   at AwesomeAssertions.Execution.AssertionScope.AddPreFormattedFailure(String formattedFailureMessage)
+   at AwesomeAssertions.Execution.AssertionChain.FailWith(Func`1 getFailureReason)
+   at AwesomeAssertions.Execution.AssertionChain.FailWith(Func`1 getFailureReason)
+   at AwesomeAssertions.Execution.AssertionChain.FailWith(String message)
+   at AwesomeAssertions.Specialized.ExceptionAssertions`1.AssertExceptionMessage(IEnumerable`1 messages, String expectation, String because, Object[] becauseArgs)
+   at AwesomeAssertions.Specialized.ExceptionAssertions`1.WithMessage(String expectedWildcardPattern, String because, Object[] becauseArgs)
+   at Cadastro.UnitTests.ValueObjects.IsrcTests.Create_ComFomatoIsrcInvalido_DeveLancarDomainException(String isrcInvalido) in /home/tsgomes/mcad/services/cadastro-api/5-Tests/Cadastro.UnitTests/ValueObjects/IsrcTests.cs:line 45
+   at InvokeStub_IsrcTests.Create_ComFomatoIsrcInvalido_DeveLancarDomainException(Object, Span`1)
+   at System.Reflection.MethodBaseInvoker.InvokeWithOneArg(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)
+  Failed Cadastro.UnitTests.ValueObjects.IsrcTests.Create_ComFomatoIsrcInvalido_DeveLancarDomainException(isrcInvalido: null) [1 ms]
+  Error Message:
+   Expected exception message to match the equivalent of "ISRC no formato inválido.", but "ISRC deve seguir formato CC-XXX-YY-NNNNN (12 caracteres alfanuméricos)" does not.
+  Stack Trace:
+     at AwesomeAssertions.Execution.LateBoundTestFramework.Throw(String message)
+   at AwesomeAssertions.Execution.DefaultAssertionStrategy.HandleFailure(String message)
+   at AwesomeAssertions.Execution.AssertionScope.AddPreFormattedFailure(String formattedFailureMessage)
+   at AwesomeAssertions.Execution.AssertionChain.FailWith(Func`1 getFailureReason)
+   at AwesomeAssertions.Execution.AssertionChain.FailWith(Func`1 getFailureReason)
+   at AwesomeAssertions.Execution.AssertionChain.FailWith(String message)
+   at AwesomeAssertions.Specialized.ExceptionAssertions`1.AssertExceptionMessage(IEnumerable`1 messages, String expectation, String because, Object[] becauseArgs)
+   at AwesomeAssertions.Specialized.ExceptionAssertions`1.WithMessage(String expectedWildcardPattern, String because, Object[] becauseArgs)
+   at Cadastro.UnitTests.ValueObjects.IsrcTests.Create_ComFomatoIsrcInvalido_DeveLancarDomainException(String isrcInvalido) in /home/tsgomes/mcad/services/cadastro-api/5-Tests/Cadastro.UnitTests/ValueObjects/IsrcTests.cs:line 45
+   at InvokeStub_IsrcTests.Create_ComFomatoIsrcInvalido_DeveLancarDomainException(Object, Span`1)
+   at System.Reflection.MethodBaseInvoker.InvokeWithOneArg(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)
+  Failed Cadastro.UnitTests.ValueObjects.IsrcTests.Create_ComFomatoIsrcInvalido_DeveLancarDomainException(isrcInvalido: "BR-XYZ-XX-00001") [< 1 ms]
+  Error Message:
+   Expected exception message to match the equivalent of "ISRC no formato inválido.", but "ISRC deve seguir formato CC-XXX-YY-NNNNN (12 caracteres alfanuméricos)" does not.
+  Stack Trace:
+     at AwesomeAssertions.Execution.LateBoundTestFramework.Throw(String message)
+   at AwesomeAssertions.Execution.DefaultAssertionStrategy.HandleFailure(String message)
+   at AwesomeAssertions.Execution.AssertionScope.AddPreFormattedFailure(String formattedFailureMessage)
+   at AwesomeAssertions.Execution.AssertionChain.FailWith(Func`1 getFailureReason)
+   at AwesomeAssertions.Execution.AssertionChain.FailWith(Func`1 getFailureReason)
+   at AwesomeAssertions.Execution.AssertionChain.FailWith(String message)
+   at AwesomeAssertions.Specialized.ExceptionAssertions`1.AssertExceptionMessage(IEnumerable`1 messages, String expectation, String because, Object[] becauseArgs)
+   at AwesomeAssertions.Specialized.ExceptionAssertions`1.WithMessage(String expectedWildcardPattern, String because, Object[] becauseArgs)
+   at Cadastro.UnitTests.ValueObjects.IsrcTests.Create_ComFomatoIsrcInvalido_DeveLancarDomainException(String isrcInvalido) in /home/tsgomes/mcad/services/cadastro-api/5-Tests/Cadastro.UnitTests/ValueObjects/IsrcTests.cs:line 45
+   at InvokeStub_IsrcTests.Create_ComFomatoIsrcInvalido_DeveLancarDomainException(Object, Span`1)
+   at System.Reflection.MethodBaseInvoker.InvokeWithOneArg(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)
+  Passed Cadastro.UnitTests.Fonogramas.FonogramaTests.Criar_DeveRetornarFonogramaPendenteComObra [4 ms]
+  Passed Cadastro.UnitTests.Fonogramas.AtualizarFonogramaCommandHandlerTests.Handle_FonogramaLiberado_SomentePaisAlterado_DevePermitir [5 ms]
+[xUnit.net 00:00:00.71]       Expected exception message to match the equivalent of "ISRC no formato inválido.", but "ISRC deve seguir formato CC-XXX-YY-NNNNN (12 caracteres alfanuméricos)" does not.
+[xUnit.net 00:00:00.71]       Stack Trace:
+[xUnit.net 00:00:00.71]            at AwesomeAssertions.Execution.LateBoundTestFramework.Throw(String message)
+[xUnit.net 00:00:00.72]            at AwesomeAssertions.Execution.DefaultAssertionStrategy.HandleFailure(String message)
+[xUnit.net 00:00:00.72]            at AwesomeAssertions.Execution.AssertionScope.AddPreFormattedFailure(String formattedFailureMessage)
+[xUnit.net 00:00:00.72]            at AwesomeAssertions.Execution.AssertionChain.FailWith(Func`1 getFailureReason)
+[xUnit.net 00:00:00.72]            at AwesomeAssertions.Execution.AssertionChain.FailWith(Func`1 getFailureReason)
+[xUnit.net 00:00:00.72]            at AwesomeAssertions.Execution.AssertionChain.FailWith(String message)
+[xUnit.net 00:00:00.72]            at AwesomeAssertions.Specialized.ExceptionAssertions`1.AssertExceptionMessage(IEnumerable`1 messages, String expectation, String because, Object[] becauseArgs)
+[xUnit.net 00:00:00.72]            at AwesomeAssertions.Specialized.ExceptionAssertions`1.WithMessage(String expectedWildcardPattern, String because, Object[] becauseArgs)
+[xUnit.net 00:00:00.72]         /home/tsgomes/mcad/services/cadastro-api/5-Tests/Cadastro.UnitTests/ValueObjects/IsrcTests.cs(45,0): at Cadastro.UnitTests.ValueObjects.IsrcTests.Create_ComFomatoIsrcInvalido_DeveLancarDomainException(String isrcInvalido)
+[xUnit.net 00:00:00.72]            at InvokeStub_IsrcTests.Create_ComFomatoIsrcInvalido_DeveLancarDomainException(Object, Span`1)
+[xUnit.net 00:00:00.72]            at System.Reflection.MethodBaseInvoker.InvokeWithOneArg(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)
+[xUnit.net 00:00:00.72]       Expected exception message to match the equivalent of "ISRC no formato inválido.", but "ISRC deve seguir formato CC-XXX-YY-NNNNN (12 caracteres alfanuméricos)" does not.
+[xUnit.net 00:00:00.72]       Stack Trace:
+[xUnit.net 00:00:00.72]            at AwesomeAssertions.Execution.LateBoundTestFramework.Throw(String message)
+[xUnit.net 00:00:00.72]            at AwesomeAssertions.Execution.DefaultAssertionStrategy.HandleFailure(String message)
+[xUnit.net 00:00:00.72]            at AwesomeAssertions.Execution.AssertionScope.AddPreFormattedFailure(String formattedFailureMessage)
+[xUnit.net 00:00:00.72]            at AwesomeAssertions.Execution.AssertionChain.FailWith(Func`1 getFailureReason)
+[xUnit.net 00:00:00.72]            at AwesomeAssertions.Execution.AssertionChain.FailWith(Func`1 getFailureReason)
+[xUnit.net 00:00:00.72]            at AwesomeAssertions.Execution.AssertionChain.FailWith(String message)
+[xUnit.net 00:00:00.72]            at AwesomeAssertions.Specialized.ExceptionAssertions`1.AssertExceptionMessage(IEnumerable`1 messages, String expectation, String because, Object[] becauseArgs)
+[xUnit.net 00:00:00.72]            at AwesomeAssertions.Specialized.ExceptionAssertions`1.WithMessage(String expectedWildcardPattern, String because, Object[] becauseArgs)
+[xUnit.net 00:00:00.72]         /home/tsgomes/mcad/services/cadastro-api/5-Tests/Cadastro.UnitTests/ValueObjects/IsrcTests.cs(45,0): at Cadastro.UnitTests.ValueObjects.IsrcTests.Create_ComFomatoIsrcInvalido_DeveLancarDomainException(String isrcInvalido)
+[xUnit.net 00:00:00.72]            at InvokeStub_IsrcTests.Create_ComFomatoIsrcInvalido_DeveLancarDomainException(Object, Span`1)
+[xUnit.net 00:00:00.72]            at System.Reflection.MethodBaseInvoker.InvokeWithOneArg(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)
+  Passed Cadastro.UnitTests.Fonogramas.FonogramaTests.RequerDepuracao_FonogramaLiberadoEIsrcIgual_RetornaFalse [< 1 ms]
+  Failed Cadastro.UnitTests.ValueObjects.IsrcTests.Create_ComFomatoIsrcInvalido_DeveLancarDomainException(isrcInvalido: "BR-XYZ-23-AAAA1") [< 1 ms]
+  Error Message:
+   Expected exception message to match the equivalent of "ISRC no formato inválido.", but "ISRC deve seguir formato CC-XXX-YY-NNNNN (12 caracteres alfanuméricos)" does not.
+  Stack Trace:
+     at AwesomeAssertions.Execution.LateBoundTestFramework.Throw(String message)
+   at AwesomeAssertions.Execution.DefaultAssertionStrategy.HandleFailure(String message)
+   at AwesomeAssertions.Execution.AssertionScope.AddPreFormattedFailure(String formattedFailureMessage)
+   at AwesomeAssertions.Execution.AssertionChain.FailWith(Func`1 getFailureReason)
+   at AwesomeAssertions.Execution.AssertionChain.FailWith(Func`1 getFailureReason)
+   at AwesomeAssertions.Execution.AssertionChain.FailWith(String message)
+   at AwesomeAssertions.Specialized.ExceptionAssertions`1.AssertExceptionMessage(IEnumerable`1 messages, String expectation, String because, Object[] becauseArgs)
+   at AwesomeAssertions.Specialized.ExceptionAssertions`1.WithMessage(String expectedWildcardPattern, String because, Object[] becauseArgs)
+   at Cadastro.UnitTests.ValueObjects.IsrcTests.Create_ComFomatoIsrcInvalido_DeveLancarDomainException(String isrcInvalido) in /home/tsgomes/mcad/services/cadastro-api/5-Tests/Cadastro.UnitTests/ValueObjects/IsrcTests.cs:line 45
+   at InvokeStub_IsrcTests.Create_ComFomatoIsrcInvalido_DeveLancarDomainException(Object, Span`1)
+   at System.Reflection.MethodBaseInvoker.InvokeWithOneArg(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)
+  Passed Cadastro.UnitTests.Titularidades.EditarTitularidadeHandlerTests.HandleAsync_ProcessoValido_DeveRetornarResponse [10 ms]
+  Passed Cadastro.UnitTests.Fonogramas.FonogramaTests.Atualizar_FonogramaPendente_DeveAtualizarEContinuarPendente [< 1 ms]
+  Passed Cadastro.UnitTests.Titulares.AtualizarTitularCommandHandlerTests.HandleAsync_ComTitularValido_DeveAtualizarETornarNovoTitular [17 ms]
+  Passed Cadastro.UnitTests.Fonogramas.FonogramaTests.PodeSerExcluido_FonogramaLiberadoOuDepurado_RetornaFalse [< 1 ms]
+  Failed Cadastro.UnitTests.ValueObjects.IsrcTests.Create_ComFomatoIsrcInvalido_DeveLancarDomainException(isrcInvalido: "12-XYZ-23-00001") [< 1 ms]
+  Error Message:
+   Expected exception message to match the equivalent of "ISRC no formato inválido.", but "ISRC deve seguir formato CC-XXX-YY-NNNNN (12 caracteres alfanuméricos)" does not.
+  Stack Trace:
+     at AwesomeAssertions.Execution.LateBoundTestFramework.Throw(String message)
+   at AwesomeAssertions.Execution.DefaultAssertionStrategy.HandleFailure(String message)
+   at AwesomeAssertions.Execution.AssertionScope.AddPreFormattedFailure(String formattedFailureMessage)
+   at AwesomeAssertions.Execution.AssertionChain.FailWith(Func`1 getFailureReason)
+   at AwesomeAssertions.Execution.AssertionChain.FailWith(Func`1 getFailureReason)
+   at AwesomeAssertions.Execution.AssertionChain.FailWith(String message)
+   at AwesomeAssertions.Specialized.ExceptionAssertions`1.AssertExceptionMessage(IEnumerable`1 messages, String expectation, String because, Object[] becauseArgs)
+   at AwesomeAssertions.Specialized.ExceptionAssertions`1.WithMessage(String expectedWildcardPattern, String because, Object[] becauseArgs)
+   at Cadastro.UnitTests.ValueObjects.IsrcTests.Create_ComFomatoIsrcInvalido_DeveLancarDomainException(String isrcInvalido) in /home/tsgomes/mcad/services/cadastro-api/5-Tests/Cadastro.UnitTests/ValueObjects/IsrcTests.cs:line 45
+   at InvokeStub_IsrcTests.Create_ComFomatoIsrcInvalido_DeveLancarDomainException(Object, Span`1)
+   at System.Reflection.MethodBaseInvoker.InvokeWithOneArg(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)
+[xUnit.net 00:00:00.72]   Finished:    Cadastro.UnitTests
+  Passed Cadastro.UnitTests.ValueObjects.IsrcTests.Formatado_DeveRetornarComHifens [< 1 ms]
+  Passed Cadastro.UnitTests.Titularidades.EditarTitularidadeHandlerTests.HandleAsync_TitularidadeNaoEncontrada_DeveLancarNotFoundException [2 ms]
+  Passed Cadastro.UnitTests.Fonogramas.AtualizarFonogramaCommandHandlerTests.Handle_FonogramaLiberado_ComIsrcDiferente_DeveLancarDepuracaoNecessariaException [3 ms]
+  Passed Cadastro.UnitTests.Titulares.AtualizarTitularCommandHandlerTests.HandleAsync_ComTitularInexistente_DeveLancarNotFoundException [3 ms]
+  Passed Cadastro.UnitTests.Fonogramas.AtualizarFonogramaCommandHandlerTests.Handle_FonogramaPendente_ComIsrcDiferente_DeveAtualizar [3 ms]
+
+Total tests: 112
+     Passed: 103
+     Failed: 9
+ Total time: 1.3365 Seconds

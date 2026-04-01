@@ -17,6 +17,7 @@ import { DepuracaoModal } from '../components/DepuracaoModal';
 import { DominioPublicoToggle } from '../components/DominioPublicoToggle';
 import { DeleteObraModal } from '../components/DeleteObraModal';
 import { TitularidadesSection, useTitularidades } from '@features/cadastro/titularidades';
+import { ObraFonogramasSection } from '@features/cadastro/fonogramas';
 import type { AtualizarObraRequest, DepurarObraRequest } from '../types/obra';
 import styles from './ObraDetailPage.module.css';
 
@@ -137,6 +138,12 @@ export function ObraDetailPage() {
             obraId={obra.id}
             obraStatus={obra.status}
             onDepuracaoRequired={() => setShowDepuracaoModalForTitularidades(true)}
+          />
+
+          {/* F05 — Seção Fonogramas */}
+          <ObraFonogramasSection
+            obraId={obra.id}
+            obraStatus={obra.status}
           />
         </div>
         <div className={styles.rightCol}>

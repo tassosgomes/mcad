@@ -77,8 +77,8 @@ ABRAMUS, AMAR, ASSIM, SBACEM, SICAM, SOCINPRO, UBC
 | F02 | Gestão de Titulares | CRUD de titulares (PF/PJ) com CPF/CNPJ, CAE/IPI, vínculo a associação e categorias. Um titular pode acumular categorias autorais e conexas. | Must Have | `done` | `tasks/prd-gestao-titulares/prd.md` |
 | F03 | Gestão de Obras Musicais | CRUD de obras com ISWC (obtido via API externa), título, tipo (MUSICAL, LITEROMUSICAL, VERSAO, POT_POURRI), gênero e validação de unicidade (título + titulares). | Must Have | `done` | `tasks/prd-gestao-obras/prd.md` |
 | F04 | Titularidades Autorais | Vinculação de titulares a obras com categoria e percentual. Validação obrigatória: soma = 100%. | Must Have | `prd-ready` | `tasks/prd-titularidades-autorais/prd.md` |
-| F05 | Gestão de Fonogramas | CRUD de fonogramas com ISRC, vínculo à obra, país de origem, datas. Exige ao menos um Produtor Fonográfico. | Must Have | `planned` | — |
-| F06 | Participação Conexa Automática | Cálculo automático dos percentuais conexos ao vincular titulares ao fonograma. Com músico: 43,7% intérprete / 41,7% produtor / 14,6% músicos (÷ N). Sem músico: 50% / 50%. | Must Have | `planned` | — |
+| F05 | Gestão de Fonogramas | CRUD de fonogramas com ISRC (manual, formato validado), vínculo à obra (imutável), depuração por alteração ISRC/conexos. | Must Have | `prd-ready` | `tasks/prd-gestao-fonogramas/prd.md` |
+| F06 | Participação Conexa Automática | Cálculo automático dos percentuais conexos ao vincular titulares ao fonograma. Com músico: 43,7% intérprete / 41,7% produtor / 14,6% músicos (÷ N). Sem músico: 50% / 50%. | Must Have | `prd-ready` | `tasks/prd-participacao-conexa/prd.md` |
 | F07 | Controle de Status | Fluxo de status para Obras (LIBERADO, BLOQUEADO, PENDENTE, DOMINIO_PUBLICO), Fonogramas (LIBERADO, PENDENTE_VALIDACAO, PENDENTE_DOCUMENTACAO) e Titulares (ATIVO, FALECIDO, TRANSFERINDO). Flag manual para Domínio Público. | Must Have | `planned` | — |
 | F08 | Eventos de Cadastro | Publicação de eventos no RabbitMQ a cada mudança relevante de estado, seguindo padrão `cadastro.entidade.acao`. | Must Have | `planned` | — |
 

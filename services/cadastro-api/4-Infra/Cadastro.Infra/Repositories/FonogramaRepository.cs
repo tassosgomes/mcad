@@ -23,7 +23,10 @@ public class FonogramaRepository : IFonogramaRepository
         if (!string.IsNullOrWhiteSpace(filtro.Isrc))
         {
             var isrcLimpo = filtro.Isrc.Replace("-", "").ToUpperInvariant();
-            query = query.Where(f => f.Isrc.Valor.Contains(isrcLimpo));
+            if (isrcLimpo.Length == 12) {
+                var isrcVo = Cadastro.Domain.ValueObjects.Isrc.Create(isrcLimpo);
+                query = query.Where(f => f.Isrc == isrcVo);
+            }
         }
 
         if (filtro.ObraId.HasValue)
@@ -50,14 +53,14 @@ public class FonogramaRepository : IFonogramaRepository
 
         query = filtro.Sort?.ToLowerInvariant() switch
         {
-            "isrc_desc" => query.OrderByDescending(f => f.Isrc.Valor),
+            "isrc_desc" => query.OrderByDescending(f => f.Isrc),
             "obra" => query.OrderBy(f => f.Obra.Titulo),
             "obra_desc" => query.OrderByDescending(f => f.Obra.Titulo),
             "status" => query.OrderBy(f => f.Status),
             "status_desc" => query.OrderByDescending(f => f.Status),
             "pais" => query.OrderBy(f => f.PaisOrigem),
             "pais_desc" => query.OrderByDescending(f => f.PaisOrigem),
-            _ => query.OrderBy(f => f.Isrc.Valor)
+            _ => query.OrderBy(f => f.Isrc)
         };
 
         var items = await query
@@ -73,7 +76,7 @@ public class FonogramaRepository : IFonogramaRepository
         return await _context.Set<Fonograma>()
             .Include(f => f.Obra)
             .Where(f => f.ObraId == obraId)
-            .OrderBy(f => f.Isrc.Valor)
+            .OrderBy(f => f.Isrc)
             .ToListAsync(ct);
     }
 
@@ -86,14 +89,16 @@ public class FonogramaRepository : IFonogramaRepository
 
     public async Task<bool> ExisteIsrcAsync(string isrc, CancellationToken ct)
     {
+        var isrcVo = Cadastro.Domain.ValueObjects.Isrc.Create(isrc);
         return await _context.Set<Fonograma>()
-            .AnyAsync(f => f.Isrc.Valor == isrc, ct);
+            .AnyAsync(f => f.Isrc == isrcVo, ct);
     }
 
     public async Task<bool> ExisteIsrcAsync(string isrc, Guid excludeId, CancellationToken ct)
     {
+        var isrcVo = Cadastro.Domain.ValueObjects.Isrc.Create(isrc);
         return await _context.Set<Fonograma>()
-            .AnyAsync(f => f.Isrc.Valor == isrc && f.Id != excludeId, ct);
+            .AnyAsync(f => f.Isrc == isrcVo && f.Id != excludeId, ct);
     }
 
     public async Task<Fonograma> AddAsync(Fonograma fonograma, CancellationToken ct)

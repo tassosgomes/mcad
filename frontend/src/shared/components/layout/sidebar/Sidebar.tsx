@@ -12,6 +12,7 @@ const navigation = [
       { label: 'Associações', path: '/cadastro/associacoes' },
       { label: 'Titulares', path: '/cadastro/titulares' },
       { label: 'Obras', path: '/cadastro/obras' },
+      { label: 'Fonogramas', path: '/cadastro/fonogramas' },
     ],
   },
   // Fases futuras (desabilitados):

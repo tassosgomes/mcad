@@ -2,6 +2,7 @@ import { Routes, Route } from 'react-router-dom';
 import { AssociacoesPage } from './associacoes';
 import { TitularesPage, TitularCreatePage, TitularEditPage } from './titulares';
 import { ObrasPage, ObraCreatePage, ObraDetailPage } from './obras';
+import { FonogramasPage, FonogramaCreatePage, FonogramaDetailPage } from './fonogramas';
 
 export default function CadastroRoutes() {
   return (
@@ -13,6 +14,9 @@ export default function CadastroRoutes() {
       <Route path="obras" element={<ObrasPage />} />
       <Route path="obras/nova" element={<ObraCreatePage />} />
       <Route path="obras/:id" element={<ObraDetailPage />} />
+      <Route path="fonogramas" element={<FonogramasPage />} />
+      <Route path="fonogramas/novo" element={<FonogramaCreatePage />} />
+      <Route path="fonogramas/:id" element={<FonogramaDetailPage />} />
     </Routes>
   );
 }

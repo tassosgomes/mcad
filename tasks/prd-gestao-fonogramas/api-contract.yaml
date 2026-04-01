@@ -1,0 +1,663 @@
+openapi: 3.1.0
+
+info:
+  title: "Cadastro API — Fonogramas"
+  description: |
+    API CRUD para gestão de fonogramas (gravações) do ECAD, com ISRC validado,
+    vínculo obrigatório a obra e mecanismo de depuração.
+
+    **Contrato gerado a partir do PRD:** `tasks/prd-gestao-fonogramas/prd.md`
+    **Data de geração:** 2026-03-31
+
+    ## Premissas Adotadas
+    - ISRC digitado manualmente, formato validado (CC-XXX-YY-NNNNN), armazenado sem hífens
+    - Obra é FK obrigatória e imutável (trocar obra = depuração)
+    - Depuração: alteração de ISRC ou participações conexas em fonograma LIBERADO
+    - Exclusão apenas em status PENDENTE
+    - Paginação server-side: page/size (default 20)
+    - Erros: RFC 7807 ProblemDetails
+    - Campos JSON: camelCase
+  version: "1.0.0"
+  contact:
+    name: "Time de Plataforma ECAD"
+
+servers:
+  - url: http://localhost:5001/api/v1
+    description: Desenvolvimento local (cadastro-api)
+
+security:
+  - BearerAuth: []
+
+tags:
+  - name: Fonogramas
+    description: "Gestão de fonogramas — CRUD e depuração"
+  - name: Fonogramas da Obra
+    description: "Fonogramas vinculados a uma obra (sub-resource)"
+
+paths:
+
+  /fonogramas:
+    get:
+      summary: Listar fonogramas com paginação e filtros
+      description: |
+        Retorna lista paginada de fonogramas com filtros e ordenação server-side.
+      operationId: listarFonogramas
+      tags:
+        - Fonogramas
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: size
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: sort
+          in: query
+          description: "Campos: `isrc`, `obra`, `status`. Prefixo `-` para DESC."
+          schema:
+            type: string
+            default: "isrc"
+        - name: isrc
+          in: query
+          description: Filtro por ISRC (parcial)
+          schema:
+            type: string
+            example: "BR-ABC"
+        - name: obraId
+          in: query
+          description: Filtro por ID da obra (exato)
+          schema:
+            type: string
+            format: uuid
+        - name: obraTitulo
+          in: query
+          description: Filtro por título da obra (parcial, case-insensitive)
+          schema:
+            type: string
+            example: "meu bem"
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [PENDENTE_VALIDACAO, PENDENTE_DOCUMENTACAO, LIBERADO, DEPURADO]
+        - name: pais
+          in: query
+          description: Filtro por país de origem (parcial)
+          schema:
+            type: string
+            example: "Brasil"
+      responses:
+        "200":
+          description: Lista paginada de fonogramas
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FonogramaListResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+      x-frontend-notes: |
+        Debounce 300ms nos campos texto. ISRC em font-mono.
+        Badge status: PENDENTE_* (warning), LIBERADO (success), DEPURADO (secondary).
+
+    post:
+      summary: Criar novo fonograma
+      description: |
+        Cria fonograma vinculado a uma obra existente com status PENDENTE_VALIDACAO.
+        ISRC deve seguir formato CC-XXX-YY-NNNNN e ser único no sistema.
+      operationId: criarFonograma
+      tags:
+        - Fonogramas
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CriarFonogramaRequest"
+      responses:
+        "201":
+          description: Fonograma criado com sucesso
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FonogramaResponse"
+          headers:
+            Location:
+              schema:
+                type: string
+                example: "/api/v1/fonogramas/a1b2c3d4-..."
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "409":
+          $ref: "#/components/responses/ConflictIsrc"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /fonogramas/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+
+    get:
+      summary: Buscar fonograma por ID
+      description: |
+        Retorna dados completos do fonograma incluindo obra resumida e `fonogramaDepuradoParaId`.
+      operationId: buscarFonogramaPorId
+      tags:
+        - Fonogramas
+      responses:
+        "200":
+          description: Fonograma encontrado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FonogramaResponse"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+    put:
+      summary: Atualizar fonograma
+      description: |
+        Atualiza dados editáveis. Obra é imutável.
+
+        **ISRC em PENDENTE:** edição livre (valida formato + unicidade).
+        **ISRC em LIBERADO:** retorna 409 DEPURACAO_NECESSARIA.
+        **País e datas:** editáveis livremente mesmo em LIBERADO.
+        **DEPURADO:** rejeita qualquer edição.
+      operationId: atualizarFonograma
+      tags:
+        - Fonogramas
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AtualizarFonogramaRequest"
+      responses:
+        "200":
+          description: Fonograma atualizado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FonogramaResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/ConflictDepuracao"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+    delete:
+      summary: Excluir fonograma
+      description: |
+        Exclusão permitida APENAS em status PENDENTE_VALIDACAO ou PENDENTE_DOCUMENTACAO.
+        LIBERADO e DEPURADO não podem ser excluídos.
+      operationId: excluirFonograma
+      tags:
+        - Fonogramas
+      responses:
+        "204":
+          description: Fonograma excluído
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/ConflictStatusExclusao"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /fonogramas/{id}/depurar:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+
+    post:
+      summary: Depurar fonograma e criar nova versão
+      description: |
+        Depura fonograma LIBERADO: original torna-se DEPURADO (imutável),
+        novo fonograma criado com dados atualizados na mesma obra, sem participações conexas.
+
+        Pré-requisito: status LIBERADO.
+      operationId: depurarFonograma
+      tags:
+        - Fonogramas
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DepurarFonogramaRequest"
+      responses:
+        "201":
+          description: Fonograma depurado e novo criado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DepuracaoFonogramaResponse"
+          headers:
+            Location:
+              schema:
+                type: string
+                example: "/api/v1/fonogramas/novo-id-..."
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/ConflictStatusInvalido"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /obras/{obraId}/fonogramas:
+    parameters:
+      - name: obraId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+
+    get:
+      summary: Listar fonogramas de uma obra
+      description: |
+        Retorna todos os fonogramas vinculados a uma obra específica (sem paginação — volume pequeno por obra).
+      operationId: listarFonogramasDaObra
+      tags:
+        - Fonogramas da Obra
+      responses:
+        "200":
+          description: Fonogramas da obra
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/FonogramaResumoResponse"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+      x-frontend-notes: |
+        Seção na ObraDetailPage. Tabela simples: ISRC (mono), status (badge), país, data lançamento.
+        Botão "Novo Fonograma" → /cadastro/fonogramas/novo?obraId={id}.
+
+components:
+
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  responses:
+    BadRequest:
+      description: Erro de validação
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ProblemDetails"
+          example:
+            type: "https://tools.ietf.org/html/rfc7231#section-6.5.1"
+            title: "Validation Error"
+            status: 400
+            detail: "ISRC deve seguir formato CC-XXX-YY-NNNNN"
+
+    NotFound:
+      description: Recurso não encontrado
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ProblemDetails"
+
+    ConflictIsrc:
+      description: ISRC já existe no sistema
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ProblemDetails"
+          example:
+            type: "https://tools.ietf.org/html/rfc7231#section-6.5.8"
+            title: "Conflict"
+            status: 409
+            detail: "Já existe um fonograma com o ISRC 'BR-ABC-23-12345'"
+
+    ConflictDepuracao:
+      description: Alteração requer depuração
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ProblemDetails"
+          example:
+            type: "https://tools.ietf.org/html/rfc7231#section-6.5.8"
+            title: "Depuração Necessária"
+            status: 409
+            detail: "Alterar o ISRC de um fonograma LIBERADO requer depuração"
+            code: "DEPURACAO_NECESSARIA"
+
+    ConflictStatusExclusao:
+      description: Status não permite exclusão
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ProblemDetails"
+          example:
+            type: "https://tools.ietf.org/html/rfc7231#section-6.5.8"
+            title: "Conflict"
+            status: 409
+            detail: "Fonogramas liberados ou depurados não podem ser excluídos"
+
+    ConflictStatusInvalido:
+      description: Operação não permitida para o status atual
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ProblemDetails"
+
+    UnprocessableEntity:
+      description: Regra de negócio violada
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ProblemDetails"
+
+    InternalServerError:
+      description: Erro interno
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ProblemDetails"
+
+  schemas:
+
+    FonogramaResponse:
+      type: object
+      required:
+        - id
+        - isrc
+        - isrcFormatado
+        - obra
+        - paisOrigem
+        - status
+        - criadoEm
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "b1c2d3e4-f5a6-7890-bcde-f12345678901"
+        isrc:
+          type: string
+          description: "ISRC sem formatação (12 chars alfanumérico)"
+          example: "BRABC2312345"
+        isrcFormatado:
+          type: string
+          description: "ISRC formatado: CC-XXX-YY-NNNNN"
+          example: "BR-ABC-23-12345"
+        obra:
+          $ref: "#/components/schemas/ObraResumoResponse"
+        paisOrigem:
+          type: string
+          maxLength: 100
+          example: "Brasil"
+        dataGravacao:
+          type: string
+          format: date
+          nullable: true
+          example: "2023-06-15"
+        dataLancamento:
+          type: string
+          format: date
+          nullable: true
+          example: "2023-09-01"
+        status:
+          type: string
+          enum: [PENDENTE_VALIDACAO, PENDENTE_DOCUMENTACAO, LIBERADO, DEPURADO]
+          description: |
+            - `PENDENTE_VALIDACAO`: Aguardando participações conexas e validação
+            - `PENDENTE_DOCUMENTACAO`: Participações ok mas documentação incompleta
+            - `LIBERADO`: Pronto para distribuição
+            - `DEPURADO`: Imutável — substituído por nova versão
+          example: "PENDENTE_VALIDACAO"
+        fonogramaDepuradoParaId:
+          type: string
+          format: uuid
+          nullable: true
+          description: "ID do novo fonograma (se DEPURADO)"
+          example: null
+        criadoEm:
+          type: string
+          format: date-time
+          example: "2026-03-31T10:00:00Z"
+        atualizadoEm:
+          type: string
+          format: date-time
+          example: "2026-03-31T10:00:00Z"
+
+    FonogramaResumoResponse:
+      type: object
+      description: "Resumo para listagem na tela de obra"
+      required:
+        - id
+        - isrcFormatado
+        - status
+        - paisOrigem
+      properties:
+        id:
+          type: string
+          format: uuid
+        isrcFormatado:
+          type: string
+          example: "BR-ABC-23-12345"
+        status:
+          type: string
+          enum: [PENDENTE_VALIDACAO, PENDENTE_DOCUMENTACAO, LIBERADO, DEPURADO]
+        paisOrigem:
+          type: string
+          example: "Brasil"
+        dataLancamento:
+          type: string
+          format: date
+          nullable: true
+
+    ObraResumoResponse:
+      type: object
+      required:
+        - id
+        - titulo
+        - status
+      properties:
+        id:
+          type: string
+          format: uuid
+        titulo:
+          type: string
+          example: "Meu Bem Querer"
+        status:
+          type: string
+          example: "LIBERADO"
+
+    CriarFonogramaRequest:
+      type: object
+      required:
+        - isrc
+        - obraId
+        - paisOrigem
+      properties:
+        isrc:
+          type: string
+          description: "ISRC sem formatação (12 chars). Formato validado: CC-XXX-YY-NNNNN"
+          minLength: 12
+          maxLength: 12
+          example: "BRABC2312345"
+        obraId:
+          type: string
+          format: uuid
+          example: "d1e2f3a4-b5c6-7890-abcd-ef1234567890"
+        paisOrigem:
+          type: string
+          minLength: 1
+          maxLength: 100
+          example: "Brasil"
+        dataGravacao:
+          type: string
+          format: date
+          nullable: true
+          example: "2023-06-15"
+        dataLancamento:
+          type: string
+          format: date
+          nullable: true
+          example: "2023-09-01"
+
+    AtualizarFonogramaRequest:
+      type: object
+      description: "Dados editáveis. Obra é imutável. ISRC editável apenas em PENDENTE."
+      required:
+        - isrc
+        - paisOrigem
+      properties:
+        isrc:
+          type: string
+          minLength: 12
+          maxLength: 12
+          description: "ISRC sem formatação. Se diferente do atual em fonograma LIBERADO → 409."
+          example: "BRABC2312345"
+        paisOrigem:
+          type: string
+          minLength: 1
+          maxLength: 100
+          example: "Brasil"
+        dataGravacao:
+          type: string
+          format: date
+          nullable: true
+        dataLancamento:
+          type: string
+          format: date
+          nullable: true
+
+    DepurarFonogramaRequest:
+      type: object
+      required:
+        - isrc
+        - paisOrigem
+      properties:
+        isrc:
+          type: string
+          minLength: 12
+          maxLength: 12
+          example: "BRABC2399999"
+        paisOrigem:
+          type: string
+          maxLength: 100
+          example: "Brasil"
+        dataGravacao:
+          type: string
+          format: date
+          nullable: true
+        dataLancamento:
+          type: string
+          format: date
+          nullable: true
+
+    DepuracaoFonogramaResponse:
+      type: object
+      required:
+        - fonogramaDepurado
+        - novoFonograma
+      properties:
+        fonogramaDepurado:
+          $ref: "#/components/schemas/FonogramaResponse"
+        novoFonograma:
+          $ref: "#/components/schemas/FonogramaResponse"
+
+    FonogramaListResponse:
+      type: object
+      required:
+        - data
+        - pagination
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/FonogramaResponse"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+
+    Pagination:
+      type: object
+      required:
+        - page
+        - size
+        - total
+        - totalPages
+      properties:
+        page:
+          type: integer
+          example: 1
+        size:
+          type: integer
+          example: 20
+        total:
+          type: integer
+          example: 45
+        totalPages:
+          type: integer
+          example: 3
+
+    ProblemDetails:
+      type: object
+      required:
+        - type
+        - title
+        - status
+      properties:
+        type:
+          type: string
+          format: uri
+        title:
+          type: string
+        status:
+          type: integer
+        detail:
+          type: string
+        instance:
+          type: string
+        code:
+          type: string
+          nullable: true
+        traceId:
+          type: string
+          nullable: true
+        errors:
+          type: array
+          nullable: true
+          items:
+            type: object
+            properties:
+              field:
+                type: string
+              message:
+                type: string
