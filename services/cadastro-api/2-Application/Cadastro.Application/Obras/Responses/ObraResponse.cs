@@ -13,5 +13,6 @@ public record ObraResponse(
     bool DominioPublico,
     Guid? ObraDepuradaParaId,
     DateTime CriadoEm,
-    DateTime AtualizadoEm
+    DateTime AtualizadoEm,
+    string? BloqueioJustificativa = null
 );

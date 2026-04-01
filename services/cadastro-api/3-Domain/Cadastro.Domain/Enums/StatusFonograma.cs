@@ -5,5 +5,6 @@ public enum StatusFonograma
     PendenteValidacao,
     PendenteDocumentacao,
     Liberado,
+    Bloqueado,
     Depurado
 }

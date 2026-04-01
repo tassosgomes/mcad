@@ -43,6 +43,7 @@ public class GlobalExceptionHandler : IExceptionHandler
             DomainException => (StatusCodes.Status422UnprocessableEntity, "Unprocessable Entity"),
             ExternalServiceException => (StatusCodes.Status502BadGateway, "Bad Gateway"),
             DepuracaoNecessariaException => (StatusCodes.Status409Conflict, "Depuração Necessária"),
+            PreRequisitosException => (StatusCodes.Status422UnprocessableEntity, "Pré-requisitos não atendidos"),
             _ => (StatusCodes.Status500InternalServerError, "Internal Server Error")
         };
         var problemDetails = new ProblemDetails
@@ -56,6 +57,21 @@ public class GlobalExceptionHandler : IExceptionHandler
         if (exception is DepuracaoNecessariaException depException)
         {
             problemDetails.Extensions["code"] = depException.Code;
+        }
+
+        if (exception is PreRequisitosException preReqException)
+        {
+            var response = new Cadastro.Application.Status.Responses.PreRequisitosResponse(
+                "https://tools.ietf.org/html/rfc9110#section-15.5.21", // 422 Type
+                title,
+                statusCode,
+                exception.Message,
+                preReqException.Pendencias
+            );
+            
+            httpContext.Response.StatusCode = statusCode;
+            await httpContext.Response.WriteAsJsonAsync(response, cancellationToken);
+            return true;
         }
 
         httpContext.Response.StatusCode = statusCode;

@@ -9,7 +9,7 @@ public class ObraMusicalConfiguration : IEntityTypeConfiguration<ObraMusical>
 {
     public void Configure(EntityTypeBuilder<ObraMusical> builder)
     {
-        builder.ToTable("obras_musicais");
+        // table is configured below with constraint
 
         builder.HasKey(o => o.Id);
 
@@ -39,12 +39,24 @@ public class ObraMusicalConfiguration : IEntityTypeConfiguration<ObraMusical>
             .HasMaxLength(20)
             .IsRequired(false);
 
+        builder.Property(o => o.BloqueioJustificativa)
+            .HasMaxLength(500)
+            .IsRequired(false);
+
         builder.Property(o => o.Status)
             .HasConversion(
                 v => v == StatusObra.DominioPublico ? "DOMINIO_PUBLICO" : v.ToString().ToUpperInvariant(),
                 v => v == "DOMINIO_PUBLICO" ? StatusObra.DominioPublico : Enum.Parse<StatusObra>(v, true))
             .HasColumnType("VARCHAR(20)")
             .IsRequired();
+            
+        // Validar constraint do banco de dados (Check constraint) não está aqui explicitamente, 
+        // mas seria bom adicionar se existir no schema. No schema do PRD tem `ck_obras_status`
+        // Não vimos a declaração da tabela com check constraints aqui antes para Obra (diferente do Fonograma) mas posso add
+        builder.ToTable("obras_musicais", tb =>
+        {
+            tb.HasCheckConstraint("ck_obras_status", "\"Status\" IN ('PENDENTE', 'LIBERADO', 'BLOQUEADO', 'DOMINIO_PUBLICO', 'DEPURADA')");
+        });
 
         builder.Property(o => o.DominioPublico)
             .IsRequired();

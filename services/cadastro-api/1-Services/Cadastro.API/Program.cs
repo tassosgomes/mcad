@@ -37,6 +37,7 @@ builder.Services.AddScoped<IObraRepository, ObraRepository>();
 builder.Services.AddScoped<ITitularidadeRepository, TitularidadeRepository>();
 builder.Services.AddScoped<IFonogramaRepository, FonogramaRepository>();
 builder.Services.AddScoped<IParticipacaoRepository, ParticipacaoRepository>();
+builder.Services.AddScoped<IHistoricoBloqueioRepository, HistoricoBloqueioRepository>();
 
 // ─── HttpClient + Polly ────────────────────────────────────────────────
 builder.Services.AddHttpClient<IIswcService, Cadastro.Infra.ExternalServices.IswcService>(client =>

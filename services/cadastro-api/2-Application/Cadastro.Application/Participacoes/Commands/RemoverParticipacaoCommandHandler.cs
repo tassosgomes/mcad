@@ -46,6 +46,7 @@ public class RemoverParticipacaoCommandHandler : ICommandHandler<RemoverParticip
         if (tinhaCalculo)
         {
             fonograma.MarcarPercentuaisDesatualizados();
+            fonograma.RetornarParaPendenteValidacao();
             _fonogramaRepository.Update(fonograma);
         }
 

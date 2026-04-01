@@ -12,7 +12,7 @@ public class FonogramaConfiguration : IEntityTypeConfiguration<Fonograma>
     {
         builder.ToTable("fonogramas", tb =>
         {
-            tb.HasCheckConstraint("ck_fonogramas_status", "\"Status\" IN ('PENDENTE_VALIDACAO', 'PENDENTE_DOCUMENTACAO', 'LIBERADO', 'DEPURADO')");
+            tb.HasCheckConstraint("ck_fonogramas_status", "\"Status\" IN ('PENDENTE_VALIDACAO', 'PENDENTE_DOCUMENTACAO', 'LIBERADO', 'BLOQUEADO', 'DEPURADO')");
         });
 
         builder.HasKey(f => f.Id);
@@ -33,6 +33,14 @@ public class FonogramaConfiguration : IEntityTypeConfiguration<Fonograma>
 
         builder.Property(f => f.DataGravacao)
             .HasColumnType("DATE")
+            .IsRequired(false);
+
+        builder.Property(f => f.UrlAudio)
+            .HasColumnType("VARCHAR(500)")
+            .IsRequired(false);
+
+        builder.Property(f => f.BloqueioJustificativa)
+            .HasColumnType("VARCHAR(500)")
             .IsRequired(false);
 
         builder.Property(f => f.DataLancamento)

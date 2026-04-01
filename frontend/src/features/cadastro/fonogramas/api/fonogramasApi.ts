@@ -1,4 +1,4 @@
-import { apiGet, apiPost, apiPut, apiDelete } from '@services/apiClient';
+import { apiGet, apiPost, apiPut, apiDelete, apiPatch } from '@services/apiClient';
 import type {
   Fonograma,
   FonogramaListResponse,
@@ -47,3 +47,24 @@ export function excluirFonograma(id: string): Promise<void> {
 export function depurarFonograma(id: string, data: DepurarFonogramaRequest): Promise<DepuracaoFonogramaResponse> {
   return apiPost<DepuracaoFonogramaResponse>(`/fonogramas/${id}/depurar`, data);
 }
+
+export function liberarFonograma(id: string): Promise<Fonograma> {
+  return apiPost<Fonograma>(`/fonogramas/${id}/liberar`, {});
+}
+
+export function bloquearFonograma(id: string, data: { justificativa: string }): Promise<Fonograma> {
+  return apiPost<Fonograma>(`/fonogramas/${id}/bloquear`, data);
+}
+
+export function desbloquearFonograma(id: string): Promise<Fonograma> {
+  return apiPost<Fonograma>(`/fonogramas/${id}/desbloquear`, {});
+}
+
+export function getHistoricoFonograma(id: string): Promise<import('../../obras/types/obra').HistoricoBloqueioItem[]> {
+  return apiGet<import('../../obras/types/obra').HistoricoBloqueioItem[]>(`/fonogramas/${id}/historico-bloqueios`);
+}
+
+export function definirUrlAudio(id: string, data: { url: string | null }): Promise<Fonograma> {
+  return apiPatch<Fonograma>(`/fonogramas/${id}/url-audio`, data); 
+}
+

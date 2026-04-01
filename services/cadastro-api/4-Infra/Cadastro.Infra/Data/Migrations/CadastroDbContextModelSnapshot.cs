@@ -118,6 +118,9 @@ namespace Cadastro.Infra.Data.Migrations
                     b.Property<DateTime>("AtualizadoEm")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<string>("BloqueioJustificativa")
+                        .HasColumnType("VARCHAR(500)");
+
                     b.Property<DateTime>("CriadoEm")
                         .HasColumnType("timestamp with time zone");
 
@@ -148,6 +151,9 @@ namespace Cadastro.Infra.Data.Migrations
                         .IsRequired()
                         .HasColumnType("VARCHAR(25)");
 
+                    b.Property<string>("UrlAudio")
+                        .HasColumnType("VARCHAR(500)");
+
                     b.HasKey("Id");
 
                     b.HasIndex("FonogramaDepuradoParaId")
@@ -167,7 +173,45 @@ namespace Cadastro.Infra.Data.Migrations
 
                     b.ToTable("fonogramas", "cadastro", t =>
                         {
-                            t.HasCheckConstraint("ck_fonogramas_status", "\"Status\" IN ('PENDENTE_VALIDACAO', 'PENDENTE_DOCUMENTACAO', 'LIBERADO', 'DEPURADO')");
+                            t.HasCheckConstraint("ck_fonogramas_status", "\"Status\" IN ('PENDENTE_VALIDACAO', 'PENDENTE_DOCUMENTACAO', 'LIBERADO', 'BLOQUEADO', 'DEPURADO')");
+                        });
+                });
+
+            modelBuilder.Entity("Cadastro.Domain.Entities.HistoricoBloqueio", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Acao")
+                        .IsRequired()
+                        .HasColumnType("VARCHAR(15)");
+
+                    b.Property<DateTime>("DataHora")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TIMESTAMPTZ")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                    b.Property<Guid>("EntidadeId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("EntidadeTipo")
+                        .IsRequired()
+                        .HasColumnType("VARCHAR(15)");
+
+                    b.Property<string>("Justificativa")
+                        .HasColumnType("VARCHAR(500)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EntidadeTipo", "EntidadeId")
+                        .HasDatabaseName("ix_historico_entidade");
+
+                    b.ToTable("historico_bloqueios", "cadastro", t =>
+                        {
+                            t.HasCheckConstraint("ck_historico_acao", "\"Acao\" IN ('BLOQUEIO', 'DESBLOQUEIO')");
+
+                            t.HasCheckConstraint("ck_historico_tipo", "\"EntidadeTipo\" IN ('OBRA', 'FONOGRAMA')");
                         });
                 });
 
@@ -179,6 +223,10 @@ namespace Cadastro.Infra.Data.Migrations
 
                     b.Property<DateTime>("AtualizadoEm")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("BloqueioJustificativa")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
 
                     b.Property<DateTime>("CriadoEm")
                         .HasColumnType("timestamp with time zone");
@@ -231,7 +279,10 @@ namespace Cadastro.Infra.Data.Migrations
                     b.HasIndex("Tipo")
                         .HasDatabaseName("ix_obras_tipo");
 
-                    b.ToTable("obras_musicais", "cadastro");
+                    b.ToTable("obras_musicais", "cadastro", t =>
+                        {
+                            t.HasCheckConstraint("ck_obras_status", "\"Status\" IN ('PENDENTE', 'LIBERADO', 'BLOQUEADO', 'DOMINIO_PUBLICO', 'DEPURADA')");
+                        });
                 });
 
             modelBuilder.Entity("Cadastro.Domain.Entities.ParticipacaoConexa", b =>

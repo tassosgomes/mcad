@@ -9,6 +9,17 @@ import { Badge } from '@components/ui/badge';
 import { useFonograma } from '../hooks/useFonograma';
 import { useUpdateFonograma } from '../hooks/useUpdateFonograma';
 import { useDeleteFonograma } from '../hooks/useDeleteFonograma';
+import { useLiberarFonograma } from '../hooks/useLiberarFonograma';
+import { useBloquearFonograma } from '../hooks/useBloquearFonograma';
+import { useDesbloquearFonograma } from '../hooks/useDesbloquearFonograma';
+import { useHistoricoFonograma } from '../hooks/useHistoricoFonograma';
+
+import { LiberarButton, BloquearButton, DesbloquearButton } from '@shared/components/ui/status-actions';
+import { BloqueioBanner } from '@shared/components/ui/bloqueio-banner';
+import { BloqueioModal } from '@shared/components/ui/bloqueio-modal';
+import { ChecklistPreRequisitos } from '@shared/components/ui/checklist-prereqs';
+import { HistoricoBloqueios } from '@shared/components/ui/historico-bloqueios';
+import { PreRequisitoItem } from '@features/cadastro/obras/types/obra';
 
 import { FonogramaForm } from '../components/FonogramaForm';
 import { FonogramaDepuracaoBanner } from '../components/FonogramaDepuracaoBanner';
@@ -36,16 +47,26 @@ export function FonogramaDetailPage() {
   const { data: fonograma, isLoading, error, refetch } = useFonograma(id);
   const updateMutation = useUpdateFonograma();
   const deleteMutation = useDeleteFonograma();
+  
+  const liberarMutation = useLiberarFonograma();
+  const bloquearMutation = useBloquearFonograma();
+  const desbloquearMutation = useDesbloquearFonograma();
+  const { data: historico } = useHistoricoFonograma(id!);
 
   const [depuracaoData, setDepuracaoData] = useState<any>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showDepuracaoModal, setShowDepuracaoModal] = useState(false);
+  const [showBloqueioModal, setShowBloqueioModal] = useState(false);
+  const [pendenciasValidacao, setPendenciasValidacao] = useState<PreRequisitoItem[]>([]);
 
   if (isLoading) return <Loading />;
   if (error || !fonograma) return <ErrorState message="Erro ao carregar fonograma" onRetry={refetch} />;
 
-  const isLiberadoOuDepurado = fonograma.status === 'Liberado' || fonograma.status === 'Depurado';
-  const isDepurado = fonograma.status === 'Depurado';
+  const isLiberadoOuDepurado = fonograma.status === 'Liberado' || fonograma.status.toUpperCase() === 'LIBERADO' || fonograma.status === 'Depurado' || fonograma.status.toUpperCase() === 'DEPURADO';
+  const isDepurado = fonograma.status === 'Depurado' || fonograma.status.toUpperCase() === 'DEPURADO';
+  const isBloqueado = fonograma.status === 'Bloqueado' || fonograma.status.toUpperCase() === 'BLOQUEADO';
+  
+  const fonogramaIsReadOnly = isDepurado || isBloqueado;
 
   const handleUpdate = async (formData: any) => {
     try {
@@ -81,6 +102,35 @@ export function FonogramaDetailPage() {
     }
   };
 
+  const handleLiberar = async () => {
+    if (!id) return;
+    try {
+      setPendenciasValidacao([]);
+      await liberarMutation.mutateAsync(id);
+    } catch (err: any) {
+      if (err.status === 422 && err.pendencias) {
+        setPendenciasValidacao(err.pendencias);
+        showToast('Pré-requisitos não atendidos. Verifique a lista.', 'error');
+      } else {
+        showToast(err.detail || 'Erro ao liberar fonograma.', 'error');
+      }
+    }
+  };
+
+  const statusActions = (
+    <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+      {(!isLiberadoOuDepurado && !isBloqueado) && (
+        <LiberarButton onClick={handleLiberar} isLoading={liberarMutation.isPending} />
+      )}
+      {(isLiberadoOuDepurado || !isBloqueado) && !isDepurado && (
+        <BloquearButton onClick={() => setShowBloqueioModal(true)} />
+      )}
+      {isBloqueado && (
+        <DesbloquearButton onClick={() => desbloquearMutation.mutate(id!)} isLoading={desbloquearMutation.isPending} />
+      )}
+    </div>
+  );
+
   return (
     <div className={styles.page}>
       <div style={{ marginBottom: '-1rem' }}>
@@ -104,6 +154,14 @@ export function FonogramaDetailPage() {
       />
 
       <div className={styles.content}>
+        {isBloqueado && fonograma.bloqueioJustificativa && (
+          <BloqueioBanner justificativa={fonograma.bloqueioJustificativa} />
+        )}
+        
+        {pendenciasValidacao.length > 0 && (
+          <ChecklistPreRequisitos pendencias={pendenciasValidacao} />
+        )}
+        
         {isDepurado && (
           <FonogramaDepuracaoBanner
             fonogramaDepuradoParaId={fonograma.fonogramaDepuradoParaId}
@@ -159,6 +217,18 @@ export function FonogramaDetailPage() {
         onConfirm={handleDelete}
         isDeleting={deleteMutation.isPending}
         isrcFormatted={formatIsrc(fonograma.isrcFormatado)}
+      />
+
+      <BloqueioModal
+        isOpen={showBloqueioModal}
+        onClose={() => setShowBloqueioModal(false)}
+        onConfirm={(justificativa) => {
+          bloquearMutation.mutate({ id: id!, justificativa }, {
+            onSuccess: () => setShowBloqueioModal(false)
+          });
+        }}
+        isLoading={bloquearMutation.isPending}
+        entityName="fonograma"
       />
     </div>
   );

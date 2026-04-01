@@ -51,3 +51,19 @@ export function depurarObra(id: string, data: DepurarObraRequest): Promise<Depur
 export function alterarDominioPublico(id: string, data: DominioPublicoRequest): Promise<ObraMusical> {
   return apiPut<ObraMusical>(`/obras/${id}/dominio-publico`, data);
 }
+
+export function liberarObra(id: string): Promise<ObraMusical> {
+  return apiPost<ObraMusical>(`/obras/${id}/liberar`, {});
+}
+
+export function bloquearObra(id: string, data: import('../types/obra').BloquearRequest): Promise<ObraMusical> {
+  return apiPost<ObraMusical>(`/obras/${id}/bloquear`, data);
+}
+
+export function desbloquearObra(id: string): Promise<ObraMusical> {
+  return apiPost<ObraMusical>(`/obras/${id}/desbloquear`, {});
+}
+
+export function getHistoricoObra(id: string): Promise<import('../types/obra').HistoricoBloqueioItem[]> {
+  return apiGet<import('../types/obra').HistoricoBloqueioItem[]>(`/obras/${id}/historico-bloqueios`);
+}

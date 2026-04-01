@@ -39,6 +39,7 @@ public class CalcularPercentuaisCommandHandler : ICommandHandler<CalcularPercent
         CalculadoraConexos.Calcular(participacoes);
 
         fonograma.MarcarPercentuaisAtualizados();
+        fonograma.TransicionarParaPendenteDocumentacao();
         _fonogramaRepository.Update(fonograma);
 
         await _repository.SaveChangesAsync(cancellationToken);

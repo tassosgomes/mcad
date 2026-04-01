@@ -1,0 +1,482 @@
+openapi: 3.1.0
+
+info:
+  title: "Cadastro API — Controle de Status"
+  description: |
+    API para controle de status de Obras e Fonogramas: liberação com validação de pré-requisitos,
+    bloqueio com justificativa, desbloqueio e campo urlAudio no fonograma.
+
+    **Contrato gerado a partir do PRD:** `tasks/prd-controle-status/prd.md`
+    **Data de geração:** 2026-04-01
+
+    ## Premissas Adotadas
+    - Endpoints de ação (liberar/bloquear/desbloquear) como sub-resources POST
+    - Liberação é manual — sistema valida pré-requisitos mas não transiciona automaticamente
+    - Bloqueio exige justificativa obrigatória (mín 10 chars)
+    - Desbloqueio retorna para PENDENTE (não direto para LIBERADO)
+    - Transição automática fonograma PENDENTE_VALIDACAO → PENDENTE_DOCUMENTACAO feita no backend (F06 CalcularHandler)
+    - urlAudio adicionado ao fonograma (texto, PUT existente)
+    - Erros: RFC 7807 ProblemDetails
+  version: "1.0.0"
+  contact:
+    name: "Time de Plataforma ECAD"
+
+servers:
+  - url: http://localhost:5001/api/v1
+    description: Desenvolvimento local (cadastro-api)
+
+security:
+  - BearerAuth: []
+
+tags:
+  - name: Status de Obras
+    description: "Liberação, bloqueio e desbloqueio de obras musicais"
+  - name: Status de Fonogramas
+    description: "Liberação, bloqueio e desbloqueio de fonogramas"
+  - name: Histórico de Bloqueios
+    description: "Consulta de histórico de bloqueios/desbloqueios"
+
+paths:
+
+  /obras/{id}/liberar:
+    parameters:
+      - $ref: "#/components/parameters/EntityId"
+    post:
+      summary: Liberar obra musical
+      description: |
+        Valida pré-requisitos e transiciona obra de PENDENTE para LIBERADO.
+
+        **Pré-requisitos validados:**
+        - Título preenchido
+        - Tipo preenchido
+        - ISWC preenchido (obtido via F03)
+        - Soma das titularidades autorais = 100.0000% (F04)
+
+        **Status permitido:** apenas PENDENTE.
+        Obra pode ser liberada independente do status dos fonogramas.
+      operationId: liberarObra
+      tags:
+        - Status de Obras
+      responses:
+        "200":
+          description: Obra liberada com sucesso
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ObraResponse"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/ConflictStatusInvalido"
+        "422":
+          $ref: "#/components/responses/PreRequisitosNaoAtendidos"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+      x-frontend-notes: |
+        Botão "Liberar" (primary/success) com ícone CheckCircle.
+        Visível apenas em PENDENTE. Se 422, exibir lista de pendências retornada.
+
+  /obras/{id}/bloquear:
+    parameters:
+      - $ref: "#/components/parameters/EntityId"
+    post:
+      summary: Bloquear obra musical
+      description: |
+        Bloqueia obra com justificativa obrigatória. Obra BLOQUEADA não pode ser editada.
+        **Status permitido:** PENDENTE ou LIBERADO.
+      operationId: bloquearObra
+      tags:
+        - Status de Obras
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BloquearRequest"
+      responses:
+        "200":
+          description: Obra bloqueada com sucesso
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ObraResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/ConflictStatusInvalido"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /obras/{id}/desbloquear:
+    parameters:
+      - $ref: "#/components/parameters/EntityId"
+    post:
+      summary: Desbloquear obra musical
+      description: |
+        Desbloqueia obra — retorna para PENDENTE (não LIBERADO).
+        **Status permitido:** apenas BLOQUEADO.
+      operationId: desbloquearObra
+      tags:
+        - Status de Obras
+      responses:
+        "200":
+          description: Obra desbloqueada — status retornou para PENDENTE
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ObraResponse"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/ConflictStatusInvalido"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /fonogramas/{id}/liberar:
+    parameters:
+      - $ref: "#/components/parameters/EntityId"
+    post:
+      summary: Liberar fonograma
+      description: |
+        Valida pré-requisitos e transiciona fonograma para LIBERADO.
+
+        **Pré-requisitos validados:**
+        - ISRC preenchido
+        - Participações conexas soma = 100%
+        - Obra vinculada com status LIBERADO
+        - URL de áudio preenchida
+
+        **Status permitido:** apenas PENDENTE_DOCUMENTACAO.
+      operationId: liberarFonograma
+      tags:
+        - Status de Fonogramas
+      responses:
+        "200":
+          description: Fonograma liberado com sucesso
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FonogramaResponse"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/ConflictStatusInvalido"
+        "422":
+          $ref: "#/components/responses/PreRequisitosNaoAtendidos"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /fonogramas/{id}/bloquear:
+    parameters:
+      - $ref: "#/components/parameters/EntityId"
+    post:
+      summary: Bloquear fonograma
+      description: |
+        Bloqueia fonograma com justificativa obrigatória.
+        **Status permitido:** PENDENTE_VALIDACAO, PENDENTE_DOCUMENTACAO ou LIBERADO.
+      operationId: bloquearFonograma
+      tags:
+        - Status de Fonogramas
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BloquearRequest"
+      responses:
+        "200":
+          description: Fonograma bloqueado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FonogramaResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/ConflictStatusInvalido"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /fonogramas/{id}/desbloquear:
+    parameters:
+      - $ref: "#/components/parameters/EntityId"
+    post:
+      summary: Desbloquear fonograma
+      description: |
+        Desbloqueia fonograma — retorna para PENDENTE_VALIDACAO.
+        **Status permitido:** apenas BLOQUEADO.
+      operationId: desbloquearFonograma
+      tags:
+        - Status de Fonogramas
+      responses:
+        "200":
+          description: Fonograma desbloqueado — retornou para PENDENTE_VALIDACAO
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FonogramaResponse"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/ConflictStatusInvalido"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /obras/{id}/historico-bloqueios:
+    parameters:
+      - $ref: "#/components/parameters/EntityId"
+    get:
+      summary: Histórico de bloqueios de uma obra
+      description: Lista cronológica de bloqueios e desbloqueios.
+      operationId: historicoBloqueiobra
+      tags:
+        - Histórico de Bloqueios
+      responses:
+        "200":
+          description: Histórico de bloqueios
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/HistoricoBloqueioItem"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /fonogramas/{id}/historico-bloqueios:
+    parameters:
+      - $ref: "#/components/parameters/EntityId"
+    get:
+      summary: Histórico de bloqueios de um fonograma
+      operationId: historicoBloqueioFonograma
+      tags:
+        - Histórico de Bloqueios
+      responses:
+        "200":
+          description: Histórico de bloqueios
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/HistoricoBloqueioItem"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+components:
+
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    EntityId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+
+  responses:
+    BadRequest:
+      description: Erro de validação
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ProblemDetails"
+          example:
+            type: "https://tools.ietf.org/html/rfc7231#section-6.5.1"
+            title: "Validation Error"
+            status: 400
+            detail: "Justificativa deve ter no mínimo 10 caracteres"
+
+    NotFound:
+      description: Recurso não encontrado
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ProblemDetails"
+
+    ConflictStatusInvalido:
+      description: Status atual não permite esta operação
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ProblemDetails"
+          example:
+            type: "https://tools.ietf.org/html/rfc7231#section-6.5.8"
+            title: "Conflict"
+            status: 409
+            detail: "Obra com status BLOQUEADO não pode ser liberada. Desbloqueie primeiro."
+
+    PreRequisitosNaoAtendidos:
+      description: Pré-requisitos para liberação não atendidos
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/PreRequisitosResponse"
+          example:
+            type: "https://tools.ietf.org/html/rfc7231#section-6.5.1"
+            title: "Pré-requisitos não atendidos"
+            status: 422
+            detail: "Não é possível liberar. Existem pendências."
+            pendencias:
+              - item: "ISWC"
+                atendido: false
+                detalhe: "ISWC não obtido"
+              - item: "Titularidades"
+                atendido: false
+                detalhe: "Soma das titularidades (80.0000%) diferente de 100%"
+              - item: "Título"
+                atendido: true
+              - item: "Tipo"
+                atendido: true
+
+    InternalServerError:
+      description: Erro interno
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ProblemDetails"
+
+  schemas:
+
+    BloquearRequest:
+      type: object
+      required:
+        - justificativa
+      properties:
+        justificativa:
+          type: string
+          minLength: 10
+          maxLength: 500
+          description: "Justificativa obrigatória para o bloqueio (mín 10 chars)"
+          example: "Conflito de titularidade com processo judicial em andamento"
+
+    PreRequisitosResponse:
+      type: object
+      description: "Detalhes dos pré-requisitos de liberação"
+      required:
+        - type
+        - title
+        - status
+        - detail
+        - pendencias
+      properties:
+        type:
+          type: string
+          format: uri
+        title:
+          type: string
+        status:
+          type: integer
+        detail:
+          type: string
+        pendencias:
+          type: array
+          items:
+            $ref: "#/components/schemas/PreRequisitoItem"
+
+    PreRequisitoItem:
+      type: object
+      required:
+        - item
+        - atendido
+      properties:
+        item:
+          type: string
+          description: "Nome do pré-requisito"
+          example: "ISWC"
+        atendido:
+          type: boolean
+          description: "true se atendido, false se pendente"
+          example: false
+        detalhe:
+          type: string
+          nullable: true
+          description: "Detalhe adicional quando não atendido"
+          example: "ISWC não obtido"
+
+    HistoricoBloqueioItem:
+      type: object
+      required:
+        - id
+        - acao
+        - dataHora
+      properties:
+        id:
+          type: string
+          format: uuid
+        acao:
+          type: string
+          enum: [BLOQUEIO, DESBLOQUEIO]
+        justificativa:
+          type: string
+          nullable: true
+          description: "Presente apenas em BLOQUEIO"
+          example: "Conflito de titularidade"
+        dataHora:
+          type: string
+          format: date-time
+          example: "2026-04-01T10:30:00Z"
+
+    ObraResponse:
+      description: "Reutiliza schema existente de F03 — inclui campo bloqueioJustificativa"
+      type: object
+      properties:
+        bloqueioJustificativa:
+          type: string
+          nullable: true
+          description: "Justificativa do último bloqueio (null se não bloqueado)"
+          example: null
+
+    FonogramaResponse:
+      description: "Reutiliza schema existente de F05 — inclui campos urlAudio e bloqueioJustificativa"
+      type: object
+      properties:
+        urlAudio:
+          type: string
+          nullable: true
+          description: "URL do áudio do fonograma (texto livre)"
+          example: "https://storage.ecad.org.br/audio/BRABC2312345.mp3"
+        bloqueioJustificativa:
+          type: string
+          nullable: true
+          description: "Justificativa do último bloqueio"
+          example: null
+
+    ProblemDetails:
+      type: object
+      required:
+        - type
+        - title
+        - status
+      properties:
+        type:
+          type: string
+          format: uri
+        title:
+          type: string
+        status:
+          type: integer
+        detail:
+          type: string
+        instance:
+          type: string
+        code:
+          type: string
+          nullable: true
+        traceId:
+          type: string
+          nullable: true

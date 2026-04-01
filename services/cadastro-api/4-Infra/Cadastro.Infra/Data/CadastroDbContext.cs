@@ -16,6 +16,7 @@ public class CadastroDbContext : DbContext
     public DbSet<TitularidadeAutoral> TitularidadesAutorais => Set<TitularidadeAutoral>();
     public DbSet<Fonograma> Fonogramas => Set<Fonograma>();
     public DbSet<ParticipacaoConexa> ParticipacoesConexas => Set<ParticipacaoConexa>();
+    public DbSet<HistoricoBloqueio> HistoricoBloqueios => Set<HistoricoBloqueio>();
 
     public CadastroDbContext(DbContextOptions<CadastroDbContext> options) : base(options)
     {
@@ -33,6 +34,7 @@ public class CadastroDbContext : DbContext
         modelBuilder.ApplyConfiguration(new TitularidadeAutoralConfiguration());
         modelBuilder.ApplyConfiguration(new FonogramaConfiguration());
         modelBuilder.ApplyConfiguration(new ParticipacaoConexaConfiguration());
+        modelBuilder.ApplyConfiguration(new HistoricoBloqueioConfiguration());
 
         base.OnModelCreating(modelBuilder);
     }

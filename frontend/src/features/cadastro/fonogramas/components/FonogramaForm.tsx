@@ -25,6 +25,7 @@ export function FonogramaForm({ initialData, initialObraId, initialObraTitulo, o
   const [paisOrigem, setPaisOrigem] = useState(initialData?.paisOrigem || 'BR');
   const [dataGravacao, setDataGravacao] = useState(initialData?.dataGravacao || '');
   const [dataLancamento, setDataLancamento] = useState(initialData?.dataLancamento || '');
+  const [urlAudio, setUrlAudio] = useState(initialData?.urlAudio || '');
 
   const validateIsrc = (value: string) => {
     if (!value) {
@@ -47,11 +48,12 @@ export function FonogramaForm({ initialData, initialObraId, initialObraTitulo, o
       return;
     }
 
-    const payload: CriarFonogramaRequest | AtualizarFonogramaRequest = {
+    const payload = {
       isrc: isrc.replace(/-/g, ''),
       paisOrigem,
       dataGravacao: dataGravacao || undefined,
       dataLancamento: dataLancamento || undefined,
+      urlAudio: urlAudio || undefined,
       ...(isEditing ? {} : { obraId }),
     };
 
@@ -139,6 +141,19 @@ export function FonogramaForm({ initialData, initialObraId, initialObraTitulo, o
             value={dataLancamento}
             onChange={(e) => setDataLancamento(e.target.value)}
             disabled={initialData?.status === 'Depurado'}
+          />
+        </div>
+        
+        {/* URL Áudio */}
+        <div className={styles.formGroup} style={{ gridColumn: '1 / -1' }}>
+          <label className={styles.label}>URL do Áudio (Opcional)</label>
+          <input
+            type="url"
+            className={styles.input}
+            placeholder="https://storage.example.com/audio.mp3"
+            value={urlAudio}
+            onChange={(e) => setUrlAudio(e.target.value)}
+            disabled={initialData?.status === 'Depurado' || (initialData?.status === 'Bloqueado' || initialData?.status?.toUpperCase() === 'BLOQUEADO')}
           />
         </div>
       </div>

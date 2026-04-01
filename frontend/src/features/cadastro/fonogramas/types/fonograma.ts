@@ -12,7 +12,9 @@ export interface Fonograma {
   paisOrigem: string;
   dataGravacao?: string;
   dataLancamento?: string;
-  status: 'Pendente_Validacao' | 'Pendente_Documentacao' | 'Liberado' | 'Depurado';
+  urlAudio?: string | null;
+  bloqueioJustificativa?: string | null;
+  status: 'Pendente_Validacao' | 'PENDENTE_VALIDACAO' | 'Pendente_Documentacao' | 'PENDENTE_DOCUMENTACAO' | 'Liberado' | 'LIBERADO' | 'Bloqueado' | 'BLOQUEADO' | 'Depurado' | 'DEPURADO';
   fonogramaDepuradoParaId?: string;
   criadoEm: string;
   atualizadoEm?: string;

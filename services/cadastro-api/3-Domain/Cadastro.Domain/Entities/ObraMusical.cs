@@ -11,6 +11,7 @@ public class ObraMusical
     public TipoObra Tipo { get; private set; }
     public string? Genero { get; private set; }
     public string? Iswc { get; private set; }
+    public string? BloqueioJustificativa { get; private set; }
     public StatusObra Status { get; private set; }
     public bool DominioPublico { get; private set; }
     public Guid? ObraDepuradaParaId { get; private set; }
@@ -45,11 +46,43 @@ public class ObraMusical
             throw new DomainException("Obras depuradas não podem ser editadas");
         if (Status == StatusObra.DominioPublico)
             throw new DomainException("Obras em Domínio Público não podem ser editadas");
+        if (Status == StatusObra.Bloqueado)
+            throw new DomainException("Obras bloqueadas não podem ser editadas");
 
         Titulo = titulo ?? throw new ArgumentNullException(nameof(titulo));
         Subtitulo = subtitulo;
         Tipo = tipo;
         Genero = genero;
+        AtualizadoEm = DateTime.UtcNow;
+    }
+
+    public void Liberar()
+    {
+        if (Status != StatusObra.Pendente)
+            throw new DomainException("Apenas obras PENDENTES podem ser liberadas");
+        Status = StatusObra.Liberado;
+        AtualizadoEm = DateTime.UtcNow;
+    }
+
+    public void Bloquear(string justificativa)
+    {
+        if (Status == StatusObra.Depurada)
+            throw new DomainException("Obras depuradas não podem ser bloqueadas");
+        if (Status == StatusObra.Bloqueado)
+            throw new DomainException("Obra já está bloqueada");
+        
+        BloqueioJustificativa = justificativa;
+        Status = StatusObra.Bloqueado;
+        AtualizadoEm = DateTime.UtcNow;
+    }
+
+    public void Desbloquear()
+    {
+        if (Status != StatusObra.Bloqueado)
+            throw new DomainException("Apenas obras BLOQUEADAS podem ser desbloqueadas");
+        
+        Status = StatusObra.Pendente;
+        BloqueioJustificativa = null;
         AtualizadoEm = DateTime.UtcNow;
     }
 

@@ -11,5 +11,7 @@ public record FonogramaResponse(
     string Status,
     Guid? FonogramaDepuradoParaId,
     DateTime CriadoEm,
-    DateTime AtualizadoEm
+    DateTime AtualizadoEm,
+    string? UrlAudio = null,
+    string? BloqueioJustificativa = null
 );

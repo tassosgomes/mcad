@@ -13,6 +13,8 @@ public class Fonograma
     public DateOnly? DataGravacao { get; private set; }
     public DateOnly? DataLancamento { get; private set; }
     public StatusFonograma Status { get; private set; }
+    public string? UrlAudio { get; private set; }
+    public string? BloqueioJustificativa { get; private set; }
     public Guid? FonogramaDepuradoParaId { get; private set; }
     public bool PercentuaisDesatualizados { get; private set; }
     public DateTime CriadoEm { get; private set; }
@@ -47,6 +49,9 @@ public class Fonograma
     {
         if (Status == StatusFonograma.Depurado)
             throw new DomainException("Fonogramas depurados não podem ser editados");
+        if (Status == StatusFonograma.Bloqueado)
+            throw new DomainException("Fonogramas bloqueados não podem ser editados");
+
         Isrc = isrc ?? throw new ArgumentNullException(nameof(isrc));
         PaisOrigem = paisOrigem ?? throw new ArgumentNullException(nameof(paisOrigem));
         DataGravacao = dataGravacao;
@@ -81,5 +86,61 @@ public class Fonograma
     }
 
     public bool PodeSerExcluido =>
-        Status == StatusFonograma.PendenteValidacao || Status == StatusFonograma.PendenteDocumentacao;
+        Status == StatusFonograma.PendenteValidacao || Status == StatusFonograma.PendenteDocumentacao || Status == StatusFonograma.Bloqueado;
+
+    public void DefinirUrlAudio(string? url)
+    {
+        if (Status == StatusFonograma.Liberado || Status == StatusFonograma.Depurado || Status == StatusFonograma.Bloqueado)
+            throw new DomainException("URL de áudio não pode ser alterada nesse status");
+        
+        UrlAudio = url;
+        AtualizadoEm = DateTime.UtcNow;
+    }
+
+    public void Liberar()
+    {
+        if (Status != StatusFonograma.PendenteDocumentacao)
+            throw new DomainException("Apenas fonogramas em PENDENTE_DOCUMENTACAO podem ser liberados");
+        
+        Status = StatusFonograma.Liberado;
+        AtualizadoEm = DateTime.UtcNow;
+    }
+
+    public void Bloquear(string justificativa)
+    {
+        if (Status == StatusFonograma.Depurado)
+            throw new DomainException("Fonogramas depurados não podem ser bloqueados");
+        if (Status == StatusFonograma.Bloqueado)
+            throw new DomainException("Fonograma já está bloqueado");
+        
+        BloqueioJustificativa = justificativa;
+        Status = StatusFonograma.Bloqueado;
+        AtualizadoEm = DateTime.UtcNow;
+    }
+
+    public void Desbloquear()
+    {
+        if (Status != StatusFonograma.Bloqueado)
+            throw new DomainException("Apenas fonogramas BLOQUEADOS podem ser desbloqueados");
+        
+        Status = StatusFonograma.PendenteValidacao;
+        BloqueioJustificativa = null;
+        AtualizadoEm = DateTime.UtcNow;
+    }
+
+    public void TransicionarParaPendenteDocumentacao()
+    {
+        if (Status != StatusFonograma.PendenteValidacao) return;
+        
+        Status = StatusFonograma.PendenteDocumentacao;
+        AtualizadoEm = DateTime.UtcNow;
+    }
+
+    public void RetornarParaPendenteValidacao()
+    {
+        if (Status != StatusFonograma.PendenteDocumentacao) return;
+        
+        Status = StatusFonograma.PendenteValidacao;
+        AtualizadoEm = DateTime.UtcNow;
+    }
 }

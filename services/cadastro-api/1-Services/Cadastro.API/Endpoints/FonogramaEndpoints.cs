@@ -56,6 +56,41 @@ public static class FonogramaEndpoints
             var result = await dispatcher.QueryAsync(new ListarFonogramasPorObraQuery(obraId), ct);
             return Results.Ok(result);
         });
+
+        group.MapPost("/{id:guid}/liberar", async (Guid id, IDispatcher dispatcher, CancellationToken ct) =>
+        {
+            var command = new Cadastro.Application.Status.Commands.LiberarFonogramaCommand(id);
+            var result = await dispatcher.SendAsync(command, ct);
+            return Results.Ok(result);
+        });
+
+        group.MapPost("/{id:guid}/bloquear", async (Guid id, [FromBody] Cadastro.Application.Status.Commands.BloquearFonogramaCommand commandArgs, IDispatcher dispatcher, CancellationToken ct) =>
+        {
+            var command = new Cadastro.Application.Status.Commands.BloquearFonogramaCommand(id, commandArgs.Justificativa);
+            var result = await dispatcher.SendAsync(command, ct);
+            return Results.Ok(result);
+        });
+
+        group.MapPost("/{id:guid}/desbloquear", async (Guid id, IDispatcher dispatcher, CancellationToken ct) =>
+        {
+            var command = new Cadastro.Application.Status.Commands.DesbloquearFonogramaCommand(id);
+            var result = await dispatcher.SendAsync(command, ct);
+            return Results.Ok(result);
+        });
+
+        group.MapGet("/{id:guid}/historico-bloqueios", async (Guid id, IDispatcher dispatcher, CancellationToken ct) =>
+        {
+            var query = new Cadastro.Application.Status.Queries.HistoricoBloqueiosQuery("FONOGRAMA", id);
+            var result = await dispatcher.QueryAsync(query, ct);
+            return Results.Ok(result);
+        });
+
+        group.MapPatch("/{id:guid}/url-audio", async (Guid id, [FromBody] Cadastro.Application.Status.Commands.DefinirUrlAudioCommand commandArgs, IDispatcher dispatcher, CancellationToken ct) =>
+        {
+            var command = new Cadastro.Application.Status.Commands.DefinirUrlAudioCommand(id, commandArgs.Url);
+            var result = await dispatcher.SendAsync(command, ct);
+            return Results.Ok(result);
+        });
     }
 }
 

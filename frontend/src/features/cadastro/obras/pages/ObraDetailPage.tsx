@@ -10,6 +10,17 @@ import { Badge } from '@components/ui/badge';
 import { useObra } from '../hooks/useObra';
 import { useUpdateObra } from '../hooks/useUpdateObra';
 import { useDeleteObra } from '../hooks/useDeleteObra';
+import { useLiberarObra } from '../hooks/useLiberarObra';
+import { useBloquearObra } from '../hooks/useBloquearObra';
+import { useDesbloquearObra } from '../hooks/useDesbloquearObra';
+import { useHistoricoObra } from '../hooks/useHistoricoObra';
+
+import { LiberarButton, BloquearButton, DesbloquearButton } from '@shared/components/ui/status-actions';
+import { BloqueioBanner } from '@shared/components/ui/bloqueio-banner';
+import { BloqueioModal } from '@shared/components/ui/bloqueio-modal';
+import { ChecklistPreRequisitos } from '@shared/components/ui/checklist-prereqs';
+import { HistoricoBloqueios } from '@shared/components/ui/historico-bloqueios';
+
 import { ObraForm } from '../components/ObraForm';
 import { IswcSection } from '../components/IswcSection';
 import { DepuracaoBanner } from '../components/DepuracaoBanner';
@@ -38,6 +49,11 @@ export function ObraDetailPage() {
   const updateMutation = useUpdateObra();
   const deleteMutation = useDeleteObra();
 
+  const liberarMutation = useLiberarObra();
+  const bloquearMutation = useBloquearObra();
+  const desbloquearMutation = useDesbloquearObra();
+  const { data: historico } = useHistoricoObra(id!);
+
   // F04 — Titularidades: temTitulares real para IswcSection
   const { data: titularidadesData } = useTitularidades(id ?? '');
   const temTitulares = (titularidadesData?.titularidades.length ?? 0) > 0;
@@ -45,8 +61,10 @@ export function ObraDetailPage() {
   // Modals state
   const [depuracaoData, setDepuracaoData] = useState<DepurarObraRequest | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  // Depuração disparada pelas Titularidades (F04)
   const [showDepuracaoModalForTitularidades, setShowDepuracaoModalForTitularidades] = useState(false);
+  const [showBloqueioModal, setShowBloqueioModal] = useState(false);
+  
+  const [pendenciasValidacao, setPendenciasValidacao] = useState<import('../types/obra').PreRequisitoItem[]>([]);
 
   async function handleSubmit(data: AtualizarObraRequest) {
     if (!obra) return;
@@ -84,7 +102,23 @@ export function ObraDetailPage() {
   if (isLoading) return <Loading />;
   if (error || !obra) return <ErrorState message="Obra não encontrada" onRetry={refetch} />;
 
-  const isReadOnly = obra.status === 'DEPURADA' || obra.status === 'DOMINIO_PUBLICO';
+  const isReadOnly = obra.status === 'DEPURADA' || obra.status === 'DOMINIO_PUBLICO' || obra.status === 'BLOQUEADO';
+  const isBloqueado = obra.status === 'BLOQUEADO';
+
+  const handleLiberar = async () => {
+    if (!obra) return;
+    try {
+      setPendenciasValidacao([]);
+      await liberarMutation.mutateAsync(obra.id);
+    } catch (err: any) {
+      if (err.status === 422 && err.pendencias) {
+        setPendenciasValidacao(err.pendencias);
+        showToast('Pré-requisitos não atendidos. Verifique a lista.', 'error');
+      } else {
+        showToast(err.detail || 'Erro ao liberar obra', 'error');
+      }
+    }
+  };
 
   return (
     <div className={styles.page}>
@@ -103,7 +137,20 @@ export function ObraDetailPage() {
           action={
             <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
               <Badge variant={STATUS_VARIANT[obra.status] as any}>{obra.status}</Badge>
-              {!isReadOnly && (
+              
+              <div style={{ display: 'flex', gap: '8px' }}>
+                {obra.status === 'PENDENTE' && (
+                  <LiberarButton onClick={handleLiberar} isLoading={liberarMutation.isPending} />
+                )}
+                {(obra.status === 'PENDENTE' || obra.status === 'LIBERADO') && (
+                  <BloquearButton onClick={() => setShowBloqueioModal(true)} />
+                )}
+                {obra.status === 'BLOQUEADO' && (
+                  <DesbloquearButton onClick={() => desbloquearMutation.mutate(obra.id)} isLoading={desbloquearMutation.isPending} />
+                )}
+              </div>
+
+              {!isReadOnly && obra.status !== 'BLOQUEADO' && (
                 <Button
                   variant="danger"
                   onClick={() => setShowDeleteModal(true)}
@@ -117,6 +164,14 @@ export function ObraDetailPage() {
           }
         />
       </div>
+
+      {obra.status === 'BLOQUEADO' && obra.bloqueioJustificativa && (
+        <BloqueioBanner justificativa={obra.bloqueioJustificativa} />
+      )}
+      
+      {pendenciasValidacao.length > 0 && (
+        <ChecklistPreRequisitos pendencias={pendenciasValidacao} />
+      )}
 
       {obra.status === 'DEPURADA' && obra.obraDepuradaParaId && (
         <DepuracaoBanner obraDepuradaParaId={obra.obraDepuradaParaId} />
@@ -159,6 +214,8 @@ export function ObraDetailPage() {
         </div>
       </div>
 
+      <HistoricoBloqueios items={historico ?? []} />
+
       <DepuracaoModal
         isOpen={!!depuracaoData}
         onClose={() => setDepuracaoData(null)}
@@ -185,6 +242,18 @@ export function ObraDetailPage() {
         onConfirm={handleDelete}
         isDeleting={deleteMutation.isPending}
         obra={obra}
+      />
+
+      <BloqueioModal
+        isOpen={showBloqueioModal}
+        onClose={() => setShowBloqueioModal(false)}
+        onConfirm={(justificativa) => {
+          bloquearMutation.mutate({ id: id!, justificativa }, {
+            onSuccess: () => setShowBloqueioModal(false)
+          });
+        }}
+        isLoading={bloquearMutation.isPending}
+        entityName="obra"
       />
     </div>
   );

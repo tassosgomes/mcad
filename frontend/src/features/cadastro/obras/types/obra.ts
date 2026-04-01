@@ -11,8 +11,34 @@ export interface ObraMusical {
   status: ObraStatus;
   dominioPublico: boolean;
   obraDepuradaParaId: string | null;
+  bloqueioJustificativa?: string | null;
   criadoEm: string;
   atualizadoEm: string;
+}
+
+export interface PreRequisitoItem {
+  item: string;
+  atendido: boolean;
+  detalhe?: string | null;
+}
+
+export interface PreRequisitosError {
+  type: string;
+  title: string;
+  status: 422;
+  detail: string;
+  pendencias: PreRequisitoItem[];
+}
+
+export interface HistoricoBloqueioItem {
+  id: string;
+  acao: 'BLOQUEIO' | 'DESBLOQUEIO';
+  justificativa: string | null;
+  dataHora: string;
+}
+
+export interface BloquearRequest {
+  justificativa: string;
 }
 
 export interface CriarObraRequest {
