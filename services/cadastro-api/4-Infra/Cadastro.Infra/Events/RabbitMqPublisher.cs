@@ -26,6 +26,7 @@ public class RabbitMqPublisher : IRabbitMqPublisher, IDisposable, IAsyncDisposab
         _logger = logger;
 
         var rabbitUrl = configuration["RABBITMQ_URL"] ?? "amqp://guest:guest@localhost:5672";
+        var rabbitVhost = configuration["RABBITMQ_VHOST"];
 
         try
         {
@@ -33,6 +34,11 @@ public class RabbitMqPublisher : IRabbitMqPublisher, IDisposable, IAsyncDisposab
             {
                 Uri = new Uri(rabbitUrl)
             };
+
+            if (!string.IsNullOrWhiteSpace(rabbitVhost))
+            {
+                factory.VirtualHost = rabbitVhost;
+            }
 
             _connection = factory.CreateConnectionAsync().GetAwaiter().GetResult();
             _channel = _connection.CreateChannelAsync().GetAwaiter().GetResult();
