@@ -14,6 +14,7 @@ public class Fonograma
     public DateOnly? DataLancamento { get; private set; }
     public StatusFonograma Status { get; private set; }
     public Guid? FonogramaDepuradoParaId { get; private set; }
+    public bool PercentuaisDesatualizados { get; private set; }
     public DateTime CriadoEm { get; private set; }
     public DateTime AtualizadoEm { get; private set; }
 
@@ -36,6 +37,7 @@ public class Fonograma
             DataLancamento = dataLancamento,
             Status = StatusFonograma.PendenteValidacao,
             FonogramaDepuradoParaId = null,
+            PercentuaisDesatualizados = false,
             CriadoEm = DateTime.UtcNow,
             AtualizadoEm = DateTime.UtcNow,
         };
@@ -63,6 +65,18 @@ public class Fonograma
             throw new DomainException("Apenas fonogramas LIBERADOS podem ser depurados");
         Status = StatusFonograma.Depurado;
         FonogramaDepuradoParaId = novoFonogramaId;
+        AtualizadoEm = DateTime.UtcNow;
+    }
+
+    public void MarcarPercentuaisDesatualizados()
+    {
+        PercentuaisDesatualizados = true;
+        AtualizadoEm = DateTime.UtcNow;
+    }
+
+    public void MarcarPercentuaisAtualizados()
+    {
+        PercentuaisDesatualizados = false;
         AtualizadoEm = DateTime.UtcNow;
     }
 

@@ -15,6 +15,7 @@ public class CadastroDbContext : DbContext
     public DbSet<ObraMusical> ObrasMusicais => Set<ObraMusical>();
     public DbSet<TitularidadeAutoral> TitularidadesAutorais => Set<TitularidadeAutoral>();
     public DbSet<Fonograma> Fonogramas => Set<Fonograma>();
+    public DbSet<ParticipacaoConexa> ParticipacoesConexas => Set<ParticipacaoConexa>();
 
     public CadastroDbContext(DbContextOptions<CadastroDbContext> options) : base(options)
     {
@@ -31,6 +32,7 @@ public class CadastroDbContext : DbContext
         modelBuilder.ApplyConfiguration(new ObraMusicalConfiguration());
         modelBuilder.ApplyConfiguration(new TitularidadeAutoralConfiguration());
         modelBuilder.ApplyConfiguration(new FonogramaConfiguration());
+        modelBuilder.ApplyConfiguration(new ParticipacaoConexaConfiguration());
 
         base.OnModelCreating(modelBuilder);
     }

@@ -133,7 +133,8 @@ public class TitularRepository : ITitularRepository
 
     public async Task<bool> PossuiVinculosAsync(Guid titularId, CancellationToken cancellationToken)
     {
-        return await _context.TitularidadesAutorais.AnyAsync(t => t.TitularId == titularId, cancellationToken);
+        return await _context.TitularidadesAutorais.AnyAsync(t => t.TitularId == titularId, cancellationToken)
+            || await _context.ParticipacoesConexas.AnyAsync(p => p.TitularId == titularId, cancellationToken);
     }
 
     public async Task SaveChangesAsync(CancellationToken cancellationToken)
