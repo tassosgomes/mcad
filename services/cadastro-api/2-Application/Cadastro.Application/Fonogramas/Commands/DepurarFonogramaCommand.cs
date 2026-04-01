@@ -22,7 +22,7 @@ public class DepurarFonogramaCommandValidator : AbstractValidator<DepurarFonogra
     public DepurarFonogramaCommandValidator()
     {
         RuleFor(x => x.Id).NotEmpty().WithMessage("ID do fonograma é obrigatório.");
-        
+
         RuleFor(x => x.Isrc)
             .NotEmpty().WithMessage("ISRC é obrigatório.")
             .Length(12).WithMessage("ISRC deve ter 12 caracteres (sem hífens).");
@@ -36,10 +36,12 @@ public class DepurarFonogramaCommandValidator : AbstractValidator<DepurarFonogra
 public class DepurarFonogramaCommandHandler : ICommandHandler<DepurarFonogramaCommand, DepuracaoFonogramaResponse>
 {
     private readonly IFonogramaRepository _fonogramaRepository;
+    private readonly IOutboxEventWriter _outbox;
 
-    public DepurarFonogramaCommandHandler(IFonogramaRepository fonogramaRepository)
+    public DepurarFonogramaCommandHandler(IFonogramaRepository fonogramaRepository, IOutboxEventWriter outbox)
     {
         _fonogramaRepository = fonogramaRepository;
+        _outbox = outbox;
     }
 
     public async Task<DepuracaoFonogramaResponse> HandleAsync(DepurarFonogramaCommand command, CancellationToken cancellationToken)
@@ -65,9 +67,19 @@ public class DepurarFonogramaCommandHandler : ICommandHandler<DepurarFonogramaCo
         );
 
         await _fonogramaRepository.AddAsync(novoFonograma, cancellationToken);
-        
+
+        var isrcOriginal = original.Isrc.Valor;
         original.Depurar(novoFonograma.Id);
         _fonogramaRepository.Update(original);
+
+        // Registrar evento na outbox — mesma transação (RF-17)
+        _outbox.AddEvent("cadastro.fonograma.depurado", original.Id.ToString(), new
+        {
+            fonogramaId = original.Id,
+            isrcOriginal,
+            novoFonogramaId = novoFonograma.Id,
+            obraId = original.ObraId,
+        });
 
         await _fonogramaRepository.SaveChangesAsync(cancellationToken);
 

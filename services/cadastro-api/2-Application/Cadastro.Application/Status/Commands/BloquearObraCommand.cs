@@ -25,11 +25,16 @@ public class BloquearObraCommandHandler : ICommandHandler<BloquearObraCommand, O
 {
     private readonly IObraRepository _obraRepository;
     private readonly IHistoricoBloqueioRepository _historicoRepository;
+    private readonly IOutboxEventWriter _outbox;
 
-    public BloquearObraCommandHandler(IObraRepository obraRepository, IHistoricoBloqueioRepository historicoRepository)
+    public BloquearObraCommandHandler(
+        IObraRepository obraRepository,
+        IHistoricoBloqueioRepository historicoRepository,
+        IOutboxEventWriter outbox)
     {
         _obraRepository = obraRepository;
         _historicoRepository = historicoRepository;
+        _outbox = outbox;
     }
 
     public async Task<ObraResponse> HandleAsync(BloquearObraCommand command, CancellationToken cancellationToken)
@@ -38,11 +43,20 @@ public class BloquearObraCommandHandler : ICommandHandler<BloquearObraCommand, O
             ?? throw new NotFoundException(nameof(ObraMusical), command.Id);
 
         obra.Bloquear(command.Justificativa);
-        
+
         var historico = HistoricoBloqueio.CriarBloqueio("OBRA", obra.Id, command.Justificativa);
         _historicoRepository.Add(historico);
 
         _obraRepository.Update(obra);
+
+        // Registrar evento na outbox — mesma transação (RF-17)
+        _outbox.AddEvent("cadastro.obra.bloqueada", obra.Id.ToString(), new
+        {
+            obraId = obra.Id,
+            titulo = obra.Titulo,
+            justificativa = command.Justificativa,
+        });
+
         await _obraRepository.SaveChangesAsync(cancellationToken);
 
         return new ObraResponse(

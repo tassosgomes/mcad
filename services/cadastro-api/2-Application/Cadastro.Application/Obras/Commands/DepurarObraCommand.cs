@@ -13,10 +13,12 @@ public record DepurarObraCommand(Guid Id, string Titulo, string Tipo, string? Su
 public class DepurarObraCommandHandler : ICommandHandler<DepurarObraCommand, DepuracaoResponse>
 {
     private readonly IObraRepository _repository;
+    private readonly IOutboxEventWriter _outbox;
 
-    public DepurarObraCommandHandler(IObraRepository repository)
+    public DepurarObraCommandHandler(IObraRepository repository, IOutboxEventWriter outbox)
     {
         _repository = repository;
+        _outbox = outbox;
     }
 
     public async Task<DepuracaoResponse> HandleAsync(DepurarObraCommand request, CancellationToken cancellationToken)
@@ -30,10 +32,23 @@ public class DepurarObraCommandHandler : ICommandHandler<DepurarObraCommand, Dep
         var novaObraTipo = Enum.Parse<TipoObra>(request.Tipo.Replace("_", ""), true);
         var novaObra = ObraMusical.Criar(request.Titulo, novaObraTipo, request.Subtitulo, request.Genero);
 
+        // Captura o ISWC original antes da depuração
+        var iswcOriginal = obraOriginal.Iswc;
+
         obraOriginal.Depurar(novaObra.Id);
 
         _repository.Update(obraOriginal);
         await _repository.AddAsync(novaObra, cancellationToken);
+
+        // Registrar evento na outbox — mesma transação (RF-17)
+        _outbox.AddEvent("cadastro.obra.depurada", obraOriginal.Id.ToString(), new
+        {
+            obraId = obraOriginal.Id,
+            titulo = obraOriginal.Titulo,
+            iswcOriginal,
+            novaObraId = novaObra.Id,
+        });
+
         await _repository.SaveChangesAsync(cancellationToken);
 
         return new DepuracaoResponse(

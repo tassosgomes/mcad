@@ -5,6 +5,7 @@ using Cadastro.Application.Common.CQRS;
 using Cadastro.Application.Titulares.Commands;
 using Cadastro.Domain.Interfaces;
 using Cadastro.Infra.Data;
+using Cadastro.Infra.Events;
 using Cadastro.Infra.Repositories;
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
@@ -45,6 +46,14 @@ builder.Services.AddHttpClient<IIswcService, Cadastro.Infra.ExternalServices.Isw
     client.BaseAddress = new Uri("https://iswc.tasso.dev.br/");
     client.Timeout = TimeSpan.FromSeconds(10);
 }).AddTransientHttpErrorPolicy(p => p.RetryAsync(2));
+
+// ─── Outbox / RabbitMQ / Events ───────────────────────────────────────
+builder.Services.AddScoped<IOutboxEventWriter, OutboxEventWriter>();
+builder.Services.AddSingleton<IRabbitMqPublisher>(sp =>
+    new RabbitMqPublisher(
+        sp.GetRequiredService<Microsoft.Extensions.Configuration.IConfiguration>(),
+        sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<RabbitMqPublisher>>()));
+builder.Services.AddHostedService<OutboxPublisherWorker>();
 
 // ─── CQRS — Dispatcher + Handlers (via Scrutor) ───────────────────────
 builder.Services.AddScoped<IDispatcher, Dispatcher>();

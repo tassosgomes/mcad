@@ -12,22 +12,25 @@ namespace Cadastro.Application.Titulares.Commands;
 
 /// <summary>
 /// Handler para criação de titular (PF ou PJ).
-/// Pipeline: Validator → VO validation → unicidade → FK associação → persist.
+/// Pipeline: Validator → VO validation → unicidade → FK associação → persist → outbox event.
 /// </summary>
 public class CriarTitularCommandHandler : ICommandHandler<CriarTitularCommand, TitularResponse>
 {
     private readonly ITitularRepository _titularRepository;
     private readonly IAssociacaoRepository _associacaoRepository;
     private readonly IValidator<CriarTitularCommand> _validator;
+    private readonly IOutboxEventWriter _outbox;
 
     public CriarTitularCommandHandler(
         ITitularRepository titularRepository,
         IAssociacaoRepository associacaoRepository,
-        IValidator<CriarTitularCommand> validator)
+        IValidator<CriarTitularCommand> validator,
+        IOutboxEventWriter outbox)
     {
         _titularRepository = titularRepository;
         _associacaoRepository = associacaoRepository;
         _validator = validator;
+        _outbox = outbox;
     }
 
     public async Task<TitularResponse> HandleAsync(
@@ -79,6 +82,16 @@ public class CriarTitularCommandHandler : ICommandHandler<CriarTitularCommand, T
 
         // 5. Persistir
         titular = await _titularRepository.AddAsync(titular, cancellationToken);
+
+        // 6. Registrar evento na outbox — mesma transação (RF-17)
+        _outbox.AddEvent("cadastro.titular.criado", titular.Id.ToString(), new
+        {
+            titularId = titular.Id,
+            nome = titular.Nome,
+            tipo = command.Tipo.ToUpperInvariant(),
+            documento = titular.DocumentoFormatado,
+        });
+
         await _titularRepository.SaveChangesAsync(cancellationToken);
 
         // Reload com Associação para o response

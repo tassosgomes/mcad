@@ -17,6 +17,7 @@ public class CriarTitularCommandHandlerTests
     private readonly Mock<ITitularRepository> _mockTitularRepo;
     private readonly Mock<IAssociacaoRepository> _mockAssociacaoRepo;
     private readonly Mock<IValidator<CriarTitularCommand>> _mockValidator;
+    private readonly Mock<IOutboxEventWriter> _mockOutbox;
     private readonly CriarTitularCommandHandler _handler;
 
     public CriarTitularCommandHandlerTests()
@@ -24,6 +25,7 @@ public class CriarTitularCommandHandlerTests
         _mockTitularRepo = new Mock<ITitularRepository>();
         _mockAssociacaoRepo = new Mock<IAssociacaoRepository>();
         _mockValidator = new Mock<IValidator<CriarTitularCommand>>();
+        _mockOutbox = new Mock<IOutboxEventWriter>();
 
         _mockValidator.Setup(v => v.ValidateAsync(It.IsAny<CriarTitularCommand>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new ValidationResult());
@@ -31,7 +33,8 @@ public class CriarTitularCommandHandlerTests
         _handler = new CriarTitularCommandHandler(
             _mockTitularRepo.Object,
             _mockAssociacaoRepo.Object,
-            _mockValidator.Object);
+            _mockValidator.Object,
+            _mockOutbox.Object);
     }
 
     [Fact]

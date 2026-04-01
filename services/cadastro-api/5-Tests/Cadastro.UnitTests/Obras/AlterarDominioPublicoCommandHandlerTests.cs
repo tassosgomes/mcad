@@ -11,12 +11,14 @@ namespace Cadastro.UnitTests.Obras;
 public class AlterarDominioPublicoCommandHandlerTests
 {
     private readonly Mock<IObraRepository> _repoMock;
+    private readonly Mock<IOutboxEventWriter> _outboxMock;
     private readonly AlterarDominioPublicoCommandHandler _handler;
 
     public AlterarDominioPublicoCommandHandlerTests()
     {
         _repoMock = new Mock<IObraRepository>();
-        _handler = new AlterarDominioPublicoCommandHandler(_repoMock.Object);
+        _outboxMock = new Mock<IOutboxEventWriter>();
+        _handler = new AlterarDominioPublicoCommandHandler(_repoMock.Object, _outboxMock.Object);
     }
 
     [Fact]

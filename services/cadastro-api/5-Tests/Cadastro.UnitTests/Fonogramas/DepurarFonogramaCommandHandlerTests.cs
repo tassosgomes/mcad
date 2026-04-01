@@ -12,12 +12,14 @@ namespace Cadastro.UnitTests.Fonogramas;
 public class DepurarFonogramaCommandHandlerTests
 {
     private readonly Mock<IFonogramaRepository> _repoMock;
+    private readonly Mock<IOutboxEventWriter> _outboxMock;
     private readonly DepurarFonogramaCommandHandler _handler;
 
     public DepurarFonogramaCommandHandlerTests()
     {
         _repoMock = new Mock<IFonogramaRepository>();
-        _handler = new DepurarFonogramaCommandHandler(_repoMock.Object);
+        _outboxMock = new Mock<IOutboxEventWriter>();
+        _handler = new DepurarFonogramaCommandHandler(_repoMock.Object, _outboxMock.Object);
     }
 
     [Fact]

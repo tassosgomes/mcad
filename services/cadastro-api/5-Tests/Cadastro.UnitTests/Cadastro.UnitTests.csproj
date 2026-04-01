@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
@@ -9,10 +9,15 @@
 
   <ItemGroup>
     <PackageReference Include="AwesomeAssertions" Version="9.0.0" />
+    <PackageReference Include="CloudNative.CloudEvents" Version="2.7.1" />
     <PackageReference Include="coverlet.collector" Version="6.0.4" />
     <PackageReference Include="FluentAssertions" Version="8.9.0" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="9.0.4" />
+    <PackageReference Include="Microsoft.Extensions.Configuration" Version="9.0.4" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.4" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
     <PackageReference Include="Moq" Version="4.20.72" />
+    <PackageReference Include="System.Text.Json" Version="9.0.4" />
     <PackageReference Include="xunit" Version="2.9.3" />
     <PackageReference Include="xunit.runner.visualstudio" Version="3.1.4" />
   </ItemGroup>
@@ -24,6 +29,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\2-Application\Cadastro.Application\Cadastro.Application.csproj" />
     <ProjectReference Include="..\..\3-Domain\Cadastro.Domain\Cadastro.Domain.csproj" />
+    <ProjectReference Include="..\..\4-Infra\Cadastro.Infra\Cadastro.Infra.csproj" />
   </ItemGroup>
 
 </Project>

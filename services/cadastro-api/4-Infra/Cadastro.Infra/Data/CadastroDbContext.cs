@@ -17,6 +17,7 @@ public class CadastroDbContext : DbContext
     public DbSet<Fonograma> Fonogramas => Set<Fonograma>();
     public DbSet<ParticipacaoConexa> ParticipacoesConexas => Set<ParticipacaoConexa>();
     public DbSet<HistoricoBloqueio> HistoricoBloqueios => Set<HistoricoBloqueio>();
+    public DbSet<OutboxEvent> OutboxEvents => Set<OutboxEvent>();
 
     public CadastroDbContext(DbContextOptions<CadastroDbContext> options) : base(options)
     {
@@ -35,6 +36,7 @@ public class CadastroDbContext : DbContext
         modelBuilder.ApplyConfiguration(new FonogramaConfiguration());
         modelBuilder.ApplyConfiguration(new ParticipacaoConexaConfiguration());
         modelBuilder.ApplyConfiguration(new HistoricoBloqueioConfiguration());
+        modelBuilder.ApplyConfiguration(new OutboxEventConfiguration());
 
         base.OnModelCreating(modelBuilder);
     }

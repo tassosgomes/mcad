@@ -13,12 +13,14 @@ namespace Cadastro.UnitTests.Obras;
 public class DepurarObraCommandHandlerTests
 {
     private readonly Mock<IObraRepository> _repoMock;
+    private readonly Mock<IOutboxEventWriter> _outboxMock;
     private readonly DepurarObraCommandHandler _handler;
 
     public DepurarObraCommandHandlerTests()
     {
         _repoMock = new Mock<IObraRepository>();
-        _handler = new DepurarObraCommandHandler(_repoMock.Object);
+        _outboxMock = new Mock<IOutboxEventWriter>();
+        _handler = new DepurarObraCommandHandler(_repoMock.Object, _outboxMock.Object);
     }
 
     [Fact]

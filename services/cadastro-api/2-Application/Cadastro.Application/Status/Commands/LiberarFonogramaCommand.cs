@@ -14,13 +14,16 @@ public class LiberarFonogramaCommandHandler : ICommandHandler<LiberarFonogramaCo
 {
     private readonly IFonogramaRepository _fonogramaRepository;
     private readonly IParticipacaoRepository _participacaoRepository;
+    private readonly IOutboxEventWriter _outbox;
 
     public LiberarFonogramaCommandHandler(
         IFonogramaRepository fonogramaRepository,
-        IParticipacaoRepository participacaoRepository)
+        IParticipacaoRepository participacaoRepository,
+        IOutboxEventWriter outbox)
     {
         _fonogramaRepository = fonogramaRepository;
         _participacaoRepository = participacaoRepository;
+        _outbox = outbox;
     }
 
     public async Task<FonogramaResponse> HandleAsync(LiberarFonogramaCommand command, CancellationToken cancellationToken)
@@ -46,6 +49,15 @@ public class LiberarFonogramaCommandHandler : ICommandHandler<LiberarFonogramaCo
 
         fonograma.Liberar();
         _fonogramaRepository.Update(fonograma);
+
+        // Registrar evento na outbox — mesma transação (RF-17)
+        _outbox.AddEvent("cadastro.fonograma.liberado", fonograma.Id.ToString(), new
+        {
+            fonogramaId = fonograma.Id,
+            isrc = fonograma.Isrc.Valor,
+            obraId = fonograma.ObraId,
+        });
+
         await _fonogramaRepository.SaveChangesAsync(cancellationToken);
 
         var obraStatus = fonograma.Obra.Status == StatusObra.DominioPublico ? "DOMINIO_PUBLICO" : fonograma.Obra.Status.ToString().ToUpperInvariant();

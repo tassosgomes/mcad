@@ -15,15 +15,18 @@ public class ObterIswcCommandHandler : ICommandHandler<ObterIswcCommand, ObraRes
     private readonly IObraRepository _repository;
     private readonly IIswcService _iswcService;
     private readonly ITitularidadeRepository _titularidadeRepository;
+    private readonly IOutboxEventWriter _outbox;
 
     public ObterIswcCommandHandler(
         IObraRepository repository,
         IIswcService iswcService,
-        ITitularidadeRepository titularidadeRepository)
+        ITitularidadeRepository titularidadeRepository,
+        IOutboxEventWriter outbox)
     {
         _repository = repository;
         _iswcService = iswcService;
         _titularidadeRepository = titularidadeRepository;
+        _outbox = outbox;
     }
 
     public async Task<ObraResponse> HandleAsync(ObterIswcCommand request, CancellationToken cancellationToken)
@@ -59,6 +62,16 @@ public class ObterIswcCommandHandler : ICommandHandler<ObterIswcCommand, ObraRes
 
         obra.AtribuirIswc(iswc);
         _repository.Update(obra);
+
+        // Registrar evento na outbox — mesma transação (RF-17)
+        // AtribuirIswc muda o status para Liberado
+        _outbox.AddEvent("cadastro.obra.liberada", obra.Id.ToString(), new
+        {
+            obraId = obra.Id,
+            titulo = obra.Titulo,
+            iswc = obra.Iswc,
+        });
+
         await _repository.SaveChangesAsync(cancellationToken);
 
         return ListarObrasQueryHandler.MapToResponse(obra);

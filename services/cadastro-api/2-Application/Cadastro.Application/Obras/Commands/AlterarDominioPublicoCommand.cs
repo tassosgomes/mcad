@@ -11,10 +11,12 @@ public record AlterarDominioPublicoCommand(Guid Id, bool DominioPublico) : IComm
 public class AlterarDominioPublicoCommandHandler : ICommandHandler<AlterarDominioPublicoCommand, ObraResponse>
 {
     private readonly IObraRepository _repository;
+    private readonly IOutboxEventWriter _outbox;
 
-    public AlterarDominioPublicoCommandHandler(IObraRepository repository)
+    public AlterarDominioPublicoCommandHandler(IObraRepository repository, IOutboxEventWriter outbox)
     {
         _repository = repository;
+        _outbox = outbox;
     }
 
     public async Task<ObraResponse> HandleAsync(AlterarDominioPublicoCommand request, CancellationToken cancellationToken)
@@ -23,8 +25,17 @@ public class AlterarDominioPublicoCommandHandler : ICommandHandler<AlterarDomini
             ?? throw new NotFoundException("Obra não encontrada.", request.Id);
 
         obra.MarcarDominioPublico(request.DominioPublico);
-        
+
         _repository.Update(obra);
+
+        // Registrar evento na outbox — mesma transação (RF-17)
+        _outbox.AddEvent("cadastro.obra.dominio-publico", obra.Id.ToString(), new
+        {
+            obraId = obra.Id,
+            titulo = obra.Titulo,
+            dominioPublico = request.DominioPublico,
+        });
+
         await _repository.SaveChangesAsync(cancellationToken);
 
         return ListarObrasQueryHandler.MapToResponse(obra);

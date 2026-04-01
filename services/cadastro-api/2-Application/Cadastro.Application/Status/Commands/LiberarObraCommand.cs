@@ -14,11 +14,16 @@ public class LiberarObraCommandHandler : ICommandHandler<LiberarObraCommand, Obr
 {
     private readonly IObraRepository _obraRepository;
     private readonly ITitularidadeRepository _titularidadeRepository;
+    private readonly IOutboxEventWriter _outbox;
 
-    public LiberarObraCommandHandler(IObraRepository obraRepository, ITitularidadeRepository titularidadeRepository)
+    public LiberarObraCommandHandler(
+        IObraRepository obraRepository,
+        ITitularidadeRepository titularidadeRepository,
+        IOutboxEventWriter outbox)
     {
         _obraRepository = obraRepository;
         _titularidadeRepository = titularidadeRepository;
+        _outbox = outbox;
     }
 
     public async Task<ObraResponse> HandleAsync(LiberarObraCommand command, CancellationToken cancellationToken)
@@ -44,6 +49,15 @@ public class LiberarObraCommandHandler : ICommandHandler<LiberarObraCommand, Obr
 
         obra.Liberar();
         _obraRepository.Update(obra);
+
+        // Registrar evento na outbox — mesma transação que a liberação da obra (RF-17)
+        _outbox.AddEvent("cadastro.obra.liberada", obra.Id.ToString(), new
+        {
+            obraId = obra.Id,
+            titulo = obra.Titulo,
+            iswc = obra.Iswc,
+        });
+
         await _obraRepository.SaveChangesAsync(cancellationToken);
 
         return new ObraResponse(

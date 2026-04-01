@@ -26,11 +26,16 @@ public class BloquearFonogramaCommandHandler : ICommandHandler<BloquearFonograma
 {
     private readonly IFonogramaRepository _fonogramaRepository;
     private readonly IHistoricoBloqueioRepository _historicoRepository;
+    private readonly IOutboxEventWriter _outbox;
 
-    public BloquearFonogramaCommandHandler(IFonogramaRepository fonogramaRepository, IHistoricoBloqueioRepository historicoRepository)
+    public BloquearFonogramaCommandHandler(
+        IFonogramaRepository fonogramaRepository,
+        IHistoricoBloqueioRepository historicoRepository,
+        IOutboxEventWriter outbox)
     {
         _fonogramaRepository = fonogramaRepository;
         _historicoRepository = historicoRepository;
+        _outbox = outbox;
     }
 
     public async Task<FonogramaResponse> HandleAsync(BloquearFonogramaCommand command, CancellationToken cancellationToken)
@@ -39,11 +44,20 @@ public class BloquearFonogramaCommandHandler : ICommandHandler<BloquearFonograma
             ?? throw new NotFoundException(nameof(Fonograma), command.Id);
 
         fonograma.Bloquear(command.Justificativa);
-        
+
         var historico = HistoricoBloqueio.CriarBloqueio("FONOGRAMA", fonograma.Id, command.Justificativa);
         _historicoRepository.Add(historico);
 
         _fonogramaRepository.Update(fonograma);
+
+        // Registrar evento na outbox — mesma transação (RF-17)
+        _outbox.AddEvent("cadastro.fonograma.bloqueado", fonograma.Id.ToString(), new
+        {
+            fonogramaId = fonograma.Id,
+            isrc = fonograma.Isrc.Valor,
+            justificativa = command.Justificativa,
+        });
+
         await _fonogramaRepository.SaveChangesAsync(cancellationToken);
 
         var obraStatus = fonograma.Obra.Status == StatusObra.DominioPublico ? "DOMINIO_PUBLICO" : fonograma.Obra.Status.ToString().ToUpperInvariant();
