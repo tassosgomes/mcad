@@ -19,6 +19,7 @@ import { Button } from '@components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 
 import styles from './FonogramaDetailPage.module.css';
+import { ParticipacoesSection } from '@features/cadastro/participacoes';
 
 const STATUS_VARIANT: Record<string, 'success' | 'warning' | 'secondary' | 'error'> = {
   Pendente_Validacao: 'warning',
@@ -38,6 +39,7 @@ export function FonogramaDetailPage() {
 
   const [depuracaoData, setDepuracaoData] = useState<any>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showDepuracaoModal, setShowDepuracaoModal] = useState(false);
 
   if (isLoading) return <Loading />;
   if (error || !fonograma) return <ErrorState message="Erro ao carregar fonograma" onRetry={refetch} />;
@@ -130,21 +132,23 @@ export function FonogramaDetailPage() {
           )}
         </section>
 
-        <section className={styles.sectionPlaceholder}>
+        <section className={styles.section}>
           <h2 className={styles.sectionTitle}>Direitos Conexos</h2>
-          <div className={styles.placeholderBanner}>
-            Trilha de implementação de Produtores Fonográficos e Intérpretes em breve.
-          </div>
+          <ParticipacoesSection
+            fonogramaId={fonograma.id}
+            fonogramaStatus={fonograma.status.toUpperCase()}
+            onDepuracaoRequired={() => setShowDepuracaoModal(true)}
+          />
         </section>
       </div>
 
       <FonogramaDepuracaoModal
-        isOpen={!!depuracaoData}
-        onClose={() => setDepuracaoData(null)}
+        isOpen={!!depuracaoData || showDepuracaoModal}
+        onClose={() => { setDepuracaoData(null); setShowDepuracaoModal(false); }}
         fonogramaId={fonograma.id}
         isrcAtual={formatIsrc(fonograma.isrcFormatado)}
-        novoIsrc={depuracaoData ? formatIsrc(depuracaoData.novoIsrc) : ''}
-        paisOrigem={depuracaoData?.paisOrigem || ''}
+        novoIsrc={depuracaoData ? formatIsrc(depuracaoData.novoIsrc) : formatIsrc(fonograma.isrcFormatado)}
+        paisOrigem={depuracaoData?.paisOrigem || fonograma.paisOrigem || ''}
         dataGravacao={depuracaoData?.dataGravacao}
         dataLancamento={depuracaoData?.dataLancamento}
       />

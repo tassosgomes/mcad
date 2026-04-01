@@ -1,0 +1,78 @@
+.tableWrapper { overflow-x: auto; }
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--text-sm);
+}
+
+.table th {
+  text-align: left;
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-text-muted);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.table td {
+  padding: var(--space-3);
+  border-bottom: 1px solid color-mix(in srgb, var(--color-border) 50%, transparent);
+  color: var(--color-text-primary);
+  vertical-align: middle;
+}
+
+.actionsHeader { text-align: center; }
+.actionsCell { text-align: center; white-space: nowrap; }
+
+.nameCell { display: flex; flex-direction: column; gap: 2px; }
+.name { font-weight: 500; }
+.associacao { font-size: var(--text-xs); color: var(--color-text-muted); }
+
+.mono { font-family: var(--font-mono); color: var(--color-text-secondary); }
+.monoValue { font-family: var(--font-mono); display: inline-flex; align-items: center; gap: var(--space-1); }
+
+.categoria { font-size: var(--text-xs); color: var(--color-text-secondary); }
+
+/* Inline edit */
+.editableValue {
+  font-family: var(--font-mono);
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  padding: 2px 4px;
+  transition: background var(--transition-fast);
+  display: inline-block;
+}
+.editableValue:hover { background: var(--color-bg-elevated); }
+
+.lockedValue {
+  font-family: var(--font-mono);
+  cursor: default;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  color: var(--color-text-muted);
+}
+.lockIcon { color: var(--color-text-muted); flex-shrink: 0; }
+
+.inlineInput {
+  width: 90px;
+  font-family: var(--font-mono);
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-accent);
+  border-radius: var(--radius-sm);
+  padding: var(--space-1) var(--space-2);
+  color: var(--color-text-primary);
+  font-size: var(--text-sm);
+  outline: none;
+}
+
+.empty {
+  padding: var(--space-6);
+  text-align: center;
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}
+.empty p { margin: var(--space-1) 0; }

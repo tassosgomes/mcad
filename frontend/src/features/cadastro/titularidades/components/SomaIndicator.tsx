@@ -4,9 +4,21 @@ import styles from './SomaIndicator.module.css';
 interface SomaIndicatorProps {
   soma: number;
   completa: boolean;
+  /** Se true, exibe "Pendente" (esperando cálculo) ao invés de valor numérico */
+  pendente?: boolean;
 }
 
-export function SomaIndicator({ soma, completa }: SomaIndicatorProps) {
+export function SomaIndicator({ soma, completa, pendente }: SomaIndicatorProps) {
+  if (pendente) {
+    return (
+      <div className={styles.indicator}>
+        <span className={styles.label}>Total:</span>
+        <Badge variant="secondary" mono>Pendente</Badge>
+        <span className={styles.hint}>Execute "Calcular Percentuais" para distribuir automaticamente</span>
+      </div>
+    );
+  }
+
   const variant = completa ? 'success' : soma > 100 ? 'error' : 'warning';
 
   return (

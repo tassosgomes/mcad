@@ -1,0 +1,49 @@
+/* AddParticipacaoForm.module.css */
+
+.form {
+  background: var(--color-bg-elevated);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
+  margin-bottom: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.field { display: flex; flex-direction: column; gap: var(--space-1); }
+
+.label {
+  font-size: var(--text-xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-text-secondary);
+}
+
+.selectedInfo {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  background: var(--color-bg-surface);
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+}
+
+.selectedLabel { color: var(--color-text-muted); font-size: var(--text-xs); text-transform: uppercase; letter-spacing: 0.04em; }
+.selectedName { font-weight: 500; color: var(--color-text-primary); flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.clearBtn {
+  background: none; border: none; color: var(--color-text-muted); cursor: pointer;
+  font-size: 18px; line-height: 1; padding: 0 var(--space-1); transition: color var(--transition-fast); flex-shrink: 0;
+}
+.clearBtn:hover { color: var(--color-text-primary); }
+
+.actions { display: flex; justify-content: flex-end; gap: var(--space-2); }
+.cancelRow { display: flex; justify-content: flex-end; }
+
+.autocompleteItem { display: flex; flex-direction: column; gap: 2px; }
+.itemName { font-size: var(--text-sm); font-weight: 500; color: var(--color-text-primary); }
+.itemMeta { display: flex; align-items: center; gap: var(--space-2); }
+.itemDoc { font-family: var(--font-mono); font-size: var(--text-xs); color: var(--color-text-secondary); }
+.itemAssoc { font-family: var(--font-mono); font-size: var(--text-xs); color: var(--color-text-muted); background: var(--color-secondary-container); padding: 1px var(--space-1); border-radius: var(--radius-sm); }
