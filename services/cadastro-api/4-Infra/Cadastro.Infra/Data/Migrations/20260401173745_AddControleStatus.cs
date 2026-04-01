@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
@@ -56,6 +56,11 @@ namespace Cadastro.Infra.Data.Migrations
                     table.CheckConstraint("ck_historico_acao", "\"Acao\" IN ('BLOQUEIO', 'DESBLOQUEIO')");
                     table.CheckConstraint("ck_historico_tipo", "\"EntidadeTipo\" IN ('OBRA', 'FONOGRAMA')");
                 });
+
+            migrationBuilder.DropCheckConstraint(
+                name: "ck_obras_status",
+                schema: "cadastro",
+                table: "obras_musicais");
 
             migrationBuilder.AddCheckConstraint(
                 name: "ck_obras_status",
