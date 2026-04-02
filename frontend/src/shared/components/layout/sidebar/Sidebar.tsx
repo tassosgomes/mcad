@@ -16,7 +16,15 @@ const navigation = [
     ],
   },
   // Fases futuras (desabilitados):
-  { label: 'Identificação', icon: Search, basePath: '/identificacao', disabled: true },
+  { 
+    label: 'Identificação', 
+    icon: Search, 
+    basePath: '/identificacao', 
+    disabled: false,
+    children: [
+      { label: 'Captações', path: '/identificacao/captacoes' },
+    ]
+  },
   { label: 'Arrecadação', icon: Banknote, basePath: '/arrecadacao', disabled: true },
   { label: 'Distribuição', icon: Split, basePath: '/distribuicao', disabled: true },
 ];
@@ -29,7 +37,8 @@ interface SidebarProps {
 export function Sidebar({ isOpen, onClose }: SidebarProps) {
   // Always open first section for now
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({
-    'Cadastro': true
+    'Cadastro': true,
+    'Identificação': true
   });
 
   const toggleSection = (label: string) => {

@@ -5,6 +5,7 @@ import { Loading } from '@components/ui/loading';
 import { CallbackPage, LoggedOutPage, ProtectedRoute, SilentCallbackPage } from '@shared/auth';
 
 const CadastroRoutes = lazy(() => import('@features/cadastro'));
+const IdentificacaoRoutes = lazy(() => import('@features/identificacao'));
 
 export const router = createBrowserRouter([
   {
@@ -33,6 +34,14 @@ export const router = createBrowserRouter([
         element: (
           <Suspense fallback={<Loading />}>
             <CadastroRoutes />
+          </Suspense>
+        ) 
+      },
+      { 
+        path: 'identificacao/*', 
+        element: (
+          <Suspense fallback={<Loading />}>
+            <IdentificacaoRoutes />
           </Suspense>
         ) 
       },

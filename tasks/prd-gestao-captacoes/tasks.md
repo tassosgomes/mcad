@@ -34,7 +34,7 @@ Mockups no Stitch, tipos TypeScript, hooks, componentes e páginas. Task 6 (mock
 - [x] 6.0 Frontend — Mockups no Stitch
 - [x] 7.0 Frontend — Types, API Client e Hooks
 - [x] 8.0 Frontend — Componentes
-- [ ] 9.0 Frontend — Pages e Roteamento
+- [x] 9.0 Frontend — Pages e Roteamento
 
 ## Rastreabilidade RF → Tasks
 

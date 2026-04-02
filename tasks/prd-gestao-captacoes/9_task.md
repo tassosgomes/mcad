@@ -1,5 +1,5 @@
 ---
-status: pending
+status: completed
 parallelizable: false
 blocked_by: [5.0, 7.0, 8.0]
 ---
@@ -46,15 +46,15 @@ Implementar as 3 páginas (listagem, criação, detalhe/edição), o módulo de 
 
 ## Subtarefas
 
-- [ ] 9.1 Criar `CaptacoesPage.tsx` — estado de filtros (default: page 1, size 20, sort -periodo), useCaptacoes, useAuth para canWrite, navigate para criar/detalhar, delete com modal e toast
-- [ ] 9.2 Criar `CaptacaoCreatePage.tsx` — CaptacaoForm sem initialData, useCreateCaptacao, toast sucesso/erro, navigate back, tratamento 409 CAPTACAO_DUPLICADA
-- [ ] 9.3 Criar `CaptacaoDetailPage.tsx` — useCaptacao(id), cards de resumo de execuções, CaptacaoForm com initialData, useUpdateCaptacao, delete com modal, tratamento 409 RUBRICA_BLOQUEADA/CAPTACAO_DUPLICADA, 422 STATUS_INVALIDO, 403 FORBIDDEN
-- [ ] 9.4 Criar `captacoes/index.ts` (barrel export das 3 pages)
-- [ ] 9.5 Criar `identificacao/index.tsx` (Routes: captacoes, captacoes/nova, captacoes/:id)
-- [ ] 9.6 Modificar `routes.tsx` — adicionar lazy import de IdentificacaoRoutes e rota `/identificacao/*`
-- [ ] 9.7 Modificar `Sidebar.tsx` — habilitar seção Identificação (disabled: false) + children: [{label: 'Captações', path: '/identificacao/captacoes'}]
-- [ ] 9.8 Modificar `.env.example` — adicionar `VITE_IDENTIFICACAO_API_BASE_URL=http://localhost:5100/api/v1`
-- [ ] 9.9 Teste de integração manual: navegar pela UI, criar/editar/excluir captação
+- [x] 9.1 Criar `CaptacoesPage.tsx` — estado de filtros (default: page 1, size 20, sort -periodo), useCaptacoes, useAuth para canWrite, navigate para criar/detalhar, delete com modal e toast
+- [x] 9.2 Criar `CaptacaoCreatePage.tsx` — CaptacaoForm sem initialData, useCreateCaptacao, toast sucesso/erro, navigate back, tratamento 409 CAPTACAO_DUPLICADA
+- [x] 9.3 Criar `CaptacaoDetailPage.tsx` — useCaptacao(id), cards de resumo de execuções, CaptacaoForm com initialData, useUpdateCaptacao, delete com modal, tratamento 409 RUBRICA_BLOQUEADA/CAPTACAO_DUPLICADA, 422 STATUS_INVALIDO, 403 FORBIDDEN
+- [x] 9.4 Criar `captacoes/index.ts` (barrel export das 3 pages)
+- [x] 9.5 Criar `identificacao/index.tsx` (Routes: captacoes, captacoes/nova, captacoes/:id)
+- [x] 9.6 Modificar `routes.tsx` — adicionar lazy import de IdentificacaoRoutes e rota `/identificacao/*`
+- [x] 9.7 Modificar `Sidebar.tsx` — habilitar seção Identificação (disabled: false) + children: [{label: 'Captações', path: '/identificacao/captacoes'}]
+- [x] 9.8 Modificar `.env.example` — adicionar `VITE_IDENTIFICACAO_API_BASE_URL=http://localhost:5100/api/v1`
+- [x] 9.9 Teste de integração manual: navegar pela UI, criar/editar/excluir captação
 
 ## Sequenciamento
 
@@ -222,12 +222,12 @@ const IdentificacaoRoutes = lazy(() => import('@features/identificacao'));
 
 ## Critérios de Sucesso (Verificáveis)
 
-- [ ] Build compila: `cd frontend && npm run build`
-- [ ] TypeScript sem erros: `cd frontend && npx tsc --noEmit`
-- [ ] Navegação para `/identificacao/captacoes` exibe a listagem
-- [ ] Sidebar mostra "Identificação > Captações" habilitado
-- [ ] Criar captação via formulário → 201, toast sucesso, redirecionamento para listagem
-- [ ] Editar captação ABERTA → 200, toast sucesso
-- [ ] Excluir captação ABERTA → 204, toast sucesso, item removido da lista
-- [ ] Erro 409 CAPTACAO_DUPLICADA → toast com mensagem do backend
-- [ ] Consultor sem role `analista-identificacao` → botões de escrita ocultos
+- [x] Build compila: `cd frontend && npm run build`
+- [x] TypeScript sem erros: `cd frontend && npx tsc --noEmit`
+- [x] Navegação para `/identificacao/captacoes` exibe a listagem
+- [x] Sidebar mostra "Identificação > Captações" habilitado
+- [x] Criar captação via formulário → 201, toast sucesso, redirecionamento para listagem
+- [x] Editar captação ABERTA → 200, toast sucesso
+- [x] Excluir captação ABERTA → 204, toast sucesso, item removido da lista
+- [x] Erro 409 CAPTACAO_DUPLICADA → toast com mensagem do backend
+- [x] Consultor sem role `analista-identificacao` → botões de escrita ocultos
