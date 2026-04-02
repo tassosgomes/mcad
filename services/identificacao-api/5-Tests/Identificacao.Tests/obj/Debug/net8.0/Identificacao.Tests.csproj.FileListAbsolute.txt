@@ -116,3 +116,17 @@
 /home/tsgomes/mcad/services/identificacao-api/5-Tests/Identificacao.Tests/obj/Debug/net8.0/Identificacao.Tests.pdb
 /home/tsgomes/mcad/services/identificacao-api/5-Tests/Identificacao.Tests/obj/Debug/net8.0/Identificacao.Tests.genruntimeconfig.cache
 /home/tsgomes/mcad/services/identificacao-api/5-Tests/Identificacao.Tests/obj/Debug/net8.0/ref/Identificacao.Tests.dll
+/home/tsgomes/mcad/services/identificacao-api/5-Tests/Identificacao.Tests/bin/Debug/net8.0/Microsoft.EntityFrameworkCore.dll
+/home/tsgomes/mcad/services/identificacao-api/5-Tests/Identificacao.Tests/bin/Debug/net8.0/Microsoft.EntityFrameworkCore.Abstractions.dll
+/home/tsgomes/mcad/services/identificacao-api/5-Tests/Identificacao.Tests/bin/Debug/net8.0/Microsoft.EntityFrameworkCore.Relational.dll
+/home/tsgomes/mcad/services/identificacao-api/5-Tests/Identificacao.Tests/bin/Debug/net8.0/Microsoft.Extensions.Caching.Abstractions.dll
+/home/tsgomes/mcad/services/identificacao-api/5-Tests/Identificacao.Tests/bin/Debug/net8.0/Microsoft.Extensions.Caching.Memory.dll
+/home/tsgomes/mcad/services/identificacao-api/5-Tests/Identificacao.Tests/bin/Debug/net8.0/Microsoft.Extensions.Configuration.Abstractions.dll
+/home/tsgomes/mcad/services/identificacao-api/5-Tests/Identificacao.Tests/bin/Debug/net8.0/Microsoft.Extensions.DependencyInjection.dll
+/home/tsgomes/mcad/services/identificacao-api/5-Tests/Identificacao.Tests/bin/Debug/net8.0/Microsoft.Extensions.Logging.dll
+/home/tsgomes/mcad/services/identificacao-api/5-Tests/Identificacao.Tests/bin/Debug/net8.0/Microsoft.Extensions.Logging.Abstractions.dll
+/home/tsgomes/mcad/services/identificacao-api/5-Tests/Identificacao.Tests/bin/Debug/net8.0/Microsoft.Extensions.Options.dll
+/home/tsgomes/mcad/services/identificacao-api/5-Tests/Identificacao.Tests/bin/Debug/net8.0/Microsoft.Extensions.Primitives.dll
+/home/tsgomes/mcad/services/identificacao-api/5-Tests/Identificacao.Tests/bin/Debug/net8.0/Npgsql.dll
+/home/tsgomes/mcad/services/identificacao-api/5-Tests/Identificacao.Tests/bin/Debug/net8.0/Npgsql.EntityFrameworkCore.PostgreSQL.dll
+/home/tsgomes/mcad/services/identificacao-api/5-Tests/Identificacao.Tests/bin/Debug/net8.0/System.Diagnostics.DiagnosticSource.dll

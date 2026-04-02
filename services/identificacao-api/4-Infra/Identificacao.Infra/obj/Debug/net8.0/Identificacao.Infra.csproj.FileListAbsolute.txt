@@ -14,3 +14,5 @@
 /home/tsgomes/mcad/services/identificacao-api/4-Infra/Identificacao.Infra/bin/Debug/net8.0/Identificacao.Domain.pdb
 /home/tsgomes/mcad/services/identificacao-api/4-Infra/Identificacao.Infra/obj/Debug/net8.0/Identificacao.Infra.csproj.AssemblyReference.cache
 /home/tsgomes/mcad/services/identificacao-api/4-Infra/Identificacao.Infra/obj/Debug/net8.0/Identifi.862C2113.Up2Date
+/home/tsgomes/mcad/services/identificacao-api/4-Infra/Identificacao.Infra/bin/Debug/net8.0/Identificacao.Infra.runtimeconfig.json
+/home/tsgomes/mcad/services/identificacao-api/4-Infra/Identificacao.Infra/obj/Debug/net8.0/Identificacao.Infra.genruntimeconfig.cache
