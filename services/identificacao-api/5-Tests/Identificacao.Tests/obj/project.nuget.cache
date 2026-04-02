@@ -1,12 +1,13 @@
 {
   "version": 2,
-  "dgSpecHash": "GYhw0h/i5Us=",
+  "dgSpecHash": "2xiEja6mDAc=",
   "success": true,
   "projectFilePath": "/home/tsgomes/mcad/services/identificacao-api/5-Tests/Identificacao.Tests/Identificacao.Tests.csproj",
   "expectedPackageFiles": [
     "/home/tsgomes/.nuget/packages/awesomeassertions/8.0.1/awesomeassertions.8.0.1.nupkg.sha512",
     "/home/tsgomes/.nuget/packages/castle.core/5.1.1/castle.core.5.1.1.nupkg.sha512",
     "/home/tsgomes/.nuget/packages/coverlet.collector/6.0.0/coverlet.collector.6.0.0.nupkg.sha512",
+    "/home/tsgomes/.nuget/packages/fluentvalidation/11.11.0/fluentvalidation.11.11.0.nupkg.sha512",
     "/home/tsgomes/.nuget/packages/microsoft.codecoverage/17.6.0/microsoft.codecoverage.17.6.0.nupkg.sha512",
     "/home/tsgomes/.nuget/packages/microsoft.entityframeworkcore/9.0.4/microsoft.entityframeworkcore.9.0.4.nupkg.sha512",
     "/home/tsgomes/.nuget/packages/microsoft.entityframeworkcore.abstractions/9.0.4/microsoft.entityframeworkcore.abstractions.9.0.4.nupkg.sha512",

@@ -137,3 +137,4 @@
 /home/tsgomes/mcad/services/identificacao-api/1-Services/Identificacao.API/bin/Debug/net8.0/zh-Hans/Microsoft.CodeAnalysis.Workspaces.MSBuild.BuildHost.resources.dll
 /home/tsgomes/mcad/services/identificacao-api/1-Services/Identificacao.API/bin/Debug/net8.0/zh-Hant/Microsoft.CodeAnalysis.Workspaces.MSBuild.BuildHost.resources.dll
 /home/tsgomes/mcad/services/identificacao-api/1-Services/Identificacao.API/bin/Debug/net8.0/runtimes/browser/lib/net8.0/System.Text.Encodings.Web.dll
+/home/tsgomes/mcad/services/identificacao-api/1-Services/Identificacao.API/bin/Debug/net8.0/FluentValidation.dll

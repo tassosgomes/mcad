@@ -1,9 +1,10 @@
 {
   "version": 2,
-  "dgSpecHash": "YTHbn57FbTs=",
+  "dgSpecHash": "o9GURiA3XlI=",
   "success": true,
   "projectFilePath": "/home/tsgomes/mcad/services/identificacao-api/1-Services/Identificacao.API/Identificacao.API.csproj",
   "expectedPackageFiles": [
+    "/home/tsgomes/.nuget/packages/fluentvalidation/11.11.0/fluentvalidation.11.11.0.nupkg.sha512",
     "/home/tsgomes/.nuget/packages/humanizer.core/2.14.1/humanizer.core.2.14.1.nupkg.sha512",
     "/home/tsgomes/.nuget/packages/microsoft.bcl.asyncinterfaces/7.0.0/microsoft.bcl.asyncinterfaces.7.0.0.nupkg.sha512",
     "/home/tsgomes/.nuget/packages/microsoft.build.framework/17.8.3/microsoft.build.framework.17.8.3.nupkg.sha512",
