@@ -131,3 +131,16 @@
 /home/tsgomes/mcad/services/identificacao-api/5-Tests/Identificacao.Tests/bin/Debug/net8.0/Npgsql.EntityFrameworkCore.PostgreSQL.dll
 /home/tsgomes/mcad/services/identificacao-api/5-Tests/Identificacao.Tests/bin/Debug/net8.0/System.Diagnostics.DiagnosticSource.dll
 /home/tsgomes/mcad/services/identificacao-api/5-Tests/Identificacao.Tests/bin/Debug/net8.0/FluentValidation.dll
+/home/tsgomes/mcad/services/identificacao-api/5-Tests/Identificacao.Tests/bin/Debug/net8.0/DotNetEnv.dll
+/home/tsgomes/mcad/services/identificacao-api/5-Tests/Identificacao.Tests/bin/Debug/net8.0/FluentValidation.DependencyInjectionExtensions.dll
+/home/tsgomes/mcad/services/identificacao-api/5-Tests/Identificacao.Tests/bin/Debug/net8.0/Microsoft.AspNetCore.Authentication.JwtBearer.dll
+/home/tsgomes/mcad/services/identificacao-api/5-Tests/Identificacao.Tests/bin/Debug/net8.0/Microsoft.Extensions.DependencyModel.dll
+/home/tsgomes/mcad/services/identificacao-api/5-Tests/Identificacao.Tests/bin/Debug/net8.0/Microsoft.IdentityModel.Abstractions.dll
+/home/tsgomes/mcad/services/identificacao-api/5-Tests/Identificacao.Tests/bin/Debug/net8.0/Microsoft.IdentityModel.JsonWebTokens.dll
+/home/tsgomes/mcad/services/identificacao-api/5-Tests/Identificacao.Tests/bin/Debug/net8.0/Microsoft.IdentityModel.Logging.dll
+/home/tsgomes/mcad/services/identificacao-api/5-Tests/Identificacao.Tests/bin/Debug/net8.0/Microsoft.IdentityModel.Protocols.dll
+/home/tsgomes/mcad/services/identificacao-api/5-Tests/Identificacao.Tests/bin/Debug/net8.0/Microsoft.IdentityModel.Protocols.OpenIdConnect.dll
+/home/tsgomes/mcad/services/identificacao-api/5-Tests/Identificacao.Tests/bin/Debug/net8.0/Microsoft.IdentityModel.Tokens.dll
+/home/tsgomes/mcad/services/identificacao-api/5-Tests/Identificacao.Tests/bin/Debug/net8.0/Scrutor.dll
+/home/tsgomes/mcad/services/identificacao-api/5-Tests/Identificacao.Tests/bin/Debug/net8.0/Sprache.dll
+/home/tsgomes/mcad/services/identificacao-api/5-Tests/Identificacao.Tests/bin/Debug/net8.0/System.IdentityModel.Tokens.Jwt.dll

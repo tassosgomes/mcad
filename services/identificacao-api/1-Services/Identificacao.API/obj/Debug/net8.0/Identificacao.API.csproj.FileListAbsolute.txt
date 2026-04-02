@@ -138,3 +138,15 @@
 /home/tsgomes/mcad/services/identificacao-api/1-Services/Identificacao.API/bin/Debug/net8.0/zh-Hant/Microsoft.CodeAnalysis.Workspaces.MSBuild.BuildHost.resources.dll
 /home/tsgomes/mcad/services/identificacao-api/1-Services/Identificacao.API/bin/Debug/net8.0/runtimes/browser/lib/net8.0/System.Text.Encodings.Web.dll
 /home/tsgomes/mcad/services/identificacao-api/1-Services/Identificacao.API/bin/Debug/net8.0/FluentValidation.dll
+/home/tsgomes/mcad/services/identificacao-api/1-Services/Identificacao.API/bin/Debug/net8.0/DotNetEnv.dll
+/home/tsgomes/mcad/services/identificacao-api/1-Services/Identificacao.API/bin/Debug/net8.0/FluentValidation.DependencyInjectionExtensions.dll
+/home/tsgomes/mcad/services/identificacao-api/1-Services/Identificacao.API/bin/Debug/net8.0/Microsoft.AspNetCore.Authentication.JwtBearer.dll
+/home/tsgomes/mcad/services/identificacao-api/1-Services/Identificacao.API/bin/Debug/net8.0/Microsoft.IdentityModel.Abstractions.dll
+/home/tsgomes/mcad/services/identificacao-api/1-Services/Identificacao.API/bin/Debug/net8.0/Microsoft.IdentityModel.JsonWebTokens.dll
+/home/tsgomes/mcad/services/identificacao-api/1-Services/Identificacao.API/bin/Debug/net8.0/Microsoft.IdentityModel.Logging.dll
+/home/tsgomes/mcad/services/identificacao-api/1-Services/Identificacao.API/bin/Debug/net8.0/Microsoft.IdentityModel.Protocols.dll
+/home/tsgomes/mcad/services/identificacao-api/1-Services/Identificacao.API/bin/Debug/net8.0/Microsoft.IdentityModel.Protocols.OpenIdConnect.dll
+/home/tsgomes/mcad/services/identificacao-api/1-Services/Identificacao.API/bin/Debug/net8.0/Microsoft.IdentityModel.Tokens.dll
+/home/tsgomes/mcad/services/identificacao-api/1-Services/Identificacao.API/bin/Debug/net8.0/Scrutor.dll
+/home/tsgomes/mcad/services/identificacao-api/1-Services/Identificacao.API/bin/Debug/net8.0/Sprache.dll
+/home/tsgomes/mcad/services/identificacao-api/1-Services/Identificacao.API/bin/Debug/net8.0/System.IdentityModel.Tokens.Jwt.dll

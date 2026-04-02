@@ -2,7 +2,10 @@ namespace Identificacao.Application.Common.Exceptions;
 
 public class ConflictException : Exception
 {
-    public ConflictException(string message) : base(message)
+    public string ErrorCode { get; }
+    
+    public ConflictException(string message, string errorCode = "CONFLICT") : base(message)
     {
+        ErrorCode = errorCode;
     }
 }
