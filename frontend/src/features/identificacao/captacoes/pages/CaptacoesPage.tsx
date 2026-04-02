@@ -51,6 +51,7 @@ export function CaptacoesPage() {
     <div>
       <PageHeader
         title="Captações"
+        description="Gestão, registro e controle de verbas arrecadadas por rubrica e período."
         action={
           canWrite ? (
             <Button onClick={() => navigate('/identificacao/captacoes/nova')}>
