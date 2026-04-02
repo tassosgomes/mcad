@@ -15,6 +15,7 @@ import { useDeleteCaptacao } from '../hooks/useDeleteCaptacao';
 import { CaptacoesTable } from '../components/CaptacoesTable';
 import { CaptacaoFilters } from '../components/CaptacaoFilters';
 import { DeleteCaptacaoModal } from '../components/DeleteCaptacaoModal';
+import styles from './CaptacoesPage.module.css';
 
 export function CaptacoesPage() {
   const navigate = useNavigate();
@@ -48,7 +49,7 @@ export function CaptacoesPage() {
   }
 
   return (
-    <div>
+    <div className={styles.page}>
       <PageHeader
         title="Captações"
         description="Gestão, registro e controle de verbas arrecadadas por rubrica e período."

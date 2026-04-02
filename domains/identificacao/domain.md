@@ -78,7 +78,7 @@ Sem um processo estruturado de captação e identificação, a Distribuição n�
 | # | Feature | Descrição | Prioridade | Status | PRD |
 |---|---|---|---|---|---|
 | F01 | Gestão de Captações | Criar, listar e acompanhar captações por rubrica + período. Garante unicidade de Rol não-cancelado por rubrica+período. | Must Have | `prd-ready` | `tasks/prd-gestao-captacoes/prd.md` |
-| F02 | Registro Manual de Execuções | Formulário para inclusão individual de execuções informando ISRC ou ISWC, tipo de utilização e quantidade de ocorrências. | Must Have | `planned` | — |
+| F02 | Registro Manual de Execuções | Formulário para inclusão individual de execuções com busca integrada ao Cadastro (ISRC, ISWC, título, titular), campos condicionais por rubrica, criação inline de obra/fonograma pendente. | Must Have | `prd-ready` | `tasks/prd-registro-manual-execucoes/prd.md` |
 | F03 | Upload de Execuções via CSV | Layout CSV definido, armazenamento de arquivo no MinIO (S3-compatible), processamento assíncrono com feedback de erros por linha. | Must Have | `planned` | — |
 | F04 | Identificação de Execuções | Resolução automática de ISRC/ISWC consultando o Cadastro via HTTP. Execuções sem match ficam como Pendentes. Tela de gestão para identificação manual das pendentes. | Must Have | `planned` | — |
 | F05 | Fechamento do Rol | Ação explícita do Analista responsável. Valida pré-requisitos e publica `identificacao.rol.fechado`. | Must Have | `planned` | — |
