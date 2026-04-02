@@ -19,7 +19,7 @@ public static class CaptacaoEndpoints
             [FromQuery] Guid? rubricaId,
             [FromQuery] DateOnly? periodoInicial,
             [FromQuery] DateOnly? periodoFinal,
-            [FromQuery] Identificacao.Domain.Enums.StatusCaptacao? status,
+            [FromQuery] string? status,
             [FromQuery] Guid? analistaResponsavelId,
             [FromQuery] string? sort,
             [FromQuery] int? page,

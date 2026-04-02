@@ -1,0 +1,792 @@
+openapi: 3.1.0
+
+info:
+  title: "Registro Manual de Execuções API"
+  description: |
+    API para registro manual de execuções musicais dentro de captações do domínio de Identificação,
+    com busca integrada ao Cadastro e criação inline de obras/fonogramas pendentes.
+
+    **Contrato gerado a partir do PRD:** `tasks/prd-registro-manual-execucoes/prd.md`
+    **Data de geração:** 2026-04-02
+
+    ## Serviços Envolvidos
+    - **Identificação API** (`:5100`) — CRUD de execuções, tipos de utilização
+    - **Cadastro API** (`:5001`) — busca unificada (novo), criação de obras/fonogramas pendentes
+
+    ## Premissas Adotadas
+    - Mesmos padrões do contrato F01: JWT Bearer, page/size, RFC 7807, camelCase
+    - Execuções são sub-recurso de captações: `/captacoes/{captacaoId}/execucoes`
+    - Endpoint de busca unificada criado no Cadastro como novo recurso
+    - Seed de tipos de utilização (4 registros) no schema identificacao
+  version: "1.0.0"
+  contact:
+    name: "Time de Identificação"
+
+servers:
+  - url: http://localhost:5100/api/v1
+    description: Identificação API — desenvolvimento local
+  - url: http://localhost:5001/api/v1
+    description: Cadastro API — desenvolvimento local
+
+security:
+  - BearerAuth: []
+
+tags:
+  - name: Execuções
+    description: "CRUD de execuções dentro de uma captação (Identificação API :5100)"
+  - name: Tipos de Utilização
+    description: "Consulta de tipos de utilização disponíveis (Identificação API :5100)"
+  - name: Busca Cadastro
+    description: "Busca unificada de obras e fonogramas (Cadastro API :5001 — novo endpoint)"
+
+# ─── Paths ───────────────────────────────────────────────────────────────────
+paths:
+
+  # ══════════════════════════════════════════════════════════════════════════
+  # IDENTIFICAÇÃO API (:5100)
+  # ══════════════════════════════════════════════════════════════════════════
+
+  /tipos-utilizacao:
+    get:
+      summary: Listar tipos de utilização
+      description: |
+        Retorna todos os tipos de utilização do sistema (seed fixo, 4 registros).
+        Não paginado — dataset pequeno e estático.
+      operationId: listarTiposUtilizacao
+      tags:
+        - Tipos de Utilização
+      responses:
+        "200":
+          description: Lista de tipos de utilização
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/TipoUtilizacao"
+              example:
+                data:
+                  - id: "d1e2f3a4-0001-0000-0000-000000000001"
+                    sigla: "TA"
+                    descricao: "Tema de Abertura"
+                    peso: 1.0
+                  - id: "d1e2f3a4-0001-0000-0000-000000000002"
+                    sigla: "TE"
+                    descricao: "Tema de Encerramento"
+                    peso: 1.0
+                  - id: "d1e2f3a4-0001-0000-0000-000000000003"
+                    sigla: "PE"
+                    descricao: "Performance Cênica"
+                    peso: 1.0
+                  - id: "d1e2f3a4-0001-0000-0000-000000000004"
+                    sigla: "BK"
+                    descricao: "Background (Música de Fundo)"
+                    peso: 0.0833
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+      x-frontend-notes: "Carregar uma vez e cachear — dados estáticos. Peso BK = 1/12 ≈ 0.0833"
+      x-backend-notes: "Seed fixo de 4 registros, sem paginação"
+
+  /captacoes/{captacaoId}/execucoes:
+    parameters:
+      - name: captacaoId
+        in: path
+        required: true
+        description: ID da captação
+        schema:
+          type: string
+          format: uuid
+          example: "c1d2e3f4-5678-90ab-cdef-123456789012"
+
+    get:
+      summary: Listar execuções de uma captação
+      description: |
+        Retorna lista paginada de execuções de uma captação.
+        Todos os usuários (Analista e Consultor) podem visualizar.
+      operationId: listarExecucoes
+      tags:
+        - Execuções
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+            example: 1
+        - name: size
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+            example: 20
+        - name: status
+          in: query
+          description: Filtrar por status da execução
+          schema:
+            type: string
+            enum: [IDENTIFICADA, PENDENTE]
+            example: "IDENTIFICADA"
+        - name: sort
+          in: query
+          description: "Campo de ordenação. Prefixo `-` para DESC. Campos: `inicio`, `titulo`, `criadoEm`"
+          schema:
+            type: string
+            default: "inicio"
+            example: "inicio"
+      responses:
+        "200":
+          description: Lista de execuções
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExecucaoListResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+      x-frontend-notes: "Seção dentro da tela de detalhe da captação. Exibir badge de status por linha"
+      x-backend-notes: "Include Rubrica da Captação para validar campos condicionais no frontend"
+
+    post:
+      summary: Adicionar execução
+      description: |
+        Adiciona uma execução a uma captação ABERTA.
+        Somente o analista responsável (dono) pode adicionar.
+        Identificação automática: se obra_id/fonograma_id resolve no Cadastro → IDENTIFICADA, senão → PENDENTE.
+
+        **Regras:** RN-02, RN-03, RN-04, RN-08, RN-12
+      operationId: criarExecucao
+      tags:
+        - Execuções
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CriarExecucaoRequest"
+      responses:
+        "201":
+          description: Execução criada
+          headers:
+            Location:
+              schema:
+                type: string
+                example: "/api/v1/captacoes/c1d2.../execucoes/e1f2..."
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExecucaoResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          description: Regra de negócio violada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetails"
+              examples:
+                captacaoNaoAberta:
+                  summary: Captação não está ABERTA
+                  value:
+                    type: "https://tools.ietf.org/html/rfc7807#section-6.5.1"
+                    title: "Unprocessable Entity"
+                    status: 422
+                    detail: "Não é possível adicionar execuções a uma captação com status FECHADA"
+                    code: "STATUS_INVALIDO"
+                tipoUtilizacaoObrigatorio:
+                  summary: Tipo de utilização obrigatório para rubrica audiovisual
+                  value:
+                    type: "https://tools.ietf.org/html/rfc7807#section-6.5.1"
+                    title: "Unprocessable Entity"
+                    status: 422
+                    detail: "Tipo de utilização é obrigatório para a rubrica TV Aberta"
+                    code: "TIPO_UTILIZACAO_OBRIGATORIO"
+                tituloProgramaObrigatorio:
+                  summary: Título do programa obrigatório para rubrica audiovisual
+                  value:
+                    type: "https://tools.ietf.org/html/rfc7807#section-6.5.1"
+                    title: "Unprocessable Entity"
+                    status: 422
+                    detail: "Título do programa é obrigatório para a rubrica TV Aberta"
+                    code: "TITULO_PROGRAMA_OBRIGATORIO"
+                horarioInvalido:
+                  summary: Horário de fim anterior ao início
+                  value:
+                    type: "https://tools.ietf.org/html/rfc7807#section-6.5.1"
+                    title: "Unprocessable Entity"
+                    status: 422
+                    detail: "O horário de fim deve ser posterior ao início"
+                    code: "HORARIO_INVALIDO"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+      x-frontend-notes: "Campos tipo de utilização e título do programa visíveis/obrigatórios apenas se rubrica.exigeClassificacao. Duração calculada client-side (fim - início)"
+      x-backend-notes: "Validar campos condicionais com base na rubrica da captação. Calcular duração server-side (fim - início em segundos)"
+
+  /captacoes/{captacaoId}/execucoes/{id}:
+    parameters:
+      - name: captacaoId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          example: "c1d2e3f4-5678-90ab-cdef-123456789012"
+      - name: id
+        in: path
+        required: true
+        description: ID da execução
+        schema:
+          type: string
+          format: uuid
+          example: "e1f2a3b4-5678-90ab-cdef-123456789012"
+
+    put:
+      summary: Atualizar execução
+      description: |
+        Atualiza uma execução em captação ABERTA. Somente o analista dono.
+        Se a obra/fonograma mudou, o status é recalculado.
+      operationId: atualizarExecucao
+      tags:
+        - Execuções
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AtualizarExecucaoRequest"
+      responses:
+        "200":
+          description: Execução atualizada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExecucaoResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          description: Regra de negócio violada (mesmos códigos do POST)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetails"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+    delete:
+      summary: Excluir execução
+      description: |
+        Exclui uma execução de captação ABERTA. Somente o analista dono.
+      operationId: excluirExecucao
+      tags:
+        - Execuções
+      security:
+        - BearerAuth: []
+      responses:
+        "204":
+          description: Execução removida
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          description: Captação não está ABERTA
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetails"
+              example:
+                type: "https://tools.ietf.org/html/rfc7807#section-6.5.1"
+                title: "Unprocessable Entity"
+                status: 422
+                detail: "Não é possível excluir execuções de uma captação com status FECHADA"
+                code: "STATUS_INVALIDO"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  # ══════════════════════════════════════════════════════════════════════════
+  # CADASTRO API (:5001) — Novo endpoint de busca unificada
+  # ══════════════════════════════════════════════════════════════════════════
+
+  /cadastro/busca:
+    get:
+      summary: Busca unificada de obras e fonogramas
+      description: |
+        **Endpoint NOVO no Cadastro API (:5001).**
+
+        Busca unificada por ISRC, ISWC, título ou nome de titular.
+        Retorna obras e fonogramas que correspondem ao critério.
+        Usado pelo módulo de Identificação para resolver execuções.
+
+        Mínimo 3 caracteres para busca por texto (título/titular).
+      operationId: buscarCadastro
+      tags:
+        - Busca Cadastro
+      parameters:
+        - name: q
+          in: query
+          required: true
+          description: "Termo de busca: ISRC, ISWC, título ou nome de titular (min 3 chars)"
+          schema:
+            type: string
+            minLength: 3
+            example: "BRUM71500001"
+        - name: tipo
+          in: query
+          description: "Filtrar por tipo de resultado"
+          schema:
+            type: string
+            enum: [obra, fonograma, todos]
+            default: "todos"
+            example: "todos"
+        - name: size
+          in: query
+          description: "Máximo de resultados (não paginado — autocomplete)"
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 50
+            default: 20
+            example: 20
+      responses:
+        "200":
+          description: Resultados da busca
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BuscaCadastroResponse"
+        "400":
+          description: Termo de busca muito curto
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetails"
+              example:
+                type: "https://tools.ietf.org/html/rfc7807#section-6.5.1"
+                title: "Bad Request"
+                status: 400
+                detail: "O termo de busca deve ter no mínimo 3 caracteres"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+      x-frontend-notes: "Usar como autocomplete com debounce 300ms. Mín 3 chars antes de buscar. Exibir ISRC/ISWC ao lado do título para diferenciação"
+      x-backend-notes: "Buscar em obras (título, ISWC) e fonogramas (ISRC, título). Join com titulares para busca por nome. ILike para case-insensitive. Limitar a 20 resultados por performance"
+
+# ─── Components ──────────────────────────────────────────────────────────────
+components:
+
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: "Token JWT via Keycloak. Roles: analista-identificacao (write), consultor-identificacao (read)"
+
+  responses:
+    BadRequest:
+      description: Requisição inválida
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ProblemDetails"
+    Unauthorized:
+      description: Não autenticado
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ProblemDetails"
+    Forbidden:
+      description: Sem permissão
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ProblemDetails"
+    NotFound:
+      description: Recurso não encontrado
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ProblemDetails"
+    InternalServerError:
+      description: Erro interno
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ProblemDetails"
+
+  schemas:
+
+    # ── Tipo de Utilização (seed) ──
+    TipoUtilizacao:
+      type: object
+      required:
+        - id
+        - sigla
+        - descricao
+        - peso
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "d1e2f3a4-0001-0000-0000-000000000001"
+        sigla:
+          type: string
+          example: "TA"
+        descricao:
+          type: string
+          example: "Tema de Abertura"
+        peso:
+          type: number
+          format: double
+          description: "Fator multiplicador. 1.0 = 100%, 0.0833 ≈ 1/12"
+          example: 1.0
+
+    # ── Execução ──
+    Execucao:
+      type: object
+      required:
+        - id
+        - obraId
+        - obraTitulo
+        - interpretes
+        - inicio
+        - fim
+        - duracaoSegundos
+        - quantidade
+        - status
+        - criadoEm
+        - atualizadoEm
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "e1f2a3b4-5678-90ab-cdef-123456789012"
+        obraId:
+          type: string
+          format: uuid
+          description: "ID da obra no Cadastro"
+          example: "a1b2c3d4-1111-2222-3333-444444444444"
+        fonogramaId:
+          type: string
+          format: uuid
+          nullable: true
+          description: "ID do fonograma no Cadastro (null se identificado apenas por obra)"
+          example: "f1e2d3c4-5555-6666-7777-888888888888"
+        obraTitulo:
+          type: string
+          description: "Título da obra (snapshot do Cadastro no momento do registro)"
+          example: "Meu Bem Querer"
+        fonogramaIsrc:
+          type: string
+          nullable: true
+          description: "ISRC do fonograma (se disponível)"
+          example: "BRUM71500001"
+        obraIswc:
+          type: string
+          nullable: true
+          description: "ISWC da obra (se disponível)"
+          example: "T-345.246.800-1"
+        interpretes:
+          type: string
+          description: "Até 3 intérpretes principais separados por '/'"
+          example: "Djavan / Caetano Veloso / Gilberto Gil"
+        inicio:
+          type: string
+          description: "Horário de início (HH:mm:ss)"
+          pattern: "^\\d{2}:\\d{2}:\\d{2}$"
+          example: "14:30:00"
+        fim:
+          type: string
+          description: "Horário de fim (HH:mm:ss)"
+          pattern: "^\\d{2}:\\d{2}:\\d{2}$"
+          example: "14:33:45"
+        duracaoSegundos:
+          type: integer
+          description: "Duração calculada (fim - início) em segundos"
+          example: 225
+        quantidade:
+          type: integer
+          minimum: 1
+          description: "Quantidade de ocorrências desta execução"
+          example: 1
+        tipoUtilizacao:
+          $ref: "#/components/schemas/TipoUtilizacao"
+          nullable: true
+          description: "Tipo de utilização (obrigatório para rubricas audiovisuais, null para demais)"
+        tituloPrograma:
+          type: string
+          nullable: true
+          description: "Título do programa/filme (obrigatório para rubricas audiovisuais)"
+          example: "Novela das 9 - Cap. 142"
+        status:
+          type: string
+          enum: [IDENTIFICADA, PENDENTE]
+          description: |
+            - `IDENTIFICADA`: obra/fonograma encontrado no Cadastro com status LIBERADO
+            - `PENDENTE`: sem match ou obra/fonograma com status PENDENTE no Cadastro
+          example: "IDENTIFICADA"
+        criadoEm:
+          type: string
+          format: date-time
+          example: "2026-01-15T14:30:00Z"
+        atualizadoEm:
+          type: string
+          format: date-time
+          example: "2026-01-15T14:35:00Z"
+
+    # ── Responses ──
+    ExecucaoResponse:
+      allOf:
+        - $ref: "#/components/schemas/Execucao"
+
+    ExecucaoListResponse:
+      type: object
+      required:
+        - data
+        - pagination
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Execucao"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+
+    # ── Requests ──
+    CriarExecucaoRequest:
+      type: object
+      required:
+        - obraId
+        - inicio
+        - fim
+        - quantidade
+      properties:
+        obraId:
+          type: string
+          format: uuid
+          description: "ID da obra selecionada da busca"
+          example: "a1b2c3d4-1111-2222-3333-444444444444"
+        fonogramaId:
+          type: string
+          format: uuid
+          nullable: true
+          description: "ID do fonograma (opcional — quando identificado por fonograma)"
+          example: "f1e2d3c4-5555-6666-7777-888888888888"
+        inicio:
+          type: string
+          description: "Horário de início (HH:mm:ss)"
+          pattern: "^\\d{2}:\\d{2}:\\d{2}$"
+          example: "14:30:00"
+        fim:
+          type: string
+          description: "Horário de fim (HH:mm:ss)"
+          pattern: "^\\d{2}:\\d{2}:\\d{2}$"
+          example: "14:33:45"
+        quantidade:
+          type: integer
+          minimum: 1
+          description: "Quantidade de ocorrências (default 1)"
+          example: 1
+        tipoUtilizacaoId:
+          type: string
+          format: uuid
+          nullable: true
+          description: "ID do tipo de utilização (obrigatório se rubrica audiovisual)"
+          example: "d1e2f3a4-0001-0000-0000-000000000001"
+        tituloPrograma:
+          type: string
+          nullable: true
+          maxLength: 255
+          description: "Título do programa (obrigatório se rubrica audiovisual)"
+          example: "Novela das 9 - Cap. 142"
+
+    AtualizarExecucaoRequest:
+      type: object
+      description: "Atualização completa (PUT)"
+      required:
+        - obraId
+        - inicio
+        - fim
+        - quantidade
+      properties:
+        obraId:
+          type: string
+          format: uuid
+          example: "a1b2c3d4-1111-2222-3333-444444444444"
+        fonogramaId:
+          type: string
+          format: uuid
+          nullable: true
+          example: "f1e2d3c4-5555-6666-7777-888888888888"
+        inicio:
+          type: string
+          pattern: "^\\d{2}:\\d{2}:\\d{2}$"
+          example: "14:30:00"
+        fim:
+          type: string
+          pattern: "^\\d{2}:\\d{2}:\\d{2}$"
+          example: "14:34:00"
+        quantidade:
+          type: integer
+          minimum: 1
+          example: 1
+        tipoUtilizacaoId:
+          type: string
+          format: uuid
+          nullable: true
+          example: "d1e2f3a4-0001-0000-0000-000000000001"
+        tituloPrograma:
+          type: string
+          nullable: true
+          maxLength: 255
+          example: "Novela das 9 - Cap. 142"
+
+    # ── Busca Cadastro (Cadastro API :5001) ──
+    BuscaCadastroResponse:
+      type: object
+      required:
+        - resultados
+      properties:
+        resultados:
+          type: array
+          items:
+            $ref: "#/components/schemas/ResultadoBusca"
+
+    ResultadoBusca:
+      type: object
+      required:
+        - tipo
+        - id
+        - titulo
+        - status
+      properties:
+        tipo:
+          type: string
+          enum: [obra, fonograma]
+          description: "Tipo do resultado"
+          example: "fonograma"
+        id:
+          type: string
+          format: uuid
+          example: "f1e2d3c4-5555-6666-7777-888888888888"
+        obraId:
+          type: string
+          format: uuid
+          nullable: true
+          description: "ID da obra vinculada (quando tipo=fonograma)"
+          example: "a1b2c3d4-1111-2222-3333-444444444444"
+        titulo:
+          type: string
+          description: "Título da obra ou fonograma"
+          example: "Meu Bem Querer"
+        isrc:
+          type: string
+          nullable: true
+          description: "ISRC (quando tipo=fonograma)"
+          example: "BRUM71500001"
+        iswc:
+          type: string
+          nullable: true
+          description: "ISWC (quando tipo=obra)"
+          example: "T-345.246.800-1"
+        interpretes:
+          type: string
+          nullable: true
+          description: "Até 3 intérpretes separados por '/' (quando tipo=fonograma)"
+          example: "Djavan / Caetano Veloso / Gilberto Gil"
+        status:
+          type: string
+          description: "Status no Cadastro (LIBERADO, PENDENTE, BLOQUEADO)"
+          example: "LIBERADO"
+
+    # ── Compartilhados ──
+    Pagination:
+      type: object
+      required:
+        - page
+        - size
+        - total
+        - totalPages
+      properties:
+        page:
+          type: integer
+          example: 1
+        size:
+          type: integer
+          example: 20
+        total:
+          type: integer
+          example: 150
+        totalPages:
+          type: integer
+          example: 8
+
+    ProblemDetails:
+      type: object
+      required:
+        - type
+        - title
+        - status
+        - detail
+      properties:
+        type:
+          type: string
+          format: uri
+          example: "https://tools.ietf.org/html/rfc7807#section-6.5.1"
+        title:
+          type: string
+          example: "Unprocessable Entity"
+        status:
+          type: integer
+          example: 422
+        detail:
+          type: string
+          example: "Tipo de utilização é obrigatório para a rubrica TV Aberta"
+        code:
+          type: string
+          nullable: true
+          example: "TIPO_UTILIZACAO_OBRIGATORIO"
+        traceId:
+          type: string
+          nullable: true
+          example: "0HN4B2E8M0T0K:00000001"
+        errors:
+          type: array
+          nullable: true
+          items:
+            type: object
+            properties:
+              field:
+                type: string
+              message:
+                type: string

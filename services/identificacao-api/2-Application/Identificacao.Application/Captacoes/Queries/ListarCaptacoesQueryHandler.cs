@@ -16,9 +16,26 @@ public class ListarCaptacoesQueryHandler : IQueryHandler<ListarCaptacoesQuery, C
         _repository = repository;
     }
 
+    private static Identificacao.Domain.Enums.StatusCaptacao? ParseStatus(string? value) => value switch
+    {
+        null or "" => null,
+        _ => Enum.TryParse<Identificacao.Domain.Enums.StatusCaptacao>(value, ignoreCase: true, out var v) ? v : null
+    };
+
     public async Task<CaptacaoListResponse> HandleAsync(ListarCaptacoesQuery query, CancellationToken cancellationToken)
     {
-        var result = await _repository.ListarAsync(query, cancellationToken);
+        var filtro = new {
+            query.RubricaId,
+            query.PeriodoInicial,
+            query.PeriodoFinal,
+            Status = ParseStatus(query.Status),
+            query.AnalistaResponsavelId,
+            query.Sort,
+            query.Page,
+            query.Size
+        };
+
+        var result = await _repository.ListarAsync(filtro, cancellationToken);
         var totalPages = (int)Math.Ceiling((double)result.Total / (query.Size ?? 10));
 
         var items = result.Items.Select(c => new CaptacaoResponse(

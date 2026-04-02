@@ -7,7 +7,7 @@ public record ListarCaptacoesQuery(
     Guid? RubricaId = null,
     DateOnly? PeriodoInicial = null,
     DateOnly? PeriodoFinal = null,
-    Identificacao.Domain.Enums.StatusCaptacao? Status = null,
+    string? Status = null,
     Guid? AnalistaResponsavelId = null,
     string? Sort = null,
     int? Page = 1,
