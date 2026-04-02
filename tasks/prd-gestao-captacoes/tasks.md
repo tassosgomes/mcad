@@ -32,7 +32,7 @@ Mockups no Stitch, tipos TypeScript, hooks, componentes e páginas. Task 6 (mock
 - [x] 4.0 Backend — Application Layer (Commands, Queries, Validators, Responses)
 - [x] 5.0 Backend — API (Program.cs, Endpoints, Auth, Exception Handler)
 - [x] 6.0 Frontend — Mockups no Stitch
-- [ ] 7.0 Frontend — Types, API Client e Hooks
+- [x] 7.0 Frontend — Types, API Client e Hooks
 - [ ] 8.0 Frontend — Componentes
 - [ ] 9.0 Frontend — Pages e Roteamento
 

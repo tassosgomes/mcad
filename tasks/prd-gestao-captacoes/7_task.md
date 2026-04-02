@@ -1,5 +1,5 @@
 ---
-status: pending
+status: completed
 parallelizable: true
 blocked_by: []
 ---
@@ -45,15 +45,15 @@ Criar os tipos TypeScript derivados do api-contract.yaml, o API client para o se
 
 ## Subtarefas
 
-- [ ] 7.1 Criar `captacao.ts` com todas as interfaces TypeScript (Rubrica, Captacao, CaptacaoDetalhe, requests, responses, filtros)
-- [ ] 7.2 Criar `apiIdentificacaoClient.ts` — reutiliza lógica de auth do apiClient mas aponta para `VITE_IDENTIFICACAO_API_BASE_URL`
-- [ ] 7.3 Criar `captacoesApi.ts` com funções: getRubricas, getCaptacoes, getCaptacaoById, criarCaptacao, atualizarCaptacao, excluirCaptacao
-- [ ] 7.4 Criar `useRubricas.ts` — staleTime Infinity, gcTime 1h, select para extrair array
-- [ ] 7.5 Criar `useCaptacoes.ts` — queryKey com filtros, keepPreviousData
-- [ ] 7.6 Criar `useCaptacao.ts` — enabled: !!id
-- [ ] 7.7 Criar `useCreateCaptacao.ts` — invalidate ['captacoes'] on success
-- [ ] 7.8 Criar `useUpdateCaptacao.ts` — setQueryData + invalidate on success
-- [ ] 7.9 Criar `useDeleteCaptacao.ts` — invalidate ['captacoes'] on success
+- [x] 7.1 Criar `captacao.ts` com todas as interfaces TypeScript (Rubrica, Captacao, CaptacaoDetalhe, requests, responses, filtros)
+- [x] 7.2 Criar `apiIdentificacaoClient.ts` — reutiliza lógica de auth do apiClient mas aponta para `VITE_IDENTIFICACAO_API_BASE_URL`
+- [x] 7.3 Criar `captacoesApi.ts` com funções: getRubricas, getCaptacoes, getCaptacaoById, criarCaptacao, atualizarCaptacao, excluirCaptacao
+- [x] 7.4 Criar `useRubricas.ts` — staleTime Infinity, gcTime 1h, select para extrair array
+- [x] 7.5 Criar `useCaptacoes.ts` — queryKey com filtros, keepPreviousData
+- [x] 7.6 Criar `useCaptacao.ts` — enabled: !!id
+- [x] 7.7 Criar `useCreateCaptacao.ts` — invalidate ['captacoes'] on success
+- [x] 7.8 Criar `useUpdateCaptacao.ts` — setQueryData + invalidate on success
+- [x] 7.9 Criar `useDeleteCaptacao.ts` — invalidate ['captacoes'] on success
 
 ## Sequenciamento
 
@@ -109,8 +109,8 @@ export function useRubricas() {
 
 ## Critérios de Sucesso (Verificáveis)
 
-- [ ] Build compila: `cd frontend && npm run build`
-- [ ] TypeScript sem erros: `cd frontend && npx tsc --noEmit`
-- [ ] Tipos cobrem todos os schemas do api-contract.yaml
-- [ ] 6 hooks criados com queryKeys corretas
-- [ ] apiIdentificacaoClient aponta para variável de ambiente separada
+- [x] Build compila: `cd frontend && npm run build`
+- [x] TypeScript sem erros: `cd frontend && npx tsc --noEmit`
+- [x] Tipos cobrem todos os schemas do api-contract.yaml
+- [x] 6 hooks criados com queryKeys corretas
+- [x] apiIdentificacaoClient aponta para variável de ambiente separada

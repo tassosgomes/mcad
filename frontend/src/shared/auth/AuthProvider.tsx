@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import type { User } from 'oidc-client-ts';
 import { Loading } from '@components/ui/loading';
 import { setAuthTokenProvider } from '@services/apiClient';
+import { setIdentificacaoAuthTokenProvider } from '@services/apiIdentificacaoClient';
 import { AuthContext } from './AuthContext';
 import { userManager } from './authConfig';
 
@@ -122,9 +123,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   useEffect(() => {
     setAuthTokenProvider(() => user?.access_token ?? null);
+    setIdentificacaoAuthTokenProvider(() => user?.access_token ?? null);
 
     return () => {
       setAuthTokenProvider(null);
+      setIdentificacaoAuthTokenProvider(null);
     };
   }, [user]);
 
