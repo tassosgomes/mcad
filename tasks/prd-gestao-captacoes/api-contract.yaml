@@ -1,0 +1,755 @@
+openapi: 3.1.0
+
+info:
+  title: "Gestão de Captações API"
+  description: |
+    API para criação e gerenciamento de captações no domínio de Identificação.
+    Uma captação é o contêiner que agrupa execuções musicais de uma rubrica em um dia específico.
+
+    **Contrato gerado a partir do PRD:** `tasks/prd-gestao-captacoes/prd.md`
+    **Data de geração:** 2026-04-02
+
+    ## Premissas Adotadas
+    - Autenticação via JWT Bearer (Keycloak) — mesma configuração do Cadastro
+    - Paginação por page/size (1-indexed, default 20, max 100)
+    - Erros no formato RFC 7807 ProblemDetails
+    - Campos JSON em camelCase
+    - Sorting com prefixo `-` para DESC
+    - Schema PostgreSQL isolado: `identificacao`
+  version: "1.0.0"
+  contact:
+    name: "Time de Identificação"
+
+servers:
+  - url: http://localhost:5100/api/v1
+    description: Desenvolvimento local
+
+# ─── Segurança Global ────────────────────────────────────────────────────────
+security:
+  - BearerAuth: []
+
+tags:
+  - name: Captações
+    description: "Gestão de captações (contêiner de execuções por rubrica + dia)"
+  - name: Rubricas
+    description: "Consulta de rubricas disponíveis (seed fixo)"
+
+# ─── Paths ───────────────────────────────────────────────────────────────────
+paths:
+
+  # ── Rubricas (somente leitura) ──────────────────────────────────────────────
+
+  /rubricas:
+    get:
+      summary: Listar rubricas disponíveis
+      description: |
+        Retorna todas as rubricas do sistema (seed fixo, 7 registros).
+        Não paginado — dataset pequeno e estático.
+      operationId: listarRubricas
+      tags:
+        - Rubricas
+      responses:
+        "200":
+          description: Lista de rubricas retornada com sucesso
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Rubrica"
+              example:
+                data:
+                  - id: "b1a2c3d4-0001-0000-0000-000000000001"
+                    sigla: "RADIO"
+                    nome: "Rádio AM/FM"
+                    exigeClassificacao: false
+                  - id: "b1a2c3d4-0001-0000-0000-000000000002"
+                    sigla: "TV_ABERTA"
+                    nome: "TV Aberta"
+                    exigeClassificacao: true
+                  - id: "b1a2c3d4-0001-0000-0000-000000000003"
+                    sigla: "TV_FECHADA"
+                    nome: "TV Fechada"
+                    exigeClassificacao: true
+                  - id: "b1a2c3d4-0001-0000-0000-000000000004"
+                    sigla: "CINEMA"
+                    nome: "Cinema"
+                    exigeClassificacao: true
+                  - id: "b1a2c3d4-0001-0000-0000-000000000005"
+                    sigla: "VOD"
+                    nome: "Streaming Vídeo (VOD)"
+                    exigeClassificacao: true
+                  - id: "b1a2c3d4-0001-0000-0000-000000000006"
+                    sigla: "STREAMING_AUDIO"
+                    nome: "Streaming Áudio"
+                    exigeClassificacao: false
+                  - id: "b1a2c3d4-0001-0000-0000-000000000007"
+                    sigla: "SHOW"
+                    nome: "Show"
+                    exigeClassificacao: false
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+      x-frontend-notes: "Carregar uma vez e cachear no cliente — dados estáticos"
+      x-backend-notes: "Sem paginação necessária — dataset fixo de 7 registros"
+
+  # ── Captações ────────────────────────────────────────────────────────────────
+
+  /captacoes:
+    get:
+      summary: Listar captações
+      description: |
+        Retorna lista paginada de captações com filtros opcionais.
+        Todos os usuários (Analista e Consultor) podem visualizar todas as captações.
+      operationId: listarCaptacoes
+      tags:
+        - Captações
+      parameters:
+        - name: page
+          in: query
+          description: Número da página (começa em 1)
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+            example: 1
+        - name: size
+          in: query
+          description: Itens por página (máx 100)
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+            example: 20
+        - name: rubricaId
+          in: query
+          description: Filtrar por ID da rubrica
+          schema:
+            type: string
+            format: uuid
+            example: "b1a2c3d4-0001-0000-0000-000000000002"
+        - name: periodoInicio
+          in: query
+          description: Filtrar por período — data inicial (inclusive)
+          schema:
+            type: string
+            format: date
+            example: "2026-01-01"
+        - name: periodoFim
+          in: query
+          description: Filtrar por período — data final (inclusive)
+          schema:
+            type: string
+            format: date
+            example: "2026-01-31"
+        - name: status
+          in: query
+          description: Filtrar por status da captação
+          schema:
+            type: string
+            enum: [ABERTA, FECHADA, CANCELADA]
+            example: "ABERTA"
+        - name: analistaResponsavelId
+          in: query
+          description: Filtrar por ID do analista responsável
+          schema:
+            type: string
+            format: uuid
+            example: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+        - name: sort
+          in: query
+          description: "Campo de ordenação. Prefixo `-` para DESC. Campos: `periodo`, `criadoEm`, `rubrica`"
+          schema:
+            type: string
+            default: "-periodo"
+            example: "-periodo"
+      responses:
+        "200":
+          description: Lista de captações retornada com sucesso
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CaptacaoListResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+      x-frontend-notes: "Implementar tabela com filtros laterais ou inline. Default: ordenar por período DESC"
+      x-backend-notes: "Índice composto em (rubrica_id, periodo, status) para performance dos filtros"
+
+    post:
+      summary: Criar captação
+      description: |
+        Cria uma nova captação com status ABERTA.
+        O analista responsável é preenchido automaticamente a partir do token JWT.
+
+        **Regra RN-01:** Só pode existir uma captação não-cancelada (ABERTA ou FECHADA) por rubrica + período.
+      operationId: criarCaptacao
+      tags:
+        - Captações
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CriarCaptacaoRequest"
+      responses:
+        "201":
+          description: Captação criada com sucesso
+          headers:
+            Location:
+              description: URL do recurso criado
+              schema:
+                type: string
+                example: "/api/v1/captacoes/c1d2e3f4-5678-90ab-cdef-123456789012"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CaptacaoResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "409":
+          description: Conflito — já existe captação ativa para rubrica + período
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetails"
+              example:
+                type: "https://tools.ietf.org/html/rfc7807#section-6.5.8"
+                title: "Conflict"
+                status: 409
+                detail: "Já existe uma captação ativa para TV Aberta em 2026-01-15"
+                code: "CAPTACAO_DUPLICADA"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+      x-frontend-notes: "Rubrica como dropdown (carregar do GET /rubricas). Período como date picker"
+      x-backend-notes: "Verificar constraint de unicidade (rubrica_id, periodo) WHERE status != 'CANCELADA'"
+
+  /captacoes/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: ID único da captação
+        schema:
+          type: string
+          format: uuid
+          example: "c1d2e3f4-5678-90ab-cdef-123456789012"
+
+    get:
+      summary: Buscar captação por ID
+      description: |
+        Retorna os detalhes de uma captação específica, incluindo resumo de execuções.
+        Todos os usuários (Analista e Consultor) podem visualizar.
+      operationId: buscarCaptacaoPorId
+      tags:
+        - Captações
+      responses:
+        "200":
+          description: Captação encontrada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CaptacaoDetalheResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+      x-frontend-notes: "Exibir badge visual para o status. Mostrar resumo de execuções quando houver"
+
+    put:
+      summary: Atualizar captação
+      description: |
+        Atualiza os dados de uma captação no estado ABERTA.
+        Somente o analista responsável (dono) pode editar.
+
+        **Regra RN-08:** Apenas o analista responsável pode editar.
+        **Regra RN-01:** A nova combinação rubrica+período não pode duplicar outra captação ativa.
+        **Restrição:** Se a captação já possui execuções vinculadas, a rubrica não pode ser alterada.
+      operationId: atualizarCaptacao
+      tags:
+        - Captações
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AtualizarCaptacaoRequest"
+      responses:
+        "200":
+          description: Captação atualizada com sucesso
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CaptacaoResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          description: Conflito — duplicação de rubrica + período ou rubrica bloqueada por execuções existentes
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetails"
+              examples:
+                duplicada:
+                  summary: Já existe captação ativa para rubrica + período
+                  value:
+                    type: "https://tools.ietf.org/html/rfc7807#section-6.5.8"
+                    title: "Conflict"
+                    status: 409
+                    detail: "Já existe uma captação ativa para TV Aberta em 2026-01-15"
+                    code: "CAPTACAO_DUPLICADA"
+                rubricaBloqueada:
+                  summary: Rubrica não pode ser alterada com execuções vinculadas
+                  value:
+                    type: "https://tools.ietf.org/html/rfc7807#section-6.5.8"
+                    title: "Conflict"
+                    status: 409
+                    detail: "Não é possível alterar a rubrica de uma captação que já possui execuções"
+                    code: "RUBRICA_BLOQUEADA"
+        "422":
+          description: Captação não está no estado ABERTA
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetails"
+              example:
+                type: "https://tools.ietf.org/html/rfc7807#section-6.5.1"
+                title: "Unprocessable Entity"
+                status: 422
+                detail: "Apenas captações com status ABERTA podem ser editadas"
+                code: "STATUS_INVALIDO"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+      x-frontend-notes: "Desabilitar botão de edição se usuário não for o dono ou se status != ABERTA. Desabilitar campo rubrica se captação tem execuções"
+      x-backend-notes: "Comparar analista do JWT com analistaResponsavelId. Verificar contagem de execuções antes de permitir alteração de rubrica"
+
+    delete:
+      summary: Excluir captação
+      description: |
+        Exclui uma captação no estado ABERTA e todas as suas execuções vinculadas.
+        Somente o analista responsável (dono) pode excluir.
+        Captações FECHADAS não podem ser excluídas — devem ser canceladas via F06.
+        Nenhum evento é publicado.
+
+        **Regra RN-08:** Apenas o analista responsável pode excluir.
+      operationId: excluirCaptacao
+      tags:
+        - Captações
+      security:
+        - BearerAuth: []
+      responses:
+        "204":
+          description: Captação e suas execuções removidas com sucesso
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          description: Captação não está no estado ABERTA
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetails"
+              example:
+                type: "https://tools.ietf.org/html/rfc7807#section-6.5.1"
+                title: "Unprocessable Entity"
+                status: 422
+                detail: "Apenas captações com status ABERTA podem ser excluídas. Para captações fechadas, utilize o cancelamento"
+                code: "STATUS_INVALIDO"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+      x-frontend-notes: "Exibir dialog de confirmação. Se captação tem execuções, alertar quantas serão removidas"
+      x-backend-notes: "Cascade delete das execuções. Sem publicação de evento — exclusão é silenciosa"
+
+# ─── Components ──────────────────────────────────────────────────────────────
+components:
+
+  # Segurança
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: "Token JWT obtido via Keycloak (OIDC). Roles: analista-identificacao (write), consultor-identificacao (read)"
+
+  # Respostas reutilizáveis
+  responses:
+    BadRequest:
+      description: Requisição inválida — erro de validação de campos
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ProblemDetails"
+          example:
+            type: "https://tools.ietf.org/html/rfc7807#section-6.5.1"
+            title: "Bad Request"
+            status: 400
+            detail: "Dados inválidos na requisição"
+            errors:
+              - field: "periodo"
+                message: "O campo período é obrigatório"
+
+    Unauthorized:
+      description: Não autenticado — token ausente ou inválido
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ProblemDetails"
+          example:
+            type: "https://tools.ietf.org/html/rfc7807#section-6.5.1"
+            title: "Unauthorized"
+            status: 401
+            detail: "Token de autenticação inválido ou expirado"
+
+    Forbidden:
+      description: Sem permissão para esta operação
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ProblemDetails"
+          example:
+            type: "https://tools.ietf.org/html/rfc7807#section-6.5.1"
+            title: "Forbidden"
+            status: 403
+            detail: "Você não tem permissão para realizar esta operação"
+
+    NotFound:
+      description: Recurso não encontrado
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ProblemDetails"
+          example:
+            type: "https://tools.ietf.org/html/rfc7807#section-6.5.4"
+            title: "Not Found"
+            status: 404
+            detail: "Captação não encontrada"
+
+    InternalServerError:
+      description: Erro interno do servidor
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ProblemDetails"
+          example:
+            type: "https://tools.ietf.org/html/rfc7807#section-6.6.1"
+            title: "Internal Server Error"
+            status: 500
+            detail: "Ocorreu um erro interno. Tente novamente mais tarde."
+            traceId: "0HN4B2E8M0T0K:00000001"
+
+  # Schemas
+  schemas:
+
+    # ── Rubrica ──
+    Rubrica:
+      type: object
+      description: "Segmento de utilização musical. Dados pré-cadastrados (seed), não editáveis."
+      required:
+        - id
+        - sigla
+        - nome
+        - exigeClassificacao
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Identificador único
+          example: "b1a2c3d4-0001-0000-0000-000000000002"
+        sigla:
+          type: string
+          description: Código curto da rubrica
+          example: "TV_ABERTA"
+        nome:
+          type: string
+          description: Nome legível da rubrica
+          example: "TV Aberta"
+        exigeClassificacao:
+          type: boolean
+          description: "Se `true`, execuções desta rubrica devem ter tipo de utilização (TA, TE, PE, BK)"
+          example: true
+
+    # ── Captação ──
+    Captacao:
+      type: object
+      description: "Contêiner de execuções musicais para uma rubrica em um dia específico"
+      required:
+        - id
+        - rubrica
+        - periodo
+        - usuarioDeMusica
+        - status
+        - analistaResponsavel
+        - criadoEm
+        - atualizadoEm
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Identificador único da captação
+          example: "c1d2e3f4-5678-90ab-cdef-123456789012"
+        rubrica:
+          $ref: "#/components/schemas/Rubrica"
+        periodo:
+          type: string
+          format: date
+          description: Data da captação (YYYY-MM-DD)
+          example: "2026-01-15"
+        usuarioDeMusica:
+          type: string
+          description: "Identificação da fonte das execuções (texto livre). Ex: nome da rádio, canal de TV, plataforma"
+          example: "Rádio Globo SP"
+        status:
+          type: string
+          enum: [ABERTA, FECHADA, CANCELADA]
+          description: |
+            Status da captação:
+            - `ABERTA`: em edição, permite adicionar/editar execuções
+            - `FECHADA`: Rol finalizado, sem edição (representa o Rol de Execuções)
+            - `CANCELADA`: invalidada, não será considerada na distribuição
+          example: "ABERTA"
+        analistaResponsavel:
+          $ref: "#/components/schemas/AnalistaResumo"
+        criadoEm:
+          type: string
+          format: date-time
+          description: Data de criação (ISO 8601)
+          example: "2026-01-15T09:30:00Z"
+        atualizadoEm:
+          type: string
+          format: date-time
+          description: Data da última atualização (ISO 8601)
+          example: "2026-01-15T14:22:00Z"
+
+    CaptacaoDetalhe:
+      type: object
+      description: "Captação com resumo de execuções"
+      allOf:
+        - $ref: "#/components/schemas/Captacao"
+        - type: object
+          required:
+            - resumoExecucoes
+          properties:
+            resumoExecucoes:
+              $ref: "#/components/schemas/ResumoExecucoes"
+
+    AnalistaResumo:
+      type: object
+      description: "Dados resumidos do analista responsável (extraídos do JWT)"
+      required:
+        - id
+        - nome
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: ID do usuário no Keycloak
+          example: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+        nome:
+          type: string
+          description: Nome do analista
+          example: "Maria Silva"
+
+    ResumoExecucoes:
+      type: object
+      description: "Contadores de execuções vinculadas à captação"
+      required:
+        - total
+        - identificadas
+        - pendentes
+      properties:
+        total:
+          type: integer
+          description: Total de execuções na captação
+          example: 150
+        identificadas:
+          type: integer
+          description: Execuções com match no Cadastro
+          example: 142
+        pendentes:
+          type: integer
+          description: Execuções pendentes de identificação
+          example: 8
+
+    # ── Responses ──
+    CaptacaoResponse:
+      type: object
+      description: "Response de uma única captação"
+      allOf:
+        - $ref: "#/components/schemas/Captacao"
+
+    CaptacaoDetalheResponse:
+      type: object
+      description: "Response de uma captação com resumo de execuções"
+      allOf:
+        - $ref: "#/components/schemas/CaptacaoDetalhe"
+
+    CaptacaoListResponse:
+      type: object
+      required:
+        - data
+        - pagination
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Captacao"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+
+    # ── Requests ──
+    CriarCaptacaoRequest:
+      type: object
+      required:
+        - rubricaId
+        - periodo
+        - usuarioDeMusica
+      properties:
+        rubricaId:
+          type: string
+          format: uuid
+          description: ID da rubrica selecionada
+          example: "b1a2c3d4-0001-0000-0000-000000000002"
+        periodo:
+          type: string
+          format: date
+          description: Data da captação (YYYY-MM-DD)
+          example: "2026-01-15"
+        usuarioDeMusica:
+          type: string
+          description: "Identificação da fonte das execuções"
+          minLength: 1
+          maxLength: 255
+          example: "Rádio Globo SP"
+
+    AtualizarCaptacaoRequest:
+      type: object
+      description: "Atualização completa dos dados editáveis da captação (PUT)"
+      required:
+        - rubricaId
+        - periodo
+        - usuarioDeMusica
+      properties:
+        rubricaId:
+          type: string
+          format: uuid
+          description: "ID da rubrica. Não pode ser alterado se a captação já possui execuções"
+          example: "b1a2c3d4-0001-0000-0000-000000000002"
+        periodo:
+          type: string
+          format: date
+          description: Data da captação (YYYY-MM-DD)
+          example: "2026-01-16"
+        usuarioDeMusica:
+          type: string
+          description: "Identificação da fonte das execuções"
+          minLength: 1
+          maxLength: 255
+          example: "Rádio Globo SP - Filial Centro"
+
+    # ── Compartilhados ──
+    Pagination:
+      type: object
+      required:
+        - page
+        - size
+        - total
+        - totalPages
+      properties:
+        page:
+          type: integer
+          description: Página atual
+          example: 1
+        size:
+          type: integer
+          description: Itens por página
+          example: 20
+        total:
+          type: integer
+          description: Total de itens
+          example: 85
+        totalPages:
+          type: integer
+          description: Total de páginas
+          example: 5
+
+    ProblemDetails:
+      type: object
+      description: "RFC 7807 — formato padrão de erro"
+      required:
+        - type
+        - title
+        - status
+        - detail
+      properties:
+        type:
+          type: string
+          format: uri
+          description: URI de referência do tipo de erro
+          example: "https://tools.ietf.org/html/rfc7807#section-6.5.1"
+        title:
+          type: string
+          description: Título curto do erro
+          example: "Bad Request"
+        status:
+          type: integer
+          description: Código HTTP
+          example: 400
+        detail:
+          type: string
+          description: Mensagem legível descrevendo o erro
+          example: "Dados inválidos na requisição"
+        instance:
+          type: string
+          nullable: true
+          description: URI da requisição que causou o erro
+          example: "/api/v1/captacoes"
+        traceId:
+          type: string
+          nullable: true
+          description: ID de rastreamento para debug (presente em erros 5xx)
+          example: "0HN4B2E8M0T0K:00000001"
+        code:
+          type: string
+          nullable: true
+          description: Código de erro de negócio legível por máquina
+          example: "CAPTACAO_DUPLICADA"
+        errors:
+          type: array
+          nullable: true
+          description: Detalhes de validação por campo
+          items:
+            type: object
+            properties:
+              field:
+                type: string
+                example: "periodo"
+              message:
+                type: string
+                example: "O campo período é obrigatório"

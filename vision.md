@@ -41,7 +41,7 @@ O mini-ECAD (mcad) é uma aplicação de demonstração multi-contexto que usa o
 
 | # | Domínio (Domain) | Responsabilidade Principal | Status | Domain Doc |
 |---|---|---|---|---|
-| D01 | Cadastro | Fonte de verdade de Obras Musicais, Fonogramas e Titulares. Valida percentuais de titularidade autoral (soma = 100%) e conexa, controla ciclo de vida de status (LIBERADO/BLOQUEADO/PENDENTE) e publica eventos de mudança. | `planned` | `domains/cadastro/domain.md` |
+| D01 | Cadastro | Fonte de verdade de Obras Musicais, Fonogramas e Titulares. Valida percentuais de titularidade autoral (soma = 100%) e conexa, controla ciclo de vida de status (LIBERADO/BLOQUEADO/PENDENTE) e publica eventos de mudança. | `done` | `domains/cadastro/domain.md` |
 | D02 | Identificação | Recebe execuções musicais de diversas origens (planilhas, plataformas de streaming, gravações), identifica obras e fonogramas via ISRC/ISWC, atribui tipo de utilização com peso correspondente e fecha o Rol de Execuções do período. | `planned` | `domains/identificacao/domain.md` |
 | D03 | Arrecadação | Registra usuários de música licenciados, controla pagamentos de licença por rubrica e período, calcula verba líquida (dedução administrativa de 15% sobre o bruto) e disponibiliza a verba para distribuição. | `planned` | `domains/arrecadacao/domain.md` |
 | D04 | Distribuição | Cruza verba líquida da Arrecadação com Rol de Execuções da Identificação, calcula créditos por titular aplicando split autoral (66,67%) / conexo (33,33%), gerencia retenções por pendências cadastrais e gera demonstrativos. | `planned` | `domains/distribuicao/domain.md` |
@@ -202,6 +202,7 @@ Analytics     ──consome de──→ Todos os domínios (eventos de todos os 
 |---|---|---|---|
 | 1.0 | 2026-03-29 | Discovery com IA | Versão inicial — 4 domínios identificados, roadmap em 4 fases, restrições e glossário definidos |
 | 1.1 | 2026-03-30 | Decisão arquitetural | Auth adicionada: Keycloak externo, JWT, OIDC PKCE. Removido non-goal de "sem autenticação". Plano em `docs/architecture/auth-plan.md` |
+| 1.2 | 2026-04-01 | Fase 1 concluída | Domínio Cadastro (D01) 100% implementado: 8 features (F01-F08), 8 tabelas, 8 eventos CloudEvents, Outbox Pattern. Auth em finalização. |
 
 ---
 
