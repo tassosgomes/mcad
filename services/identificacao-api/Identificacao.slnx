@@ -1,2 +1,17 @@
 <Solution>
+  <Folder Name="/1-Services/">
+    <Project Path="1-Services/Identificacao.API/Identificacao.API.csproj" />
+  </Folder>
+  <Folder Name="/2-Application/">
+    <Project Path="2-Application/Identificacao.Application/Identificacao.Application.csproj" />
+  </Folder>
+  <Folder Name="/3-Domain/">
+    <Project Path="3-Domain/Identificacao.Domain/Identificacao.Domain.csproj" />
+  </Folder>
+  <Folder Name="/4-Infra/">
+    <Project Path="4-Infra/Identificacao.Infra/Identificacao.Infra.csproj" />
+  </Folder>
+  <Folder Name="/5-Tests/">
+    <Project Path="5-Tests/Identificacao.Tests/Identificacao.Tests.csproj" />
+  </Folder>
 </Solution>

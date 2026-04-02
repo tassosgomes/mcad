@@ -1,8 +1,10 @@
 {
   "version": 2,
-  "dgSpecHash": "zi9E/xDbkYM=",
+  "dgSpecHash": "MxgMB7gWbP8=",
   "success": true,
   "projectFilePath": "/home/tsgomes/mcad/services/identificacao-api/2-Application/Identificacao.Application/Identificacao.Application.csproj",
-  "expectedPackageFiles": [],
+  "expectedPackageFiles": [
+    "/home/tsgomes/.nuget/packages/microsoft.extensions.dependencyinjection.abstractions/8.0.1/microsoft.extensions.dependencyinjection.abstractions.8.0.1.nupkg.sha512"
+  ],
   "logs": []
 }

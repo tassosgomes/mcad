@@ -1,0 +1,39 @@
+{
+  "runtimeTarget": {
+    "name": ".NETCoreApp,Version=v8.0",
+    "signature": ""
+  },
+  "compilationOptions": {},
+  "targets": {
+    ".NETCoreApp,Version=v8.0": {
+      "Identificacao.Infra/1.0.0": {
+        "dependencies": {
+          "Identificacao.Domain": "1.0.0"
+        },
+        "runtime": {
+          "Identificacao.Infra.dll": {}
+        }
+      },
+      "Identificacao.Domain/1.0.0": {
+        "runtime": {
+          "Identificacao.Domain.dll": {
+            "assemblyVersion": "1.0.0.0",
+            "fileVersion": "1.0.0.0"
+          }
+        }
+      }
+    }
+  },
+  "libraries": {
+    "Identificacao.Infra/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "Identificacao.Domain/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    }
+  }
+}

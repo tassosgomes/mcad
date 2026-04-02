@@ -1,9 +1,10 @@
 {
   "version": 2,
-  "dgSpecHash": "8GMRsOqOZdY=",
+  "dgSpecHash": "CKvz/cylMv0=",
   "success": true,
   "projectFilePath": "/home/tsgomes/mcad/services/identificacao-api/1-Services/Identificacao.API/Identificacao.API.csproj",
   "expectedPackageFiles": [
+    "/home/tsgomes/.nuget/packages/microsoft.extensions.dependencyinjection.abstractions/8.0.1/microsoft.extensions.dependencyinjection.abstractions.8.0.1.nupkg.sha512",
     "/home/tsgomes/.nuget/packages/microsoft.netcore.app.host.linux-x64/8.0.25/microsoft.netcore.app.host.linux-x64.8.0.25.nupkg.sha512"
   ],
   "logs": []

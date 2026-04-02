@@ -1,11 +1,30 @@
 {
   "version": 3,
   "targets": {
-    "net8.0": {}
+    "net8.0": {
+      "Identificacao.Domain/1.0.0": {
+        "type": "project",
+        "framework": ".NETCoreApp,Version=v8.0",
+        "compile": {
+          "bin/placeholder/Identificacao.Domain.dll": {}
+        },
+        "runtime": {
+          "bin/placeholder/Identificacao.Domain.dll": {}
+        }
+      }
+    }
   },
-  "libraries": {},
+  "libraries": {
+    "Identificacao.Domain/1.0.0": {
+      "type": "project",
+      "path": "../../3-Domain/Identificacao.Domain/Identificacao.Domain.csproj",
+      "msbuildProject": "../../3-Domain/Identificacao.Domain/Identificacao.Domain.csproj"
+    }
+  },
   "projectFileDependencyGroups": {
-    "net8.0": []
+    "net8.0": [
+      "Identificacao.Domain >= 1.0.0"
+    ]
   },
   "packageFolders": {
     "/home/tsgomes/.nuget/packages/": {}
@@ -32,7 +51,11 @@
       "frameworks": {
         "net8.0": {
           "targetAlias": "net8.0",
-          "projectReferences": {}
+          "projectReferences": {
+            "/home/tsgomes/mcad/services/identificacao-api/3-Domain/Identificacao.Domain/Identificacao.Domain.csproj": {
+              "projectPath": "/home/tsgomes/mcad/services/identificacao-api/3-Domain/Identificacao.Domain/Identificacao.Domain.csproj"
+            }
+          }
         }
       },
       "warningProperties": {

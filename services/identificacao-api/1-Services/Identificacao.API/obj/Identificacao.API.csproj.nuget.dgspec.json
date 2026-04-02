@@ -26,7 +26,14 @@
         "frameworks": {
           "net8.0": {
             "targetAlias": "net8.0",
-            "projectReferences": {}
+            "projectReferences": {
+              "/home/tsgomes/mcad/services/identificacao-api/2-Application/Identificacao.Application/Identificacao.Application.csproj": {
+                "projectPath": "/home/tsgomes/mcad/services/identificacao-api/2-Application/Identificacao.Application/Identificacao.Application.csproj"
+              },
+              "/home/tsgomes/mcad/services/identificacao-api/4-Infra/Identificacao.Infra/Identificacao.Infra.csproj": {
+                "projectPath": "/home/tsgomes/mcad/services/identificacao-api/4-Infra/Identificacao.Infra/Identificacao.Infra.csproj"
+              }
+            }
           }
         },
         "warningProperties": {
@@ -65,6 +72,200 @@
             "Microsoft.AspNetCore.App": {
               "privateAssets": "none"
             },
+            "Microsoft.NETCore.App": {
+              "privateAssets": "all"
+            }
+          },
+          "runtimeIdentifierGraphPath": "/usr/lib/dotnet/sdk/10.0.104/PortableRuntimeIdentifierGraph.json"
+        }
+      }
+    },
+    "/home/tsgomes/mcad/services/identificacao-api/2-Application/Identificacao.Application/Identificacao.Application.csproj": {
+      "version": "1.0.0",
+      "restore": {
+        "projectUniqueName": "/home/tsgomes/mcad/services/identificacao-api/2-Application/Identificacao.Application/Identificacao.Application.csproj",
+        "projectName": "Identificacao.Application",
+        "projectPath": "/home/tsgomes/mcad/services/identificacao-api/2-Application/Identificacao.Application/Identificacao.Application.csproj",
+        "packagesPath": "/home/tsgomes/.nuget/packages/",
+        "outputPath": "/home/tsgomes/mcad/services/identificacao-api/2-Application/Identificacao.Application/obj/",
+        "projectStyle": "PackageReference",
+        "configFilePaths": [
+          "/home/tsgomes/.nuget/NuGet/NuGet.Config"
+        ],
+        "originalTargetFrameworks": [
+          "net8.0"
+        ],
+        "sources": {
+          "/usr/lib/dotnet/library-packs": {},
+          "https://api.nuget.org/v3/index.json": {}
+        },
+        "frameworks": {
+          "net8.0": {
+            "targetAlias": "net8.0",
+            "projectReferences": {
+              "/home/tsgomes/mcad/services/identificacao-api/3-Domain/Identificacao.Domain/Identificacao.Domain.csproj": {
+                "projectPath": "/home/tsgomes/mcad/services/identificacao-api/3-Domain/Identificacao.Domain/Identificacao.Domain.csproj"
+              }
+            }
+          }
+        },
+        "warningProperties": {
+          "warnAsError": [
+            "NU1605"
+          ]
+        },
+        "restoreAuditProperties": {
+          "enableAudit": "true",
+          "auditLevel": "low",
+          "auditMode": "direct"
+        },
+        "SdkAnalysisLevel": "10.0.100"
+      },
+      "frameworks": {
+        "net8.0": {
+          "targetAlias": "net8.0",
+          "dependencies": {
+            "Microsoft.Extensions.DependencyInjection.Abstractions": {
+              "target": "Package",
+              "version": "[8.0.1, )"
+            }
+          },
+          "imports": [
+            "net461",
+            "net462",
+            "net47",
+            "net471",
+            "net472",
+            "net48",
+            "net481"
+          ],
+          "assetTargetFallback": true,
+          "warn": true,
+          "frameworkReferences": {
+            "Microsoft.NETCore.App": {
+              "privateAssets": "all"
+            }
+          },
+          "runtimeIdentifierGraphPath": "/usr/lib/dotnet/sdk/10.0.104/PortableRuntimeIdentifierGraph.json"
+        }
+      }
+    },
+    "/home/tsgomes/mcad/services/identificacao-api/3-Domain/Identificacao.Domain/Identificacao.Domain.csproj": {
+      "version": "1.0.0",
+      "restore": {
+        "projectUniqueName": "/home/tsgomes/mcad/services/identificacao-api/3-Domain/Identificacao.Domain/Identificacao.Domain.csproj",
+        "projectName": "Identificacao.Domain",
+        "projectPath": "/home/tsgomes/mcad/services/identificacao-api/3-Domain/Identificacao.Domain/Identificacao.Domain.csproj",
+        "packagesPath": "/home/tsgomes/.nuget/packages/",
+        "outputPath": "/home/tsgomes/mcad/services/identificacao-api/3-Domain/Identificacao.Domain/obj/",
+        "projectStyle": "PackageReference",
+        "configFilePaths": [
+          "/home/tsgomes/.nuget/NuGet/NuGet.Config"
+        ],
+        "originalTargetFrameworks": [
+          "net8.0"
+        ],
+        "sources": {
+          "/usr/lib/dotnet/library-packs": {},
+          "https://api.nuget.org/v3/index.json": {}
+        },
+        "frameworks": {
+          "net8.0": {
+            "targetAlias": "net8.0",
+            "projectReferences": {}
+          }
+        },
+        "warningProperties": {
+          "warnAsError": [
+            "NU1605"
+          ]
+        },
+        "restoreAuditProperties": {
+          "enableAudit": "true",
+          "auditLevel": "low",
+          "auditMode": "direct"
+        },
+        "SdkAnalysisLevel": "10.0.100"
+      },
+      "frameworks": {
+        "net8.0": {
+          "targetAlias": "net8.0",
+          "imports": [
+            "net461",
+            "net462",
+            "net47",
+            "net471",
+            "net472",
+            "net48",
+            "net481"
+          ],
+          "assetTargetFallback": true,
+          "warn": true,
+          "frameworkReferences": {
+            "Microsoft.NETCore.App": {
+              "privateAssets": "all"
+            }
+          },
+          "runtimeIdentifierGraphPath": "/usr/lib/dotnet/sdk/10.0.104/PortableRuntimeIdentifierGraph.json"
+        }
+      }
+    },
+    "/home/tsgomes/mcad/services/identificacao-api/4-Infra/Identificacao.Infra/Identificacao.Infra.csproj": {
+      "version": "1.0.0",
+      "restore": {
+        "projectUniqueName": "/home/tsgomes/mcad/services/identificacao-api/4-Infra/Identificacao.Infra/Identificacao.Infra.csproj",
+        "projectName": "Identificacao.Infra",
+        "projectPath": "/home/tsgomes/mcad/services/identificacao-api/4-Infra/Identificacao.Infra/Identificacao.Infra.csproj",
+        "packagesPath": "/home/tsgomes/.nuget/packages/",
+        "outputPath": "/home/tsgomes/mcad/services/identificacao-api/4-Infra/Identificacao.Infra/obj/",
+        "projectStyle": "PackageReference",
+        "configFilePaths": [
+          "/home/tsgomes/.nuget/NuGet/NuGet.Config"
+        ],
+        "originalTargetFrameworks": [
+          "net8.0"
+        ],
+        "sources": {
+          "/usr/lib/dotnet/library-packs": {},
+          "https://api.nuget.org/v3/index.json": {}
+        },
+        "frameworks": {
+          "net8.0": {
+            "targetAlias": "net8.0",
+            "projectReferences": {
+              "/home/tsgomes/mcad/services/identificacao-api/3-Domain/Identificacao.Domain/Identificacao.Domain.csproj": {
+                "projectPath": "/home/tsgomes/mcad/services/identificacao-api/3-Domain/Identificacao.Domain/Identificacao.Domain.csproj"
+              }
+            }
+          }
+        },
+        "warningProperties": {
+          "warnAsError": [
+            "NU1605"
+          ]
+        },
+        "restoreAuditProperties": {
+          "enableAudit": "true",
+          "auditLevel": "low",
+          "auditMode": "direct"
+        },
+        "SdkAnalysisLevel": "10.0.100"
+      },
+      "frameworks": {
+        "net8.0": {
+          "targetAlias": "net8.0",
+          "imports": [
+            "net461",
+            "net462",
+            "net47",
+            "net471",
+            "net472",
+            "net48",
+            "net481"
+          ],
+          "assetTargetFallback": true,
+          "warn": true,
+          "frameworkReferences": {
             "Microsoft.NETCore.App": {
               "privateAssets": "all"
             }
