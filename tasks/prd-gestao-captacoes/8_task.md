@@ -1,5 +1,5 @@
 ---
-status: pending
+status: completed
 parallelizable: false
 blocked_by: [6.0, 7.0]
 ---
@@ -44,10 +44,10 @@ Implementar os 4 componentes de domínio (tabela, formulário, filtros, modal de
 
 ## Subtarefas
 
-- [ ] 8.1 Criar `CaptacoesTable.tsx` + CSS — colunas: rubrica (badge), período (dd/MM/yyyy), usuário de música, status (badge), responsável, ações (view, delete condicional)
-- [ ] 8.2 Criar `CaptacaoForm.tsx` + CSS — campos: rubrica (Select de useRubricas com indicador classificação), período (input date), usuário de música (TextInput). Rubrica disabled se temExecucoes. Read-only se status !== ABERTA
-- [ ] 8.3 Criar `CaptacaoFilters.tsx` + CSS — filtros: rubrica (Select), período início/fim (date), status (Select), responsável (TextInput com debounce 300ms). Reset page ao filtrar
-- [ ] 8.4 Criar `DeleteCaptacaoModal.tsx` + CSS — título, mensagem com rubrica+período em bold, aviso de execuções se totalExecucoes > 0, botões Cancelar + Excluir (danger)
+- [x] 8.1 Criar `CaptacoesTable.tsx` + CSS — colunas: rubrica (badge), período (dd/MM/yyyy), usuário de música, status (badge), responsável, ações (view, delete condicional)
+- [x] 8.2 Criar `CaptacaoForm.tsx` + CSS — campos: rubrica (Select de useRubricas com indicador classificação), período (input date), usuário de música (TextInput). Rubrica disabled se temExecucoes. Read-only se status !== ABERTA
+- [x] 8.3 Criar `CaptacaoFilters.tsx` + CSS — filtros: rubrica (Select), período início/fim (date), status (Select), responsável (TextInput com debounce 300ms). Reset page ao filtrar
+- [x] 8.4 Criar `DeleteCaptacaoModal.tsx` + CSS — título, mensagem com rubrica+período em bold, aviso de execuções se totalExecucoes > 0, botões Cancelar + Excluir (danger)
 
 ## Sequenciamento
 
@@ -143,9 +143,9 @@ useEffect(() => {
 
 ## Critérios de Sucesso (Verificáveis)
 
-- [ ] Build compila: `cd frontend && npm run build`
-- [ ] TypeScript sem erros: `cd frontend && npx tsc --noEmit`
-- [ ] Componentes seguem mockups do Stitch
-- [ ] CaptacaoForm valida campos obrigatórios antes de submeter
-- [ ] Rubrica disabled quando `temExecucoes === true`
-- [ ] Badge de status com cores corretas (accent/success/muted)
+- [x] Build compila: `cd frontend && npm run build`
+- [x] TypeScript sem erros: `cd frontend && npx tsc --noEmit`
+- [x] Componentes seguem mockups do Stitch
+- [x] CaptacaoForm valida campos obrigatórios antes de submeter
+- [x] Rubrica disabled quando `temExecucoes === true`
+- [x] Badge de status com cores corretas (accent/success/muted)

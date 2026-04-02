@@ -1,0 +1,19 @@
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  color: var(--color-text);
+  font-size: 0.9375rem;
+}
+
+.warningBox {
+  padding: var(--space-3);
+  background-color: var(--color-danger-alpha);
+  border-left: 4px solid var(--color-danger);
+  border-radius: 0 var(--radius-md) var(--radius-md) 0;
+}
+
+.warningText {
+  color: var(--color-text);
+  margin: 0;
+}
