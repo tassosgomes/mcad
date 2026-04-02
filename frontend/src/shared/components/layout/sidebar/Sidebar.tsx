@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import { Database, Search, Banknote, Split, ChevronDown } from 'lucide-react';
+import { useAuth } from '@shared/auth';
 import styles from './Sidebar.module.css';
 
 const navigation = [
@@ -8,6 +9,7 @@ const navigation = [
     label: 'Cadastro',
     icon: Database,
     basePath: '/cadastro',
+    requiredRoles: ['analista-cadastro', 'consultor'],
     children: [
       { label: 'Associações', path: '/cadastro/associacoes' },
       { label: 'Titulares', path: '/cadastro/titulares' },
@@ -21,12 +23,13 @@ const navigation = [
     icon: Search, 
     basePath: '/identificacao', 
     disabled: false,
+    requiredRoles: ['analista-identificacao', 'consultor-identificacao'],
     children: [
       { label: 'Captações', path: '/identificacao/captacoes' },
     ]
   },
-  { label: 'Arrecadação', icon: Banknote, basePath: '/arrecadacao', disabled: true },
-  { label: 'Distribuição', icon: Split, basePath: '/distribuicao', disabled: true },
+  { label: 'Arrecadação', icon: Banknote, basePath: '/arrecadacao', disabled: true, requiredRoles: [] },
+  { label: 'Distribuição', icon: Split, basePath: '/distribuicao', disabled: true, requiredRoles: [] },
 ];
 
 interface SidebarProps {
@@ -35,6 +38,8 @@ interface SidebarProps {
 }
 
 export function Sidebar({ isOpen, onClose }: SidebarProps) {
+  const { hasRole } = useAuth();
+
   // Always open first section for now
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({
     'Cadastro': true,
@@ -60,6 +65,10 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
           {navigation.map((group) => {
             const Icon = group.icon;
             const isGroupOpen = openSections[group.label];
+            
+            // Check visibility
+            const isVisible = group.requiredRoles.length === 0 || group.requiredRoles.some(role => hasRole(role));
+            if (!isVisible) return null;
             
             return (
               <div key={group.label} className={styles.group}>

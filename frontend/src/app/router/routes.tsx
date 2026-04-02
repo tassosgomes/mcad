@@ -2,7 +2,7 @@ import { lazy, Suspense } from 'react';
 import { createBrowserRouter, Navigate } from 'react-router-dom';
 import { MainLayout } from '@components/layout/main-layout';
 import { Loading } from '@components/ui/loading';
-import { CallbackPage, LoggedOutPage, ProtectedRoute, SilentCallbackPage } from '@shared/auth';
+import { CallbackPage, LoggedOutPage, ProtectedRoute, RequireRole, SilentCallbackPage } from '@shared/auth';
 
 const CadastroRoutes = lazy(() => import('@features/cadastro'));
 const IdentificacaoRoutes = lazy(() => import('@features/identificacao'));
@@ -32,17 +32,21 @@ export const router = createBrowserRouter([
       { 
         path: 'cadastro/*', 
         element: (
-          <Suspense fallback={<Loading />}>
-            <CadastroRoutes />
-          </Suspense>
+          <RequireRole roles={['analista-cadastro', 'consultor']}>
+            <Suspense fallback={<Loading />}>
+              <CadastroRoutes />
+            </Suspense>
+          </RequireRole>
         ) 
       },
       { 
         path: 'identificacao/*', 
         element: (
-          <Suspense fallback={<Loading />}>
-            <IdentificacaoRoutes />
-          </Suspense>
+          <RequireRole roles={['analista-identificacao', 'consultor-identificacao']}>
+            <Suspense fallback={<Loading />}>
+              <IdentificacaoRoutes />
+            </Suspense>
+          </RequireRole>
         ) 
       },
     ],
