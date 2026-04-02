@@ -28,6 +28,11 @@ export ANALISTA_EMAIL="${KEYCLOAK_ANALISTA_EMAIL:-analista@mcad.dev}"
 export ANALISTA_FIRST_NAME="${KEYCLOAK_ANALISTA_FIRST_NAME:-Analista}"
 export ANALISTA_LAST_NAME="${KEYCLOAK_ANALISTA_LAST_NAME:-Teste}"
 export ANALISTA_PASSWORD="${KEYCLOAK_ANALISTA_PASSWORD:-Analista123!}"
+export ANALISTA_IDENT_USERNAME="${KEYCLOAK_ANALISTA_IDENT_USERNAME:-analista.ident}"
+export ANALISTA_IDENT_EMAIL="${KEYCLOAK_ANALISTA_IDENT_EMAIL:-analista.ident@mcad.dev}"
+export ANALISTA_IDENT_FIRST_NAME="${KEYCLOAK_ANALISTA_IDENT_FIRST_NAME:-Analista}"
+export ANALISTA_IDENT_LAST_NAME="${KEYCLOAK_ANALISTA_IDENT_LAST_NAME:-Identificacao}"
+export ANALISTA_IDENT_PASSWORD="${KEYCLOAK_ANALISTA_IDENT_PASSWORD:-Analista123!}"
 export CONSULTOR_USERNAME="${KEYCLOAK_CONSULTOR_USERNAME:-consultor.teste}"
 export CONSULTOR_EMAIL="${KEYCLOAK_CONSULTOR_EMAIL:-consultor@mcad.dev}"
 export CONSULTOR_FIRST_NAME="${KEYCLOAK_CONSULTOR_FIRST_NAME:-Consultor}"
@@ -254,6 +259,7 @@ admin_token = post_form(
 
 ensure_realm(admin_token)
 ensure_role(admin_token, "analista-cadastro", "Analista de Cadastro (leitura + escrita)")
+ensure_role(admin_token, "analista-identificacao", "Analista de Identificação (leitura + escrita)")
 ensure_role(admin_token, "consultor", "Consultor (somente leitura)")
 ensure_client(admin_token)
 ensure_user(
@@ -274,12 +280,22 @@ ensure_user(
     os.environ["CONSULTOR_PASSWORD"],
     "consultor",
 )
+ensure_user(
+    admin_token,
+    os.environ["ANALISTA_IDENT_USERNAME"],
+    os.environ["ANALISTA_IDENT_EMAIL"],
+    os.environ["ANALISTA_IDENT_FIRST_NAME"],
+    os.environ["ANALISTA_IDENT_LAST_NAME"],
+    os.environ["ANALISTA_IDENT_PASSWORD"],
+    "analista-identificacao",
+)
 
 print(json.dumps(
     {
         "realm": realm_name,
         "clientId": client_id,
         "analistaUser": os.environ["ANALISTA_USERNAME"],
+        "analistaIdentUser": os.environ["ANALISTA_IDENT_USERNAME"],
         "consultorUser": os.environ["CONSULTOR_USERNAME"],
     },
     indent=2,
