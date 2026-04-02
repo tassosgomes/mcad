@@ -12,4 +12,4 @@ public record ListarCaptacoesQuery(
     string? Sort = null,
     int? Page = 1,
     int? Size = 10
-) : IQuery<(IEnumerable<CaptacaoResponse> Items, int Total)>;
+) : IQuery<CaptacaoListResponse>;

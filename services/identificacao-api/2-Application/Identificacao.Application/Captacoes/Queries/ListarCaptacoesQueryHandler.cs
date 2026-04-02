@@ -3,9 +3,11 @@ using Identificacao.Application.Captacoes.Responses;
 using Identificacao.Application.Rubricas.Responses;
 using Identificacao.Domain.Interfaces;
 
+using Identificacao.Application.Common.Responses;
+
 namespace Identificacao.Application.Captacoes.Queries;
 
-public class ListarCaptacoesQueryHandler : IQueryHandler<ListarCaptacoesQuery, (IEnumerable<CaptacaoResponse> Items, int Total)>
+public class ListarCaptacoesQueryHandler : IQueryHandler<ListarCaptacoesQuery, CaptacaoListResponse>
 {
     private readonly ICaptacaoRepository _repository;
 
@@ -14,9 +16,10 @@ public class ListarCaptacoesQueryHandler : IQueryHandler<ListarCaptacoesQuery, (
         _repository = repository;
     }
 
-    public async Task<(IEnumerable<CaptacaoResponse> Items, int Total)> HandleAsync(ListarCaptacoesQuery query, CancellationToken cancellationToken)
+    public async Task<CaptacaoListResponse> HandleAsync(ListarCaptacoesQuery query, CancellationToken cancellationToken)
     {
         var result = await _repository.ListarAsync(query, cancellationToken);
+        var totalPages = (int)Math.Ceiling((double)result.Total / (query.Size ?? 10));
 
         var items = result.Items.Select(c => new CaptacaoResponse(
             c.Id,
@@ -29,6 +32,9 @@ public class ListarCaptacoesQueryHandler : IQueryHandler<ListarCaptacoesQuery, (
             c.AtualizadoEm
         ));
 
-        return (items, result.Total);
+        return new CaptacaoListResponse(
+            items,
+            new PaginationResponse(query.Page ?? 1, query.Size ?? 10, result.Total, totalPages)
+        );
     }
 }
