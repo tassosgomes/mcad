@@ -46,8 +46,11 @@ public class CaptacaoRepository : ICaptacaoRepository
 
         if (filtro.Status != null)
         {
-            var status = (StatusCaptacao)filtro.Status;
-            query = query.Where(c => c.Status == status);
+            var statusStr = (string)filtro.Status;
+            if (Enum.TryParse<StatusCaptacao>(statusStr, true, out var status))
+            {
+                query = query.Where(c => c.Status == status);
+            }
         }
 
         if (filtro.AnalistaResponsavelId != null)
