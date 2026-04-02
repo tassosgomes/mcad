@@ -5,6 +5,7 @@ import styles from './TitularesTable.module.css';
 
 interface TitularesTableProps {
   data: Titular[];
+  canWrite: boolean;
   sort: string;
   onSortChange: (sort: string) => void;
   onEdit: (id: string) => void;
@@ -34,7 +35,7 @@ function toggleSort(field: string, currentSort: string): string {
   return field;
 }
 
-export function TitularesTable({ data, sort, onSortChange, onEdit, onDelete }: TitularesTableProps) {
+export function TitularesTable({ data, canWrite, sort, onSortChange, onEdit, onDelete }: TitularesTableProps) {
   if (data.length === 0) {
     return (
       <div className={styles.empty}>
@@ -77,7 +78,7 @@ export function TitularesTable({ data, sort, onSortChange, onEdit, onDelete }: T
                 STATUS <SortIcon field="status" currentSort={sort} />
               </button>
             </th>
-            <th className={`${styles.th} ${styles.textRight}`} aria-label="Ações">Ações</th>
+            {canWrite && <th className={`${styles.th} ${styles.textRight}`} aria-label="Ações">Ações</th>}
           </tr>
         </thead>
         <tbody>
@@ -98,28 +99,30 @@ export function TitularesTable({ data, sort, onSortChange, onEdit, onDelete }: T
               <td className={styles.td}>
                 <Badge variant={STATUS_VARIANT[titular.status]}>{titular.status}</Badge>
               </td>
-              <td className={styles.td}>
-                <div className={styles.actions}>
-                  <button
-                    className={styles.actionBtn}
-                    onClick={() => onEdit(titular.id)}
-                    aria-label={`Editar ${titular.nome}`}
-                    title="Editar"
-                    type="button"
-                  >
-                    <Pencil size={15} />
-                  </button>
-                  <button
-                    className={`${styles.actionBtn} ${styles.danger}`}
-                    onClick={() => onDelete(titular)}
-                    aria-label={`Excluir ${titular.nome}`}
-                    title="Excluir"
-                    type="button"
-                  >
-                    <Trash2 size={15} />
-                  </button>
-                </div>
-              </td>
+              {canWrite && (
+                <td className={styles.td}>
+                  <div className={styles.actions}>
+                    <button
+                      className={styles.actionBtn}
+                      onClick={() => onEdit(titular.id)}
+                      aria-label={`Editar ${titular.nome}`}
+                      title="Editar"
+                      type="button"
+                    >
+                      <Pencil size={15} />
+                    </button>
+                    <button
+                      className={`${styles.actionBtn} ${styles.danger}`}
+                      onClick={() => onDelete(titular)}
+                      aria-label={`Excluir ${titular.nome}`}
+                      title="Excluir"
+                      type="button"
+                    >
+                      <Trash2 size={15} />
+                    </button>
+                  </div>
+                </td>
+              )}
             </tr>
           ))}
         </tbody>

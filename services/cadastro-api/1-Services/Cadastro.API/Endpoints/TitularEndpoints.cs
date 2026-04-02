@@ -19,22 +19,27 @@ public static class TitularEndpoints
             .WithTags("Titulares");
 
         group.MapGet("/", ListarTitulares)
+            .RequireAuthorization("read")
             .WithName("ListarTitulares")
             .WithSummary("Listar titulares com paginação, filtros e ordenação");
 
         group.MapPost("/", CriarTitular)
+            .RequireAuthorization("write")
             .WithName("CriarTitular")
             .WithSummary("Criar novo titular PF ou PJ");
 
         group.MapGet("/{id:guid}", BuscarPorId)
+            .RequireAuthorization("read")
             .WithName("BuscarTitularPorId")
             .WithSummary("Buscar titular por ID");
 
         group.MapPut("/{id:guid}", AtualizarTitular)
+            .RequireAuthorization("write")
             .WithName("AtualizarTitular")
             .WithSummary("Atualizar dados editáveis do titular");
 
         group.MapDelete("/{id:guid}", ExcluirTitular)
+            .RequireAuthorization("write")
             .WithName("ExcluirTitular")
             .WithSummary("Excluir titular (se sem vínculos)");
     }

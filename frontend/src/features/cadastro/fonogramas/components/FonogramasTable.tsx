@@ -6,6 +6,7 @@ import styles from './FonogramasTable.module.css';
 
 interface FonogramasTableProps {
   data: FonogramaResumo[];
+  canWrite: boolean;
   sort: string;
   onSortChange: (sort: string) => void;
   onEdit: (id: string) => void;
@@ -31,7 +32,7 @@ function toggleSort(field: string, currentSort: string): string {
   return field;
 }
 
-export function FonogramasTable({ data, sort, onSortChange, onEdit, onDelete }: FonogramasTableProps) {
+export function FonogramasTable({ data, canWrite, sort, onSortChange, onEdit, onDelete }: FonogramasTableProps) {
   if (data.length === 0) {
     return (
       <div className={styles.empty}>
@@ -62,7 +63,7 @@ export function FonogramasTable({ data, sort, onSortChange, onEdit, onDelete }: 
               </button>
             </th>
             <th className={styles.th}>LANÇAMENTO</th>
-            <th className={`${styles.th} ${styles.textRight}`}>Ações</th>
+            {canWrite && <th className={`${styles.th} ${styles.textRight}`}>Ações</th>}
           </tr>
         </thead>
         <tbody>
@@ -86,30 +87,32 @@ export function FonogramasTable({ data, sort, onSortChange, onEdit, onDelete }: 
               <td className={styles.td}>
                 <span className={styles.data}>{fonograma.dataLancamento || '—'}</span>
               </td>
-              <td className={styles.td}>
-                <div className={styles.actions}>
-                  <button
-                    className={styles.actionBtn}
-                    onClick={() => onEdit(fonograma.id)}
-                    aria-label={`Editar ${fonograma.isrcFormatado}`}
-                    title="Editar"
-                    type="button"
-                  >
-                    <Pencil size={15} />
-                  </button>
-                  <button
-                    className={`${styles.actionBtn} ${styles.danger}`}
-                    onClick={() => onDelete(fonograma)}
-                    aria-label={`Excluir ${fonograma.isrcFormatado}`}
-                    title="Excluir"
-                    type="button"
-                    disabled={fonograma.status === 'Liberado' || fonograma.status === 'Depurado'}
-                    style={{ opacity: fonograma.status === 'Liberado' || fonograma.status === 'Depurado' ? 0.3 : 1, cursor: fonograma.status === 'Liberado' || fonograma.status === 'Depurado' ? 'not-allowed' : 'pointer'}}
-                  >
-                    <Trash2 size={15} />
-                  </button>
-                </div>
-              </td>
+              {canWrite && (
+                <td className={styles.td}>
+                  <div className={styles.actions}>
+                    <button
+                      className={styles.actionBtn}
+                      onClick={() => onEdit(fonograma.id)}
+                      aria-label={`Editar ${fonograma.isrcFormatado}`}
+                      title="Editar"
+                      type="button"
+                    >
+                      <Pencil size={15} />
+                    </button>
+                    <button
+                      className={`${styles.actionBtn} ${styles.danger}`}
+                      onClick={() => onDelete(fonograma)}
+                      aria-label={`Excluir ${fonograma.isrcFormatado}`}
+                      title="Excluir"
+                      type="button"
+                      disabled={fonograma.status === 'Liberado' || fonograma.status === 'Depurado'}
+                      style={{ opacity: fonograma.status === 'Liberado' || fonograma.status === 'Depurado' ? 0.3 : 1, cursor: fonograma.status === 'Liberado' || fonograma.status === 'Depurado' ? 'not-allowed' : 'pointer'}}
+                    >
+                      <Trash2 size={15} />
+                    </button>
+                  </div>
+                </td>
+              )}
             </tr>
           ))}
         </tbody>

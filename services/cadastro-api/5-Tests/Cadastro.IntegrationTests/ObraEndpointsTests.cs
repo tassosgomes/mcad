@@ -22,7 +22,7 @@ public class ObraEndpointsTests : IClassFixture<CadastroApiFactory>
     {
         _mockIswcService = new Mock<IIswcService>();
 
-        _client = factory.WithWebHostBuilder(builder =>
+        _client = factory.CreateAuthenticatedClient(builder =>
         {
             builder.ConfigureTestServices(services =>
             {
@@ -33,7 +33,7 @@ public class ObraEndpointsTests : IClassFixture<CadastroApiFactory>
                 }
                 services.AddScoped<IIswcService>(_ => _mockIswcService.Object);
             });
-        }).CreateClient();
+        });
     }
 
     private static string GerarCpfValido()

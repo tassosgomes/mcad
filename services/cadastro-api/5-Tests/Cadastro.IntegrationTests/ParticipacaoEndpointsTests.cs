@@ -31,12 +31,12 @@ public class ParticipacaoEndpointsTests : IClassFixture<CadastroApiFactory>
             .Setup(s => s.ObterIswcAsync(It.IsAny<string>(), It.IsAny<IEnumerable<string>>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync($"T-{Guid.NewGuid().ToString()[..8]}");
 
-        _client = factory.WithWebHostBuilder(b => b.ConfigureTestServices(services =>
+        _client = factory.CreateAuthenticatedClient(b => b.ConfigureTestServices(services =>
         {
             var d = services.SingleOrDefault(s => s.ServiceType == typeof(IIswcService));
             if (d != null) services.Remove(d);
             services.AddScoped<IIswcService>(_ => mockIswc.Object);
-        })).CreateClient();
+        }));
     }
 
     // ─── Helpers ──────────────────────────────────────────────────────────────

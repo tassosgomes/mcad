@@ -7,6 +7,7 @@ import { ErrorState } from '@components/ui/error-state';
 import { Button } from '@components/ui/button';
 import { Pagination } from '@components/ui/pagination';
 import { useToast } from '@components/ui/toast';
+import { useAuth } from '@shared/auth';
 import { useObras } from '../hooks/useObras';
 import { useDeleteObra } from '../hooks/useDeleteObra';
 import { ObrasTable } from '../components/ObrasTable';
@@ -18,6 +19,8 @@ import styles from './ObrasPage.module.css';
 export function ObrasPage() {
   const navigate = useNavigate();
   const { showToast } = useToast();
+  const { hasRole } = useAuth();
+  const canWrite = hasRole('analista-cadastro');
   const [filtros, setFiltros] = useState<ObraFiltros>({ page: 1, size: 20, sort: 'titulo' });
   const [obraParaExcluir, setObraParaExcluir] = useState<ObraMusical | null>(null);
   const { data, isLoading, error, refetch } = useObras(filtros);
@@ -40,7 +43,7 @@ export function ObrasPage() {
       <PageHeader
         title="Obras Musicais"
         description="Gestão de obras musicais, metadados e códigos ISWC."
-        action={
+        action={canWrite ? (
           <Button
             variant="primary"
             onClick={() => navigate('/cadastro/obras/nova')}
@@ -49,7 +52,7 @@ export function ObrasPage() {
           >
             <Plus size={16} /> Nova Obra
           </Button>
-        }
+        ) : undefined}
       />
 
       <ObrasFilters filtros={filtros} onChange={setFiltros} />
@@ -62,6 +65,7 @@ export function ObrasPage() {
         <>
           <ObrasTable
             data={data.data}
+            canWrite={canWrite}
             sort={filtros.sort || 'titulo'}
             onSortChange={(sort) => setFiltros((prev) => ({ ...prev, sort, page: 1 }))}
             onEdit={(id) => navigate(`/cadastro/obras/${id}`)}

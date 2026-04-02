@@ -15,28 +15,32 @@ public static class TitularidadeEndpoints
         {
             var result = await dispatcher.QueryAsync(new ListarTitularidadesQuery(obraId), ct);
             return Results.Ok(result);
-        });
+        })
+        .RequireAuthorization("read");
 
         obrasGroup.MapPost("/{obraId:guid}/titularidades", async (Guid obraId, [FromBody] AdicionarTitularidadeRequest request, IDispatcher dispatcher, CancellationToken ct) =>
         {
             var command = new AdicionarTitularidadeCommand(obraId, request.TitularId, request.Categoria, request.Percentual);
             var result = await dispatcher.SendAsync(command, ct);
             return Results.Created($"/api/v1/obras/{obraId}/titularidades", result);
-        });
+        })
+        .RequireAuthorization("write");
 
         obrasGroup.MapPut("/{obraId:guid}/titularidades/{id:guid}", async (Guid obraId, Guid id, [FromBody] EditarTitularidadeRequest request, IDispatcher dispatcher, CancellationToken ct) =>
         {
             var command = new EditarTitularidadeCommand(obraId, id, request.Percentual);
             var result = await dispatcher.SendAsync(command, ct);
             return Results.Ok(result);
-        });
+        })
+        .RequireAuthorization("write");
 
         obrasGroup.MapDelete("/{obraId:guid}/titularidades/{id:guid}", async (Guid obraId, Guid id, IDispatcher dispatcher, CancellationToken ct) =>
         {
             var command = new RemoverTitularidadeCommand(obraId, id);
             var result = await dispatcher.SendAsync(command, ct);
             return Results.Ok(result);
-        });
+        })
+        .RequireAuthorization("write");
 
         var titularesGroup = app.MapGroup("/api/v1/titulares").WithTags("Autocomplete Titulares");
 
@@ -44,7 +48,8 @@ public static class TitularidadeEndpoints
         {
             var result = await dispatcher.QueryAsync(query, ct);
             return Results.Ok(result);
-        });
+        })
+        .RequireAuthorization("read");
     }
 }
 

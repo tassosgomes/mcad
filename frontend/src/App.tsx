@@ -2,14 +2,17 @@ import { RouterProvider } from 'react-router-dom';
 import { router } from './app/router/routes';
 import { AppProviders } from './app/providers/AppProviders';
 import { ToastProvider } from '@components/ui/toast';
+import { AuthProvider } from '@shared/auth';
 
 function App() {
   return (
-    <AppProviders>
-      <ToastProvider>
-        <RouterProvider router={router} />
-      </ToastProvider>
-    </AppProviders>
+    <AuthProvider>
+      <AppProviders>
+        <ToastProvider>
+          <RouterProvider router={router} />
+        </ToastProvider>
+      </AppProviders>
+    </AuthProvider>
   );
 }
 

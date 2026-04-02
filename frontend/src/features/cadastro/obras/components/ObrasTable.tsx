@@ -5,6 +5,7 @@ import styles from './ObrasTable.module.css';
 
 interface ObrasTableProps {
   data: ObraMusical[];
+  canWrite: boolean;
   sort: string;
   onSortChange: (sort: string) => void;
   onEdit: (id: string) => void;
@@ -38,7 +39,7 @@ function toggleSort(field: string, currentSort: string): string {
   return field;
 }
 
-export function ObrasTable({ data, sort, onSortChange, onEdit, onDelete }: ObrasTableProps) {
+export function ObrasTable({ data, canWrite, sort, onSortChange, onEdit, onDelete }: ObrasTableProps) {
   if (data.length === 0) {
     return (
       <div className={styles.empty}>
@@ -81,7 +82,7 @@ export function ObrasTable({ data, sort, onSortChange, onEdit, onDelete }: Obras
                 STATUS <SortIcon field="status" currentSort={sort} />
               </button>
             </th>
-            <th className={`${styles.th} ${styles.textRight}`} aria-label="Ações">Ações</th>
+            {canWrite && <th className={`${styles.th} ${styles.textRight}`} aria-label="Ações">Ações</th>}
           </tr>
         </thead>
         <tbody>
@@ -112,30 +113,32 @@ export function ObrasTable({ data, sort, onSortChange, onEdit, onDelete }: Obras
               <td className={styles.td}>
                 <Badge variant={STATUS_VARIANT[obra.status] as any}>{obra.status}</Badge>
               </td>
-              <td className={styles.td}>
-                <div className={styles.actions}>
-                  <button
-                    className={styles.actionBtn}
-                    onClick={() => onEdit(obra.id)}
-                    aria-label={`Editar ${obra.titulo}`}
-                    title="Editar"
-                    type="button"
-                  >
-                    <Pencil size={15} />
-                  </button>
-                  <button
-                    className={`${styles.actionBtn} ${styles.danger}`}
-                    onClick={() => onDelete(obra)}
-                    aria-label={`Excluir ${obra.titulo}`}
-                    title="Excluir"
-                    type="button"
-                    disabled={obra.status === 'DEPURADA'}
-                    style={{ opacity: obra.status === 'DEPURADA' ? 0.3 : 1, cursor: obra.status === 'DEPURADA' ? 'not-allowed' : 'pointer'}}
-                  >
-                    <Trash2 size={15} />
-                  </button>
-                </div>
-              </td>
+              {canWrite && (
+                <td className={styles.td}>
+                  <div className={styles.actions}>
+                    <button
+                      className={styles.actionBtn}
+                      onClick={() => onEdit(obra.id)}
+                      aria-label={`Editar ${obra.titulo}`}
+                      title="Editar"
+                      type="button"
+                    >
+                      <Pencil size={15} />
+                    </button>
+                    <button
+                      className={`${styles.actionBtn} ${styles.danger}`}
+                      onClick={() => onDelete(obra)}
+                      aria-label={`Excluir ${obra.titulo}`}
+                      title="Excluir"
+                      type="button"
+                      disabled={obra.status === 'DEPURADA'}
+                      style={{ opacity: obra.status === 'DEPURADA' ? 0.3 : 1, cursor: obra.status === 'DEPURADA' ? 'not-allowed' : 'pointer'}}
+                    >
+                      <Trash2 size={15} />
+                    </button>
+                  </div>
+                </td>
+              )}
             </tr>
           ))}
         </tbody>

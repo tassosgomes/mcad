@@ -24,6 +24,7 @@ public static class AssociacaoEndpoints
             var result = await dispatcher.QueryAsync(new GetAssociacoesQuery(), cancellationToken);
             return Results.Ok(result);
         })
+        .RequireAuthorization("read")
         .WithName("GetAssociacoes")
         .WithSummary("Lista todas as associações de gestão coletiva do ECAD");
 
@@ -47,6 +48,7 @@ public static class AssociacaoEndpoints
                     instance: $"/api/v1/associacoes/{id}");
             }
         })
+        .RequireAuthorization("read")
         .WithName("GetAssociacaoById")
         .WithSummary("Busca associação por ID");
 

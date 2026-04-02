@@ -8,12 +8,20 @@ using Cadastro.Infra.Data;
 using Cadastro.Infra.Events;
 using Cadastro.Infra.Repositories;
 using FluentValidation;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using Polly;
 
 DotEnvLoader.LoadIfPresent();
 
 var builder = WebApplication.CreateBuilder(args);
+var authEnabled = !string.Equals(
+    builder.Configuration["AUTH_ENABLED"],
+    "false",
+    StringComparison.OrdinalIgnoreCase);
 
 // ─── Connection String (lida de variáveis de ambiente) ─────────────────
 var dbHost     = Environment.GetEnvironmentVariable("CADASTRO_DB_HOST")     ?? "localhost";
@@ -86,6 +94,54 @@ builder.Services.AddCors(options =>
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddProblemDetails();
 
+if (authEnabled)
+{
+    var oidcAuthority = Environment.GetEnvironmentVariable("OIDC_AUTHORITY");
+    var oidcAudience = Environment.GetEnvironmentVariable("OIDC_AUDIENCE") ?? "mcad-frontend";
+
+    if (string.IsNullOrWhiteSpace(oidcAuthority))
+    {
+        throw new InvalidOperationException("OIDC_AUTHORITY is required when AUTH_ENABLED=true.");
+    }
+
+    builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+        .AddJwtBearer(options =>
+        {
+            options.Authority = oidcAuthority;
+            options.Audience = oidcAudience;
+            options.RequireHttpsMetadata = !builder.Environment.IsDevelopment();
+            options.TokenValidationParameters = new TokenValidationParameters
+            {
+                ValidIssuer = oidcAuthority,
+                ValidateIssuer = true,
+                ValidateAudience = false
+            };
+            options.Events = new JwtBearerEvents
+            {
+                OnTokenValidated = context =>
+                {
+                    var authorizedParty = context.Principal?.FindFirst("azp")?.Value;
+                    if (!string.Equals(authorizedParty, oidcAudience, StringComparison.Ordinal))
+                    {
+                        context.Fail("Token authorized party does not match configured audience.");
+                    }
+
+                    return Task.CompletedTask;
+                }
+            };
+        });
+
+    builder.Services.AddTransient<IClaimsTransformation, KeycloakClaimsTransformation>();
+    builder.Services.AddAuthorization(options =>
+    {
+        options.FallbackPolicy = new AuthorizationPolicyBuilder()
+            .RequireAuthenticatedUser()
+            .Build();
+        options.AddPolicy("read", policy => policy.RequireRole("analista-cadastro", "consultor"));
+        options.AddPolicy("write", policy => policy.RequireRole("analista-cadastro"));
+    });
+}
+
 // ─── Logging estruturado ───────────────────────────────────────────────
 builder.Logging.AddConsole();
 
@@ -94,6 +150,16 @@ var app = builder.Build();
 // ─── Middleware pipeline ───────────────────────────────────────────────
 app.UseExceptionHandler();
 app.UseCors();
+
+if (authEnabled)
+{
+    app.UseAuthentication();
+    app.UseAuthorization();
+}
+else
+{
+    app.Logger.LogWarning("Authentication is DISABLED");
+}
 
 // ─── Aplicar migrations + confirmar seed no startup ───────────────────
 using (var scope = app.Services.CreateScope())
@@ -120,7 +186,7 @@ app.MapFonogramaEndpoints();
 app.MapParticipacaoEndpoints();
 
 // ─── Health Check ─────────────────────────────────────────────────────
-app.MapHealthChecks("/health");
+app.MapHealthChecks("/health").AllowAnonymous();
 
 app.Logger.LogInformation("Cadastro API iniciada na porta 5001");
 app.Run();

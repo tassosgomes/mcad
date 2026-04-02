@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Plus } from 'lucide-react';
 import { Button } from '@components/ui/button';
 import { useToast } from '@components/ui/toast';
+import { useAuth } from '@shared/auth';
 import { SomaIndicator } from '@features/cadastro/titularidades/components/SomaIndicator';
 import { useParticipacoes } from '../hooks/useParticipacoes';
 import { useAddParticipacao } from '../hooks/useAddParticipacao';
@@ -19,14 +20,17 @@ import styles from './ParticipacoesSection.module.css';
 interface ParticipacoesSecaoProps {
   fonogramaId: string;
   fonogramaStatus: string;
+  canWrite?: boolean;
   onDepuracaoRequired: () => void;
 }
 
 export function ParticipacoesSection({
   fonogramaId,
   fonogramaStatus,
+  canWrite: canWriteProp,
   onDepuracaoRequired,
 }: ParticipacoesSecaoProps) {
+  const { hasRole } = useAuth();
   const { data, isLoading } = useParticipacoes(fonogramaId);
   const addMutation = useAddParticipacao(fonogramaId);
   const removeMutation = useRemoveParticipacao(fonogramaId);
@@ -37,8 +41,10 @@ export function ParticipacoesSection({
   const [showAddForm, setShowAddForm] = useState(false);
   const [showRecalcularModal, setShowRecalcularModal] = useState(false);
 
+  const canWrite = canWriteProp ?? hasRole('analista-cadastro');
+
   // Read-only em fonogramas depurados
-  const isReadOnly = fonogramaStatus === 'DEPURADO';
+  const isReadOnly = !canWrite || fonogramaStatus === 'DEPURADO';
 
   const participacoes = data?.participacoes ?? [];
   const somaCalculada = data?.somaCalculada ?? false;

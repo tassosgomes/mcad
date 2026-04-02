@@ -7,6 +7,7 @@ import { ErrorState } from '@components/ui/error-state';
 import { Button } from '@components/ui/button';
 import { Pagination } from '@components/ui/pagination';
 import { useToast } from '@components/ui/toast';
+import { useAuth } from '@shared/auth';
 import { useTitulares } from '../hooks/useTitulares';
 import { useDeleteTitular } from '../hooks/useDeleteTitular';
 import { TitularesTable } from '../components/TitularesTable';
@@ -18,6 +19,8 @@ import styles from './TitularesPage.module.css';
 export function TitularesPage() {
   const navigate = useNavigate();
   const { showToast } = useToast();
+  const { hasRole } = useAuth();
+  const canWrite = hasRole('analista-cadastro');
   const [filtros, setFiltros] = useState<TitularFiltros>({ page: 1, size: 20, sort: 'nome' });
   const [titularParaExcluir, setTitularParaExcluir] = useState<Titular | null>(null);
   const { data, isLoading, error, refetch } = useTitulares(filtros);
@@ -39,7 +42,7 @@ export function TitularesPage() {
       <PageHeader
         title="Titulares"
         description="Pessoas físicas e jurídicas titulares de direitos autorais registrados no sistema."
-        action={
+        action={canWrite ? (
           <Button
             variant="primary"
             onClick={() => navigate('/cadastro/titulares/novo')}
@@ -48,7 +51,7 @@ export function TitularesPage() {
           >
             <UserPlus size={16} /> Novo Titular
           </Button>
-        }
+        ) : undefined}
       />
 
       <TitularesFilters filtros={filtros} onChange={setFiltros} />
@@ -61,6 +64,7 @@ export function TitularesPage() {
         <>
           <TitularesTable
             data={data!.data}
+            canWrite={canWrite}
             sort={filtros.sort}
             onSortChange={(sort) => setFiltros((prev) => ({ ...prev, sort, page: 1 }))}
             onEdit={(id) => navigate(`/cadastro/titulares/${id}/editar`)}

@@ -13,7 +13,7 @@ export function useLiberarObra() {
       queryClient.invalidateQueries({ queryKey: ['obras'] });
       addToast({ type: 'success', title: 'Sucesso', message: 'Obra liberada com sucesso' });
     },
-    onError: (error: any) => {
+    onError: () => {
       // O frontend TechSpec não menciona tratamento específico no onError do hook,
       // ele geralmente é deixado para a UI tratar o error e exibir no ChecklistPreRequisitos se for 422.
     }

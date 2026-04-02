@@ -28,6 +28,7 @@ import { DeleteFonogramaModal } from '../components/DeleteFonogramaModal';
 import { formatIsrc } from '../utils/isrcFormatter';
 import { Button } from '@components/ui/button';
 import { ArrowLeft } from 'lucide-react';
+import { useAuth } from '@shared/auth';
 
 import styles from './FonogramaDetailPage.module.css';
 import { ParticipacoesSection } from '@features/cadastro/participacoes';
@@ -43,6 +44,8 @@ export function FonogramaDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { showToast } = useToast();
+  const { hasRole } = useAuth();
+  const canWrite = hasRole('analista-cadastro');
 
   const { data: fonograma, isLoading, error, refetch } = useFonograma(id);
   const updateMutation = useUpdateFonograma();
@@ -65,8 +68,6 @@ export function FonogramaDetailPage() {
   const isLiberadoOuDepurado = fonograma.status === 'Liberado' || fonograma.status.toUpperCase() === 'LIBERADO' || fonograma.status === 'Depurado' || fonograma.status.toUpperCase() === 'DEPURADO';
   const isDepurado = fonograma.status === 'Depurado' || fonograma.status.toUpperCase() === 'DEPURADO';
   const isBloqueado = fonograma.status === 'Bloqueado' || fonograma.status.toUpperCase() === 'BLOQUEADO';
-  
-  const fonogramaIsReadOnly = isDepurado || isBloqueado;
 
   const handleUpdate = async (formData: any) => {
     try {
@@ -147,9 +148,12 @@ export function FonogramaDetailPage() {
         title={formatIsrc(fonograma.isrcFormatado)}
         description="Detalhes do Fonograma"
         action={
-          <Badge variant={STATUS_VARIANT[fonograma.status] as any}>
-            {fonograma.status.replace('_', ' ')}
-          </Badge>
+          <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+            <Badge variant={STATUS_VARIANT[fonograma.status] as any}>
+              {fonograma.status.replace('_', ' ')}
+            </Badge>
+            {canWrite ? statusActions : null}
+          </div>
         }
       />
 
@@ -176,7 +180,7 @@ export function FonogramaDetailPage() {
             isLoading={updateMutation.isPending}
           />
           
-          {!isLiberadoOuDepurado && (
+          {canWrite && !isLiberadoOuDepurado && (
             <div className={styles.deleteZone}>
               <button
                 type="button"
@@ -195,9 +199,12 @@ export function FonogramaDetailPage() {
           <ParticipacoesSection
             fonogramaId={fonograma.id}
             fonogramaStatus={fonograma.status.toUpperCase()}
+            canWrite={canWrite}
             onDepuracaoRequired={() => setShowDepuracaoModal(true)}
           />
         </section>
+
+        <HistoricoBloqueios items={historico ?? []} />
       </div>
 
       <FonogramaDepuracaoModal

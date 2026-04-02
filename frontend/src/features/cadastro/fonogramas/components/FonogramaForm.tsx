@@ -1,7 +1,8 @@
 import { useState, FormEvent } from 'react';
+import { useAuth } from '@shared/auth';
 import { ObraSelect } from './ObraSelect';
 import { isValidIsrc } from '../utils/isrcValidator';
-import type { Fonograma, CriarFonogramaRequest, AtualizarFonogramaRequest } from '../types/fonograma';
+import type { Fonograma } from '../types/fonograma';
 import styles from './FonogramaForm.module.css';
 
 interface FonogramaFormProps {
@@ -13,6 +14,8 @@ interface FonogramaFormProps {
 }
 
 export function FonogramaForm({ initialData, initialObraId, initialObraTitulo, onSubmit, isLoading }: FonogramaFormProps) {
+  const { hasRole } = useAuth();
+  const canWrite = hasRole('analista-cadastro');
   const isEditing = !!initialData;
   const isLiberadoOuDepurado = initialData?.status === 'Liberado' || initialData?.status === 'Depurado';
 
@@ -76,7 +79,7 @@ export function FonogramaForm({ initialData, initialObraId, initialObraTitulo, o
               if (isrcError) setIsrcError('');
             }}
             onBlur={(e) => validateIsrc(e.target.value)}
-            disabled={isLiberadoOuDepurado}
+            disabled={!canWrite || isLiberadoOuDepurado}
             required
           />
           {isrcError && <span className={styles.errorText}>{isrcError}</span>}
@@ -88,7 +91,7 @@ export function FonogramaForm({ initialData, initialObraId, initialObraTitulo, o
         {/* Obra Musical */}
         <div className={styles.formGroup}>
           <label className={styles.label}>Obra Musical *</label>
-          {isEditing || initialObraId ? (
+          {isEditing || initialObraId || !canWrite ? (
             <input
               type="text"
               className={styles.input}
@@ -116,7 +119,7 @@ export function FonogramaForm({ initialData, initialObraId, initialObraTitulo, o
             placeholder="BR"
             value={paisOrigem}
             onChange={(e) => setPaisOrigem(e.target.value.toUpperCase())}
-            disabled={initialData?.status === 'Depurado'}
+            disabled={!canWrite || initialData?.status === 'Depurado'}
             maxLength={2}
             required
           />
@@ -130,7 +133,7 @@ export function FonogramaForm({ initialData, initialObraId, initialObraTitulo, o
             className={styles.input}
             value={dataGravacao}
             onChange={(e) => setDataGravacao(e.target.value)}
-            disabled={initialData?.status === 'Depurado'}
+            disabled={!canWrite || initialData?.status === 'Depurado'}
           />
         </div>
         <div className={styles.formGroup}>
@@ -140,7 +143,7 @@ export function FonogramaForm({ initialData, initialObraId, initialObraTitulo, o
             className={styles.input}
             value={dataLancamento}
             onChange={(e) => setDataLancamento(e.target.value)}
-            disabled={initialData?.status === 'Depurado'}
+            disabled={!canWrite || initialData?.status === 'Depurado'}
           />
         </div>
         
@@ -153,12 +156,12 @@ export function FonogramaForm({ initialData, initialObraId, initialObraTitulo, o
             placeholder="https://storage.example.com/audio.mp3"
             value={urlAudio}
             onChange={(e) => setUrlAudio(e.target.value)}
-            disabled={initialData?.status === 'Depurado' || (initialData?.status === 'Bloqueado' || initialData?.status?.toUpperCase() === 'BLOQUEADO')}
+            disabled={!canWrite || initialData?.status === 'Depurado' || (initialData?.status === 'Bloqueado' || initialData?.status?.toUpperCase() === 'BLOQUEADO')}
           />
         </div>
       </div>
 
-      {initialData?.status !== 'Depurado' && (
+      {canWrite && initialData?.status !== 'Depurado' && (
         <div className={styles.formActions}>
           <button type="submit" className={styles.submitBtn} disabled={isLoading}>
             {isLoading ? 'Salvando...' : 'Salvar Fonograma'}

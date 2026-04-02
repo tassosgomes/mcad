@@ -3,6 +3,7 @@ import { FormField } from '@components/ui/form-field';
 import { TextInput } from '@components/ui/text-input';
 import { Select } from '@components/ui/select';
 import { Button } from '@components/ui/button';
+import { useAuth } from '@shared/auth';
 import { useAssociacoes } from '../../associacoes/hooks/useAssociacoes';
 import { isValidCpf } from '../utils/cpfValidator';
 import { isValidCnpj } from '../utils/cnpjValidator';
@@ -40,6 +41,8 @@ const TIPO_OPTIONS = [
 ];
 
 export function TitularForm({ initialData, onSubmit, onCancel, isSubmitting }: TitularFormProps) {
+  const { hasRole } = useAuth();
+  const canWrite = hasRole('analista-cadastro');
   const isEditMode = !!initialData;
   const { data: assocResp } = useAssociacoes();
 
@@ -248,14 +251,16 @@ export function TitularForm({ initialData, onSubmit, onCancel, isSubmitting }: T
         </FormField>
       </div>
 
-      <div className={styles.actions}>
-        <Button variant="secondary" type="button" onClick={onCancel} disabled={isSubmitting}>
-          Cancelar
-        </Button>
-        <Button variant="primary" type="submit" disabled={isSubmitting}>
-          {isSubmitting ? 'Salvando...' : isEditMode ? 'Salvar Alterações' : 'Salvar'}
-        </Button>
-      </div>
+      {canWrite && (
+        <div className={styles.actions}>
+          <Button variant="secondary" type="button" onClick={onCancel} disabled={isSubmitting}>
+            Cancelar
+          </Button>
+          <Button variant="primary" type="submit" disabled={isSubmitting}>
+            {isSubmitting ? 'Salvando...' : isEditMode ? 'Salvar Alterações' : 'Salvar'}
+          </Button>
+        </div>
+      )}
     </form>
   );
 }

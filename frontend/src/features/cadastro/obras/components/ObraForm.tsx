@@ -3,6 +3,7 @@ import { FormField } from '@components/ui/form-field';
 import { TextInput } from '@components/ui/text-input';
 import { Select } from '@components/ui/select';
 import { Button } from '@components/ui/button';
+import { useAuth } from '@shared/auth';
 import type {
   ObraMusical,
   CriarObraRequest,
@@ -27,9 +28,11 @@ const TIPO_OPTIONS = [
 ];
 
 export function ObraForm({ initialData, onSubmit, onCancel, isSubmitting }: ObraFormProps) {
+  const { hasRole } = useAuth();
+  const canWrite = hasRole('analista-cadastro');
   const isEditMode = !!initialData;
   const isLiberado = initialData?.status === 'LIBERADO';
-  const isReadOnly = initialData?.status === 'DEPURADA' || initialData?.status === 'DOMINIO_PUBLICO';
+  const isReadOnly = !canWrite || initialData?.status === 'DEPURADA' || initialData?.status === 'DOMINIO_PUBLICO';
 
   const [titulo, setTitulo] = useState(initialData?.titulo ?? '');
   const [subtitulo, setSubtitulo] = useState(initialData?.subtitulo ?? '');

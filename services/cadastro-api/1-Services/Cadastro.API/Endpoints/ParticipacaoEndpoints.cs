@@ -18,7 +18,8 @@ public static class ParticipacaoEndpoints
         {
             var result = await dispatcher.QueryAsync(new ListarParticipacoesQuery(fonogramaId), ct);
             return Results.Ok(result);
-        });
+        })
+        .RequireAuthorization("read");
 
         // POST /api/v1/fonogramas/{fonogramaId}/participacoes
         group.MapPost("/", async (Guid fonogramaId, [FromBody] AdicionarParticipacaoRequest request, IDispatcher dispatcher, CancellationToken ct) =>
@@ -26,7 +27,8 @@ public static class ParticipacaoEndpoints
             var command = new AdicionarParticipacaoCommand(fonogramaId, request.TitularId, request.Categoria);
             var result = await dispatcher.SendAsync(command, ct);
             return Results.Created($"/api/v1/fonogramas/{fonogramaId}/participacoes", result);
-        });
+        })
+        .RequireAuthorization("write");
 
         // PUT /api/v1/fonogramas/{fonogramaId}/participacoes/{id}
         group.MapPut("/{id:guid}", async (Guid fonogramaId, Guid id, [FromBody] AjustarPercentualRequest request, IDispatcher dispatcher, CancellationToken ct) =>
@@ -34,7 +36,8 @@ public static class ParticipacaoEndpoints
             var command = new AjustarPercentualCommand(fonogramaId, id, request.Percentual);
             var result = await dispatcher.SendAsync(command, ct);
             return Results.Ok(result);
-        });
+        })
+        .RequireAuthorization("write");
 
         // DELETE /api/v1/fonogramas/{fonogramaId}/participacoes/{id}
         group.MapDelete("/{id:guid}", async (Guid fonogramaId, Guid id, IDispatcher dispatcher, CancellationToken ct) =>
@@ -42,7 +45,8 @@ public static class ParticipacaoEndpoints
             var command = new RemoverParticipacaoCommand(fonogramaId, id);
             var result = await dispatcher.SendAsync(command, ct);
             return Results.Ok(result);
-        });
+        })
+        .RequireAuthorization("write");
 
         // POST /api/v1/fonogramas/{fonogramaId}/participacoes/calcular
         group.MapPost("/calcular", async (Guid fonogramaId, IDispatcher dispatcher, CancellationToken ct) =>
@@ -50,7 +54,8 @@ public static class ParticipacaoEndpoints
             var command = new CalcularPercentuaisCommand(fonogramaId);
             var result = await dispatcher.SendAsync(command, ct);
             return Results.Ok(result);
-        });
+        })
+        .RequireAuthorization("write");
     }
 }
 

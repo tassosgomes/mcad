@@ -7,6 +7,7 @@ import styles from './ObraFonogramasSection.module.css';
 interface ObraFonogramasSectionProps {
   obraId: string;
   obraStatus: string;
+  canWrite: boolean;
 }
 
 const STATUS_VARIANT: Record<string, 'success' | 'warning' | 'secondary' | 'error'> = {
@@ -16,7 +17,7 @@ const STATUS_VARIANT: Record<string, 'success' | 'warning' | 'secondary' | 'erro
   Depurado: 'secondary',
 };
 
-export function ObraFonogramasSection({ obraId, obraStatus }: ObraFonogramasSectionProps) {
+export function ObraFonogramasSection({ obraId, obraStatus, canWrite }: ObraFonogramasSectionProps) {
   const navigate = useNavigate();
   const { data: fonogramas, isLoading, isError } = useFonogramasDaObra(obraId);
 
@@ -26,7 +27,7 @@ export function ObraFonogramasSection({ obraId, obraStatus }: ObraFonogramasSect
     <section className={styles.section}>
       <div className={styles.header}>
         <h3 className={styles.title}>Gestão de Fonogramas</h3>
-        {!isReadOnly && (
+        {canWrite && !isReadOnly && (
           <button
             className={styles.newBtn}
             onClick={() => navigate(`/cadastro/fonogramas/novo?obraId=${obraId}`)}

@@ -30,7 +30,7 @@ public class TitularidadeEndpointsTests : IClassFixture<CadastroApiFactory>
             .Setup(s => s.ObterIswcAsync(It.IsAny<string>(), It.IsAny<IEnumerable<string>>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync($"T-{Guid.NewGuid().ToString()[..8]}");
 
-        _client = factory.WithWebHostBuilder(builder =>
+        _client = factory.CreateAuthenticatedClient(builder =>
         {
             builder.ConfigureTestServices(services =>
             {
@@ -38,7 +38,7 @@ public class TitularidadeEndpointsTests : IClassFixture<CadastroApiFactory>
                 if (d != null) services.Remove(d);
                 services.AddScoped<IIswcService>(_ => _mockIswcService.Object);
             });
-        }).CreateClient();
+        });
     }
 
     private async Task<Guid> SeedObraAsync(string titulo = "Obra Teste")

@@ -7,9 +7,10 @@ import styles from './IswcSection.module.css';
 interface IswcSectionProps {
   obra: ObraMusical;
   temTitulares: boolean;
+  canWrite: boolean;
 }
 
-export function IswcSection({ obra, temTitulares }: IswcSectionProps) {
+export function IswcSection({ obra, temTitulares, canWrite }: IswcSectionProps) {
   const { showToast } = useToast();
   const obterIswcMutation = useObterIswc();
 
@@ -44,17 +45,19 @@ export function IswcSection({ obra, temTitulares }: IswcSectionProps) {
         {obra.iswc || '—'}
       </span>
 
-      <div className={styles.tooltipWrapper} title={tooltipText}>
-        <Button
-          variant="primary"
-          onClick={handleObter}
-          disabled={isDisabled || isPending}
-          className={`${styles.btnWrapper} ${isDisabled ? styles.disabledBtn : ''}`}
-          type="button"
-        >
-          {buttonLabel}
-        </Button>
-      </div>
+      {canWrite && (
+        <div className={styles.tooltipWrapper} title={tooltipText}>
+          <Button
+            variant="primary"
+            onClick={handleObter}
+            disabled={isDisabled || isPending}
+            className={`${styles.btnWrapper} ${isDisabled ? styles.disabledBtn : ''}`}
+            type="button"
+          >
+            {buttonLabel}
+          </Button>
+        </div>
+      )}
     </div>
   );
 }

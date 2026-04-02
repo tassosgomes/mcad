@@ -33,7 +33,7 @@ public class OutboxEventosIntegrationTests : IClassFixture<CadastroApiFactory>
         _mockIswcService = new Mock<IIswcService>();
 
         // Sobrescreve apenas o IIswcService, mantendo o mesmo container da factory
-        _client = factory.WithWebHostBuilder(builder =>
+        _client = factory.CreateAuthenticatedClient(builder =>
         {
             builder.ConfigureTestServices(services =>
             {
@@ -41,7 +41,7 @@ public class OutboxEventosIntegrationTests : IClassFixture<CadastroApiFactory>
                 if (desc != null) services.Remove(desc);
                 services.AddScoped<IIswcService>(_ => _mockIswcService.Object);
             });
-        }).CreateClient();
+        });
     }
 
     // ── Helpers ────────────────────────────────────────────────────────────────

@@ -5,9 +5,10 @@ import styles from './DominioPublicoToggle.module.css';
 
 interface DominioPublicoToggleProps {
   obra: ObraMusical;
+  canWrite: boolean;
 }
 
-export function DominioPublicoToggle({ obra }: DominioPublicoToggleProps) {
+export function DominioPublicoToggle({ obra, canWrite }: DominioPublicoToggleProps) {
   const { showToast } = useToast();
   const dpMutation = useDominioPublico();
 
@@ -26,18 +27,20 @@ export function DominioPublicoToggle({ obra }: DominioPublicoToggleProps) {
 
   return (
     <label className={styles.wrapper}>
-      <div className={styles.toggle}>
-        <input
-          type="checkbox"
-          checked={obra.dominioPublico}
-          onChange={handleToggle}
-          disabled={isPending}
-          aria-label="Alternar status de domínio público"
-        />
-        <span className={styles.slider} />
-      </div>
+      {canWrite ? (
+        <div className={styles.toggle}>
+          <input
+            type="checkbox"
+            checked={obra.dominioPublico}
+            onChange={handleToggle}
+            disabled={isPending}
+            aria-label="Alternar status de domínio público"
+          />
+          <span className={styles.slider} />
+        </div>
+      ) : null}
       <span className={styles.label}>
-        Domínio Público
+        Domínio Público{!canWrite ? `: ${obra.dominioPublico ? 'Sim' : 'Não'}` : ''}
       </span>
     </label>
   );

@@ -1,6 +1,12 @@
 import { createContext, useContext, useState, useCallback, type ReactNode } from 'react';
 import { Toast, type ToastVariant } from './Toast';
 
+interface LegacyToastPayload {
+  type: ToastVariant;
+  title?: string;
+  message: string;
+}
+
 interface ToastItem {
   id: string;
   message: string;
@@ -9,6 +15,7 @@ interface ToastItem {
 
 interface ToastContextValue {
   showToast: (message: string, variant?: ToastVariant) => void;
+  addToast: (toast: LegacyToastPayload) => void;
 }
 
 const ToastContext = createContext<ToastContextValue | null>(null);
@@ -31,12 +38,20 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     }, 5000);
   }, []);
 
+  const addToast = useCallback(
+    ({ type, title, message }: LegacyToastPayload) => {
+      const content = title ? `${title}: ${message}` : message;
+      showToast(content, type);
+    },
+    [showToast],
+  );
+
   const dismiss = useCallback((id: string) => {
     setToasts((prev) => prev.filter((t) => t.id !== id));
   }, []);
 
   return (
-    <ToastContext.Provider value={{ showToast }}>
+    <ToastContext.Provider value={{ showToast, addToast }}>
       {children}
       <div
         aria-live="polite"

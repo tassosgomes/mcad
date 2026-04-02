@@ -7,6 +7,7 @@ import { Loading } from '@components/ui/loading';
 import { ErrorState } from '@components/ui/error-state';
 import { useToast } from '@components/ui/toast';
 import { Badge } from '@components/ui/badge';
+import { useAuth } from '@shared/auth';
 import { useObra } from '../hooks/useObra';
 import { useUpdateObra } from '../hooks/useUpdateObra';
 import { useDeleteObra } from '../hooks/useDeleteObra';
@@ -44,6 +45,8 @@ export function ObraDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { showToast } = useToast();
+  const { hasRole } = useAuth();
+  const canWrite = hasRole('analista-cadastro');
   
   const { data: obra, isLoading, error, refetch } = useObra(id);
   const updateMutation = useUpdateObra();
@@ -103,7 +106,6 @@ export function ObraDetailPage() {
   if (error || !obra) return <ErrorState message="Obra não encontrada" onRetry={refetch} />;
 
   const isReadOnly = obra.status === 'DEPURADA' || obra.status === 'DOMINIO_PUBLICO' || obra.status === 'BLOQUEADO';
-  const isBloqueado = obra.status === 'BLOQUEADO';
 
   const handleLiberar = async () => {
     if (!obra) return;
@@ -138,19 +140,21 @@ export function ObraDetailPage() {
             <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
               <Badge variant={STATUS_VARIANT[obra.status] as any}>{obra.status}</Badge>
               
-              <div style={{ display: 'flex', gap: '8px' }}>
-                {obra.status === 'PENDENTE' && (
-                  <LiberarButton onClick={handleLiberar} isLoading={liberarMutation.isPending} />
-                )}
-                {(obra.status === 'PENDENTE' || obra.status === 'LIBERADO') && (
-                  <BloquearButton onClick={() => setShowBloqueioModal(true)} />
-                )}
-                {obra.status === 'BLOQUEADO' && (
-                  <DesbloquearButton onClick={() => desbloquearMutation.mutate(obra.id)} isLoading={desbloquearMutation.isPending} />
-                )}
-              </div>
+              {canWrite && (
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  {obra.status === 'PENDENTE' && (
+                    <LiberarButton onClick={handleLiberar} isLoading={liberarMutation.isPending} />
+                  )}
+                  {(obra.status === 'PENDENTE' || obra.status === 'LIBERADO') && (
+                    <BloquearButton onClick={() => setShowBloqueioModal(true)} />
+                  )}
+                  {obra.status === 'BLOQUEADO' && (
+                    <DesbloquearButton onClick={() => desbloquearMutation.mutate(obra.id)} isLoading={desbloquearMutation.isPending} />
+                  )}
+                </div>
+              )}
 
-              {!isReadOnly && obra.status !== 'BLOQUEADO' && (
+              {canWrite && !isReadOnly && obra.status !== 'BLOQUEADO' && (
                 <Button
                   variant="danger"
                   onClick={() => setShowDeleteModal(true)}
@@ -192,6 +196,7 @@ export function ObraDetailPage() {
           <TitularidadesSection
             obraId={obra.id}
             obraStatus={obra.status}
+            canWrite={canWrite}
             onDepuracaoRequired={() => setShowDepuracaoModalForTitularidades(true)}
           />
 
@@ -199,16 +204,17 @@ export function ObraDetailPage() {
           <ObraFonogramasSection
             obraId={obra.id}
             obraStatus={obra.status}
+            canWrite={canWrite}
           />
         </div>
         <div className={styles.rightCol}>
           {/* F04 — temTitulares real (não mais placeholder) */}
-          <IswcSection obra={obra} temTitulares={temTitulares} />
+          <IswcSection obra={obra} temTitulares={temTitulares} canWrite={canWrite} />
           
           {(obra.status === 'PENDENTE' || obra.status === 'LIBERADO' || obra.status === 'DOMINIO_PUBLICO') && (
             <div className={styles.rightPanel}>
               <h3 style={{ fontSize: '14px', marginBottom: '16px', fontWeight: 600 }}>Propriedades</h3>
-              <DominioPublicoToggle obra={obra} />
+              <DominioPublicoToggle obra={obra} canWrite={canWrite} />
             </div>
           )}
         </div>

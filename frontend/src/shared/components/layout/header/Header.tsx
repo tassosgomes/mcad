@@ -1,12 +1,18 @@
 
 import styles from './Header.module.css';
-import { Menu } from 'lucide-react';
+import { LogOut, Menu } from 'lucide-react';
+import { Badge } from '@components/ui/badge';
+import { useAuth } from '@shared/auth';
 
 interface HeaderProps {
   onMenuClick?: () => void;
 }
 
 export function Header({ onMenuClick }: HeaderProps) {
+  const { user, hasRole, logout } = useAuth();
+  const userName = user?.profile.name ?? user?.profile.preferred_username ?? user?.profile.sub ?? 'Usuário';
+  const roleLabel = hasRole('analista-cadastro') ? 'Analista' : 'Consultor';
+
   return (
     <header className={styles.header}>
       <div className={styles.left}>
@@ -18,6 +24,16 @@ export function Header({ onMenuClick }: HeaderProps) {
           <span className={styles.subtitle}>Sistema de Gestão de Direitos Autorais</span>
         </div>
       </div>
+
+      {user && (
+        <div className={styles.right}>
+          <span className={styles.userName}>{userName}</span>
+          <Badge variant="secondary">{roleLabel}</Badge>
+          <button className={styles.logoutButton} onClick={() => void logout()} aria-label="Sair" type="button">
+            <LogOut size={18} />
+          </button>
+        </div>
+      )}
     </header>
   );
 }
