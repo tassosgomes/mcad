@@ -10,9 +10,11 @@ import styles from './UploadsSection.module.css';
 
 interface UploadsSectionProps {
   captacaoId: string;
+  captacaoAberta: boolean;
+  isOwner: boolean;
 }
 
-export function UploadsSection({ captacaoId }: UploadsSectionProps) {
+export function UploadsSection({ captacaoId, captacaoAberta, isOwner }: UploadsSectionProps) {
   const [page, setPage] = useState(1);
   const size = 10;
   
@@ -62,11 +64,13 @@ export function UploadsSection({ captacaoId }: UploadsSectionProps) {
           <p>Importe ou verifique o histórico de uploads CSV de execuções (obras e fonogramas).</p>
         </div>
         <div className={styles.actions}>
-          <UploadCsvButton 
-            captacaoId={captacaoId} 
-            onUploadStart={handleUploadStart}
-            disabled={!!uploadAtivoId}
-          />
+          {isOwner && (
+            <UploadCsvButton 
+              captacaoId={captacaoId} 
+              onUploadStart={handleUploadStart}
+              disabled={!!uploadAtivoId || !captacaoAberta}
+            />
+          )}
         </div>
       </header>
       

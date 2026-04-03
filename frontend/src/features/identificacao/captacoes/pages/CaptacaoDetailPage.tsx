@@ -17,6 +17,7 @@ import { useDeleteCaptacao } from '../hooks/useDeleteCaptacao';
 import { CaptacaoForm } from '../components/CaptacaoForm';
 import { DeleteCaptacaoModal } from '../components/DeleteCaptacaoModal';
 import { ExecucoesSection } from '../components/ExecucoesSection';
+import { UploadsSection } from '../components/UploadsSection';
 
 export function CaptacaoDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -138,6 +139,12 @@ export function CaptacaoDetailPage() {
         captacao={captacao}
         canWrite={canWrite}
         currentUserId={currentUserId || ''}
+      />
+
+      <UploadsSection
+        captacaoId={captacao.id}
+        captacaoAberta={captacao.status?.toUpperCase() === 'ABERTA'}
+        isOwner={canEdit}
       />
 
       <DeleteCaptacaoModal

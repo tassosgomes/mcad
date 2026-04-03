@@ -1,5 +1,5 @@
 ---
-status: pending
+status: completed
 parallelizable: false
 blocked_by: [6.0, 9.0]
 ---
@@ -28,11 +28,11 @@ Integrar a seção `UploadsSection` na `CaptacaoDetailPage`, abaixo da `Execucoe
 
 ## Subtarefas
 
-- [ ] 10.1 Importar `UploadsSection` na CaptacaoDetailPage
-- [ ] 10.2 Posicionar abaixo de `ExecucoesSection`
-- [ ] 10.3 Passar props: `captacaoId`, `captacaoAberta`, `isOwner`
-- [ ] 10.4 Verificar que contadores de resumo atualizam após processamento do CSV (invalidação cruzada do useUpload)
-- [ ] 10.5 Teste end-to-end manual:
+- [x] 10.1 Importar `UploadsSection` na CaptacaoDetailPage
+- [x] 10.2 Posicionar abaixo de `ExecucoesSection`
+- [x] 10.3 Passar props: `captacaoId`, `captacaoAberta`, `isOwner`
+- [x] 10.4 Verificar que contadores de resumo atualizam após processamento do CSV (invalidação cruzada do useUpload)
+- [x] 10.5 Teste end-to-end manual:
   - Upload CSV válido em captação TV Aberta → PROCESSANDO → CONCLUIDO → execuções criadas
   - Upload CSV com erros → CONCLUIDO_COM_ERROS → relatório de erros exibido
   - Upload em captação FECHADA → 422 STATUS_INVALIDO

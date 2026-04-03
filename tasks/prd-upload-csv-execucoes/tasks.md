@@ -35,7 +35,7 @@ Mockups, types/hooks, componentes e integração.
 - [x] 7.0 Frontend — Mockups no Stitch
 - [x] 8.0 Frontend — Types, API Client e Hooks
 - [x] 9.0 Frontend — Componentes
-- [ ] 10.0 Frontend — Integração na CaptacaoDetailPage
+- [x] 10.0 Frontend — Integração na CaptacaoDetailPage
 
 ## Rastreabilidade RF → Tasks
 
