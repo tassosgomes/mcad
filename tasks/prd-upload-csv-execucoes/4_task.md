@@ -1,5 +1,5 @@
 ---
-status: pending
+status: completed
 parallelizable: true
 blocked_by: []
 ---
@@ -38,13 +38,13 @@ Implementar o CsvParser como serviço de lógica pura (sem dependências de banc
 
 ## Subtarefas
 
-- [ ] 4.1 Criar DTOs: `CsvLinha`, `CsvLinhaAgrupada`, `ErroUploadDto`, `CsvParseResult`
-- [ ] 4.2 Implementar `CsvParser.Parse(StreamReader, bool exigeClassificacao)` — leitura linha a linha, split por `;`
-- [ ] 4.3 Implementar `ValidarHeader()` — verifica colunas obrigatórias (isrc, iswc, inicio, fim, tipo_utilizacao, titulo_programa)
-- [ ] 4.4 Implementar `ValidarLinha()` — formatos de hora, campos obrigatórios, siglas de tipo_utilizacao
-- [ ] 4.5 Implementar `DetectarDuplicatas()` — mesmo ISRC + horários divergentes = erro; mesmo ISRC + horário + tipo divergente = erro em ambas
-- [ ] 4.6 Implementar `Agrupar()` — GroupBy(ISRC/ISWC + início + fim + tipo_utilizacao + titulo_programa) → quantidade = Count()
-- [ ] 4.7 Testes unitários `CsvParserTests.cs` — 10 cenários
+- [x] 4.1 Criar DTOs: `CsvLinha`, `CsvLinhaAgrupada`, `ErroUploadDto`, `CsvParseResult`
+- [x] 4.2 Implementar `CsvParser.Parse(StreamReader, bool exigeClassificacao)` — leitura linha a linha, split por `;`
+- [x] 4.3 Implementar `ValidarHeader()` — verifica colunas obrigatórias (isrc, iswc, inicio, fim, tipo_utilizacao, titulo_programa)
+- [x] 4.4 Implementar `ValidarLinha()` — formatos de hora, campos obrigatórios, siglas de tipo_utilizacao
+- [x] 4.5 Implementar `DetectarDuplicatas()` — mesmo ISRC + horários divergentes = erro; mesmo ISRC + horário + tipo divergente = erro em ambas
+- [x] 4.6 Implementar `Agrupar()` — GroupBy(ISRC/ISWC + início + fim + tipo_utilizacao + titulo_programa) → quantidade = Count()
+- [x] 4.7 Testes unitários `CsvParserTests.cs` — 10 cenários
 
 ## Sequenciamento
 
@@ -122,7 +122,7 @@ public record CsvLinhaAgrupada(
 
 ## Critérios de Sucesso (Verificáveis)
 
-- [ ] Build: `cd services/identificacao-api && dotnet build`
-- [ ] Testes: `cd services/identificacao-api && dotnet test --filter "FullyQualifiedName~CsvParserTests"`
-- [ ] 10 cenários cobertos
-- [ ] Parser é lógica pura — sem dependência de DbContext, HttpClient ou serviço externo
+- [x] Build: `cd services/identificacao-api && dotnet build`
+- [x] Testes: `cd services/identificacao-api && dotnet test --filter "FullyQualifiedName~CsvParserTests"`
+- [x] 10 cenários cobertos
+- [x] Parser é lógica pura — sem dependência de DbContext, HttpClient ou serviço externo[ ] Parser é lógica pura — sem dependência de DbContext, HttpClient ou serviço externo
