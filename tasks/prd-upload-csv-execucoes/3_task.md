@@ -1,5 +1,5 @@
 ---
-status: pending
+status: completed
 parallelizable: false
 blocked_by: [1.0, 2.0]
 ---
@@ -34,12 +34,12 @@ Adicionar DbSets de Upload e ErroUpload, Fluent API configurations, migration in
 
 ## Subtarefas
 
-- [ ] 3.1 Adicionar `DbSet<Upload>` e `DbSet<ErroUpload>` ao IdentificacaoDbContext
-- [ ] 3.2 Criar `UploadConfiguration` — FK Captacao (CASCADE), índice em CaptacaoId, índice parcial em Status WHERE Processando, conversão Status→string
-- [ ] 3.3 Criar `ErroUploadConfiguration` — FK Upload (CASCADE), índice em UploadId
-- [ ] 3.4 Gerar migration: `dotnet ef migrations add AddUploadsEErros`
-- [ ] 3.5 Criar `UploadRepository` — GetByIdAsync, ListarAsync (paginado, ordenado por CriadoEm DESC), ListarPendentesAsync (WHERE Status = Processando)
-- [ ] 3.6 Criar `ErroUploadRepository` — AddAsync, AddRangeAsync, ListarPorUploadAsync (paginado)
+- [x] 3.1 Adicionar `DbSet<Upload>` e `DbSet<ErroUpload>` ao IdentificacaoDbContext
+- [x] 3.2 Criar `UploadConfiguration` — FK Captacao (CASCADE), índice em CaptacaoId, índice parcial em Status WHERE Processando, conversão Status→string
+- [x] 3.3 Criar `ErroUploadConfiguration` — FK Upload (CASCADE), índice em UploadId
+- [x] 3.4 Gerar migration: `dotnet ef migrations add AddUploadsEErros`
+- [x] 3.5 Criar `UploadRepository` — GetByIdAsync, ListarAsync (paginado, ordenado por CriadoEm DESC), ListarPendentesAsync (WHERE Status = Processando)
+- [x] 3.6 Criar `ErroUploadRepository` — AddAsync, AddRangeAsync, ListarPorUploadAsync (paginado)
 
 ## Sequenciamento
 
@@ -77,7 +77,7 @@ public async Task<IEnumerable<Upload>> ListarPendentesAsync(CancellationToken ct
 
 ## Critérios de Sucesso (Verificáveis)
 
-- [ ] Build: `cd services/identificacao-api && dotnet build`
-- [ ] Migration gerada com tabelas Uploads e ErrosUpload
-- [ ] Índice parcial em Status WHERE Processando presente
-- [ ] FK CASCADE em ambas tabelas
+- [x] Build: `cd services/identificacao-api && dotnet build`
+- [x] Migration gerada com tabelas Uploads e ErrosUpload
+- [x] Índice parcial em Status WHERE Processando presente
+- [x] FK CASCADE em ambas tabelas

@@ -41,6 +41,8 @@ builder.Services.AddScoped<ICaptacaoRepository, CaptacaoRepository>();
 builder.Services.AddScoped<IRubricaRepository, RubricaRepository>();
 builder.Services.AddScoped<IExecucaoRepository, ExecucaoRepository>();
 builder.Services.AddScoped<ITipoUtilizacaoRepository, TipoUtilizacaoRepository>();
+builder.Services.AddScoped<IUploadRepository, UploadRepository>();
+builder.Services.AddScoped<IErroUploadRepository, ErroUploadRepository>();
 
 // HttpClient para Cadastro
 var cadastroBaseUrl = Environment.GetEnvironmentVariable("CADASTRO_API_BASE_URL")
