@@ -117,6 +117,42 @@ public class FonogramaRepository : IFonogramaRepository
         _context.Set<Fonograma>().Remove(fonograma);
     }
 
+    public async Task<IEnumerable<Fonograma>> BuscarAsync(string termo, int limit, CancellationToken ct)
+    {
+        var query = _context.Set<Fonograma>()
+            .AsNoTracking()
+            .Include(f => f.Obra)
+            .Include(f => f.ParticipacoesConexas)
+                .ThenInclude(p => p.Titular)
+            .AsQueryable();
+
+        var termoLimpo = termo.Replace("-", "").ToUpperInvariant();
+        if (termoLimpo.Length == 12 && termoLimpo.All(char.IsLetterOrDigit))
+        {
+            try 
+            {
+                var isrcVo = Cadastro.Domain.ValueObjects.Isrc.Create(termoLimpo);
+                query = query.Where(f => f.Isrc == isrcVo);
+            }
+            catch (Cadastro.Domain.Exceptions.DomainException)
+            {
+                // Se o termo tem 12 caracteres mas não é um ISRC válido (por ex: falha na mask)
+                query = fallbackQuery(query, termo);
+            }
+        }
+        else
+        {
+            query = fallbackQuery(query, termo);
+        }
+
+        return await query.Take(limit).ToListAsync(ct);
+
+        static IQueryable<Fonograma> fallbackQuery(IQueryable<Fonograma> q, string t) =>
+            q.Where(f =>
+                EF.Functions.ILike(f.Obra.Titulo, $"%{t}%") ||
+                f.ParticipacoesConexas.Any(p => EF.Functions.ILike(p.Titular.Nome, $"%{t}%")));
+    }
+
     public async Task SaveChangesAsync(CancellationToken ct)
     {
         await _context.SaveChangesAsync(ct);

@@ -12,6 +12,7 @@ public interface IObraRepository
     Task<ObraMusical> AddAsync(ObraMusical obra, CancellationToken ct);
     void Update(ObraMusical obra);
     void Delete(ObraMusical obra);
+    Task<IEnumerable<ObraMusical>> BuscarAsync(string termo, int limit, CancellationToken ct);
     Task<bool> PossuiVinculosAsync(Guid obraId, CancellationToken ct);
     Task SaveChangesAsync(CancellationToken ct);
 }

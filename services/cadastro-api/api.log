@@ -1,0 +1,79 @@
+Building...
+warn: Microsoft.EntityFrameworkCore.Model.Validation[10625]
+      The foreign key property 'ParticipacaoConexa.FonogramaId1' was created in shadow state because a conflicting property with the simple name 'FonogramaId' exists in the entity type, but is either not mapped, is already used for another relationship, or is incompatible with the associated primary key type. See https://aka.ms/efcore-relationships for information on mapping relationships in EF Core.
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (33ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT "MigrationId", "ProductVersion"
+      FROM cadastro."__EFMigrationsHistory"
+      ORDER BY "MigrationId";
+warn: Microsoft.EntityFrameworkCore.Model.Validation[10625]
+      The foreign key property 'ParticipacaoConexa.FonogramaId1' was created in shadow state because a conflicting property with the simple name 'FonogramaId' exists in the entity type, but is either not mapped, is already used for another relationship, or is incompatible with the associated primary key type. See https://aka.ms/efcore-relationships for information on mapping relationships in EF Core.
+warn: Cadastro.API[0]
+      Não foi possível aplicar migrations. Banco de dados pode não estar acessível.
+      System.InvalidOperationException: An error was generated for warning 'Microsoft.EntityFrameworkCore.Migrations.PendingModelChangesWarning': The model for context 'CadastroDbContext' has pending changes. Add a new migration before updating the database. See https://aka.ms/efcore-docs-pending-changes. This exception can be suppressed or logged by passing event ID 'RelationalEventId.PendingModelChangesWarning' to the 'ConfigureWarnings' method in 'DbContext.OnConfiguring' or 'AddDbContext'.
+         at Microsoft.EntityFrameworkCore.Diagnostics.EventDefinition`1.Log[TLoggerCategory](IDiagnosticsLogger`1 logger, TParam arg)
+         at Microsoft.EntityFrameworkCore.Diagnostics.RelationalLoggerExtensions.PendingModelChangesWarning(IDiagnosticsLogger`1 diagnostics, Type contextType)
+         at Microsoft.EntityFrameworkCore.Migrations.Internal.Migrator.ValidateMigrations(Boolean useTransaction, String targetMigration)
+         at Microsoft.EntityFrameworkCore.Migrations.Internal.Migrator.Migrate(String targetMigration)
+         at Npgsql.EntityFrameworkCore.PostgreSQL.Migrations.Internal.NpgsqlMigrator.Migrate(String targetMigration)
+         at Microsoft.EntityFrameworkCore.RelationalDatabaseFacadeExtensions.Migrate(DatabaseFacade databaseFacade)
+         at Program.<Main>$(String[] args) in /home/tsgomes/mcad/services/cadastro-api/1-Services/Cadastro.API/Program.cs:line 170
+info: Cadastro.API[0]
+      Cadastro API iniciada na porta 5001
+info: Cadastro.Infra.Events.RabbitMqPublisher[0]
+      RabbitMqPublisher conectado ao broker. Exchange 'cadastro.events' declarada.
+info: Microsoft.AspNetCore.DataProtection.KeyManagement.XmlKeyManager[62]
+      User profile is available. Using '/home/tsgomes/.aspnet/DataProtection-Keys' as key repository; keys will not be encrypted at rest.
+info: Cadastro.Infra.Events.OutboxPublisherWorker[0]
+      OutboxPublisherWorker iniciado. Intervalo: 5s
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (26ms) [Parameters=[@__p_0='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+      SELECT o."Id", o."Attempts", o."CreatedAt", o."Payload", o."PublishedAt", o."RoutingKey", o."Subject", o."Type"
+      FROM cadastro.outbox_events AS o
+      WHERE o."PublishedAt" IS NULL AND o."Attempts" < 10
+      ORDER BY o."CreatedAt"
+      LIMIT @__p_0
+info: Microsoft.Hosting.Lifetime[14]
+      Now listening on: http://localhost:5001
+info: Microsoft.Hosting.Lifetime[0]
+      Application started. Press Ctrl+C to shut down.
+info: Microsoft.Hosting.Lifetime[0]
+      Hosting environment: Development
+info: Microsoft.Hosting.Lifetime[0]
+      Content root path: /home/tsgomes/mcad/services/cadastro-api/1-Services/Cadastro.API
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (3ms) [Parameters=[@__p_0='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+      SELECT o."Id", o."Attempts", o."CreatedAt", o."Payload", o."PublishedAt", o."RoutingKey", o."Subject", o."Type"
+      FROM cadastro.outbox_events AS o
+      WHERE o."PublishedAt" IS NULL AND o."Attempts" < 10
+      ORDER BY o."CreatedAt"
+      LIMIT @__p_0
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 GET http://localhost:5001/api/v1/busca?q=BRUM71500001 - - -
+info: Microsoft.AspNetCore.Authorization.DefaultAuthorizationService[2]
+      Authorization failed. These requirements were not met:
+      DenyAnonymousAuthorizationRequirement: Requires an authenticated user.
+info: Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerHandler[12]
+      AuthenticationScheme: Bearer was challenged.
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 GET http://localhost:5001/api/v1/busca?q=BRUM71500001 - 401 0 - 205.7328ms
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 GET http://localhost:5001/api/v1/busca?q=Meu%20Bem - - -
+info: Microsoft.AspNetCore.Authorization.DefaultAuthorizationService[2]
+      Authorization failed. These requirements were not met:
+      DenyAnonymousAuthorizationRequirement: Requires an authenticated user.
+info: Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerHandler[12]
+      AuthenticationScheme: Bearer was challenged.
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 GET http://localhost:5001/api/v1/busca?q=Meu%20Bem - 401 0 - 7.1964ms
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 GET http://localhost:5001/api/v1/busca?q=ab - - -
+info: Microsoft.AspNetCore.Authorization.DefaultAuthorizationService[2]
+      Authorization failed. These requirements were not met:
+      DenyAnonymousAuthorizationRequirement: Requires an authenticated user.
+info: Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerHandler[12]
+      AuthenticationScheme: Bearer was challenged.
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 GET http://localhost:5001/api/v1/busca?q=ab - 401 0 - 3.1285ms
+info: Microsoft.Hosting.Lifetime[0]
+      Application is shutting down...

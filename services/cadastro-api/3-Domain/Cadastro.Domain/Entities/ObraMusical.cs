@@ -19,6 +19,7 @@ public class ObraMusical
     public DateTime AtualizadoEm { get; private set; }
 
     public ObraMusical? ObraDepuradaPara { get; private set; }
+    public ICollection<TitularidadeAutoral> TitularidadesAutorais { get; private set; } = new List<TitularidadeAutoral>();
 
     private ObraMusical() { }
 

@@ -23,6 +23,7 @@ public class Fonograma
     // Navigation
     public ObraMusical Obra { get; private set; } = null!;
     public Fonograma? FonogramaDepuradoPara { get; private set; }
+    public ICollection<ParticipacaoConexa> ParticipacoesConexas { get; private set; } = new List<ParticipacaoConexa>();
 
     private Fonograma() { } // EF Core
 

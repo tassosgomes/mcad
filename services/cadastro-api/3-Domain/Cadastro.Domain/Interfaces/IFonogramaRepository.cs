@@ -18,5 +18,6 @@ public interface IFonogramaRepository
     Task<Fonograma> AddAsync(Fonograma fonograma, CancellationToken ct);
     void Update(Fonograma fonograma);
     void Delete(Fonograma fonograma);
+    Task<IEnumerable<Fonograma>> BuscarAsync(string termo, int limit, CancellationToken ct);
     Task SaveChangesAsync(CancellationToken ct);
 }

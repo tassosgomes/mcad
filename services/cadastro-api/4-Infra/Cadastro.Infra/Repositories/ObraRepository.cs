@@ -61,6 +61,22 @@ public class ObraRepository : IObraRepository
         return (items, total);
     }
 
+    public async Task<IEnumerable<ObraMusical>> BuscarAsync(string termo, int limit, CancellationToken ct)
+    {
+        var query = _context.ObrasMusicais.AsNoTracking();
+
+        // ISWC exato
+        if (termo.StartsWith("T-", StringComparison.OrdinalIgnoreCase))
+            query = query.Where(o => o.Iswc == termo);
+        else
+            // ILike em título + join com titulares
+            query = query.Where(o =>
+                EF.Functions.ILike(o.Titulo, $"%{termo}%") ||
+                o.TitularidadesAutorais.Any(t => EF.Functions.ILike(t.Titular.Nome, $"%{termo}%")));
+
+        return await query.Take(limit).ToListAsync(ct);
+    }
+
     public async Task<ObraMusical?> GetByIdAsync(Guid id, CancellationToken ct)
     {
         return await _context.ObrasMusicais

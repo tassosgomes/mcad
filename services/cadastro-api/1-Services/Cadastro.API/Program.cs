@@ -184,6 +184,7 @@ app.MapObraEndpoints();
 app.MapTitularidadeEndpoints();
 app.MapFonogramaEndpoints();
 app.MapParticipacaoEndpoints();
+app.MapBuscaEndpoints();
 
 // ─── Health Check ─────────────────────────────────────────────────────
 app.MapHealthChecks("/health").AllowAnonymous();
