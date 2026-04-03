@@ -76,11 +76,11 @@ ABRAMUS, AMAR, ASSIM, SBACEM, SICAM, SOCINPRO, UBC
 | F01 | Seed de Associações | Carga inicial das 7 associações de gestão coletiva. Dados não editáveis pelo usuário. | Must Have | `done` | `tasks/prd-seed-associacoes/prd.md` |
 | F02 | Gestão de Titulares | CRUD de titulares (PF/PJ) com CPF/CNPJ, CAE/IPI, vínculo a associação e categorias. Um titular pode acumular categorias autorais e conexas. | Must Have | `done` | `tasks/prd-gestao-titulares/prd.md` |
 | F03 | Gestão de Obras Musicais | CRUD de obras com ISWC (obtido via API externa), título, tipo (MUSICAL, LITEROMUSICAL, VERSAO, POT_POURRI), gênero e validação de unicidade (título + titulares). | Must Have | `done` | `tasks/prd-gestao-obras/prd.md` |
-| F04 | Titularidades Autorais | Vinculação de titulares a obras com categoria e percentual. Validação obrigatória: soma = 100%. | Must Have | `prd-ready` | `tasks/prd-titularidades-autorais/prd.md` |
-| F05 | Gestão de Fonogramas | CRUD de fonogramas com ISRC (manual, formato validado), vínculo à obra (imutável), depuração por alteração ISRC/conexos. | Must Have | `prd-ready` | `tasks/prd-gestao-fonogramas/prd.md` |
-| F06 | Participação Conexa Automática | Cálculo automático dos percentuais conexos ao vincular titulares ao fonograma. Com músico: 43,7% intérprete / 41,7% produtor / 14,6% músicos (÷ N). Sem músico: 50% / 50%. | Must Have | `prd-ready` | `tasks/prd-participacao-conexa/prd.md` |
-| F07 | Controle de Status | Liberação manual com validação de pré-requisitos, bloqueio com justificativa, desbloqueio, transição automática fonograma, campo urlAudio. | Must Have | `prd-ready` | `tasks/prd-controle-status/prd.md` |
-| F08 | Eventos de Cadastro | Publicação de 8 eventos CloudEvents no RabbitMQ via Outbox Pattern (at-least-once). | Must Have | `prd-ready` | `tasks/prd-eventos-cadastro/prd.md` |
+| F04 | Titularidades Autorais | Vinculação de titulares a obras com categoria e percentual. Validação obrigatória: soma = 100%. | Must Have | `done` | `tasks/prd-titularidades-autorais/prd.md` |
+| F05 | Gestão de Fonogramas | CRUD de fonogramas com ISRC (manual, formato validado), vínculo à obra (imutável), depuração por alteração ISRC/conexos. | Must Have | `done` | `tasks/prd-gestao-fonogramas/prd.md` |
+| F06 | Participação Conexa Automática | Cálculo automático dos percentuais conexos ao vincular titulares ao fonograma. Com músico: 43,7% intérprete / 41,7% produtor / 14,6% músicos (÷ N). Sem músico: 50% / 50%. | Must Have | `done` | `tasks/prd-participacao-conexa/prd.md` |
+| F07 | Controle de Status | Liberação manual com validação de pré-requisitos, bloqueio com justificativa, desbloqueio, transição automática fonograma, campo urlAudio. | Must Have | `done` | `tasks/prd-controle-status/prd.md` |
+| F08 | Eventos de Cadastro | Publicação de 8 eventos CloudEvents no RabbitMQ via Outbox Pattern (at-least-once). | Must Have | `done` | `tasks/prd-eventos-cadastro/prd.md` |
 
 **Prioridades (MoSCoW):** `Must Have` · `Should Have` · `Could Have` · `Won't Have`
 **Status possíveis:** `planned` · `prd-ready` · `in-progress` · `done` · `out-of-scope`
