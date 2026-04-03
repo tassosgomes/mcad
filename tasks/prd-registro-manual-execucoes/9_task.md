@@ -1,5 +1,5 @@
 ---
-status: pending
+status: completed
 parallelizable: false
 blocked_by: [5.0, 8.0]
 ---
@@ -33,11 +33,11 @@ Integrar a seção `ExecucoesSection` na `CaptacaoDetailPage` existente (F01), c
 
 ## Subtarefas
 
-- [ ] 9.1 Importar `ExecucoesSection` na `CaptacaoDetailPage`
-- [ ] 9.2 Passar props: `captacaoId`, `rubrica`, `captacaoStatus`, `isOwner`
-- [ ] 9.3 Posicionar abaixo do formulário de captação e acima do histórico (se houver)
-- [ ] 9.4 Verificar que os contadores de resumo (Total/Identificadas/Pendentes) atualizam ao adicionar/excluir execuções
-- [ ] 9.5 Teste de integração manual end-to-end:
+- [x] 9.1 Importar `ExecucoesSection` na `CaptacaoDetailPage`
+- [x] 9.2 Passar props: `captacaoId`, `rubrica`, `captacaoStatus`, `isOwner`
+- [x] 9.3 Posicionar abaixo do formulário de captação e acima do histórico (se houver)
+- [x] 9.4 Verificar que os contadores de resumo (Total/Identificadas/Pendentes) atualizam ao adicionar/excluir execuções
+- [x] 9.5 Teste de integração manual end-to-end:
   - Criar captação TV Aberta → abrir detalhe → adicionar execução com busca → verificar campos condicionais (tipo utilização obrigatório)
   - Criar captação Rádio AM/FM → adicionar execução → verificar campos condicionais ocultos
   - Buscar obra inexistente → criar obra pendente inline → verificar status PENDENTE
@@ -70,13 +70,13 @@ O `useCaptacao(id)` é invalidado pelas mutations de execuções (`queryClient.i
 
 ## Critérios de Sucesso (Verificáveis)
 
-- [ ] Build compila: `cd frontend && npm run build`
-- [ ] TypeScript sem erros: `cd frontend && npx tsc --noEmit`
-- [ ] Seção "Execuções" visível no detalhe da captação
-- [ ] Criar execução com rubrica audiovisual → campos condicionais obrigatórios
-- [ ] Criar execução com rubrica não-audiovisual → sem campos condicionais
-- [ ] Buscar obra → selecionar → IDENTIFICADA
-- [ ] Criar obra pendente inline → execução PENDENTE
-- [ ] Editar execução → alterar obra → status recalculado
-- [ ] Excluir execução → contadores de resumo atualizados
-- [ ] Consultor → sem botões de ação (somente leitura)
+- [x] Build compila: `cd frontend && npm run build`
+- [x] TypeScript sem erros: `cd frontend && npx tsc --noEmit`
+- [x] Seção "Execuções" visível no detalhe da captação
+- [x] Criar execução com rubrica audiovisual → campos condicionais obrigatórios
+- [x] Criar execução com rubrica não-audiovisual → sem campos condicionais
+- [x] Buscar obra → selecionar → IDENTIFICADA
+- [x] Criar obra pendente inline → execução PENDENTE
+- [x] Editar execução → alterar obra → status recalculado
+- [x] Excluir execução → contadores de resumo atualizados
+- [x] Consultor → sem botões de ação (somente leitura)

@@ -16,6 +16,7 @@ import { useUpdateCaptacao } from '../hooks/useUpdateCaptacao';
 import { useDeleteCaptacao } from '../hooks/useDeleteCaptacao';
 import { CaptacaoForm } from '../components/CaptacaoForm';
 import { DeleteCaptacaoModal } from '../components/DeleteCaptacaoModal';
+import { ExecucoesSection } from '../components/ExecucoesSection';
 
 export function CaptacaoDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -132,6 +133,12 @@ export function CaptacaoDetailPage() {
           isSubmitting={updateMutation.isPending}
         />
       </div>
+
+      <ExecucoesSection
+        captacao={captacao}
+        canWrite={canWrite}
+        currentUserId={currentUserId || ''}
+      />
 
       <DeleteCaptacaoModal
         captacao={captacao}
