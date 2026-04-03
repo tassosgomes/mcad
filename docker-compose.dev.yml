@@ -88,53 +88,8 @@ services:
       timeout: 5s
       retries: 5
 
-  # ── Cadastro API ──────────────────────────────────────────────────
-  mcad-cadastro-api:
-    build:
-      context: ./services/cadastro-api
-      dockerfile: Dockerfile
-    container_name: mcad-cadastro-api
-    restart: unless-stopped
-    env_file:
-      - ./services/cadastro-api/.env
-    environment:
-      ASPNETCORE_URLS: http://+:5001
-      CADASTRO_DB_HOST: mcad-postgres
-      RABBITMQ_URL: amqp://mcad:mcad@mcad-rabbitmq:5672
-      OIDC_AUTHORITY: http://mcad-keycloak:8080/realms/mcad
-    ports:
-      - "5001:5001"
-    depends_on:
-      mcad-postgres:
-        condition: service_healthy
-      mcad-rabbitmq:
-        condition: service_healthy
-      mcad-keycloak:
-        condition: service_healthy
-
-  # ── Identificacao API ─────────────────────────────────────────────
-  mcad-identificacao-api:
-    build:
-      context: ./services/identificacao-api
-      dockerfile: Dockerfile
-    container_name: mcad-identificacao-api
-    restart: unless-stopped
-    env_file:
-      - ./services/identificacao-api/.env
-    environment:
-      ASPNETCORE_URLS: http://+:5100
-      IDENTIFICACAO_DB_HOST: mcad-postgres
-      OIDC_AUTHORITY: http://mcad-keycloak:8080/realms/mcad
-      CADASTRO_API_BASE_URL: http://mcad-cadastro-api:5001/api/v1
-    ports:
-      - "5100:5100"
-    depends_on:
-      mcad-postgres:
-        condition: service_healthy
-      mcad-keycloak:
-        condition: service_healthy
-      mcad-cadastro-api:
-        condition: service_started
+# NOTE: cadastro-api e identificacao-api rodam no host via `dotnet run`
+# Ver README para instruções de execução local das APIs
 
 volumes:
   mcad_pg_data:
