@@ -7,11 +7,13 @@ using Identificacao.Application.Captacoes.Commands;
 using Identificacao.Application.Rubricas.Queries;
 using Identificacao.Domain.Interfaces;
 using Identificacao.Infra.Data;
+using Identificacao.Infra.ExternalServices;
 using Identificacao.Infra.Repositories;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
+using Polly;
 using Microsoft.IdentityModel.Tokens;
 
 Env.Load();
@@ -35,6 +37,17 @@ builder.Services.AddDbContext<IdentificacaoDbContext>(options =>
 // Repositories
 builder.Services.AddScoped<ICaptacaoRepository, CaptacaoRepository>();
 builder.Services.AddScoped<IRubricaRepository, RubricaRepository>();
+builder.Services.AddScoped<IExecucaoRepository, ExecucaoRepository>();
+builder.Services.AddScoped<ITipoUtilizacaoRepository, TipoUtilizacaoRepository>();
+
+// HttpClient para Cadastro
+var cadastroBaseUrl = Environment.GetEnvironmentVariable("CADASTRO_API_BASE_URL")
+    ?? "http://localhost:5001/api/v1";
+builder.Services.AddHttpClient<ICadastroHttpClient, CadastroHttpClient>(client =>
+{
+    client.BaseAddress = new Uri(cadastroBaseUrl);
+    client.Timeout = TimeSpan.FromSeconds(10);
+}).AddTransientHttpErrorPolicy(p => p.RetryAsync(2));
 
 // CQRS - Dispatcher e Handlers via Scrutor
 builder.Services.AddScoped<IDispatcher, Dispatcher>();
@@ -128,6 +141,8 @@ app.UseAuthorization();
 app.MapHealthChecks("/health");
 app.MapRubricaEndpoints();
 app.MapCaptacaoEndpoints();
+app.MapExecucaoEndpoints();
+app.MapTipoUtilizacaoEndpoints();
 
 // Executa Migrations no Startup
 using (var scope = app.Services.CreateScope())

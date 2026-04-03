@@ -144,3 +144,6 @@
 /home/tsgomes/mcad/services/identificacao-api/5-Tests/Identificacao.Tests/obj/Debug/net8.0/Identificacao.Tests.pdb
 /home/tsgomes/mcad/services/identificacao-api/5-Tests/Identificacao.Tests/obj/Debug/net8.0/Identificacao.Tests.genruntimeconfig.cache
 /home/tsgomes/mcad/services/identificacao-api/5-Tests/Identificacao.Tests/obj/Debug/net8.0/ref/Identificacao.Tests.dll
+/home/tsgomes/mcad/services/identificacao-api/5-Tests/Identificacao.Tests/bin/Debug/net8.0/Microsoft.Extensions.Http.Polly.dll
+/home/tsgomes/mcad/services/identificacao-api/5-Tests/Identificacao.Tests/bin/Debug/net8.0/Polly.dll
+/home/tsgomes/mcad/services/identificacao-api/5-Tests/Identificacao.Tests/bin/Debug/net8.0/Polly.Extensions.Http.dll
