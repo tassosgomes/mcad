@@ -1,5 +1,5 @@
 ---
-status: pending
+status: completed
 parallelizable: false
 blocked_by: [3.0]
 ---
@@ -54,14 +54,14 @@ Implementar todos os commands, queries, handlers, validators e responses para Ex
 
 ## Subtarefas
 
-- [ ] 4.1 Criar `TipoUtilizacaoResponse`, `ListarTiposUtilizacaoQuery` + handler
-- [ ] 4.2 Criar `ExecucaoResponse` (record com todos os campos do api-contract)
-- [ ] 4.3 Criar `CriarExecucaoCommand` + validator + handler — consulta Cadastro, define status, valida campos condicionais
-- [ ] 4.4 Criar `AtualizarExecucaoCommand` + validator + handler — recalcula status se obra/fonograma mudar
-- [ ] 4.5 Criar `ExcluirExecucaoCommand` + handler — valida dono + aberta
-- [ ] 4.6 Criar `ListarExecucoesQuery` + handler — filtro status, sort, paginação
-- [ ] 4.7 Atualizar `GetCaptacaoByIdQueryHandler` — usar IExecucaoRepository para contadores reais
-- [ ] 4.8 Testes unitários dos 3 command handlers
+- [x] 4.1 Criar `TipoUtilizacaoResponse`, `ListarTiposUtilizacaoQuery` + handler
+- [x] 4.2 Criar `ExecucaoResponse` (record com todos os campos do api-contract)
+- [x] 4.3 Criar `CriarExecucaoCommand` + validator + handler 
+- [x] 4.4 Criar `AtualizarExecucaoCommand` + validator + handler 
+- [x] 4.5 Criar `ExcluirExecucaoCommand` + handler 
+- [x] 4.6 Criar `ListarExecucoesQuery` + handler 
+- [x] 4.7 Atualizar `GetCaptacaoByIdQueryHandler` 
+- [x] 4.8 Testes unitários dos 3 command handlers
 
 ## Sequenciamento
 
@@ -130,8 +130,8 @@ var pendentes = await _execucaoRepo.ContarPendentesAsync(query.Id, ct);
 
 ## Critérios de Sucesso (Verificáveis)
 
-- [ ] Build compila: `cd services/identificacao-api && dotnet build`
-- [ ] Testes passam: `cd services/identificacao-api && dotnet test`
-- [ ] 11 cenários de teste cobertos
-- [ ] Todos os 8 RFs mapeados para handlers
-- [ ] GetCaptacaoByIdQueryHandler retorna contadores reais
+- [x] Build compila: `cd services/identificacao-api && dotnet build`
+- [x] Testes passam: `cd services/identificacao-api && dotnet test`
+- [x] 11 cenários de teste cobertos
+- [x] Todos os 8 RFs mapeados para handlers
+- [x] GetCaptacaoByIdQueryHandler retorna contadores reais
