@@ -1,5 +1,5 @@
 ---
-status: pending
+status: completed
 parallelizable: false
 blocked_by: [4.0]
 ---
@@ -40,13 +40,13 @@ Criar os endpoints de execuções (sub-recurso de captações) e tipos de utiliz
 
 ## Subtarefas
 
-- [ ] 5.1 Criar `TipoUtilizacaoEndpoints.cs` — `GET /api/v1/tipos-utilizacao`
-- [ ] 5.2 Criar `ExecucaoEndpoints.cs` — sub-recurso `/api/v1/captacoes/{captacaoId}/execucoes` (GET list, POST, PUT, DELETE)
-- [ ] 5.3 Extrair analistaId do JWT nos endpoints de escrita (POST, PUT, DELETE)
-- [ ] 5.4 Registrar no Program.cs: `IExecucaoRepository`, `ITipoUtilizacaoRepository`, `ICadastroHttpClient` (AddHttpClient com Polly)
-- [ ] 5.5 Mapear novos endpoints no Program.cs
-- [ ] 5.6 Atualizar `.env.example` com `CADASTRO_API_BASE_URL`
-- [ ] 5.7 Testar endpoints com curl
+- [x] 5.1 Criar `TipoUtilizacaoEndpoints.cs` — `GET /api/v1/tipos-utilizacao`
+- [x] 5.2 Criar `ExecucaoEndpoints.cs` — sub-recurso `/api/v1/captacoes/{captacaoId}/execucoes` (GET list, POST, PUT, DELETE)
+- [x] 5.3 Extrair analistaId do JWT nos endpoints de escrita (POST, PUT, DELETE)
+- [x] 5.4 Registrar no Program.cs: `IExecucaoRepository`, `ITipoUtilizacaoRepository`, `ICadastroHttpClient` (AddHttpClient com Polly)
+- [x] 5.5 Mapear novos endpoints no Program.cs
+- [x] 5.6 Atualizar `.env.example` com `CADASTRO_API_BASE_URL`
+- [x] 5.7 Testar endpoints com curl
 
 ## Sequenciamento
 
@@ -170,10 +170,10 @@ CADASTRO_API_BASE_URL=http://localhost:5001/api/v1
 
 ## Critérios de Sucesso (Verificáveis)
 
-- [ ] Build compila: `cd services/identificacao-api && dotnet build`
-- [ ] Serviço inicia: `dotnet run` sem erros
-- [ ] GET tipos: `curl http://localhost:5100/api/v1/tipos-utilizacao` → 200 com 4 registros
-- [ ] POST execução: `curl -X POST http://localhost:5100/api/v1/captacoes/{id}/execucoes -H 'Content-Type: application/json' -d '{"obraId":"...","inicio":"14:30:00","fim":"14:33:45","quantidade":1}'` → 201 com duração 225
-- [ ] GET execuções: `curl http://localhost:5100/api/v1/captacoes/{id}/execucoes` → 200 com lista paginada
-- [ ] DELETE: → 204
-- [ ] GET captação detalhe: contadores de resumo atualizados (não mais zeros)
+- [x] Build compila: `cd services/identificacao-api && dotnet build`
+- [x] Serviço inicia: `dotnet run` sem erros
+- [x] GET tipos: `curl http://localhost:5100/api/v1/tipos-utilizacao` → 200 com 4 registros
+- [x] POST execução: `curl -X POST http://localhost:5100/api/v1/captacoes/{id}/execucoes -H 'Content-Type: application/json' -d '{"obraId":"...","inicio":"14:30:00","fim":"14:33:45","quantidade":1}'` → 201 com duração 225
+- [x] GET execuções: `curl http://localhost:5100/api/v1/captacoes/{id}/execucoes` → 200 com lista paginada
+- [x] DELETE: → 204
+- [x] GET captação detalhe: contadores de resumo atualizados (não mais zeros)

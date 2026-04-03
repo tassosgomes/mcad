@@ -30,7 +30,7 @@ Mockups, types/hooks, componentes e integração na CaptacaoDetailPage.
 - [x] 2.0 Backend — Domain Layer (Execução, TipoUtilização, Interfaces)
 - [x] 3.0 Backend — Infrastructure (DbContext, Migration, Seeds, Repos, HttpClient)
 - [x] 4.0 Backend — Application Layer (Commands, Queries, Handlers)
-- [ ] 5.0 Backend — API (Endpoints, Program.cs updates)
+- [x] 5.0 Backend — API (Endpoints, Program.cs updates)
 - [ ] 6.0 Frontend — Mockups no Stitch
 - [ ] 7.0 Frontend — Types, API Clients e Hooks
 - [ ] 8.0 Frontend — Componentes
