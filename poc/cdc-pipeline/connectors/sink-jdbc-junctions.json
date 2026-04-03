@@ -1,0 +1,37 @@
+{
+  "name": "mcad-sink-junctions",
+  "config": {
+    "connector.class": "io.confluent.connect.jdbc.JdbcSinkConnector",
+    "tasks.max": "1",
+
+    "connection.url": "jdbc:postgresql://host.docker.internal:5432/mcad?currentSchema=cdc_staging",
+    "connection.user": "cadastro_svc",
+    "connection.password": "cadastro_svc",
+
+    "topics": "MCAD_TITULARIDADES_AUTORAIS,MCAD_PARTICIPACOES_CONEXAS",
+
+    "auto.create": false,
+    "auto.evolve": false,
+    "insert.mode": "upsert",
+    "pk.mode": "record_value",
+
+    "table.name.format": "${topic}",
+    "topics.to.table.map": "MCAD_TITULARIDADES_AUTORAIS:titularidades_autorais,MCAD_PARTICIPACOES_CONEXAS:participacoes_conexas",
+
+    "key.converter": "org.apache.kafka.connect.json.JsonConverter",
+    "key.converter.schemas.enable": false,
+    "value.converter": "org.apache.kafka.connect.json.JsonConverter",
+    "value.converter.schemas.enable": false,
+
+    "delete.enabled": true,
+
+    "errors.tolerance": "all",
+    "errors.deadletterqueue.topic.name": "dlq-mcad-sink-junctions",
+    "errors.deadletterqueue.topic.replication.factor": 1,
+    "errors.deadletterqueue.context.headers.enable": true,
+
+    "batch.size": 100,
+    "max.retries": 5,
+    "retry.backoff.ms": 3000
+  }
+}

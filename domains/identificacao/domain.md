@@ -79,7 +79,7 @@ Sem um processo estruturado de captação e identificação, a Distribuição n�
 |---|---|---|---|---|---|
 | F01 | Gestão de Captações | Criar, listar e acompanhar captações por rubrica + período. Garante unicidade de Rol não-cancelado por rubrica+período. | Must Have | `done` | `tasks/prd-gestao-captacoes/prd.md` |
 | F02 | Registro Manual de Execuções | Formulário para inclusão individual de execuções com busca integrada ao Cadastro (ISRC, ISWC, título, titular), campos condicionais por rubrica, criação inline de obra/fonograma pendente. | Must Have | `done` | `tasks/prd-registro-manual-execucoes/prd.md` |
-| F03 | Upload de Execuções via CSV | Layout CSV definido, armazenamento de arquivo no MinIO (S3-compatible), processamento assíncrono com feedback de erros por linha. | Must Have | `planned` | — |
+| F03 | Upload de Execuções via CSV | Layout CSV (`;` separador, UTF-8), upload para MinIO, processamento assíncrono com agrupamento de linhas idênticas, identificação automática, relatório de erros por linha/coluna. Até 10.000 linhas. | Must Have | `prd-ready` | `tasks/prd-upload-csv-execucoes/prd.md` |
 | F04 | Identificação de Execuções | Resolução automática de ISRC/ISWC consultando o Cadastro via HTTP. Execuções sem match ficam como Pendentes. Tela de gestão para identificação manual das pendentes. | Must Have | `planned` | — |
 | F05 | Fechamento do Rol | Ação explícita do Analista responsável. Valida pré-requisitos e publica `identificacao.rol.fechado`. | Must Have | `planned` | — |
 | F06 | Cancelamento e Recriação | Cancelar um Rol fechado (publica `identificacao.rol.cancelado`) e recriar do zero para o mesmo período. | Must Have | `planned` | — |

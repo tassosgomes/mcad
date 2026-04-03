@@ -1,0 +1,36 @@
+{
+  "name": "ecad-legado-source",
+  "config": {
+    "connector.class": "io.debezium.connector.postgresql.PostgresConnector",
+    "tasks.max": "1",
+
+    "database.hostname": "postgres-legado",
+    "database.port": "5432",
+    "database.user": "ecad_user",
+    "database.password": "ecad_pass",
+    "database.dbname": "ecad_legado",
+
+    "topic.prefix": "ecad",
+    "schema.include.list": "ecad_legado",
+    "table.include.list": "ecad_legado.tb_associacao,ecad_legado.tb_titular,ecad_legado.tb_obra,ecad_legado.tb_titularidade,ecad_legado.tb_fonograma,ecad_legado.tb_participacao,ecad_legado.tb_historico_bloqueio",
+
+    "plugin.name": "pgoutput",
+    "publication.name": "ecad_cdc_pub",
+    "slot.name": "ecad_cdc_slot",
+
+    "snapshot.mode": "initial",
+
+    "key.converter": "org.apache.kafka.connect.json.JsonConverter",
+    "key.converter.schemas.enable": false,
+    "value.converter": "org.apache.kafka.connect.json.JsonConverter",
+    "value.converter.schemas.enable": false,
+
+    "decimal.handling.mode": "string",
+    "time.precision.mode": "connect",
+
+    "tombstones.on.delete": true,
+    "include.schema.changes": false,
+
+    "heartbeat.interval.ms": "10000"
+  }
+}

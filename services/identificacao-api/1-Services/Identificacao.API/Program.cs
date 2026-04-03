@@ -16,7 +16,9 @@ using Microsoft.EntityFrameworkCore;
 using Polly;
 using Microsoft.IdentityModel.Tokens;
 
-Env.Load();
+// Busca o .env na raiz do serviço (../../.. relativo ao dir do projeto)
+var envPath = Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", ".env");
+Env.Load(Path.GetFullPath(envPath));
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -81,10 +83,23 @@ if (authEnabled)
             options.RequireHttpsMetadata = false;
             options.TokenValidationParameters = new TokenValidationParameters
             {
+                ValidIssuer = authority,
                 ValidateIssuer = true,
-                ValidateAudience = true,
+                ValidateAudience = false,
                 ValidateLifetime = true,
                 NameClaimType = "preferred_username"
+            };
+            options.Events = new JwtBearerEvents
+            {
+                OnTokenValidated = context =>
+                {
+                    var azp = context.Principal?.FindFirst("azp")?.Value;
+                    if (!string.Equals(azp, audience, StringComparison.Ordinal))
+                    {
+                        context.Fail("Token authorized party does not match configured audience.");
+                    }
+                    return Task.CompletedTask;
+                }
             };
         });
 

@@ -1,7 +1,0 @@
-  Determining projects to restore...
-  All projects are up-to-date for restore.
-  Cadastro.Domain -> /home/tsgomes/mcad/services/cadastro-api/3-Domain/Cadastro.Domain/bin/Debug/net8.0/Cadastro.Domain.dll
-  Cadastro.Application -> /home/tsgomes/mcad/services/cadastro-api/2-Application/Cadastro.Application/bin/Debug/net8.0/Cadastro.Application.dll
-  Cadastro.Infra -> /home/tsgomes/mcad/services/cadastro-api/4-Infra/Cadastro.Infra/bin/Debug/net8.0/Cadastro.Infra.dll
-  Cadastro.API -> /home/tsgomes/mcad/services/cadastro-api/1-Services/Cadastro.API/bin/Debug/net8.0/Cadastro.API.dll
-MSBUILD : error : Building target "_CopyOutOfDateSourceItemsToOutputDirectory" partially, because some output files are out of date with respect to their input files. [/home/tsgomes/mcad/services/cadastro-api/5-Tests/Cadastro.IntegrationTests/Cadastro.IntegrationTests.csproj]

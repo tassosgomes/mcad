@@ -1,0 +1,211 @@
+version: "3.8"
+
+# =============================================================================
+# POC CDC Pipeline: Legado (PG) → Debezium → Kafka → ksqlDB → JDBC Sink → mcad (PG)
+# =============================================================================
+
+services:
+
+  # ---------------------------------------------------------------------------
+  # PostgreSQL Legado (Source) — simula Oracle ECAD
+  # ---------------------------------------------------------------------------
+  postgres-legado:
+    image: postgres:16-alpine
+    container_name: cdc-postgres-legado
+    ports:
+      - "5433:5432"
+    environment:
+      POSTGRES_DB: ecad_legado
+      POSTGRES_USER: ecad_user
+      POSTGRES_PASSWORD: ecad_pass
+    command:
+      - "postgres"
+      - "-c"
+      - "wal_level=logical"              # Obrigatório para Debezium CDC
+      - "-c"
+      - "max_replication_slots=4"
+      - "-c"
+      - "max_wal_senders=4"
+    volumes:
+      - ./source-db/01-create-schema.sql:/docker-entrypoint-initdb.d/01-create-schema.sql
+      - ./source-db/02-seed-data.sql:/docker-entrypoint-initdb.d/02-seed-data.sql
+      - ./source-db/03-enable-cdc.sql:/docker-entrypoint-initdb.d/03-enable-cdc.sql
+      - cdc_legado_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ecad_user -d ecad_legado"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    networks:
+      - cdc-network
+
+  # ---------------------------------------------------------------------------
+  # Kafka (KRaft — sem Zookeeper)
+  # ---------------------------------------------------------------------------
+  kafka:
+    image: confluentinc/cp-kafka:7.7.1
+    container_name: cdc-kafka
+    ports:
+      - "9092:9092"
+    environment:
+      # KRaft mode
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      # Listeners
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:29092,EXTERNAL://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,EXTERNAL://localhost:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,EXTERNAL:PLAINTEXT,CONTROLLER:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      # Cluster
+      CLUSTER_ID: "cdc-poc-cluster-001"
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      # Performance (POC — single node)
+      KAFKA_NUM_PARTITIONS: 1
+      KAFKA_DEFAULT_REPLICATION_FACTOR: 1
+      KAFKA_LOG_RETENTION_HOURS: 24
+    volumes:
+      - cdc_kafka_data:/var/lib/kafka/data
+    healthcheck:
+      test: ["CMD", "kafka-broker-api-versions", "--bootstrap-server", "localhost:9092"]
+      interval: 10s
+      timeout: 5s
+      retries: 15
+    networks:
+      - cdc-network
+
+  # ---------------------------------------------------------------------------
+  # Schema Registry
+  # ---------------------------------------------------------------------------
+  schema-registry:
+    image: confluentinc/cp-schema-registry:7.7.1
+    container_name: cdc-schema-registry
+    ports:
+      - "8081:8081"
+    environment:
+      SCHEMA_REGISTRY_HOST_NAME: schema-registry
+      SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: kafka:29092
+      SCHEMA_REGISTRY_LISTENERS: http://0.0.0.0:8081
+    depends_on:
+      kafka:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8081/subjects || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - cdc-network
+
+  # ---------------------------------------------------------------------------
+  # Kafka Connect (Debezium Source + JDBC Sink)
+  # ---------------------------------------------------------------------------
+  kafka-connect:
+    image: confluentinc/cp-kafka-connect:7.7.1
+    container_name: cdc-kafka-connect
+    ports:
+      - "8083:8083"
+    environment:
+      CONNECT_BOOTSTRAP_SERVERS: kafka:29092
+      CONNECT_REST_ADVERTISED_HOST_NAME: kafka-connect
+      CONNECT_REST_PORT: 8083
+      CONNECT_GROUP_ID: cdc-connect-cluster
+      # Storage topics
+      CONNECT_CONFIG_STORAGE_TOPIC: _connect-configs
+      CONNECT_OFFSET_STORAGE_TOPIC: _connect-offsets
+      CONNECT_STATUS_STORAGE_TOPIC: _connect-status
+      CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR: 1
+      CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR: 1
+      CONNECT_STATUS_STORAGE_REPLICATION_FACTOR: 1
+      # Converters
+      CONNECT_KEY_CONVERTER: org.apache.kafka.connect.json.JsonConverter
+      CONNECT_VALUE_CONVERTER: org.apache.kafka.connect.json.JsonConverter
+      CONNECT_KEY_CONVERTER_SCHEMAS_ENABLE: "false"
+      CONNECT_VALUE_CONVERTER_SCHEMAS_ENABLE: "false"
+      # Plugin path
+      CONNECT_PLUGIN_PATH: /usr/share/java,/usr/share/confluent-hub-components
+    command:
+      - bash
+      - -c
+      - |
+        echo "Installing connectors..."
+        confluent-hub install --no-prompt debezium/debezium-connector-postgresql:2.7.4
+        confluent-hub install --no-prompt confluentinc/kafka-connect-jdbc:10.8.0
+        echo "Launching Kafka Connect..."
+        /etc/confluent/docker/run
+    depends_on:
+      kafka:
+        condition: service_healthy
+      schema-registry:
+        condition: service_healthy
+      postgres-legado:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8083/connectors || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 20
+      start_period: 90s
+    networks:
+      - cdc-network
+
+  # ---------------------------------------------------------------------------
+  # ksqlDB Server
+  # ---------------------------------------------------------------------------
+  ksqldb-server:
+    image: confluentinc/cp-ksqldb-server:7.7.1
+    container_name: cdc-ksqldb
+    ports:
+      - "8088:8088"
+    environment:
+      KSQL_BOOTSTRAP_SERVERS: kafka:29092
+      KSQL_LISTENERS: http://0.0.0.0:8088
+      KSQL_KSQL_SERVICE_ID: cdc-ksqldb
+      KSQL_KSQL_SCHEMA_REGISTRY_URL: http://schema-registry:8081
+      KSQL_KSQL_LOGGING_PROCESSING_STREAM_AUTO_CREATE: "true"
+      KSQL_KSQL_LOGGING_PROCESSING_TOPIC_AUTO_CREATE: "true"
+    depends_on:
+      kafka:
+        condition: service_healthy
+      schema-registry:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8088/info || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 15
+      start_period: 30s
+    networks:
+      - cdc-network
+
+  # ---------------------------------------------------------------------------
+  # Kafka UI — visualização de topics, messages, connectors
+  # ---------------------------------------------------------------------------
+  kafka-ui:
+    image: provectuslabs/kafka-ui:v0.7.2
+    container_name: cdc-kafka-ui
+    ports:
+      - "8080:8080"
+    environment:
+      KAFKA_CLUSTERS_0_NAME: cdc-poc
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:29092
+      KAFKA_CLUSTERS_0_SCHEMAREGISTRY: http://schema-registry:8081
+      KAFKA_CLUSTERS_0_KAFKACONNECT_0_NAME: cdc-connect
+      KAFKA_CLUSTERS_0_KAFKACONNECT_0_ADDRESS: http://kafka-connect:8083
+      KAFKA_CLUSTERS_0_KSQLDBSERVER: http://ksqldb-server:8088
+    depends_on:
+      kafka:
+        condition: service_healthy
+    networks:
+      - cdc-network
+
+volumes:
+  cdc_legado_data:
+  cdc_kafka_data:
+
+networks:
+  cdc-network:
+    driver: bridge

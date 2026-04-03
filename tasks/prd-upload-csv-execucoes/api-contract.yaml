@@ -1,0 +1,466 @@
+openapi: 3.1.0
+
+info:
+  title: "Upload de Execuções via CSV API"
+  description: |
+    API para upload e processamento assíncrono de execuções musicais via arquivo CSV,
+    com armazenamento no MinIO e relatório de erros por linha/coluna.
+
+    **Contrato gerado a partir do PRD:** `tasks/prd-upload-csv-execucoes/prd.md`
+    **Data de geração:** 2026-04-03
+
+    ## Serviços Envolvidos
+    - **Identificação API** (`:5100`) — upload, processamento, status, relatório de erros
+
+    ## Premissas
+    - Mesmos padrões: JWT Bearer, page/size, RFC 7807, camelCase
+    - Upload como sub-recurso: `/captacoes/{captacaoId}/uploads`
+    - Arquivo enviado como `multipart/form-data`
+    - Processamento assíncrono — polling via GET no status do upload
+  version: "1.0.0"
+  contact:
+    name: "Time de Identificação"
+
+servers:
+  - url: http://localhost:5100/api/v1
+    description: Identificação API — desenvolvimento local
+
+security:
+  - BearerAuth: []
+
+tags:
+  - name: Uploads CSV
+    description: "Upload e processamento de arquivos CSV de execuções (Identificação API :5100)"
+
+# ─── Paths ───────────────────────────────────────────────────────────────────
+paths:
+
+  /captacoes/{captacaoId}/uploads:
+    parameters:
+      - name: captacaoId
+        in: path
+        required: true
+        description: ID da captação
+        schema:
+          type: string
+          format: uuid
+          example: "c1d2e3f4-5678-90ab-cdef-123456789012"
+
+    get:
+      summary: Listar uploads de uma captação
+      description: |
+        Retorna todos os uploads realizados para uma captação, com status de processamento.
+        Todos os usuários (Analista e Consultor) podem visualizar.
+      operationId: listarUploads
+      tags:
+        - Uploads CSV
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: size
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+      responses:
+        "200":
+          description: Lista de uploads
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UploadListResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+      x-frontend-notes: "Polling a cada 5s enquanto houver upload com status PROCESSANDO"
+      x-backend-notes: "Ordenar por criadoEm DESC (mais recente primeiro)"
+
+    post:
+      summary: Upload de arquivo CSV
+      description: |
+        Faz upload de um arquivo CSV para MinIO e inicia o processamento assíncrono.
+        Somente o analista dono da captação ABERTA pode fazer upload.
+
+        **Formato aceito:** `.csv`, encoding UTF-8, separador `;`
+        **Regras:** RN-04, RN-08
+      operationId: uploadCsv
+      tags:
+        - Uploads CSV
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - arquivo
+              properties:
+                arquivo:
+                  type: string
+                  format: binary
+                  description: "Arquivo CSV (UTF-8, separador `;`, max 10.000 linhas)"
+      responses:
+        "202":
+          description: Upload aceito — processamento iniciado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UploadResponse"
+              example:
+                id: "u1a2b3c4-5678-90ab-cdef-123456789012"
+                captacaoId: "c1d2e3f4-5678-90ab-cdef-123456789012"
+                nomeArquivo: "execucoes_tv_aberta_20260115.csv"
+                status: "PROCESSANDO"
+                totalLinhas: null
+                execucoesCriadas: null
+                totalErros: null
+                criadoEm: "2026-01-15T16:00:00Z"
+                processadoEm: null
+        "400":
+          description: Formato inválido
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetails"
+              examples:
+                formatoInvalido:
+                  summary: Arquivo não é CSV
+                  value:
+                    type: "https://tools.ietf.org/html/rfc7807#section-6.5.1"
+                    title: "Bad Request"
+                    status: 400
+                    detail: "Formato inválido. Apenas arquivos .csv são aceitos"
+                    code: "FORMATO_INVALIDO"
+                arquivoVazio:
+                  summary: Arquivo vazio
+                  value:
+                    type: "https://tools.ietf.org/html/rfc7807#section-6.5.1"
+                    title: "Bad Request"
+                    status: 400
+                    detail: "Arquivo vazio ou sem cabeçalho válido"
+                    code: "ARQUIVO_VAZIO"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          description: Captação não está ABERTA
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetails"
+              example:
+                type: "https://tools.ietf.org/html/rfc7807#section-6.5.1"
+                title: "Unprocessable Entity"
+                status: 422
+                detail: "Não é possível fazer upload em uma captação com status FECHADA"
+                code: "STATUS_INVALIDO"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+      x-frontend-notes: "Usar FormData para envio multipart. Após 202, redirecionar para seção de Uploads ou iniciar polling"
+      x-backend-notes: "Salvar arquivo no MinIO com key: uploads/{captacaoId}/{uploadId}/{nomeArquivo}. Enfileirar processamento via background job"
+
+  /captacoes/{captacaoId}/uploads/{id}:
+    parameters:
+      - name: captacaoId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          example: "c1d2e3f4-5678-90ab-cdef-123456789012"
+      - name: id
+        in: path
+        required: true
+        description: ID do upload
+        schema:
+          type: string
+          format: uuid
+          example: "u1a2b3c4-5678-90ab-cdef-123456789012"
+
+    get:
+      summary: Buscar upload por ID
+      description: |
+        Retorna detalhes de um upload específico, incluindo status e contadores.
+        Usado para polling durante processamento.
+      operationId: buscarUploadPorId
+      tags:
+        - Uploads CSV
+      responses:
+        "200":
+          description: Upload encontrado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UploadResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+      x-frontend-notes: "Polling a cada 5s enquanto status === PROCESSANDO"
+
+  /captacoes/{captacaoId}/uploads/{id}/erros:
+    parameters:
+      - name: captacaoId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+
+    get:
+      summary: Listar erros de um upload
+      description: |
+        Retorna relatório paginado de erros do processamento CSV.
+        Cada erro indica número da linha, coluna afetada e mensagem descritiva.
+      operationId: listarErrosUpload
+      tags:
+        - Uploads CSV
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: size
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 50
+      responses:
+        "200":
+          description: Relatório de erros
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErroUploadListResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+      x-frontend-notes: "Exibir como tabela: Linha | Coluna | Erro. Paginação com size=50 default"
+      x-backend-notes: "Erros com TTL de 30 dias — cleanup via background job periódico"
+
+# ─── Components ──────────────────────────────────────────────────────────────
+components:
+
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: "Token JWT via Keycloak. Roles: analista-identificacao (upload), consultor-identificacao (read)"
+
+  responses:
+    Unauthorized:
+      description: Não autenticado
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ProblemDetails"
+    Forbidden:
+      description: Sem permissão
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ProblemDetails"
+    NotFound:
+      description: Recurso não encontrado
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ProblemDetails"
+    InternalServerError:
+      description: Erro interno
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ProblemDetails"
+
+  schemas:
+
+    # ── Upload ──
+    Upload:
+      type: object
+      required:
+        - id
+        - captacaoId
+        - nomeArquivo
+        - status
+        - criadoEm
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "u1a2b3c4-5678-90ab-cdef-123456789012"
+        captacaoId:
+          type: string
+          format: uuid
+          example: "c1d2e3f4-5678-90ab-cdef-123456789012"
+        nomeArquivo:
+          type: string
+          description: "Nome original do arquivo CSV"
+          example: "execucoes_tv_aberta_20260115.csv"
+        status:
+          type: string
+          enum: [PROCESSANDO, CONCLUIDO, CONCLUIDO_COM_ERROS, ERRO]
+          description: |
+            - `PROCESSANDO`: upload aceito, background job em execução
+            - `CONCLUIDO`: todas as linhas processadas sem erros
+            - `CONCLUIDO_COM_ERROS`: linhas válidas processadas, erros registrados
+            - `ERRO`: falha global (arquivo inválido, captação fechada durante processamento)
+          example: "CONCLUIDO_COM_ERROS"
+        totalLinhas:
+          type: integer
+          nullable: true
+          description: "Total de linhas no CSV (excluindo header). Preenchido após leitura"
+          example: 1500
+        execucoesCriadas:
+          type: integer
+          nullable: true
+          description: "Execuções criadas com sucesso (após agrupamento)"
+          example: 1420
+        totalErros:
+          type: integer
+          nullable: true
+          description: "Total de erros encontrados"
+          example: 80
+        mensagemErro:
+          type: string
+          nullable: true
+          description: "Mensagem de erro global (quando status=ERRO)"
+          example: null
+        criadoEm:
+          type: string
+          format: date-time
+          example: "2026-01-15T16:00:00Z"
+        processadoEm:
+          type: string
+          format: date-time
+          nullable: true
+          description: "Data de conclusão do processamento"
+          example: "2026-01-15T16:02:35Z"
+
+    # ── Erro de Upload ──
+    ErroUpload:
+      type: object
+      required:
+        - linha
+        - coluna
+        - mensagem
+      properties:
+        linha:
+          type: integer
+          description: "Número da linha no CSV (1-indexed, excluindo header)"
+          example: 42
+        coluna:
+          type: string
+          description: "Nome da coluna com erro"
+          example: "tipo_utilizacao"
+        mensagem:
+          type: string
+          description: "Descrição do erro"
+          example: "Obrigatório para a rubrica TV Aberta"
+
+    # ── Responses ──
+    UploadResponse:
+      allOf:
+        - $ref: "#/components/schemas/Upload"
+
+    UploadListResponse:
+      type: object
+      required:
+        - data
+        - pagination
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Upload"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+
+    ErroUploadListResponse:
+      type: object
+      required:
+        - data
+        - pagination
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErroUpload"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+
+    # ── Compartilhados ──
+    Pagination:
+      type: object
+      required:
+        - page
+        - size
+        - total
+        - totalPages
+      properties:
+        page:
+          type: integer
+          example: 1
+        size:
+          type: integer
+          example: 20
+        total:
+          type: integer
+          example: 80
+        totalPages:
+          type: integer
+          example: 2
+
+    ProblemDetails:
+      type: object
+      required:
+        - type
+        - title
+        - status
+        - detail
+      properties:
+        type:
+          type: string
+          format: uri
+        title:
+          type: string
+        status:
+          type: integer
+        detail:
+          type: string
+        code:
+          type: string
+          nullable: true
+        traceId:
+          type: string
+          nullable: true

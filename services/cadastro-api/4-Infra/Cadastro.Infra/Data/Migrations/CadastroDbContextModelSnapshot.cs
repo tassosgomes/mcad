@@ -346,6 +346,9 @@ namespace Cadastro.Infra.Data.Migrations
                     b.Property<Guid>("FonogramaId")
                         .HasColumnType("uuid");
 
+                    b.Property<Guid?>("FonogramaId1")
+                        .HasColumnType("uuid");
+
                     b.Property<decimal?>("Percentual")
                         .HasColumnType("DECIMAL(8,4)");
 
@@ -356,6 +359,8 @@ namespace Cadastro.Infra.Data.Migrations
 
                     b.HasIndex("FonogramaId")
                         .HasDatabaseName("ix_participacoes_fonograma");
+
+                    b.HasIndex("FonogramaId1");
 
                     b.HasIndex("TitularId")
                         .HasDatabaseName("ix_participacoes_titular");
@@ -460,6 +465,9 @@ namespace Cadastro.Infra.Data.Migrations
                     b.Property<Guid>("ObraId")
                         .HasColumnType("uuid");
 
+                    b.Property<Guid?>("ObraMusicalId")
+                        .HasColumnType("uuid");
+
                     b.Property<decimal>("Percentual")
                         .HasColumnType("DECIMAL(8,4)");
 
@@ -470,6 +478,8 @@ namespace Cadastro.Infra.Data.Migrations
 
                     b.HasIndex("ObraId")
                         .HasDatabaseName("ix_titularidades_obra");
+
+                    b.HasIndex("ObraMusicalId");
 
                     b.HasIndex("TitularId")
                         .HasDatabaseName("ix_titularidades_titular");
@@ -522,6 +532,10 @@ namespace Cadastro.Infra.Data.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("Cadastro.Domain.Entities.Fonograma", null)
+                        .WithMany("ParticipacoesConexas")
+                        .HasForeignKey("FonogramaId1");
+
                     b.HasOne("Cadastro.Domain.Entities.Titular", "Titular")
                         .WithMany()
                         .HasForeignKey("TitularId")
@@ -552,6 +566,10 @@ namespace Cadastro.Infra.Data.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("Cadastro.Domain.Entities.ObraMusical", null)
+                        .WithMany("TitularidadesAutorais")
+                        .HasForeignKey("ObraMusicalId");
+
                     b.HasOne("Cadastro.Domain.Entities.Titular", "Titular")
                         .WithMany()
                         .HasForeignKey("TitularId")
@@ -561,6 +579,16 @@ namespace Cadastro.Infra.Data.Migrations
                     b.Navigation("Obra");
 
                     b.Navigation("Titular");
+                });
+
+            modelBuilder.Entity("Cadastro.Domain.Entities.Fonograma", b =>
+                {
+                    b.Navigation("ParticipacoesConexas");
+                });
+
+            modelBuilder.Entity("Cadastro.Domain.Entities.ObraMusical", b =>
+                {
+                    b.Navigation("TitularidadesAutorais");
                 });
 #pragma warning restore 612, 618
         }

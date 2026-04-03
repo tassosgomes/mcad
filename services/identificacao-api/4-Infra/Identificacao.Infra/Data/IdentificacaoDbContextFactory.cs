@@ -8,7 +8,8 @@ public class IdentificacaoDbContextFactory : IDesignTimeDbContextFactory<Identif
     public IdentificacaoDbContext CreateDbContext(string[] args)
     {
         var optionsBuilder = new DbContextOptionsBuilder<IdentificacaoDbContext>();
-        optionsBuilder.UseNpgsql("Host=localhost;Database=IdentificacaoDb;Username=postgres;Password=postgres");
+        optionsBuilder.UseNpgsql(
+            "Host=localhost;Port=5432;Database=mcad;Username=gestauto;Password=gestauto123;SearchPath=identificacao");
 
         return new IdentificacaoDbContext(optionsBuilder.Options);
     }
