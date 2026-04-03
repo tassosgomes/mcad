@@ -1,0 +1,62 @@
+.message {
+  font-size: 0.875rem;
+  color: var(--color-text);
+  margin-bottom: var(--space-4);
+  line-height: var(--line-height-relaxed);
+}
+
+.itemTitle {
+  font-weight: 600;
+  color: var(--color-danger);
+}
+
+.warningBox {
+  background-color: var(--color-danger-alpha);
+  border: 1px solid var(--color-danger);
+  border-radius: var(--radius-md);
+  padding: var(--space-3);
+  margin-bottom: var(--space-4);
+}
+
+.warningText {
+  color: var(--color-text);
+  font-size: 0.875rem;
+}
+
+.buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-2);
+}
+
+.btnCancel {
+  padding: var(--space-2) var(--space-4);
+  background: none;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  color: var(--color-text);
+}
+
+.btnCancel:hover {
+  background-color: var(--color-surface-hover);
+}
+
+.btnDelete {
+  padding: var(--space-2) var(--space-4);
+  background-color: var(--color-danger);
+  border: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  color: white;
+  font-weight: 500;
+}
+
+.btnDelete:hover {
+  background-color: var(--color-danger-hover);
+}
+
+.btnDelete:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

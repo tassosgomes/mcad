@@ -1,5 +1,5 @@
 ---
-status: pending
+status: completed
 parallelizable: false
 blocked_by: [6.0, 7.0]
 ---
@@ -47,13 +47,13 @@ Implementar 7 componentes com CSS Modules seguindo mockups do Stitch. O `BuscaCa
 
 ## Subtarefas
 
-- [ ] 8.1 Criar `BuscaCadastroAutocomplete` + CSS — autocomplete com debounce, resultados tipados (🎵fonograma / 📝obra), ISRC/ISWC + badges, footer "Criar pendente", valor selecionado com botão limpar
-- [ ] 8.2 Criar `CriarObraPendenteModal` + CSS — título + tipo obra (Select), chama useCreateObraPendente, retorna ObraFonogramaSelecionado
-- [ ] 8.3 Criar `CriarFonogramaPendenteModal` + CSS — ISRC opcional + obra read-only, chama useCreateFonogramaPendente
-- [ ] 8.4 Criar `ExecucaoFormModal` + CSS — usa BuscaCadastroAutocomplete, inputs time, duração live (useMemo), campos condicionais, validação client-side, tratamento de erros por code
-- [ ] 8.5 Criar `ExecucoesTable` + CSS — colunas: título+ISRC, intérpretes, início, fim, duração formatada, qtd, tipo (badge), status (badge), ações condicionais
-- [ ] 8.6 Criar `DeleteExecucaoModal` + CSS — confirmação com título da obra em bold
-- [ ] 8.7 Criar `ExecucoesSection` + CSS — wrapper que orquestra tabela, modal de formulário, modal de exclusão, paginação, filtro por status
+- [x] 8.1 Criar `BuscaCadastroAutocomplete` + CSS — autocomplete com debounce, resultados tipados (🎵fonograma / 📝obra), ISRC/ISWC + badges, footer "Criar pendente", valor selecionado com botão limpar
+- [x] 8.2 Criar `CriarObraPendenteModal` + CSS — título + tipo obra (Select), chama useCreateObraPendente, retorna ObraFonogramaSelecionado
+- [x] 8.3 Criar `CriarFonogramaPendenteModal` + CSS — ISRC opcional + obra read-only, chama useCreateFonogramaPendente
+- [x] 8.4 Criar `ExecucaoFormModal` + CSS — usa BuscaCadastroAutocomplete, inputs time, duração live (useMemo), campos condicionais, validação client-side, tratamento de erros por code
+- [x] 8.5 Criar `ExecucoesTable` + CSS — colunas: título+ISRC, intérpretes, início, fim, duração formatada, qtd, tipo (badge), status (badge), ações condicionais
+- [x] 8.6 Criar `DeleteExecucaoModal` + CSS — confirmação com título da obra em bold
+- [x] 8.7 Criar `ExecucoesSection` + CSS — wrapper que orquestra tabela, modal de formulário, modal de exclusão, paginação, filtro por status
 
 ## Sequenciamento
 
@@ -134,10 +134,10 @@ const [showFormModal, setShowFormModal] = useState(false);
 
 ## Critérios de Sucesso (Verificáveis)
 
-- [ ] Build compila: `cd frontend && npm run build`
-- [ ] TypeScript sem erros: `cd frontend && npx tsc --noEmit`
-- [ ] Autocomplete busca com debounce e mostra resultados tipados
-- [ ] Campos condicionais aparecem/desaparecem com base na rubrica
-- [ ] Duração calculada live ("3min 45s" para 14:30:00→14:33:45)
-- [ ] Criação de obra/fonograma pendente funciona e preenche o autocomplete
-- [ ] Componentes seguem mockups do Stitch
+- [x] Build compila: `cd frontend && npm run build`
+- [x] TypeScript sem erros: `cd frontend && npx tsc --noEmit`
+- [x] Autocomplete busca com debounce e mostra resultados tipados
+- [x] Campos condicionais aparecem/desaparecem com base na rubrica
+- [x] Duração calculada live ("3min 45s" para 14:30:00→14:33:45)
+- [x] Criação de obra/fonograma pendente funciona e preenche o autocomplete
+- [x] Componentes seguem mockups do Stitch
