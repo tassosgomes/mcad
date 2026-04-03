@@ -9,10 +9,12 @@ namespace Identificacao.Application.Captacoes.Queries;
 public class GetCaptacaoByIdQueryHandler : IQueryHandler<GetCaptacaoByIdQuery, CaptacaoDetalheResponse>
 {
     private readonly ICaptacaoRepository _repository;
+    private readonly IExecucaoRepository _execucaoRepo;
 
-    public GetCaptacaoByIdQueryHandler(ICaptacaoRepository repository)
+    public GetCaptacaoByIdQueryHandler(ICaptacaoRepository repository, IExecucaoRepository execucaoRepo)
     {
         _repository = repository;
+        _execucaoRepo = execucaoRepo;
     }
 
     public async Task<CaptacaoDetalheResponse> HandleAsync(GetCaptacaoByIdQuery query, CancellationToken cancellationToken)
@@ -22,8 +24,11 @@ public class GetCaptacaoByIdQueryHandler : IQueryHandler<GetCaptacaoByIdQuery, C
         if (captacao == null)
             throw new NotFoundException("Captação não encontrada.");
 
-        var totalExecucoes = await _repository.ContarExecucoesAsync(query.Id, cancellationToken);
-        var resumo = new ResumoExecucoesResponse(totalExecucoes, 0, 0);
+        var total = await _execucaoRepo.ContarPorCaptacaoAsync(query.Id, cancellationToken);
+        var identificadas = await _execucaoRepo.ContarIdentificadasAsync(query.Id, cancellationToken);
+        var pendentes = await _execucaoRepo.ContarPendentesAsync(query.Id, cancellationToken);
+
+        var resumo = new ResumoExecucoesResponse(total, identificadas, pendentes);
 
         var rubricaResponse = new RubricaResponse(
             captacao.Rubrica!.Id, 
