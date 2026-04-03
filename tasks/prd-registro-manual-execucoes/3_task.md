@@ -1,5 +1,5 @@
 ---
-status: pending
+status: completed
 parallelizable: false
 blocked_by: [1.0, 2.0]
 ---
@@ -39,15 +39,15 @@ Adicionar ao serviço de Identificação: DbSets de Execução e TipoUtilizaçã
 
 ## Subtarefas
 
-- [ ] 3.1 Adicionar `DbSet<Execucao>` e `DbSet<TipoUtilizacao>` ao `IdentificacaoDbContext`
-- [ ] 3.2 Criar `ExecucaoConfiguration` — FK para Captacao (CASCADE), FK para TipoUtilizacao (SetNull), índice em CaptacaoId e ObraId, TimeOnly para Inicio/Fim
-- [ ] 3.3 Criar `TipoUtilizacaoConfiguration` — unique index em Sigla
-- [ ] 3.4 Criar `TipoUtilizacaoSeed` com 4 registros (IDs fixos)
-- [ ] 3.5 Gerar migration: `dotnet ef migrations add AddExecucoesETiposUtilizacao`
-- [ ] 3.6 Criar `ExecucaoRepository` — ListarAsync (filtro status, sort, paginação), GetByIdAsync, ContarPorCaptacao/Identificadas/Pendentes, Add/Remove/SaveChanges
-- [ ] 3.7 Criar `TipoUtilizacaoRepository` (ListarAsync, GetByIdAsync)
-- [ ] 3.8 Criar `CadastroHttpClient` — BuscarAsync, GetObraByIdAsync, GetFonogramaByIdAsync (com Polly retry)
-- [ ] 3.9 Atualizar `CaptacaoRepository.ContarExecucoesAsync` para contar execuções reais (não mais retornar 0)
+- [x] 3.1 Adicionar `DbSet<Execucao>` e `DbSet<TipoUtilizacao>` ao `IdentificacaoDbContext`
+- [x] 3.2 Criar `ExecucaoConfiguration` — FK para Captacao (CASCADE), FK para TipoUtilizacao (SetNull), índice em CaptacaoId e ObraId, TimeOnly para Inicio/Fim
+- [x] 3.3 Criar `TipoUtilizacaoConfiguration` — unique index em Sigla
+- [x] 3.4 Criar `TipoUtilizacaoSeed` com 4 registros (IDs fixos)
+- [x] 3.5 Gerar migration: `dotnet ef migrations add AddExecucoesETiposUtilizacao`
+- [x] 3.6 Criar `ExecucaoRepository` — ListarAsync (filtro status, sort, paginação), GetByIdAsync, ContarPorCaptacao/Identificadas/Pendentes, Add/Remove/SaveChanges
+- [x] 3.7 Criar `TipoUtilizacaoRepository` (ListarAsync, GetByIdAsync)
+- [x] 3.8 Criar `CadastroHttpClient` — BuscarAsync, GetObraByIdAsync, GetFonogramaByIdAsync (com Polly retry)
+- [x] 3.9 Atualizar `CaptacaoRepository.ContarExecucoesAsync` para contar execuções reais (não mais retornar 0)
 
 ## Sequenciamento
 
