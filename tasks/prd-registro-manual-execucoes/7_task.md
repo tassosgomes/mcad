@@ -1,5 +1,5 @@
 ---
-status: pending
+status: completed
 parallelizable: true
 blocked_by: []
 ---
@@ -48,14 +48,14 @@ Criar tipos TypeScript, funções de API e 8 hooks React Query para execuções,
 
 ## Subtarefas
 
-- [ ] 7.1 Criar `execucao.ts` com todas interfaces (Execucao, TipoUtilizacao, requests, responses, filtros, ResultadoBusca, ObraFonogramaSelecionado)
-- [ ] 7.2 Criar `execucoesApi.ts` — getExecucoes, criarExecucao, atualizarExecucao, excluirExecucao, getTiposUtilizacao (via apiIdentificacaoClient)
-- [ ] 7.3 Criar `buscaCadastroApi.ts` — buscarCadastro, criarObraPendente, criarFonogramaPendente (via apiClient original)
-- [ ] 7.4 Criar `useTiposUtilizacao` — staleTime Infinity
-- [ ] 7.5 Criar `useExecucoes` — queryKey com captacaoId + filtros, keepPreviousData
-- [ ] 7.6 Criar `useCreateExecucao`, `useUpdateExecucao`, `useDeleteExecucao` — invalidam `['execucoes', captacaoId]` + `['captacoes', captacaoId]`
-- [ ] 7.7 Criar `useBuscaCadastro` — debounce 300ms, enabled quando ≥ 3 chars, staleTime 30s
-- [ ] 7.8 Criar `useCreateObraPendente` + `useCreateFonogramaPendente`
+- [x] 7.1 Criar `execucao.ts` com todas interfaces (Execucao, TipoUtilizacao, requests, responses, filtros, ResultadoBusca, ObraFonogramaSelecionado)
+- [x] 7.2 Criar `execucoesApi.ts` — getExecucoes, criarExecucao, atualizarExecucao, excluirExecucao, getTiposUtilizacao (via apiIdentificacaoClient)
+- [x] 7.3 Criar `buscaCadastroApi.ts` — buscarCadastro, criarObraPendente, criarFonogramaPendente (via apiClient original)
+- [x] 7.4 Criar `useTiposUtilizacao` — staleTime Infinity
+- [x] 7.5 Criar `useExecucoes` — queryKey com captacaoId + filtros, keepPreviousData
+- [x] 7.6 Criar `useCreateExecucao`, `useUpdateExecucao`, `useDeleteExecucao` — invalidam `['execucoes', captacaoId]` + `['captacoes', captacaoId]`
+- [x] 7.7 Criar `useBuscaCadastro` — debounce 300ms, enabled quando ≥ 3 chars, staleTime 30s
+- [x] 7.8 Criar `useCreateObraPendente` + `useCreateFonogramaPendente`
 
 ## Sequenciamento
 
@@ -99,8 +99,8 @@ onSuccess: () => {
 
 ## Critérios de Sucesso (Verificáveis)
 
-- [ ] Build compila: `cd frontend && npm run build`
-- [ ] TypeScript sem erros: `cd frontend && npx tsc --noEmit`
-- [ ] 8 hooks criados
-- [ ] `buscaCadastroApi` usa `apiClient` (:5001), `execucoesApi` usa `apiIdentificacaoClient` (:5100)
-- [ ] `useBuscaCadastro` só busca com ≥ 3 chars
+- [x] Build compila: `cd frontend && npm run build`
+- [x] TypeScript sem erros: `cd frontend && npx tsc --noEmit`
+- [x] 8 hooks criados
+- [x] `buscaCadastroApi` usa `apiClient` (:5001), `execucoesApi` usa `apiIdentificacaoClient` (:5100)
+- [x] `useBuscaCadastro` só busca com ≥ 3 chars

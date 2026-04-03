@@ -31,8 +31,8 @@ Mockups, types/hooks, componentes e integração na CaptacaoDetailPage.
 - [x] 3.0 Backend — Infrastructure (DbContext, Migration, Seeds, Repos, HttpClient)
 - [x] 4.0 Backend — Application Layer (Commands, Queries, Handlers)
 - [x] 5.0 Backend — API (Endpoints, Program.cs updates)
-- [ ] 6.0 Frontend — Mockups no Stitch
-- [ ] 7.0 Frontend — Types, API Clients e Hooks
+- [x] 6.0 Frontend — Mockups no Stitch
+- [x] 7.0 Frontend — Types, API Clients e Hooks
 - [ ] 8.0 Frontend — Componentes
 - [ ] 9.0 Frontend — Integração na CaptacaoDetailPage
 
