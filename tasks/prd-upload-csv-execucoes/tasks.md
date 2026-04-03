@@ -27,7 +27,7 @@ Mockups, types/hooks, componentes e integração.
 ## Tarefas
 
 - [x] 1.0 Infraestrutura — MinIO no Docker Compose + MinioService
-- [ ] 2.0 Backend — Domain Layer (Upload, ErroUpload, Interfaces)
+- [x] 2.0 Backend — Domain Layer (Upload, ErroUpload, Interfaces)
 - [ ] 3.0 Backend — Infrastructure (DbContext, Migration, Repositories)
 - [ ] 4.0 Backend — CsvParser (parse, validação, agrupamento, duplicatas)
 - [ ] 5.0 Backend — Application Layer (Commands, Queries, Handlers)

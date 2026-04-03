@@ -74,6 +74,10 @@
               "target": "Package",
               "version": "[8.0.0, )"
             },
+            "Minio": {
+              "target": "Package",
+              "version": "[7.0.0, )"
+            },
             "Scrutor": {
               "target": "Package",
               "version": "[5.0.1, )"
@@ -296,6 +300,10 @@
               "suppressParent": "All",
               "target": "Package",
               "version": "[9.0.4, )"
+            },
+            "Minio": {
+              "target": "Package",
+              "version": "[7.0.0, )"
             },
             "Npgsql.EntityFrameworkCore.PostgreSQL": {
               "target": "Package",

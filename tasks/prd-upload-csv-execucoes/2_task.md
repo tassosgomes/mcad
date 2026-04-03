@@ -1,5 +1,5 @@
 ---
-status: pending
+status: completed
 parallelizable: true
 blocked_by: []
 ---
@@ -33,11 +33,11 @@ Criar entidades Upload (com state machine) e ErroUpload, enum StatusUpload, e in
 
 ## Subtarefas
 
-- [ ] 2.1 Criar enum `StatusUpload` (Processando, Concluido, ConcluidoComErros, Erro)
-- [ ] 2.2 Criar entidade `Upload` com factory `Criar()`, métodos `MarcarConcluido()`, `MarcarErro()`
-- [ ] 2.3 Criar entidade `ErroUpload` com factory `Criar()`
-- [ ] 2.4 Criar interfaces `IUploadRepository` (CRUD + ListarPendentesAsync), `IErroUploadRepository` (Add + ListarPorUploadAsync)
-- [ ] 2.5 Testes unitários `UploadTests.cs`
+- [x] 2.1 Criar enum `StatusUpload` (Processando, Concluido, ConcluidoComErros, Erro)
+- [x] 2.2 Criar entidade `Upload` com factory `Criar()`, métodos `MarcarConcluido()`, `MarcarErro()`
+- [x] 2.3 Criar entidade `ErroUpload` com factory `Criar()`
+- [x] 2.4 Criar interfaces `IUploadRepository` (CRUD + ListarPendentesAsync), `IErroUploadRepository` (Add + ListarPorUploadAsync)
+- [x] 2.5 Testes unitários `UploadTests.cs`
 
 ## Sequenciamento
 
@@ -69,6 +69,6 @@ public interface IUploadRepository
 
 ## Critérios de Sucesso (Verificáveis)
 
-- [ ] Build: `cd services/identificacao-api && dotnet build`
-- [ ] Testes: `cd services/identificacao-api && dotnet test --filter "FullyQualifiedName~UploadTests"`
-- [ ] 4 cenários cobertos
+- [x] Build: `cd services/identificacao-api && dotnet build`
+- [x] Testes: `cd services/identificacao-api && dotnet test --filter "FullyQualifiedName~UploadTests"`
+- [x] 4 cenários cobertos
