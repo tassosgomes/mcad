@@ -1,5 +1,5 @@
 ---
-status: pending
+status: completed
 parallelizable: false
 blocked_by: [7.0, 8.0]
 ---
@@ -34,10 +34,10 @@ Implementar 4 componentes: UploadsSection (wrapper), UploadsTable (com badges de
 
 ## Subtarefas
 
-- [ ] 9.1 Criar `UploadCsvButton` + CSS — `<input type="file" accept=".csv">` hidden, trigger via botão, disabled durante upload, validação client-side (extensão .csv, arquivo não vazio)
-- [ ] 9.2 Criar `UploadsTable` + CSS — colunas: arquivo, status (badge com spinner para PROCESSANDO), linhas, criadas, erros (link clicável se > 0), data. Linha clicável se COM_ERROS
-- [ ] 9.3 Criar `ErrosUploadPanel` + CSS — painel collapsible com tabela: Linha | Coluna | Erro. Paginação (size=50). Header com nome do arquivo e total de erros
-- [ ] 9.4 Criar `UploadsSection` + CSS — orquestra UploadsTable + UploadCsvButton + ErrosUploadPanel. Gerencia estado de upload ativo (polling via useUpload), painel de erros expandido
+- [x] 9.1 Criar `UploadCsvButton` + CSS — `<input type="file" accept=".csv">` hidden, trigger via botão, disabled durante upload, validação client-side (extensão .csv, arquivo não vazio)
+- [x] 9.2 Criar `UploadsTable` + CSS — colunas: arquivo, status (badge com spinner para PROCESSANDO), linhas, criadas, erros (link clicável se > 0), data. Linha clicável se COM_ERROS
+- [x] 9.3 Criar `ErrosUploadPanel` + CSS — painel collapsible com tabela: Linha | Coluna | Erro. Paginação (size=50). Header com nome do arquivo e total de erros
+- [x] 9.4 Criar `UploadsSection` + CSS — orquestra UploadsTable + UploadCsvButton + ErrosUploadPanel. Gerencia estado de upload ativo (polling via useUpload), painel de erros expandido
 
 ## Sequenciamento
 
