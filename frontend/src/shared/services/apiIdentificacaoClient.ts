@@ -1,4 +1,4 @@
-const BASE_URL = import.meta.env.VITE_IDENTIFICACAO_API_BASE_URL || 'http://localhost:5100/api/v1';
+export const BASE_URL = import.meta.env.VITE_IDENTIFICACAO_API_BASE_URL || 'http://localhost:5100/api/v1';
 
 let getAuthToken: (() => string | null) | null = null;
 
@@ -6,7 +6,7 @@ export function setIdentificacaoAuthTokenProvider(fn: (() => string | null) | nu
   getAuthToken = fn;
 }
 
-async function fetchWithAuth(url: string, options: RequestInit = {}): Promise<Response> {
+export async function fetchWithAuth(url: string, options: RequestInit = {}): Promise<Response> {
   const token = getAuthToken?.();
   const headers = new Headers(options.headers);
 

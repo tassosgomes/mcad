@@ -1,5 +1,5 @@
 ---
-status: pending
+status: completed
 parallelizable: true
 blocked_by: []
 ---
@@ -35,12 +35,12 @@ Criar tipos TypeScript, funções de API (incluindo upload multipart) e 4 hooks 
 
 ## Subtarefas
 
-- [ ] 8.1 Criar `upload.ts` com interfaces (Upload, ErroUpload, StatusUpload, responses)
-- [ ] 8.2 Criar `uploadsApi.ts` — getUploads, getUploadById, getErrosUpload, uploadCsv (fetch multipart direto, não apiPost)
-- [ ] 8.3 Criar `useUploads` — lista paginada
-- [ ] 8.4 Criar `useUpload` — polling via `refetchInterval: 5000` enquanto PROCESSANDO, invalidação cruzada ao concluir (execucoes + captacoes)
-- [ ] 8.5 Criar `useUploadCsv` — mutation com File, invalidate uploads on success
-- [ ] 8.6 Criar `useErrosUpload` — paginado, enabled quando uploadId definido
+- [x] 8.1 Criar `upload.ts` com interfaces (Upload, ErroUpload, StatusUpload, responses)
+- [x] 8.2 Criar `uploadsApi.ts` — getUploads, getUploadById, getErrosUpload, uploadCsv (fetch multipart direto, não apiPost)
+- [x] 8.3 Criar `useUploads` — lista paginada
+- [x] 8.4 Criar `useUpload` — polling via `refetchInterval: 5000` enquanto PROCESSANDO, invalidação cruzada ao concluir (execucoes + captacoes)
+- [x] 8.5 Criar `useUploadCsv` — mutation com File, invalidate uploads on success
+- [x] 8.6 Criar `useErrosUpload` — paginado, enabled quando uploadId definido
 
 ## Sequenciamento
 
