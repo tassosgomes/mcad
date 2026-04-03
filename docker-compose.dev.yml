@@ -1,21 +1,142 @@
 services:
+  # ── Postgres ──────────────────────────────────────────────────────
   mcad-postgres:
     image: postgres:16-alpine
     container_name: mcad-postgres
     restart: unless-stopped
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: postgres
+      POSTGRES_USER: gestauto
+      POSTGRES_PASSWORD: gestauto123
+      POSTGRES_DB: mcad
     ports:
       - "5432:5432"
     volumes:
       - mcad_pg_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      test: ["CMD-SHELL", "pg_isready -U gestauto -d mcad"]
       interval: 5s
       timeout: 3s
       retries: 5
 
+  # ── RabbitMQ ──────────────────────────────────────────────────────
+  mcad-rabbitmq:
+    image: rabbitmq:3.13-management-alpine
+    container_name: mcad-rabbitmq
+    restart: unless-stopped
+    environment:
+      RABBITMQ_DEFAULT_USER: mcad
+      RABBITMQ_DEFAULT_PASS: mcad
+      RABBITMQ_DEFAULT_VHOST: mcad
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - mcad_rmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  # ── Keycloak ──────────────────────────────────────────────────────
+  mcad-keycloak:
+    image: quay.io/keycloak/keycloak:24.0
+    container_name: mcad-keycloak
+    restart: unless-stopped
+    command: start-dev
+    environment:
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://mcad-postgres:5432/mcad
+      KC_DB_USERNAME: gestauto
+      KC_DB_PASSWORD: gestauto123
+      KC_DB_SCHEMA: keycloak
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+      KC_HOSTNAME_STRICT: "false"
+      KC_HTTP_ENABLED: "true"
+      KC_HTTP_PORT: 8080
+      KC_PROXY: edge
+    ports:
+      - "8080:8080"
+    depends_on:
+      mcad-postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8080/health/ready || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 20
+      start_period: 60s
+
+  # ── MinIO ─────────────────────────────────────────────────────────
+  mcad-minio:
+    image: minio/minio:latest
+    container_name: mcad-minio
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: mcadadmin
+      MINIO_ROOT_PASSWORD: mcadadmin123
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - mcad_minio_data:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── Cadastro API ──────────────────────────────────────────────────
+  mcad-cadastro-api:
+    build:
+      context: ./services/cadastro-api
+      dockerfile: Dockerfile
+    container_name: mcad-cadastro-api
+    restart: unless-stopped
+    env_file:
+      - ./services/cadastro-api/.env
+    environment:
+      ASPNETCORE_URLS: http://+:5001
+      CADASTRO_DB_HOST: mcad-postgres
+      RABBITMQ_URL: amqp://mcad:mcad@mcad-rabbitmq:5672
+      OIDC_AUTHORITY: http://mcad-keycloak:8080/realms/mcad
+    ports:
+      - "5001:5001"
+    depends_on:
+      mcad-postgres:
+        condition: service_healthy
+      mcad-rabbitmq:
+        condition: service_healthy
+      mcad-keycloak:
+        condition: service_healthy
+
+  # ── Identificacao API ─────────────────────────────────────────────
+  mcad-identificacao-api:
+    build:
+      context: ./services/identificacao-api
+      dockerfile: Dockerfile
+    container_name: mcad-identificacao-api
+    restart: unless-stopped
+    env_file:
+      - ./services/identificacao-api/.env
+    environment:
+      ASPNETCORE_URLS: http://+:5100
+      IDENTIFICACAO_DB_HOST: mcad-postgres
+      OIDC_AUTHORITY: http://mcad-keycloak:8080/realms/mcad
+      CADASTRO_API_BASE_URL: http://mcad-cadastro-api:5001/api/v1
+    ports:
+      - "5100:5100"
+    depends_on:
+      mcad-postgres:
+        condition: service_healthy
+      mcad-keycloak:
+        condition: service_healthy
+      mcad-cadastro-api:
+        condition: service_started
+
 volumes:
   mcad_pg_data:
+  mcad_rmq_data:
+  mcad_minio_data:
