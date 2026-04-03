@@ -1,5 +1,5 @@
 ---
-status: pending
+status: completed
 parallelizable: true
 blocked_by: []
 ---
@@ -41,11 +41,11 @@ Criar as entidades Execução e TipoUtilização, o enum StatusExecucao, interfa
 
 ## Subtarefas
 
-- [ ] 2.1 Criar enum `StatusExecucao` (Identificada, Pendente)
-- [ ] 2.2 Criar entidade `TipoUtilizacao` (seed, factory estático)
-- [ ] 2.3 Criar entidade `Execucao` com factory `Criar()`, método `Atualizar()`, validação fim > início, cálculo de duração
-- [ ] 2.4 Criar interfaces `IExecucaoRepository`, `ITipoUtilizacaoRepository`, `ICadastroHttpClient`
-- [ ] 2.5 Testes unitários `ExecucaoTests.cs`
+- [x] 2.1 Criar enum `StatusExecucao` (Identificada, Pendente)
+- [x] 2.2 Criar entidade `TipoUtilizacao` (seed, factory estático)
+- [x] 2.3 Criar entidade `Execucao` com factory `Criar()`, método `Atualizar()`, validação fim > início, cálculo de duração
+- [x] 2.4 Criar interfaces `IExecucaoRepository`, `ITipoUtilizacaoRepository`, `ICadastroHttpClient`
+- [x] 2.5 Testes unitários `ExecucaoTests.cs`
 
 ## Sequenciamento
 
