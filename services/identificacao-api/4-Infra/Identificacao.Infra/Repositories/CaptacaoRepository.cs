@@ -90,10 +90,9 @@ public class CaptacaoRepository : ICaptacaoRepository
             .AnyAsync(ct);
     }
 
-    public Task<int> ContarExecucoesAsync(Guid captacaoId, CancellationToken ct)
+    public async Task<int> ContarExecucoesAsync(Guid captacaoId, CancellationToken ct)
     {
-        // Resolução futura. Assume 0 por agora pois não temos a tabela Execucoes
-        return Task.FromResult(0);
+        return await _context.Execucoes.CountAsync(e => e.CaptacaoId == captacaoId, ct);
     }
 
     public async Task AddAsync(Captacao captacao, CancellationToken ct)

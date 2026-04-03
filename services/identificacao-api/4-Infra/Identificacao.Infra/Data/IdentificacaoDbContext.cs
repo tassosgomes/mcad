@@ -11,6 +11,8 @@ public class IdentificacaoDbContext : DbContext
 
     public DbSet<Captacao> Captacoes => Set<Captacao>();
     public DbSet<Rubrica> Rubricas => Set<Rubrica>();
+    public DbSet<Execucao> Execucoes => Set<Execucao>();
+    public DbSet<TipoUtilizacao> TiposUtilizacao => Set<TipoUtilizacao>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
