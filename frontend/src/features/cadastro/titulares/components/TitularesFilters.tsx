@@ -21,9 +21,11 @@ export function TitularesFilters({ filtros, onChange }: TitularesFiltersProps) {
   const { data: associacoesResp } = useAssociacoes();
   const [nomeDraft, setNomeDraft] = useState(filtros.nome ?? '');
   const [docDraft, setDocDraft] = useState(filtros.documento ?? '');
+  const [codigoDraft, setCodigoDraft] = useState(filtros.codigo?.toString() ?? '');
 
   const nomeDebouncado = useDebounce(nomeDraft, 300);
   const docDebouncado = useDebounce(docDraft, 300);
+  const codigoDebouncado = useDebounce(codigoDraft, 300);
 
   useEffect(() => {
     onChange({ ...filtros, nome: nomeDebouncado || undefined, page: 1 });
@@ -34,6 +36,12 @@ export function TitularesFilters({ filtros, onChange }: TitularesFiltersProps) {
     onChange({ ...filtros, documento: docDebouncado || undefined, page: 1 });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [docDebouncado]);
+
+  useEffect(() => {
+    const parsed = codigoDebouncado ? parseInt(codigoDebouncado, 10) : undefined;
+    onChange({ ...filtros, codigo: isNaN(parsed as number) ? undefined : parsed, page: 1 });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [codigoDebouncado]);
 
   const associacaoOptions =
     associacoesResp?.map((a: { id: string; sigla: string }) => ({
@@ -48,6 +56,14 @@ export function TitularesFilters({ filtros, onChange }: TitularesFiltersProps) {
         value={nomeDraft}
         onChange={setNomeDraft}
         aria-label="Filtrar por nome"
+      />
+      <TextInput
+        type="number"
+        placeholder="Código (Ex: 67494)"
+        value={codigoDraft}
+        onChange={setCodigoDraft}
+        mono
+        aria-label="Filtrar por código"
       />
       <TextInput
         placeholder="CPF / CNPJ"

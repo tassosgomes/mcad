@@ -104,6 +104,7 @@ export function ParticipacoesTable({
       <table className={styles.table}>
         <thead>
           <tr>
+            <th>Código</th>
             <th>Nome</th>
             <th>Tipo</th>
             <th>Documento</th>
@@ -115,6 +116,9 @@ export function ParticipacoesTable({
         <tbody>
           {items.map((item) => (
             <tr key={item.id}>
+              <td>
+                <span className={styles.mono}>#{item.titular.codigo}</span>
+              </td>
               <td className={styles.nameCell}>
                 <span className={styles.name}>{item.titular.nome}</span>
                 {item.titular.associacaoSigla && (

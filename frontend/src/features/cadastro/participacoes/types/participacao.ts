@@ -5,6 +5,7 @@ export type CategoriaConexo = 'INTERPRETE' | 'PRODUTOR_FONOGRAFICO' | 'MUSICO_EX
 
 export interface TitularResumo {
   id: string;
+  codigo: number;
   nome: string;
   tipo: 'PF' | 'PJ';
   documentoFormatado: string;

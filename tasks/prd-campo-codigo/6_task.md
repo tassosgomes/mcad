@@ -1,5 +1,5 @@
 ---
-status: pending
+status: done
 parallelizable: false
 blocked_by: ["5.0"]
 ---
@@ -31,18 +31,18 @@ Atualizar PageHeaders das telas de detalhe para exibir código (ex: "Titular #67
 
 ## Subtarefas
 
-- [ ] 6.1 TitularEditPage: `<PageHeader title={`Titular #${titular.codigo}`} />`
-- [ ] 6.2 ObraDetailPage: `<PageHeader title={`Obra #${obra.codigo}`} />`
-- [ ] 6.3 FonogramaDetailPage: `<PageHeader title={`Fonograma #${fonograma.codigo}`} />`
-- [ ] 6.4 DepuracaoBanner: "Nova versão: #{codigo} →" (extrair codigo do response de depuração que retorna entidade completa)
-- [ ] 6.5 FonogramaDepuracaoBanner: idem
-- [ ] 6.6 ObraFonogramasSection: +codigo na tabela simples
-- [ ] 6.7 Verificar que UUID não aparece em nenhum lugar da interface
-- [ ] 6.8 `npm run build`
+- [x] 6.1 TitularEditPage: `<PageHeader title={`Titular #${titular.codigo}`} />`
+- [x] 6.2 ObraDetailPage: `<PageHeader title={`Obra #${obra.codigo}`} />`
+- [x] 6.3 FonogramaDetailPage: `<PageHeader title={`Fonograma #${fonograma.codigo}`} />`
+- [x] 6.4 DepuracaoBanner: "Nova versão: #{codigo} →" (extrair codigo do response de depuração que retorna entidade completa)
+- [x] 6.5 FonogramaDepuracaoBanner: idem
+- [x] 6.6 ObraFonogramasSection: +codigo na tabela simples
+- [x] 6.7 Verificar que UUID não aparece em nenhum lugar da interface
+- [x] 6.8 `npm run build`
 
 ## Critérios de Sucesso (Verificáveis)
 
-- [ ] PageHeaders exibem "Entidade #N" (não UUID)
-- [ ] Banners de depuração exibem código da nova entidade
-- [ ] UUID oculto em toda a interface
-- [ ] `npm run build` compila sem erros
+- [x] PageHeaders exibem "Entidade #N" (não UUID)
+- [x] Banners de depuração exibem código da nova entidade
+- [x] UUID oculto em toda a interface
+- [x] `npm run build` compila sem erros

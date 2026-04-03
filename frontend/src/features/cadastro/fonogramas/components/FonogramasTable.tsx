@@ -47,6 +47,11 @@ export function FonogramasTable({ data, canWrite, sort, onSortChange, onEdit, on
         <thead className={styles.thead}>
           <tr>
             <th className={styles.th}>
+              <button className={styles.sortBtn} onClick={() => onSortChange(toggleSort('codigo', sort))} type="button">
+                CÓDIGO <SortIcon field="codigo" currentSort={sort} />
+              </button>
+            </th>
+            <th className={styles.th}>
               <button className={styles.sortBtn} onClick={() => onSortChange(toggleSort('isrc', sort))} type="button">
                 ISRC <SortIcon field="isrc" currentSort={sort} />
               </button>
@@ -69,6 +74,9 @@ export function FonogramasTable({ data, canWrite, sort, onSortChange, onEdit, on
         <tbody>
           {data.map((fonograma) => (
             <tr key={fonograma.id} className={styles.row}>
+              <td className={styles.td}>
+                <span className={styles.mono}>#{fonograma.codigo}</span>
+              </td>
               <td className={styles.td}>
                 <span className={styles.isrc}>{formatIsrc(fonograma.isrcFormatado)}</span>
                 {fonograma.status === 'Depurado' && (

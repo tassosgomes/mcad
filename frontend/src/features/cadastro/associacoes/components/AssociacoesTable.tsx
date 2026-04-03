@@ -3,6 +3,11 @@ import type { Associacao } from '../types/associacao';
 import styles from './AssociacoesTable.module.css';
 
 const columns = [
+  { 
+    key: 'codigo', 
+    header: 'Código', 
+    render: (v: number) => <span className={styles.mono}>#{v}</span> 
+  },
   { key: 'sigla', header: 'Sigla' },
   { key: 'nome', header: 'Nome' },
   { 

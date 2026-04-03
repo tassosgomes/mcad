@@ -79,7 +79,7 @@ export function ExecucoesTable({
           {data.map((execucao) => {
             const canModify =
               canWrite &&
-              captacao.status === 'ABERTA' &&
+              captacao.status?.toUpperCase() === 'ABERTA' &&
               captacao.analistaResponsavel.id === currentUserId;
 
             return (

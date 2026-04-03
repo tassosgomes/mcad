@@ -3,6 +3,7 @@ export type ObraStatus = 'PENDENTE' | 'LIBERADO' | 'BLOQUEADO' | 'DOMINIO_PUBLIC
 
 export interface ObraMusical {
   id: string; // uuid
+  codigo: number;
   titulo: string;
   subtitulo: string | null;
   tipo: ObraTipo;
@@ -75,6 +76,7 @@ export interface ObraFiltros {
   page: number;
   size: number;
   sort?: string;
+  codigo?: number;
   titulo?: string;
   iswc?: string;
   tipo?: ObraTipo;

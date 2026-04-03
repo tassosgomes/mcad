@@ -15,7 +15,7 @@
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-blue), var(--shadow-md);
   width: 100%;
-  max-width: 480px;
+  max-width: 640px;
   margin: var(--space-4);
   animation: slideUp var(--transition-base) ease;
   overflow: hidden;

@@ -1,5 +1,5 @@
 ---
-status: pending
+status: done
 parallelizable: true
 blocked_by: []
 ---
@@ -37,14 +37,14 @@ Adicionar `codigo: number` em todos os tipos de response. Adicionar query param 
 
 ## Subtarefas
 
-- [ ] 4.1 Tipos: +`codigo: number` em todos os interfaces de response (6+ arquivos)
-- [ ] 4.2 Filtros types: +`codigo?: number` em TitularFiltros, ObraFiltros, FonogramaFiltros
-- [ ] 4.3 API functions: +codigo no URLSearchParams das 3 listagens
-- [ ] 4.4 Filtros UI: +TextInput "Código" (mono, type number, placeholder "Ex: 67494") nos 3 componentes
-- [ ] 4.5 `npm run build`
+- [x] 4.1 Tipos: +`codigo: number` em todos os interfaces de response (6+ arquivos)
+- [x] 4.2 Filtros types: +`codigo?: number` em TitularFiltros, ObraFiltros, FonogramaFiltros
+- [x] 4.3 API functions: +codigo no URLSearchParams das 3 listagens
+- [x] 4.4 Filtros UI: +TextInput "Código" (mono, type number, placeholder "Ex: 67494") nos 3 componentes
+- [x] 4.5 `npm run build`
 
 ## Critérios de Sucesso (Verificáveis)
 
-- [ ] `npm run build` compila sem erros
-- [ ] Tipos incluem codigo: number
-- [ ] Campo "Código" visível nos 3 filtros
+- [x] `npm run build` compila sem erros
+- [x] Tipos incluem codigo: number
+- [x] Campo "Código" visível nos 3 filtros

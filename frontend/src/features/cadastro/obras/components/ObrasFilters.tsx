@@ -29,10 +29,12 @@ export function ObrasFilters({ filtros, onChange }: ObrasFiltersProps) {
   const [tituloDraft, setTituloDraft] = useState(filtros.titulo ?? '');
   const [iswcDraft, setIswcDraft] = useState(filtros.iswc ?? '');
   const [generoDraft, setGeneroDraft] = useState(filtros.genero ?? '');
+  const [codigoDraft, setCodigoDraft] = useState(filtros.codigo?.toString() ?? '');
 
   const tituloDebouncado = useDebounce(tituloDraft, 300);
   const iswcDebouncado = useDebounce(iswcDraft, 300);
   const generoDebouncado = useDebounce(generoDraft, 300);
+  const codigoDebouncado = useDebounce(codigoDraft, 300);
 
   useEffect(() => {
     onChange({ ...filtros, titulo: tituloDebouncado || undefined, page: 1 });
@@ -49,6 +51,12 @@ export function ObrasFilters({ filtros, onChange }: ObrasFiltersProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [generoDebouncado]);
 
+  useEffect(() => {
+    const parsed = codigoDebouncado ? parseInt(codigoDebouncado, 10) : undefined;
+    onChange({ ...filtros, codigo: isNaN(parsed as number) ? undefined : parsed, page: 1 });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [codigoDebouncado]);
+
   return (
     <div className={styles.filters}>
       <TextInput
@@ -56,6 +64,14 @@ export function ObrasFilters({ filtros, onChange }: ObrasFiltersProps) {
         value={tituloDraft}
         onChange={setTituloDraft}
         aria-label="Filtrar por título"
+      />
+      <TextInput
+        type="number"
+        placeholder="Código (Ex: 67494)"
+        value={codigoDraft}
+        onChange={setCodigoDraft}
+        mono
+        aria-label="Filtrar por código"
       />
       <TextInput
         placeholder="ISWC"

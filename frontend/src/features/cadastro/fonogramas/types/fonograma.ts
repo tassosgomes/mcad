@@ -1,5 +1,6 @@
 export interface Fonograma {
   id: string;
+  codigo: number;
   isrc: {
     valor: string;
     formatado?: string;
@@ -24,6 +25,7 @@ export interface FonogramaFiltros {
   page: number;
   size: number;
   sort?: string;
+  codigo?: number;
   isrc?: string;
   obraId?: string;
   obraTitulo?: string;
@@ -41,6 +43,7 @@ export interface FonogramaListResponse {
 
 export interface FonogramaResumo {
   id: string;
+  codigo: number;
   isrcFormatado: string;
   status: 'Pendente_Validacao' | 'Pendente_Documentacao' | 'Liberado' | 'Depurado';
   paisOrigem: string;

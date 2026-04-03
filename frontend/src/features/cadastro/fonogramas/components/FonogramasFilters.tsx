@@ -13,6 +13,7 @@ export function FonogramasFilters({ filters, onChange, onReset }: FonogramasFilt
   const [isrc, setIsrc] = useState(filters.isrc || '');
   const [obraTitulo, setObraTitulo] = useState(filters.obraTitulo || '');
   const [pais, setPais] = useState(filters.pais || '');
+  const [codigo, setCodigo] = useState(filters.codigo?.toString() || '');
 
   useEffect(() => {
     const handler = setTimeout(() => {
@@ -20,6 +21,14 @@ export function FonogramasFilters({ filters, onChange, onReset }: FonogramasFilt
     }, 400);
     return () => clearTimeout(handler);
   }, [isrc]);
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      const parsed = codigo ? parseInt(codigo, 10) : undefined;
+      onChange({ codigo: isNaN(parsed as number) ? undefined : parsed, page: 1 });
+    }, 400);
+    return () => clearTimeout(handler);
+  }, [codigo]);
 
   useEffect(() => {
     const handler = setTimeout(() => {
@@ -39,9 +48,10 @@ export function FonogramasFilters({ filters, onChange, onReset }: FonogramasFilt
     setIsrc(filters.isrc || '');
     setObraTitulo(filters.obraTitulo || '');
     setPais(filters.pais || '');
-  }, [filters.isrc, filters.obraTitulo, filters.pais]);
+    setCodigo(filters.codigo?.toString() || '');
+  }, [filters.isrc, filters.obraTitulo, filters.pais, filters.codigo]);
 
-  const hasActiveFilters = !!(filters.isrc || filters.obraTitulo || filters.status || filters.pais);
+  const hasActiveFilters = !!(filters.isrc || filters.obraTitulo || filters.status || filters.pais || filters.codigo);
 
   return (
     <div className={styles.filtersContainer}>
@@ -54,6 +64,17 @@ export function FonogramasFilters({ filters, onChange, onReset }: FonogramasFilt
             placeholder="Buscar por ISRC..."
             value={isrc}
             onChange={(e) => setIsrc(e.target.value)}
+          />
+        </div>
+
+        <div className={styles.inputWrapper}>
+          <Search size={16} className={styles.icon} />
+          <input
+            type="number"
+            className={`${styles.input} ${styles.mono}`}
+            placeholder="Código (Ex: 67494)"
+            value={codigo}
+            onChange={(e) => setCodigo(e.target.value)}
           />
         </div>
 

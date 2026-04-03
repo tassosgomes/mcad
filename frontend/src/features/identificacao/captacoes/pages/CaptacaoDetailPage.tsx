@@ -38,12 +38,12 @@ export function CaptacaoDetailPage() {
   const currentUserId = user?.profile.sub;
   const canWrite = hasRole('analista-identificacao');
   const canEdit = canWrite && captacao.analistaResponsavel.id === currentUserId;
-  const canDelete = canEdit && captacao.status === 'ABERTA';
+  const canDelete = canEdit && captacao.status?.toUpperCase() === 'ABERTA';
 
   const temExecucoes = captacao.resumoExecucoes.total > 0;
 
   const getStatusVariant = (status: string) => {
-    switch (status) {
+    switch (status?.toUpperCase()) {
       case 'ABERTA': return 'accent';
       case 'FECHADA': return 'success';
       case 'CANCELADA': return 'muted';

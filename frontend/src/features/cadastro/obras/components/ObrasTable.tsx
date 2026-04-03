@@ -56,6 +56,15 @@ export function ObrasTable({ data, canWrite, sort, onSortChange, onEdit, onDelet
             <th className={styles.th}>
               <button
                 className={styles.sortBtn}
+                onClick={() => onSortChange(toggleSort('codigo', sort))}
+                type="button"
+              >
+                CÓDIGO <SortIcon field="codigo" currentSort={sort} />
+              </button>
+            </th>
+            <th className={styles.th}>
+              <button
+                className={styles.sortBtn}
                 onClick={() => onSortChange(toggleSort('titulo', sort))}
                 type="button"
               >
@@ -88,6 +97,9 @@ export function ObrasTable({ data, canWrite, sort, onSortChange, onEdit, onDelet
         <tbody>
           {data.map((obra) => (
             <tr key={obra.id} className={styles.row}>
+              <td className={styles.td}>
+                <span className={styles.mono}>#{obra.codigo}</span>
+              </td>
               <td className={styles.td}>
                 <span className={styles.titulo}>{obra.titulo}</span>
                 {obra.subtitulo && (

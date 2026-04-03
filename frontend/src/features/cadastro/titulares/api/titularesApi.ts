@@ -12,6 +12,7 @@ export function getTitulares(filtros: TitularFiltros): Promise<TitularListRespon
   params.set('page', String(filtros.page));
   params.set('size', String(filtros.size));
   if (filtros.sort) params.set('sort', filtros.sort);
+  if (filtros.codigo) params.set('codigo', String(filtros.codigo));
   if (filtros.nome) params.set('nome', filtros.nome);
   if (filtros.documento) params.set('documento', filtros.documento);
   if (filtros.associacaoId) params.set('associacaoId', filtros.associacaoId);

@@ -15,6 +15,7 @@ export function getFonogramas(filtros: FonogramaFiltros): Promise<FonogramaListR
   params.set('page', String(filtros.page));
   params.set('size', String(filtros.size));
   if (filtros.sort) params.set('sort', filtros.sort);
+  if (filtros.codigo) params.set('codigo', String(filtros.codigo));
   if (filtros.isrc) params.set('isrc', filtros.isrc);
   if (filtros.obraId) params.set('obraId', filtros.obraId);
   if (filtros.obraTitulo) params.set('obra', filtros.obraTitulo); // Using obra query param

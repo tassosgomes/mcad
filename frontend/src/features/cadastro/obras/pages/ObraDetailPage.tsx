@@ -134,8 +134,8 @@ export function ObraDetailPage() {
           <ArrowLeft size={16} /> Obras Musicais
         </Button>
         <PageHeader
-          title={obra.titulo}
-          description={obra.subtitulo || `Obra ${obra.tipo.toLowerCase()} - ID: ${obra.id}`}
+          title={`Obra #${obra.codigo}`}
+          description={`${obra.titulo} ${obra.subtitulo ? ` - ${obra.subtitulo}` : ''} | ${obra.tipo}`}
           action={
             <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
               <Badge variant={STATUS_VARIANT[obra.status] as any}>{obra.status}</Badge>

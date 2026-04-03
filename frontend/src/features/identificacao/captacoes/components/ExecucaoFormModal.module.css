@@ -20,7 +20,7 @@
 .label {
   font-size: 0.875rem;
   font-weight: 500;
-  color: var(--color-text);
+  color: var(--color-text-primary);
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -32,32 +32,32 @@
 
 .input, .select {
   padding: var(--space-2) var(--space-3);
-  background-color: var(--color-background);
+  background-color: var(--color-bg-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
-  color: var(--color-text);
+  color: var(--color-text-primary);
   font-size: 0.875rem;
   width: 100%;
 }
 
 .input:focus, .select:focus {
   outline: none;
-  border-color: var(--color-primary);
+  border-color: var(--color-accent);
 }
 
 .errorText {
-  color: var(--color-danger);
+  color: var(--color-error);
   font-size: 0.75rem;
   margin-top: 2px;
 }
 
 .durationBadge {
-  background-color: var(--color-surface-hover);
+  background-color: var(--color-bg-elevated);
   padding: 2px 6px;
   border-radius: var(--radius-sm);
   font-size: 0.75rem;
   font-family: monospace;
-  color: var(--color-primary);
+  color: var(--color-accent);
 }
 
 .buttons {
@@ -73,16 +73,16 @@
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   cursor: pointer;
-  color: var(--color-text);
+  color: var(--color-text-primary);
 }
 
 .btnCancel:hover {
-  background-color: var(--color-surface-hover);
+  background-color: var(--color-bg-elevated);
 }
 
 .btnSubmit {
   padding: var(--space-2) var(--space-4);
-  background-color: var(--color-primary);
+  background-color: var(--color-accent);
   border: none;
   border-radius: var(--radius-md);
   cursor: pointer;
@@ -91,7 +91,7 @@
 }
 
 .btnSubmit:hover {
-  background-color: var(--color-primary-hover);
+  background-color: var(--color-accent-hover);
 }
 
 .btnSubmit:disabled {
@@ -100,12 +100,12 @@
 }
 
 .conditionalBlock {
-  border-left: 2px solid var(--color-primary);
+  border-left: 2px solid var(--color-accent);
   padding-left: var(--space-3);
   display: flex;
   flex-direction: column;
   gap: var(--space-4);
-  background-color: var(--color-primary-alpha);
+  background-color: var(--color-accent-subtle);
   padding: var(--space-3);
   border-radius: 0 var(--radius-md) var(--radius-md) 0;
 }

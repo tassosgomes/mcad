@@ -42,6 +42,7 @@ export function ObraFonogramasSection({ obraId, obraStatus, canWrite }: ObraFono
         <table className={styles.table}>
           <thead>
             <tr>
+              <th>Código</th>
               <th>ISRC</th>
               <th>Status</th>
               <th>País Origem</th>
@@ -51,15 +52,15 @@ export function ObraFonogramasSection({ obraId, obraStatus, canWrite }: ObraFono
           <tbody>
             {isLoading ? (
               <tr>
-                <td colSpan={4} className={styles.empty}>Carregando fonogramas...</td>
+                <td colSpan={5} className={styles.empty}>Carregando fonogramas...</td>
               </tr>
             ) : isError ? (
               <tr>
-                <td colSpan={4} className={styles.empty}>Erro ao carregar fonogramas.</td>
+                <td colSpan={5} className={styles.empty}>Erro ao carregar fonogramas.</td>
               </tr>
             ) : !fonogramas || fonogramas.length === 0 ? (
               <tr>
-                <td colSpan={4} className={styles.empty}>Nenhum fonograma associado a esta obra.</td>
+                <td colSpan={5} className={styles.empty}>Nenhum fonograma associado a esta obra.</td>
               </tr>
             ) : (
               fonogramas.map((fono) => (
@@ -68,6 +69,7 @@ export function ObraFonogramasSection({ obraId, obraStatus, canWrite }: ObraFono
                   className={styles.row}
                   onClick={() => navigate(`/cadastro/fonogramas/${fono.id}`)}
                 >
+                  <td className={styles.mono}>#{fono.codigo}</td>
                   <td className={styles.isrc}>{formatIsrc(fono.isrcFormatado)}</td>
                   <td>
                     <Badge variant={STATUS_VARIANT[fono.status] as any}>{fono.status.replace('_', ' ')}</Badge>

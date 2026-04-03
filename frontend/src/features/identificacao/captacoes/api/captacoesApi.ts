@@ -2,15 +2,15 @@ import { apiGetIden, apiPostIden, apiPutIden, apiDeleteIden } from '@services/ap
 import type {
   CaptacaoListResponse, CaptacaoDetalhe, Captacao,
   CriarCaptacaoRequest, AtualizarCaptacaoRequest,
-  CaptacaoFiltros, RubricaListResponse,
+  CaptacaoFiltros, Rubrica,
 } from '../types/captacao';
 
 const BASE = '/rubricas';
 const CAPTACOES = '/captacoes';
 
 // ── Rubricas ──
-export function getRubricas(): Promise<RubricaListResponse> {
-  return apiGetIden<RubricaListResponse>(BASE);
+export function getRubricas(): Promise<Rubrica[]> {
+  return apiGetIden<Rubrica[]>(BASE);
 }
 
 // ── Captações ──

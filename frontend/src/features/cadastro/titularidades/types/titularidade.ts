@@ -5,6 +5,7 @@ export type CategoriaAutoral = 'AUTOR' | 'EDITOR';
 
 export interface TitularResumo {
   id: string;
+  codigo: number;
   nome: string;
   tipo: 'PF' | 'PJ';
   documentoFormatado: string;

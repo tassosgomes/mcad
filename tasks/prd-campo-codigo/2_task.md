@@ -1,5 +1,5 @@
 ---
-status: pending
+status: done
 parallelizable: false
 blocked_by: ["1.0"]
 ---
@@ -43,15 +43,15 @@ Adicionar `Codigo` (long) em todos os DTOs de response. Atualizar mapeamentos no
 
 ## Subtarefas
 
-- [ ] 2.1 Adicionar `long Codigo` em todos os responses (8+ records)
-- [ ] 2.2 Atualizar mapeamento em todos os query handlers (incluir `e.Codigo` no record constructor)
-- [ ] 2.3 Adicionar `long? Codigo` nos 3 filtros
-- [ ] 2.4 Adicionar filtro nos 3 repositórios
-- [ ] 2.5 `dotnet build`
+- [x] 2.1 Adicionar `long Codigo` em todos os responses (8+ records)
+- [x] 2.2 Atualizar mapeamento em todos os query handlers (incluir `e.Codigo` no record constructor)
+- [x] 2.3 Adicionar `long? Codigo` nos 3 filtros
+- [x] 2.4 Adicionar filtro nos 3 repositórios
+- [x] 2.5 `dotnet build`
 
 ## Critérios de Sucesso (Verificáveis)
 
-- [ ] `dotnet build` compila sem erros
-- [ ] GET /associacoes retorna `codigo` em cada item
-- [ ] GET /titulares retorna `codigo` em cada item
-- [ ] POST /titulares retorna `codigo` no response
+- [x] `dotnet build` compila sem erros
+- [x] GET /associacoes retorna `codigo` em cada item
+- [x] GET /titulares retorna `codigo` em cada item
+- [x] POST /titulares retorna `codigo` no response

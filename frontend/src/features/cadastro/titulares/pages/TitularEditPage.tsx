@@ -47,7 +47,7 @@ export function TitularEditPage() {
           <ArrowLeft size={16} /> Titulares
         </Button>
         <PageHeader
-          title="Editar Titular"
+          title={`Titular #${titular.codigo}`}
           description={titular.nome}
         />
       </div>

@@ -110,6 +110,7 @@ if (authEnabled)
             options.Authority = oidcAuthority;
             options.Audience = oidcAudience;
             options.RequireHttpsMetadata = !builder.Environment.IsDevelopment();
+            options.MapInboundClaims = false;
             options.TokenValidationParameters = new TokenValidationParameters
             {
                 ValidIssuer = oidcAuthority,
@@ -137,8 +138,8 @@ if (authEnabled)
         options.FallbackPolicy = new AuthorizationPolicyBuilder()
             .RequireAuthenticatedUser()
             .Build();
-        options.AddPolicy("read", policy => policy.RequireRole("analista-cadastro", "consultor"));
-        options.AddPolicy("write", policy => policy.RequireRole("analista-cadastro"));
+        options.AddPolicy("read", policy => policy.RequireRole("analista-cadastro", "consultor", "analista-identificacao"));
+        options.AddPolicy("write", policy => policy.RequireRole("analista-cadastro", "analista-identificacao"));
     });
 }
 

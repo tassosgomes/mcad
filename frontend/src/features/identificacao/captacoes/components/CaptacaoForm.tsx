@@ -29,7 +29,7 @@ export function CaptacaoForm({
   const [usuarioDeMusica, setUsuarioDeMusica] = useState(initialData?.usuarioDeMusica ?? '');
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const isReadOnly = initialData && initialData.status !== 'ABERTA';
+  const isReadOnly = initialData && initialData.status?.toUpperCase() !== 'ABERTA';
 
   useEffect(() => {
     if (initialData) {

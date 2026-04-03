@@ -52,6 +52,15 @@ export function TitularesTable({ data, canWrite, sort, onSortChange, onEdit, onD
             <th className={styles.th}>
               <button
                 className={styles.sortBtn}
+                onClick={() => onSortChange(toggleSort('codigo', sort))}
+                type="button"
+              >
+                CÓDIGO <SortIcon field="codigo" currentSort={sort} />
+              </button>
+            </th>
+            <th className={styles.th}>
+              <button
+                className={styles.sortBtn}
                 onClick={() => onSortChange(toggleSort('nome', sort))}
                 type="button"
               >
@@ -84,6 +93,9 @@ export function TitularesTable({ data, canWrite, sort, onSortChange, onEdit, onD
         <tbody>
           {data.map((titular) => (
             <tr key={titular.id} className={styles.row}>
+              <td className={styles.td}>
+                <span className={styles.mono}>#{titular.codigo}</span>
+              </td>
               <td className={styles.td}>
                 <span className={styles.nome}>{titular.nome}</span>
               </td>

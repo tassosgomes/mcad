@@ -145,8 +145,8 @@ export function FonogramaDetailPage() {
         </Button>
       </div>
       <PageHeader
-        title={formatIsrc(fonograma.isrcFormatado)}
-        description="Detalhes do Fonograma"
+        title={`Fonograma #${fonograma.codigo}`}
+        description={`ISRC: ${formatIsrc(fonograma.isrcFormatado)}`}
         action={
           <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
             <Badge variant={STATUS_VARIANT[fonograma.status] as any}>

@@ -153,3 +153,7 @@
 /home/tsgomes/mcad/services/identificacao-api/1-Services/Identificacao.API/bin/Debug/net8.0/Microsoft.Extensions.Http.Polly.dll
 /home/tsgomes/mcad/services/identificacao-api/1-Services/Identificacao.API/bin/Debug/net8.0/Polly.dll
 /home/tsgomes/mcad/services/identificacao-api/1-Services/Identificacao.API/bin/Debug/net8.0/Polly.Extensions.Http.dll
+/home/tsgomes/mcad/services/identificacao-api/1-Services/Identificacao.API/bin/Debug/net8.0/CommunityToolkit.HighPerformance.dll
+/home/tsgomes/mcad/services/identificacao-api/1-Services/Identificacao.API/bin/Debug/net8.0/Minio.dll
+/home/tsgomes/mcad/services/identificacao-api/1-Services/Identificacao.API/bin/Debug/net8.0/System.IO.Hashing.dll
+/home/tsgomes/mcad/services/identificacao-api/1-Services/Identificacao.API/bin/Debug/net8.0/System.Reactive.dll

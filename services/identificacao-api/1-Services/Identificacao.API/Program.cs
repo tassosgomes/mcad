@@ -15,7 +15,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using Polly;
 using Microsoft.IdentityModel.Tokens;
-
+using Minio;
 // Busca o .env na raiz do serviço (../../.. relativo ao dir do projeto)
 var envPath = Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", ".env");
 Env.Load(Path.GetFullPath(envPath));
@@ -51,6 +51,19 @@ builder.Services.AddHttpClient<ICadastroHttpClient, CadastroHttpClient>(client =
     client.Timeout = TimeSpan.FromSeconds(10);
 }).AddTransientHttpErrorPolicy(p => p.RetryAsync(2));
 
+// MinIO Configurações
+var minioEndpoint = Environment.GetEnvironmentVariable("MINIO_ENDPOINT") ?? "localhost:9000";
+var minioAccessKey = Environment.GetEnvironmentVariable("MINIO_ACCESS_KEY") ?? "mcadadmin";
+var minioSecretKey = Environment.GetEnvironmentVariable("MINIO_SECRET_KEY") ?? "mcadadmin123";
+
+builder.Services.AddSingleton<IMinioClient>(_ =>
+    new MinioClient()
+        .WithEndpoint(minioEndpoint)
+        .WithCredentials(minioAccessKey, minioSecretKey)
+        .Build());
+
+builder.Services.AddScoped<IMinioService, MinioService>();
+
 // CQRS - Dispatcher e Handlers via Scrutor
 builder.Services.AddScoped<IDispatcher, Dispatcher>();
 
@@ -81,6 +94,7 @@ if (authEnabled)
             options.Authority = authority;
             options.Audience = audience;
             options.RequireHttpsMetadata = false;
+            options.MapInboundClaims = false;
             options.TokenValidationParameters = new TokenValidationParameters
             {
                 ValidIssuer = authority,

@@ -28,7 +28,7 @@ export function ExecucoesSection({
 
   const { data, isLoading, isError } = useExecucoes(captacao.id, filtros);
 
-  const isCaptacaoAberta = captacao.status === 'ABERTA';
+  const isCaptacaoAberta = captacao.status?.toUpperCase() === 'ABERTA';
   const isResponsavel = captacao.analistaResponsavel.id === currentUserId;
   const canAdd = canWrite && isCaptacaoAberta && isResponsavel;
 

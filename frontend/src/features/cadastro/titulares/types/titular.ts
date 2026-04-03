@@ -3,12 +3,14 @@ export type TitularTipo = 'PF' | 'PJ';
 
 export interface AssociacaoResumo {
   id: string;
+  codigo: number;
   sigla: string;
   nome: string;
 }
 
 export interface Titular {
   id: string;
+  codigo: number;
   nome: string;
   tipo: TitularTipo;
   documento: string;
@@ -54,6 +56,7 @@ export interface TitularFiltros {
   page: number;
   size: number;
   sort: string;
+  codigo?: number;
   nome?: string;
   documento?: string;
   associacaoId?: string;

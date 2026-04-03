@@ -59,10 +59,6 @@ export interface CaptacaoListResponse {
   };
 }
 
-export interface RubricaListResponse {
-  data: Rubrica[];
-}
-
 // ── Filtros ──
 export interface CaptacaoFiltros {
   page: number;

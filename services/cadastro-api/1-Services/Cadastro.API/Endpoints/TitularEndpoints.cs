@@ -50,6 +50,7 @@ public static class TitularEndpoints
         [FromQuery] int page = 1,
         [FromQuery] int size = 20,
         [FromQuery] string? sort = "nome",
+        [FromQuery] long? codigo = null,
         [FromQuery] string? nome = null,
         [FromQuery] string? documento = null,
         [FromQuery] Guid? associacaoId = null,
@@ -60,7 +61,7 @@ public static class TitularEndpoints
         if (!string.IsNullOrWhiteSpace(status) && Enum.TryParse<StatusTitular>(status, true, out var parsed))
             statusEnum = parsed;
 
-        var query = new ListarTitularesQuery(page, size, sort, nome, documento, associacaoId, statusEnum);
+        var query = new ListarTitularesQuery(page, size, sort, codigo, nome, documento, associacaoId, statusEnum);
         var result = await dispatcher.QueryAsync(query, cancellationToken);
 
         return Results.Ok(result);

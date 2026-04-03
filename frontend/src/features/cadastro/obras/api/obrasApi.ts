@@ -15,6 +15,7 @@ export function getObras(filtros: ObraFiltros): Promise<ObraListResponse> {
   params.set('page', String(filtros.page));
   params.set('size', String(filtros.size));
   if (filtros.sort) params.set('sort', filtros.sort);
+  if (filtros.codigo) params.set('codigo', String(filtros.codigo));
   if (filtros.titulo) params.set('titulo', filtros.titulo);
   if (filtros.iswc) params.set('iswc', filtros.iswc);
   if (filtros.tipo) params.set('tipo', filtros.tipo);

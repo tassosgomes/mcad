@@ -1,5 +1,5 @@
 ---
-status: pending
+status: completed
 parallelizable: true
 blocked_by: []
 ---
@@ -33,12 +33,12 @@ Adicionar MinIO como serviço no docker-compose, criar o wrapper `MinioService` 
 
 ## Subtarefas
 
-- [ ] 1.1 Adicionar MinIO ao `docker-compose.dev.yml`: imagem `minio/minio:latest`, portas 9000 (API) e 9001 (console), volume persistente, health check
-- [ ] 1.2 Adicionar pacote `Minio` ao API.csproj
-- [ ] 1.3 Criar interface `IMinioService` no Domain (UploadAsync, DownloadAsync)
-- [ ] 1.4 Criar `MinioService` no Infra — bucket `identificacao-uploads`, auto-create bucket
-- [ ] 1.5 Atualizar `.env.example` com `MINIO_ENDPOINT`, `MINIO_ACCESS_KEY`, `MINIO_SECRET_KEY`
-- [ ] 1.6 Testar: `docker compose up mcad-minio` + console em http://localhost:9001
+- [x] 1.1 Adicionar MinIO ao `docker-compose.dev.yml`: imagem `minio/minio:latest`, portas 9000 (API) e 9001 (console), volume persistente, health check
+- [x] 1.2 Adicionar pacote `Minio` ao API.csproj
+- [x] 1.3 Criar interface `IMinioService` no Domain (UploadAsync, DownloadAsync)
+- [x] 1.4 Criar `MinioService` no Infra — bucket `identificacao-uploads`, auto-create bucket
+- [x] 1.5 Atualizar `.env.example` com `MINIO_ENDPOINT`, `MINIO_ACCESS_KEY`, `MINIO_SECRET_KEY`
+- [x] 1.6 Testar: `docker compose up mcad-minio` + console em http://localhost:9001
 
 ## Sequenciamento
 
@@ -130,6 +130,6 @@ MINIO_SECRET_KEY=minioadmin
 
 ## Critérios de Sucesso (Verificáveis)
 
-- [ ] MinIO inicia: `docker compose up mcad-minio` sem erros
-- [ ] Console acessível: http://localhost:9001 (login minioadmin/minioadmin)
-- [ ] Build compila: `cd services/identificacao-api && dotnet build`
+- [x] MinIO inicia: `docker compose up mcad-minio` sem erros
+- [x] Console acessível: http://localhost:9001 (login minioadmin/minioadmin)
+- [x] Build compila: `cd services/identificacao-api && dotnet build`

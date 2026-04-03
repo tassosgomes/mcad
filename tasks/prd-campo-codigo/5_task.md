@@ -1,5 +1,5 @@
 ---
-status: pending
+status: done
 parallelizable: false
 blocked_by: ["4.0"]
 ---
@@ -31,13 +31,13 @@ Adicionar coluna "Código" como primeira coluna em todas as 6 tabelas. Exibir co
 
 ## Subtarefas
 
-- [ ] 5.1 Em cada tabela: adicionar como primeira coluna `{ key: 'codigo', header: 'Código', render: (v: number) => <span className={styles.mono}>#{v}</span> }`
-- [ ] 5.2 Remover qualquer exibição de UUID nas tabelas (se existir)
-- [ ] 5.3 TitularidadesTable e ParticipacoesTable: exibir `#{titular.codigo}` ao lado do nome ou como coluna
-- [ ] 5.4 `npm run build`
+- [x] 5.1 Em cada tabela: adicionar como primeira coluna `{ key: 'codigo', header: 'Código', render: (v: number) => <span className={styles.mono}>#{v}</span> }`
+- [x] 5.2 Remover qualquer exibição de UUID nas tabelas (se existir)
+- [x] 5.3 TitularidadesTable e ParticipacoesTable: exibir `#{titular.codigo}` ao lado do nome ou como coluna
+- [x] 5.4 `npm run build`
 
 ## Critérios de Sucesso (Verificáveis)
 
-- [ ] Todas as 6 tabelas mostram código como primeira coluna
-- [ ] Formato: `#67494` em font-mono
-- [ ] UUID não visível em nenhuma tabela
+- [x] Todas as 6 tabelas mostram código como primeira coluna
+- [x] Formato: `#67494` em font-mono
+- [x] UUID não visível em nenhuma tabela

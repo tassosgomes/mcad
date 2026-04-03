@@ -30,19 +30,19 @@ Adicionar query param `codigo` nos 3 endpoints de listagem (Titulares, Obras, Fo
 
 ## Subtarefas
 
-- [ ] 3.1 TitularEndpoints GET: +query param `codigo`, passar para TitularFiltro
-- [ ] 3.2 ObraEndpoints GET: +query param `codigo`
-- [ ] 3.3 FonogramaEndpoints GET: +query param `codigo`
-- [ ] 3.4 Testes integração:
-  - GET /associacoes → todos com codigo 1-7
-  - POST /titulares → response contém `codigo` (long > 0)
-  - POST segundo titular → codigo incrementa (+1)
-  - GET /titulares?codigo=X → retorna exatamente 1
-  - GET /titulares?codigo=999999 → retorna lista vazia
-  - Depurar obra → nova obra tem codigo diferente (maior)
-  - Codigo nunca muda após edição (PUT)
-- [ ] 3.5 Verificar testes existentes passam (ajustar asserts se necessário para incluir campo codigo)
-- [ ] 3.6 `dotnet test`
+- [x] **Subtarefa 3.1**: Atualizar `TitularEndpoints` (GET `/titulares` aceita `codigo`)
+- [x] **Subtarefa 3.2**: Atualizar `ObraEndpoints` (GET `/obras` aceita `codigo`)
+- [x] **Subtarefa 3.3**: Atualizar `FonogramaEndpoints` (GET `/fonogramas` aceita `codigo`)
+- [x] **Subtarefa 3.4**: Criar testes de integração (`CodigoIntegrationTests.cs`)
+  - [x] GET /associacoes → todos com codigo 1-7
+  - [x] POST /titulares → response contém `codigo` (long > 0)
+  - [x] POST segundo titular → codigo incrementa (+1)
+  - [x] GET /titulares?codigo=X → retorna exatamente 1
+  - [x] GET /titulares?codigo=999999 → retorna lista vazia
+  - [x] Depurar obra → nova obra tem codigo diferente (maior)
+  - [x] Codigo nunca muda após edição (PUT)
+- [x] 3.5 Verificar testes existentes passam (ajustar asserts se necessário para incluir campo codigo)
+- [x] 3.6 `dotnet test`
 
 ## Critérios de Sucesso (Verificáveis)
 

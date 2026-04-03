@@ -1,5 +1,6 @@
 import { AlertCircle, ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { useFonograma } from '../hooks/useFonograma';
 import styles from './FonogramaDepuracaoBanner.module.css';
 
 interface FonogramaDepuracaoBannerProps {
@@ -8,6 +9,8 @@ interface FonogramaDepuracaoBannerProps {
 }
 
 export function FonogramaDepuracaoBanner({ fonogramaDepuradoParaId, className }: FonogramaDepuracaoBannerProps) {
+  const { data: novoFonograma } = useFonograma(fonogramaDepuradoParaId || '');
+
   return (
     <div className={`${styles.banner} ${className || ''}`} role="alert">
       <div className={styles.iconContainer}>
@@ -21,7 +24,7 @@ export function FonogramaDepuracaoBanner({ fonogramaDepuradoParaId, className }:
       </div>
       {fonogramaDepuradoParaId && (
         <Link to={`/cadastro/fonogramas/${fonogramaDepuradoParaId}`} className={styles.link}>
-          Ver versão ativa <ArrowRight size={16} />
+          Ver versão ativa {novoFonograma ? `(#${novoFonograma.codigo})` : ''} <ArrowRight size={16} />
         </Link>
       )}
     </div>
