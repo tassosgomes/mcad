@@ -11,6 +11,7 @@ namespace Cadastro.Domain.Entities;
 public class Titular
 {
     public Guid Id { get; private set; }
+    public long Codigo { get; private set; }
     public string Nome { get; private set; }
     public TipoTitular Tipo { get; private set; }
 

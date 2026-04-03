@@ -16,6 +16,14 @@ public class ObraMusicalConfiguration : IEntityTypeConfiguration<ObraMusical>
         builder.Property(o => o.Id)
             .IsRequired();
 
+        builder.Property(o => o.Codigo)
+            .HasDefaultValueSql("nextval('cadastro.seq_obras_codigo')")
+            .ValueGeneratedOnAdd();
+            
+        builder.HasIndex(o => o.Codigo)
+            .IsUnique()
+            .HasDatabaseName("uq_obras_codigo");
+
         builder.Property(o => o.Titulo)
             .HasMaxLength(300)
             .IsRequired();

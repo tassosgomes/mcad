@@ -6,6 +6,7 @@ namespace Cadastro.Domain.Entities;
 public class ObraMusical
 {
     public Guid Id { get; private set; }
+    public long Codigo { get; private set; }
     public string Titulo { get; private set; } = string.Empty;
     public string? Subtitulo { get; private set; }
     public TipoObra Tipo { get; private set; }

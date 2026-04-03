@@ -7,6 +7,7 @@ namespace Cadastro.Domain.Entities;
 public class Associacao
 {
     public Guid Id { get; private set; }
+    public long Codigo { get; private set; }
     public string Nome { get; private set; }
     public string Sigla { get; private set; }
     public string Cnpj { get; private set; }

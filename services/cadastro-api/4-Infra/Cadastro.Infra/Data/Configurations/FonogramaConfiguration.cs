@@ -17,6 +17,14 @@ public class FonogramaConfiguration : IEntityTypeConfiguration<Fonograma>
 
         builder.HasKey(f => f.Id);
 
+        builder.Property(f => f.Codigo)
+            .HasDefaultValueSql("nextval('cadastro.seq_fonogramas_codigo')")
+            .ValueGeneratedOnAdd();
+            
+        builder.HasIndex(f => f.Codigo)
+            .IsUnique()
+            .HasDatabaseName("uq_fonogramas_codigo");
+
         builder.Property(f => f.Isrc)
             .HasConversion(
                 v => v.Valor,

@@ -20,6 +20,14 @@ public class AssociacaoConfiguration : IEntityTypeConfiguration<Associacao>
         builder.Property(a => a.Id)
             .IsRequired();
 
+        builder.Property(a => a.Codigo)
+            .HasDefaultValueSql("nextval('cadastro.seq_associacoes_codigo')")
+            .ValueGeneratedOnAdd();
+            
+        builder.HasIndex(a => a.Codigo)
+            .IsUnique()
+            .HasDatabaseName("uq_associacoes_codigo");
+
         builder.Property(a => a.Nome)
             .HasMaxLength(200)
             .IsRequired();

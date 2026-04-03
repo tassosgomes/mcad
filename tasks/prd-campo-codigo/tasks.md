@@ -7,7 +7,7 @@ Adição do campo `codigo` (BIGINT sequencial) em 4 entidades. Feature retroativ
 ## Tarefas
 
 ### Lane A — Backend
-- [ ] 1.0 Domain + Infra: Entidades (+Codigo), Configurations (+sequence+unique), Migration, Seed (+códigos 1-7)
+- [x] 1.0 Domain + Infra: Entidades (+Codigo), Configurations (+sequence+unique), Migration, Seed (+códigos 1-7)
 - [ ] 2.0 Application: Responses (+Codigo), Handlers (mapeamento), Filtros (+Codigo)
 - [ ] 3.0 API: Endpoints (+query param codigo) + Testes
 

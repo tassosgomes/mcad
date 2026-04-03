@@ -22,6 +22,14 @@ public class TitularConfiguration : IEntityTypeConfiguration<Titular>
         builder.Property(t => t.Id)
             .IsRequired();
 
+        builder.Property(t => t.Codigo)
+            .HasDefaultValueSql("nextval('cadastro.seq_titulares_codigo')")
+            .ValueGeneratedOnAdd();
+            
+        builder.HasIndex(t => t.Codigo)
+            .IsUnique()
+            .HasDatabaseName("uq_titulares_codigo");
+
         builder.Property(t => t.Nome)
             .HasMaxLength(200)
             .IsRequired();

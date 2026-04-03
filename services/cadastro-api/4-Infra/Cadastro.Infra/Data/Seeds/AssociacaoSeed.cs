@@ -19,14 +19,14 @@ public static class AssociacaoSeed
     public static readonly Guid SocinproId  = Guid.Parse("f6a7b8c9-d0e1-2345-fabc-456789012345");
     public static readonly Guid UbcId       = Guid.Parse("a7b8c9d0-e1f2-3456-abcd-567890123456");
 
-    public static Associacao[] GetSeedData() =>
+    public static object[] GetSeedData() =>
     [
-        new(AbramusId,  "Associação Brasileira de Música e Artes",                             "ABRAMUS",   "50.997.063/0001-32"),
-        new(AmarId,     "Associação de Músicos, Arranjadores e Regentes",                      "AMAR",      "30.713.325/0001-82"),
-        new(AssimId,    "Associação de Intérpretes e Músicos",                                 "ASSIM",     "43.985.563/0001-99"),
-        new(SbacemId,   "Sociedade Brasileira de Autores, Compositores e Escritores de Música","SBACEM",    "33.780.222/0001-23"),
-        new(SicamId,    "Sociedade Independente de Compositores e Autores Musicais",            "SICAM",     "62.092.010/0001-51"),
-        new(SocinproId, "Sociedade Brasileira de Administração e Proteção de Direitos Intelectuais", "SOCINPRO", "33.748.146/0001-79"),
-        new(UbcId,      "União Brasileira de Compositores",                                    "UBC",       "33.576.166/0001-00"),
+        new { Id = AbramusId,  Codigo = 1L, Nome = "Associação Brasileira de Música e Artes",                             Sigla = "ABRAMUS",   Cnpj = "50.997.063/0001-32" },
+        new { Id = AmarId,     Codigo = 2L, Nome = "Associação de Músicos, Arranjadores e Regentes",                      Sigla = "AMAR",      Cnpj = "30.713.325/0001-82" },
+        new { Id = AssimId,    Codigo = 3L, Nome = "Associação de Intérpretes e Músicos",                                 Sigla = "ASSIM",     Cnpj = "43.985.563/0001-99" },
+        new { Id = SbacemId,   Codigo = 4L, Nome = "Sociedade Brasileira de Autores, Compositores e Escritores de Música",Sigla = "SBACEM",    Cnpj = "33.780.222/0001-23" },
+        new { Id = SicamId,    Codigo = 5L, Nome = "Sociedade Independente de Compositores e Autores Musicais",            Sigla = "SICAM",     Cnpj = "62.092.010/0001-51" },
+        new { Id = SocinproId, Codigo = 6L, Nome = "Sociedade Brasileira de Administração e Proteção de Direitos Intelectuais", Sigla = "SOCINPRO", Cnpj = "33.748.146/0001-79" },
+        new { Id = UbcId,      Codigo = 7L, Nome = "União Brasileira de Compositores",                                    Sigla = "UBC",       Cnpj = "33.576.166/0001-00" },
     ];
 }

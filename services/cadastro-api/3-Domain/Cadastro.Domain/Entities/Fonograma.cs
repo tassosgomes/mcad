@@ -7,6 +7,7 @@ namespace Cadastro.Domain.Entities;
 public class Fonograma
 {
     public Guid Id { get; private set; }
+    public long Codigo { get; private set; }
     public Isrc Isrc { get; private set; } = null!;
     public Guid ObraId { get; private set; }
     public string PaisOrigem { get; private set; } = string.Empty;
