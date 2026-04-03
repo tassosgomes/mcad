@@ -1,5 +1,5 @@
 ---
-status: pending
+status: completed
 parallelizable: false
 blocked_by: [3.0, 4.0]
 ---
@@ -42,12 +42,12 @@ Implementar o command de upload (salva arquivo no MinIO, cria registro com statu
 
 ## Subtarefas
 
-- [ ] 5.1 Criar `UploadResponse` e `ErroUploadResponse` (DTOs)
-- [ ] 5.2 Criar `CriarUploadCommand` + handler — valida captação ABERTA + dono, valida extensão .csv, salva no MinIO, cria registro Upload
-- [ ] 5.3 Criar `ListarUploadsQuery` + handler — paginado, ordenado por CriadoEm DESC
-- [ ] 5.4 Criar `GetUploadByIdQuery` + handler — para polling
-- [ ] 5.5 Criar `ListarErrosUploadQuery` + handler — paginado
-- [ ] 5.6 Testes `CriarUploadCommandHandlerTests`
+- [x] 5.1 Criar `UploadResponse` e `ErroUploadResponse` (DTOs)
+- [x] 5.2 Criar `CriarUploadCommand` + handler — valida captação ABERTA + dono, valida extensão .csv, salva no MinIO, cria registro Upload
+- [x] 5.3 Criar `ListarUploadsQuery` + handler — paginado, ordenado por CriadoEm DESC
+- [x] 5.4 Criar `GetUploadByIdQuery` + handler — para polling
+- [x] 5.5 Criar `ListarErrosUploadQuery` + handler — paginado
+- [x] 5.6 Testes `CriarUploadCommandHandlerTests`
 
 ## Sequenciamento
 
@@ -117,6 +117,6 @@ public record UploadResponse(
 
 ## Critérios de Sucesso (Verificáveis)
 
-- [ ] Build: `cd services/identificacao-api && dotnet build`
-- [ ] Testes: `cd services/identificacao-api && dotnet test --filter "FullyQualifiedName~CriarUploadCommandHandlerTests"`
-- [ ] 5 cenários cobertos
+- [x] Build: `cd services/identificacao-api && dotnet build`
+- [x] Testes: `cd services/identificacao-api && dotnet test --filter "FullyQualifiedName~CriarUploadCommandHandlerTests"`
+- [x] 5 cenários cobertos
