@@ -21,6 +21,7 @@ public class ListarObrasQueryHandler : IQueryHandler<ListarObrasQuery, ObraListR
             Page: query.Page,
             Size: query.Size,
             Sort: query.Sort,
+            Codigo: query.Codigo,
             Titulo: query.Titulo,
             Iswc: query.Iswc,
             Tipo: ParseTipo(query.Tipo),
@@ -38,6 +39,7 @@ public class ListarObrasQueryHandler : IQueryHandler<ListarObrasQuery, ObraListR
 
     internal static ObraResponse MapToResponse(ObraMusical o) => new(
         Id: o.Id,
+        Codigo: o.Codigo,
         Titulo: o.Titulo,
         Subtitulo: o.Subtitulo,
         Tipo: vToTipoObra(o.Tipo),

@@ -44,6 +44,7 @@ public class ListarTitularidadesQueryHandler : IQueryHandler<ListarTitularidades
             t.Id,
             new TitularResumoResponse(
                 t.TitularId,
+                t.Titular.Codigo,
                 t.Titular.Nome,
                 t.Titular.Tipo.ToString().ToUpperInvariant(),
                 t.Titular.DocumentoFormatado,

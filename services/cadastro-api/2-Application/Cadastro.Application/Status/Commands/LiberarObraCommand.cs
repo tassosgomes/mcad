@@ -62,6 +62,7 @@ public class LiberarObraCommandHandler : ICommandHandler<LiberarObraCommand, Obr
 
         return new ObraResponse(
             obra.Id,
+            obra.Codigo,
             obra.Titulo,
             obra.Subtitulo,
             obra.Tipo.ToString().ToUpperInvariant(),

@@ -23,6 +23,7 @@ public class BuscarTitularesQueryHandler : IQueryHandler<BuscarTitularesQuery, I
 
         return titulares.Select(t => new TitularResumoResponse(
             t.Id,
+            t.Codigo,
             t.Nome,
             t.Tipo.ToString().ToUpperInvariant(),
             t.DocumentoFormatado,

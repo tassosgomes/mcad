@@ -67,9 +67,10 @@ public class BloquearFonogramaCommandHandler : ICommandHandler<BloquearFonograma
 
         return new FonogramaResponse(
             fonograma.Id,
+            fonograma.Codigo,
             fonograma.Isrc.Valor,
             fonograma.Isrc.Formatado,
-            new ObraResumoResponse(fonograma.Obra.Id, fonograma.Obra.Titulo, obraStatus),
+            new ObraResumoResponse(fonograma.Obra.Id, fonograma.Obra.Codigo, fonograma.Obra.Titulo, obraStatus),
             fonograma.PaisOrigem,
             fonograma.DataGravacao,
             fonograma.DataLancamento,

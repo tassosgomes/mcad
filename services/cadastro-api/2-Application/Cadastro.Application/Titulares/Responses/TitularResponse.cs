@@ -7,6 +7,7 @@ namespace Cadastro.Application.Titulares.Responses;
 /// </summary>
 public record TitularResponse(
     Guid Id,
+    long Codigo,
     string Nome,
     string Tipo,
     string Documento,
@@ -23,5 +24,6 @@ public record TitularResponse(
 /// </summary>
 public record AssociacaoResumoResponse(
     Guid Id,
+    long Codigo,
     string Sigla,
     string Nome);

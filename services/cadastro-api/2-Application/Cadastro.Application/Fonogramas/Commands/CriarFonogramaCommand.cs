@@ -80,9 +80,10 @@ public class CriarFonogramaCommandHandler : ICommandHandler<CriarFonogramaComman
 
         return new FonogramaResponse(
             fonograma.Id,
+            fonograma.Codigo,
             fonograma.Isrc.Valor,
             fonograma.Isrc.Formatado,
-            new ObraResumoResponse(obra.Id, obra.Titulo, obraStatus),
+            new ObraResumoResponse(obra.Id, obra.Codigo, obra.Titulo, obraStatus),
             fonograma.PaisOrigem,
             fonograma.DataGravacao,
             fonograma.DataLancamento,

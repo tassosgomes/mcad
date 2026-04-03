@@ -11,6 +11,7 @@ public record TitularFiltro(
     int Page = 1,
     int Size = 20,
     string? Sort = "nome",
+    long? Codigo = null,
     string? Nome = null,
     string? Documento = null,
     Guid? AssociacaoId = null,

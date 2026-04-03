@@ -19,5 +19,6 @@ public interface IObraRepository
 
 public record ObraFiltro(
     int Page = 1, int Size = 20, string? Sort = "titulo",
+    long? Codigo = null,
     string? Titulo = null, string? Iswc = null,
     TipoObra? Tipo = null, StatusObra? Status = null, string? Genero = null);

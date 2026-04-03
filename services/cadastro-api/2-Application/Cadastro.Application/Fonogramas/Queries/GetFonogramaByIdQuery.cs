@@ -31,9 +31,10 @@ public class GetFonogramaByIdHandler : IQueryHandler<GetFonogramaByIdQuery, Fono
 
         return new FonogramaResponse(
             f.Id,
+            f.Codigo,
             f.Isrc.Valor,
             f.Isrc.Formatado,
-            new ObraResumoResponse(f.Obra.Id, f.Obra.Titulo, obraStatus),
+            new ObraResumoResponse(f.Obra.Id, f.Obra.Codigo, f.Obra.Titulo, obraStatus),
             f.PaisOrigem,
             f.DataGravacao,
             f.DataLancamento,

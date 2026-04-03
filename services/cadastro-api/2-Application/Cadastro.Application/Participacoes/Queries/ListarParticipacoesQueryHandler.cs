@@ -64,6 +64,7 @@ public class ListarParticipacoesQueryHandler : IQueryHandler<ListarParticipacoes
             p.Id,
             new TitularResumoResponse(
                 p.TitularId,
+                p.Titular.Codigo,
                 p.Titular.Nome,
                 p.Titular.Tipo.ToString().ToUpperInvariant(),
                 p.Titular.DocumentoFormatado,

@@ -35,6 +35,9 @@ public class TitularRepository : ITitularRepository
             .AsQueryable();
 
         // Filtros dinâmicos
+        if (filtro.Codigo.HasValue)
+            query = query.Where(t => t.Codigo == filtro.Codigo.Value);
+
         if (!string.IsNullOrWhiteSpace(filtro.Nome))
             query = query.Where(t => EF.Functions.ILike(t.Nome, $"%{filtro.Nome}%"));
 

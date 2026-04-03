@@ -20,6 +20,9 @@ public class FonogramaRepository : IFonogramaRepository
             .Include(f => f.Obra)
             .AsQueryable();
 
+        if (filtro.Codigo.HasValue)
+            query = query.Where(f => f.Codigo == filtro.Codigo.Value);
+
         if (!string.IsNullOrWhiteSpace(filtro.Isrc))
         {
             var isrcLimpo = filtro.Isrc.Replace("-", "").ToUpperInvariant();

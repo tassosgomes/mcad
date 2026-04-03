@@ -2,6 +2,7 @@ namespace Cadastro.Application.Fonogramas.Responses;
 
 public record FonogramaResponse(
     Guid Id,
+    long Codigo,
     string Isrc,
     string IsrcFormatado,
     ObraResumoResponse Obra,

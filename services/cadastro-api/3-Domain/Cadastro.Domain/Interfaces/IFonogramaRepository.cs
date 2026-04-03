@@ -5,6 +5,7 @@ namespace Cadastro.Domain.Interfaces;
 
 public record FonogramaFiltro(
     int Page = 1, int Size = 20, string? Sort = "isrc",
+    long? Codigo = null,
     string? Isrc = null, Guid? ObraId = null, string? ObraTitulo = null,
     StatusFonograma? Status = null, string? Pais = null);
 

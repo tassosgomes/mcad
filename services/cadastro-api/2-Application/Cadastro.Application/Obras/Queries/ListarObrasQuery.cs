@@ -7,6 +7,7 @@ public record ListarObrasQuery(
     int Page = 1,
     int Size = 20,
     string? Sort = "titulo",
+    long? Codigo = null,
     string? Titulo = null,
     string? Iswc = null,
     string? Tipo = null,

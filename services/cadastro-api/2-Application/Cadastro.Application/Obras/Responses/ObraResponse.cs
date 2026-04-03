@@ -4,6 +4,7 @@ namespace Cadastro.Application.Obras.Responses;
 
 public record ObraResponse(
     Guid Id,
+    long Codigo,
     string Titulo,
     string? Subtitulo,
     string Tipo,

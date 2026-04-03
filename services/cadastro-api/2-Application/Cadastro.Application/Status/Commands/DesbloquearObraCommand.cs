@@ -34,6 +34,7 @@ public class DesbloquearObraCommandHandler : ICommandHandler<DesbloquearObraComm
 
         return new ObraResponse(
             obra.Id,
+            obra.Codigo,
             obra.Titulo,
             obra.Subtitulo,
             obra.Tipo.ToString().ToUpperInvariant(),

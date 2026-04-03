@@ -34,6 +34,7 @@ public class ListarFonogramasPorObraHandler : IQueryHandler<ListarFonogramasPorO
 
             return new FonogramaResumoResponse(
                 f.Id,
+                f.Codigo,
                 f.Isrc.Formatado,
                 fStatus,
                 f.PaisOrigem,

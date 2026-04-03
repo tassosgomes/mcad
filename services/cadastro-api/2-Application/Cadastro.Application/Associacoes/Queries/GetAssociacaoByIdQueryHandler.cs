@@ -29,6 +29,6 @@ public class GetAssociacaoByIdQueryHandler
         if (associacao is null)
             throw new NotFoundException(nameof(Associacao), query.Id);
 
-        return new AssociacaoResponse(associacao.Id, associacao.Sigla, associacao.Nome, associacao.Cnpj);
+        return new AssociacaoResponse(associacao.Id, associacao.Codigo, associacao.Sigla, associacao.Nome, associacao.Cnpj);
     }
 }

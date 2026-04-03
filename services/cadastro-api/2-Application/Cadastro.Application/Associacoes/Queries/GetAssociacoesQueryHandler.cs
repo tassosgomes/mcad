@@ -23,6 +23,6 @@ public class GetAssociacoesQueryHandler
         CancellationToken cancellationToken)
     {
         var associacoes = await _repository.GetAllAsync(cancellationToken);
-        return associacoes.Select(a => new AssociacaoResponse(a.Id, a.Sigla, a.Nome, a.Cnpj));
+        return associacoes.Select(a => new AssociacaoResponse(a.Id, a.Codigo, a.Sigla, a.Nome, a.Cnpj));
     }
 }

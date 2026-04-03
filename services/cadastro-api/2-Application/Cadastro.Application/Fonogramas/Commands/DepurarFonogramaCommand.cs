@@ -91,9 +91,10 @@ public class DepurarFonogramaCommandHandler : ICommandHandler<DepurarFonogramaCo
 
         var depuradoResp = new FonogramaResponse(
             original.Id,
+            original.Codigo,
             original.Isrc.Valor,
             original.Isrc.Formatado,
-            new ObraResumoResponse(original.Obra.Id, original.Obra.Titulo, obraStatus),
+            new ObraResumoResponse(original.Obra.Id, original.Obra.Codigo, original.Obra.Titulo, obraStatus),
             original.PaisOrigem,
             original.DataGravacao,
             original.DataLancamento,
@@ -105,9 +106,10 @@ public class DepurarFonogramaCommandHandler : ICommandHandler<DepurarFonogramaCo
 
         var novoResp = new FonogramaResponse(
             novoFonograma.Id,
+            novoFonograma.Codigo,
             novoFonograma.Isrc.Valor,
             novoFonograma.Isrc.Formatado,
-            new ObraResumoResponse(original.Obra.Id, original.Obra.Titulo, obraStatus),
+            new ObraResumoResponse(original.Obra.Id, original.Obra.Codigo, original.Obra.Titulo, obraStatus),
             novoFonograma.PaisOrigem,
             novoFonograma.DataGravacao,
             novoFonograma.DataLancamento,

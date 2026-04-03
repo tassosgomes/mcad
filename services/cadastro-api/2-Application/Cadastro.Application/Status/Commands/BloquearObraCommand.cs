@@ -61,6 +61,7 @@ public class BloquearObraCommandHandler : ICommandHandler<BloquearObraCommand, O
 
         return new ObraResponse(
             obra.Id,
+            obra.Codigo,
             obra.Titulo,
             obra.Subtitulo,
             obra.Tipo.ToString().ToUpperInvariant(),

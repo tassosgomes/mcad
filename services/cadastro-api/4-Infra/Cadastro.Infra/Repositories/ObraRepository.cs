@@ -22,6 +22,9 @@ public class ObraRepository : IObraRepository
             .AsNoTracking()
             .AsQueryable();
 
+        if (filtro.Codigo.HasValue)
+            query = query.Where(o => o.Codigo == filtro.Codigo.Value);
+
         if (!string.IsNullOrWhiteSpace(filtro.Titulo))
             query = query.Where(o => EF.Functions.ILike(o.Titulo, $"%{filtro.Titulo}%"));
 
