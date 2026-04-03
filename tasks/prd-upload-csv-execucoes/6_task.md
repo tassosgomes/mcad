@@ -1,5 +1,5 @@
 ---
-status: pending
+status: completed
 parallelizable: false
 blocked_by: [5.0]
 ---
@@ -39,13 +39,13 @@ Criar os endpoints de upload (multipart), status e erros, o CsvProcessorWorker (
 
 ## Subtarefas
 
-- [ ] 6.1 Criar `UploadEndpoints.cs` — POST multipart `/captacoes/{id}/uploads` (202), GET list, GET by id, GET erros
-- [ ] 6.2 Implementar recepção multipart no POST: extrair `IFormFile`, passar stream para command
-- [ ] 6.3 Criar `CsvProcessorWorker` — BackgroundService que poll DB a cada 5s, processa uploads pendentes usando CsvParser + CadastroHttpClient + ExecucaoRepository
-- [ ] 6.4 No Worker: batch save de execuções a cada 100 linhas, persistir erros, atualizar status do upload
-- [ ] 6.5 No Worker: verificar captação ainda ABERTA antes de cada batch
-- [ ] 6.6 Registrar no Program.cs: IUploadRepository, IErroUploadRepository, CsvParser, CsvProcessorWorker (AddHostedService), mapear UploadEndpoints
-- [ ] 6.7 Testar endpoints + processamento end-to-end
+- [x] 6.1 Criar `UploadEndpoints.cs` — POST multipart `/captacoes/{id}/uploads` (202), GET list, GET by id, GET erros
+- [x] 6.2 Implementar recepção multipart no POST: extrair `IFormFile`, passar stream para command
+- [x] 6.3 Criar `CsvProcessorWorker` — BackgroundService que poll DB a cada 5s, processa uploads pendentes usando CsvParser + CadastroHttpClient + ExecucaoRepository
+- [x] 6.4 No Worker: batch save de execuções a cada 100 linhas, persistir erros, atualizar status do upload
+- [x] 6.5 No Worker: verificar captação ainda ABERTA antes de cada batch
+- [x] 6.6 Registrar no Program.cs: IUploadRepository, IErroUploadRepository, CsvParser, CsvProcessorWorker (AddHostedService), mapear UploadEndpoints
+- [x] 6.7 Testar endpoints + processamento end-to-end
 
 ## Sequenciamento
 

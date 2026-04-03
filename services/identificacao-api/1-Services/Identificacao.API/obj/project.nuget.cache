@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "dgSpecHash": "P/dCJYED8Vg=",
+  "dgSpecHash": "R+hTy48Di0s=",
   "success": true,
   "projectFilePath": "/home/tsgomes/mcad/services/identificacao-api/1-Services/Identificacao.API/Identificacao.API.csproj",
   "expectedPackageFiles": [
@@ -34,6 +34,8 @@
     "/home/tsgomes/.nuget/packages/microsoft.extensions.dependencymodel/9.0.4/microsoft.extensions.dependencymodel.9.0.4.nupkg.sha512",
     "/home/tsgomes/.nuget/packages/microsoft.extensions.diagnostics/8.0.0/microsoft.extensions.diagnostics.8.0.0.nupkg.sha512",
     "/home/tsgomes/.nuget/packages/microsoft.extensions.diagnostics.abstractions/8.0.0/microsoft.extensions.diagnostics.abstractions.8.0.0.nupkg.sha512",
+    "/home/tsgomes/.nuget/packages/microsoft.extensions.fileproviders.abstractions/8.0.0/microsoft.extensions.fileproviders.abstractions.8.0.0.nupkg.sha512",
+    "/home/tsgomes/.nuget/packages/microsoft.extensions.hosting.abstractions/8.0.0/microsoft.extensions.hosting.abstractions.8.0.0.nupkg.sha512",
     "/home/tsgomes/.nuget/packages/microsoft.extensions.http/8.0.0/microsoft.extensions.http.8.0.0.nupkg.sha512",
     "/home/tsgomes/.nuget/packages/microsoft.extensions.http.polly/8.0.0/microsoft.extensions.http.polly.8.0.0.nupkg.sha512",
     "/home/tsgomes/.nuget/packages/microsoft.extensions.logging/9.0.4/microsoft.extensions.logging.9.0.4.nupkg.sha512",

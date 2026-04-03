@@ -5,6 +5,7 @@ using Identificacao.API.Infrastructure;
 using Identificacao.Application.Common;
 using Identificacao.Application.Captacoes.Commands;
 using Identificacao.Application.Rubricas.Queries;
+using Identificacao.Application.Uploads.Services;
 using Identificacao.Domain.Interfaces;
 using Identificacao.Infra.Data;
 using Identificacao.Infra.ExternalServices;
@@ -43,6 +44,8 @@ builder.Services.AddScoped<IExecucaoRepository, ExecucaoRepository>();
 builder.Services.AddScoped<ITipoUtilizacaoRepository, TipoUtilizacaoRepository>();
 builder.Services.AddScoped<IUploadRepository, UploadRepository>();
 builder.Services.AddScoped<IErroUploadRepository, ErroUploadRepository>();
+builder.Services.AddScoped<CsvParser>();
+builder.Services.AddHostedService<CsvProcessorWorker>();
 
 // HttpClient para Cadastro
 var cadastroBaseUrl = Environment.GetEnvironmentVariable("CADASTRO_API_BASE_URL")
@@ -174,6 +177,7 @@ app.MapRubricaEndpoints();
 app.MapCaptacaoEndpoints();
 app.MapExecucaoEndpoints();
 app.MapTipoUtilizacaoEndpoints();
+app.MapUploadEndpoints();
 
 // Executa Migrations no Startup
 using (var scope = app.Services.CreateScope())

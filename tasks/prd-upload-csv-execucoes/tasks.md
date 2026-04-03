@@ -31,7 +31,7 @@ Mockups, types/hooks, componentes e integração.
 - [x] 3.0 Backend — Infrastructure (DbContext, Migration, Repositories)
 - [x] 4.0 Backend — CsvParser (parse, validação, agrupamento, duplicatas)
 - [x] 5.0 Backend — Application Layer (Commands, Queries, Handlers)
-- [ ] 6.0 Backend — API (Endpoints, CsvProcessorWorker, Program.cs)
+- [x] 6.0 Backend — API (Endpoints, CsvProcessorWorker, Program.cs)
 - [ ] 7.0 Frontend — Mockups no Stitch
 - [ ] 8.0 Frontend — Types, API Client e Hooks
 - [ ] 9.0 Frontend — Componentes
