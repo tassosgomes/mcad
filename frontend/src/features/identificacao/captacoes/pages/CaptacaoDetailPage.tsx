@@ -18,6 +18,9 @@ import { CaptacaoForm } from '../components/CaptacaoForm';
 import { DeleteCaptacaoModal } from '../components/DeleteCaptacaoModal';
 import { ExecucoesSection } from '../components/ExecucoesSection';
 import { UploadsSection } from '../components/UploadsSection';
+import { FecharRolButton } from '../components/FecharRolButton';
+import { FecharRolModal } from '../components/FecharRolModal';
+import { useFecharRol } from '../hooks/useFecharRol';
 
 export function CaptacaoDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -30,15 +33,18 @@ export function CaptacaoDetailPage() {
   const { data: captacao, isLoading, error, refetch } = useCaptacao(id);
   const updateMutation = useUpdateCaptacao();
   const deleteMutation = useDeleteCaptacao();
+  const fecharRolMutation = useFecharRol();
+  const [isFecharModalOpen, setIsFecharModalOpen] = useState(false);
 
   useDocumentTitle(captacao ? `Captação: ${captacao.rubrica.nome} — Identificação` : 'Detalhe Captação');
 
   if (isLoading) return <Loading />;
   if (error || !captacao) return <ErrorState onRetry={() => refetch()} />;
 
+  const isFechada = captacao.status?.toUpperCase() === 'FECHADA';
   const currentUserId = user?.profile.sub;
   const canWrite = hasRole('analista-identificacao');
-  const canEdit = canWrite && captacao.analistaResponsavel.id === currentUserId;
+  const canEdit = canWrite && captacao.analistaResponsavel.id === currentUserId && !isFechada;
   const canDelete = canEdit && captacao.status?.toUpperCase() === 'ABERTA';
 
   const temExecucoes = captacao.resumoExecucoes.total > 0;
@@ -94,6 +100,17 @@ export function CaptacaoDetailPage() {
     }
   };
 
+  const handleFecharRol = async () => {
+    try {
+      await fecharRolMutation.mutateAsync(captacao.id);
+      showToast('Rol de captação fechado com sucesso!', 'success');
+      setIsFecharModalOpen(false);
+    } catch (err: unknown) {
+      const problem = err as { detail?: string };
+      showToast(problem.detail || 'Erro ao fechar rol.', 'error');
+    }
+  };
+
   return (
     <div className={styles.container}>
       <PageHeader 
@@ -101,6 +118,9 @@ export function CaptacaoDetailPage() {
         action={
           <div className={styles.headerActions}>
             <Badge variant={getStatusVariant(captacao.status) as any}>{captacao.status}</Badge>
+            {canEdit && captacao.status?.toUpperCase() === 'ABERTA' && (
+              <FecharRolButton onClick={() => setIsFecharModalOpen(true)} />
+            )}
             {canDelete && (
               <Button variant="danger" onClick={() => setIsDeleteModalOpen(true)}>
                 Excluir
@@ -137,7 +157,7 @@ export function CaptacaoDetailPage() {
 
       <ExecucoesSection
         captacao={captacao}
-        canWrite={canWrite}
+        canWrite={canEdit}
         currentUserId={currentUserId || ''}
       />
 
@@ -154,6 +174,14 @@ export function CaptacaoDetailPage() {
         isDeleting={deleteMutation.isPending}
         onConfirm={handleDelete}
         onCancel={() => setIsDeleteModalOpen(false)}
+      />
+
+      <FecharRolModal
+        captacaoId={captacao.id}
+        isOpen={isFecharModalOpen}
+        isClosing={fecharRolMutation.isPending}
+        onConfirm={handleFecharRol}
+        onCancel={() => setIsFecharModalOpen(false)}
       />
     </div>
   );

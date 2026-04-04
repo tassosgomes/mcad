@@ -1,5 +1,5 @@
 ---
-status: pending
+status: completed
 parallelizable: false
 blocked_by: [4.0, 5.0, 6.0]
 ---
@@ -30,11 +30,11 @@ Criar FecharRolButton, FecharRolModal com ChecklistPreRequisitos, e integrar na 
 
 ## Subtarefas
 
-- [ ] 7.1 Criar `ChecklistPreRequisitos` + CSS — lista ✅/❌ com detalhe, resumo (total, identificadas, rubrica)
-- [ ] 7.2 Criar `FecharRolModal` + CSS — abre → consulta pré-requisitos → exibe checklist → botão habilitado se todosAtendidos → confirma → toast
-- [ ] 7.3 Criar `FecharRolButton` — botão primary, visível se ABERTA + dono
-- [ ] 7.4 Integrar na CaptacaoDetailPage: botão no header, modal, estado FECHADA (ocultar edição/exclusão/adicionar)
-- [ ] 7.5 Teste end-to-end manual:
+- [x] 7.1 Criar `ChecklistPreRequisitos` + CSS — lista ✅/❌ com detalhe, resumo (total, identificadas, rubrica)
+- [x] 7.2 Criar `FecharRolModal` + CSS — abre → consulta pré-requisitos → exibe checklist → botão habilitado se todosAtendidos → confirma → toast
+- [x] 7.3 Criar `FecharRolButton` — botão primary, visível se ABERTA + dono
+- [x] 7.4 Integrar na CaptacaoDetailPage: botão no header, modal, estado FECHADA (ocultar edição/exclusão/adicionar)
+- [x] 7.5 Teste end-to-end manual:
   - Captação com todos pré-req OK → checklist ✅ → fechar → FECHADA → botões ocultos
   - Captação com pendentes → checklist ❌ → botão desabilitado
   - Captação audiovisual sem tipo utilização → checklist ❌
@@ -78,9 +78,9 @@ const isFechada = captacao.status === 'FECHADA';
 
 ## Critérios de Sucesso (Verificáveis)
 
-- [ ] Build: `cd frontend && npm run build`
-- [ ] TypeScript: `cd frontend && npx tsc --noEmit`
-- [ ] Checklist exibe ✅/❌ corretamente
-- [ ] Botão desabilitado se algum pré-requisito ❌
-- [ ] Fechamento → toast + status FECHADA + botões ocultos
-- [ ] Itens condicionais (classificação, horários) só aparecem para audiovisual
+- [x] Build: `cd frontend && npm run build`
+- [x] TypeScript: `cd frontend && npx tsc --noEmit`
+- [x] Checklist exibe ✅/❌ corretamente
+- [x] Botão desabilitado se algum pré-requisito ❌
+- [x] Fechamento → toast + status FECHADA + botões ocultos
+- [x] Itens condicionais (classificação, horários) só aparecem para audiovisual

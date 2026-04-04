@@ -49,3 +49,6 @@ app:
     allowed-origins: ${ARRECADACAO_CORS_ALLOWED_ORIGINS:http://localhost:5173}
   security:
     auth-enabled: ${AUTH_ENABLED:true}
+  outbox:
+    publisher:
+      poll-interval-ms: ${OUTBOX_POLL_INTERVAL_MS:5000}
