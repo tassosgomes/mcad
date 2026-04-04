@@ -1,5 +1,5 @@
 ---
-status: pending
+status: completed
 domain: Domain
 type: Feature Implementation
 scope: Full
@@ -35,11 +35,11 @@ Implementar a camada de domínio pura do serviço Arrecadação: entidades `Rubr
 
 ## Subtasks
 
-- [ ] 3.1 Criar entidade `Rubrica` com construtor, getters e construtor protegido JPA
-- [ ] 3.2 Criar entidade `OutboxEvent` com factory method, métodos de estado e constante MAX_ATTEMPTS
-- [ ] 3.3 Criar interface `RubricaRepository` (read-only: findAll, findBySigla)
-- [ ] 3.4 Criar interfaces `OutboxEventWriter` e `OutboxEventRepository`
-- [ ] 3.5 Escrever testes unitários para entidades
+- [x] 3.1 Criar entidade `Rubrica` com construtor, getters e construtor protegido JPA
+- [x] 3.2 Criar entidade `OutboxEvent` com factory method, métodos de estado e constante MAX_ATTEMPTS
+- [x] 3.3 Criar interface `RubricaRepository` (read-only: findAll, findBySigla)
+- [x] 3.4 Criar interfaces `OutboxEventWriter` e `OutboxEventRepository`
+- [x] 3.5 Escrever testes unitários para entidades
 
 ## Implementation Details
 
@@ -66,12 +66,12 @@ Padrão equivalente ao .NET: `services/cadastro-api/3-Domain/Cadastro.Domain/Ent
 ## Tests
 
 - Unit tests:
-  - [ ] `Rubrica` — construtor cria instância com todos os campos corretos
-  - [ ] `Rubrica` — construtor rejeita argumentos nulos (sigla, nome)
-  - [ ] `OutboxEvent.criar()` — factory cria evento com id, type, subject, payload, createdAt preenchidos e publishedAt nulo
-  - [ ] `OutboxEvent.marcarPublicado()` — seta publishedAt para instante atual
-  - [ ] `OutboxEvent.incrementarTentativa()` — incrementa attempts em 1
-  - [ ] `OutboxEvent.excedeuTentativas()` — retorna false com attempts < 10, true com attempts >= 10
+  - [x] `Rubrica` — construtor cria instância com todos os campos corretos
+  - [x] `Rubrica` — construtor rejeita argumentos nulos (sigla, nome)
+  - [x] `OutboxEvent.criar()` — factory cria evento com id, type, subject, payload, createdAt preenchidos e publishedAt nulo
+  - [x] `OutboxEvent.marcarPublicado()` — seta publishedAt para instante atual
+  - [x] `OutboxEvent.incrementarTentativa()` — incrementa attempts em 1
+  - [x] `OutboxEvent.excedeuTentativas()` — retorna false com attempts < 10, true com attempts >= 10
 - Test coverage target: >=80%
 - All tests must pass
 

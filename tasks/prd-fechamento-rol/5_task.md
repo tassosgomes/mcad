@@ -1,5 +1,5 @@
 ---
-status: pending
+status: completed
 parallelizable: true
 blocked_by: []
 ---
@@ -17,10 +17,10 @@ blocked_by: []
 
 ## Subtarefas
 
-- [ ] 5.1 Botão "Fechar Rol" no header da CaptacaoDetailPage (visível ABERTA + dono)
-- [ ] 5.2 Modal de fechamento — checklist todos ✅, resumo, botão habilitado
-- [ ] 5.3 Modal de fechamento — com problemas ❌, itens em vermelho, botão desabilitado
-- [ ] 5.4 Estado pós-fechamento (badge FECHADA, sem botões de edição)
+- [x] 5.1 Botão "Fechar Rol" no header da CaptacaoDetailPage (visível ABERTA + dono)
+- [x] 5.2 Modal de fechamento — checklist todos ✅, resumo, botão habilitado
+- [x] 5.3 Modal de fechamento — com problemas ❌, itens em vermelho, botão desabilitado
+- [x] 5.4 Estado pós-fechamento (badge FECHADA, sem botões de edição)
 
 ## Sequenciamento
 
@@ -30,6 +30,6 @@ blocked_by: []
 
 ## Critérios de Sucesso (Verificáveis)
 
-- [ ] 4 telas no Stitch (projeto mcad, ID `533156784329699726`)
-- [ ] Checklist com ✅/❌ claramente distinguíveis
-- [ ] Botão desabilitado quando há itens ❌
+- [x] 4 telas no Stitch (projeto mcad, ID `533156784329699726`)
+- [x] Checklist com ✅/❌ claramente distinguíveis
+- [x] Botão desabilitado quando há itens ❌

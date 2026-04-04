@@ -30,7 +30,7 @@ Mockups, types/hooks, componentes + integração.
 - [x] 2.0 Backend — Domain (Captacao.Fechar) + Infra (novos métodos repo)
 - [x] 3.0 Backend — Application (ValidarPreRequisitos, FecharRol) + Testes
 - [x] 4.0 Backend — API (Endpoints, Program.cs)
-- [ ] 5.0 Frontend — Mockups no Stitch
+- [x] 5.0 Frontend — Mockups no Stitch
 - [ ] 6.0 Frontend — Types, API Client e Hooks
 - [ ] 7.0 Frontend — Componentes + Integração CaptacaoDetailPage
 

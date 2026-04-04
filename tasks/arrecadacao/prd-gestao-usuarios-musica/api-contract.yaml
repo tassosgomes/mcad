@@ -1,0 +1,810 @@
+openapi: 3.1.0
+
+info:
+  title: "Arrecadação API — Usuários de Música"
+  description: |
+    API CRUD para gestão de Usuários de Música do ECAD — empresas ou pessoas que
+    utilizam música publicamente e pagam licença.
+
+    **Contrato gerado a partir do PRD:** `tasks/arrecadacao/prd-gestao-usuarios-musica/prd.md`
+    **Data de geração:** 2026-04-04
+
+    ## Premissas Adotadas
+    - Autenticação JWT Bearer via Keycloak
+    - Roles: analista-arrecadacao (leitura + escrita), consultor-arrecadacao (somente leitura)
+    - Paginação server-side: page/size (default page=1, size=20)
+    - Ordenação server-side: campo + direção (default: razaoSocial ASC). Prefixo `-` para DESC
+    - Filtros combinados com AND, busca parcial case-insensitive
+    - CNPJ armazenado sem formatação; formatado na exibição pelo frontend
+    - CNPJ suporta formato alfanumérico (nova regra RFB) — Value Object com validação módulo 11
+    - CNPJ imutável após criação
+    - Sem exclusão física — apenas inativação com justificativa
+    - Busca ViaCEP exclusiva do frontend (não há endpoint backend para CEP)
+    - Erros seguem RFC 7807 (ProblemDetails)
+    - Campos JSON em camelCase
+  version: "1.0.0"
+  contact:
+    name: "Time de Plataforma ECAD"
+
+servers:
+  - url: http://localhost:5003/api/v1
+    description: Desenvolvimento local (arrecadacao-api)
+
+security:
+  - BearerAuth: []
+
+tags:
+  - name: Usuários de Música
+    description: "Gestão de Usuários de Música — empresas/pessoas licenciadas para uso público de música"
+
+paths:
+
+  /usuarios-musica:
+    get:
+      summary: Listar usuários com paginação e filtros
+      description: |
+        Retorna lista paginada de Usuários de Música com filtros e ordenação server-side.
+        Filtros são combinados com AND. Busca por razão social, CNPJ e cidade é parcial e case-insensitive.
+      operationId: listarUsuariosMusica
+      tags:
+        - Usuários de Música
+      parameters:
+        - name: page
+          in: query
+          description: Número da página (começa em 1)
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+            example: 1
+        - name: size
+          in: query
+          description: Itens por página (máx 100)
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+            example: 20
+        - name: sort
+          in: query
+          description: "Campo de ordenação. Prefixo `-` para DESC. Campos: `razaoSocial`, `cidade`, `status`"
+          schema:
+            type: string
+            default: "razaoSocial"
+            example: "-razaoSocial"
+        - name: razaoSocial
+          in: query
+          description: Filtro por razão social (parcial, case-insensitive)
+          schema:
+            type: string
+            example: "rádio"
+        - name: cnpj
+          in: query
+          description: Filtro por CNPJ (parcial, apenas alfanuméricos)
+          schema:
+            type: string
+            example: "50997063"
+        - name: status
+          in: query
+          description: Filtro por status (exato)
+          schema:
+            type: string
+            enum: [ATIVO, INATIVO]
+            example: "ATIVO"
+        - name: cidade
+          in: query
+          description: Filtro por cidade (parcial, case-insensitive)
+          schema:
+            type: string
+            example: "são paulo"
+      responses:
+        "200":
+          description: Lista paginada de usuários
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UsuarioMusicaListResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+      x-frontend-notes: |
+        Debounce de 300ms nos campos de texto (razaoSocial, cnpj, cidade).
+        Filtro de status como dropdown (Todos / Ativo / Inativo).
+        Colunas clicáveis para alternar ordenação (toggle ASC/DESC via prefixo `-`).
+        CNPJ exibido com formatação (AA.BBB.CCC/DDDD-EE).
+        Badge de status: ATIVO (verde), INATIVO (cinza).
+      x-backend-notes: |
+        Índices recomendados: razao_social (trigram para ILIKE), cnpj (unique), cidade, status.
+        Filtro por CNPJ deve ignorar formatação (comparar apenas alfanuméricos).
+
+    post:
+      summary: Criar novo Usuário de Música
+      description: |
+        Cria um Usuário de Música com dados da empresa, endereço completo e contato.
+        CNPJ é validado via algoritmo módulo 11 (suporta formato alfanumérico RFB).
+        CNPJ deve ser único no sistema. Status inicial é sempre ATIVO.
+      operationId: criarUsuarioMusica
+      tags:
+        - Usuários de Música
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CriarUsuarioMusicaRequest"
+      responses:
+        "201":
+          description: Usuário criado com sucesso
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UsuarioMusicaResponse"
+          headers:
+            Location:
+              description: URL do recurso criado
+              schema:
+                type: string
+                example: "/api/v1/usuarios-musica/f47ac10b-58cc-4372-a567-0e02b2c3d479"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+      x-frontend-notes: |
+        Validação inline do CNPJ ao perder foco do campo.
+        Campo CEP dispara chamada ViaCEP ao atingir 8 dígitos ou perder foco.
+        Se ViaCEP falhar, campos de endereço permanecem editáveis (preenchimento manual).
+        Após sucesso, redirecionar para listagem com toast de confirmação.
+      x-backend-notes: |
+        CNPJ como Value Object com validação módulo 11 (referência: Cadastro.Domain.ValueObjects.Cnpj).
+        Armazenar CNPJ sem formatação (apenas alfanuméricos, uppercase).
+        Status inicial hardcoded como ATIVO — não aceitar no request body.
+
+  /usuarios-musica/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: ID único do Usuário de Música (UUID)
+        schema:
+          type: string
+          format: uuid
+          example: "f47ac10b-58cc-4372-a567-0e02b2c3d479"
+
+    get:
+      summary: Buscar Usuário de Música por ID
+      description: |
+        Retorna os dados completos de um Usuário de Música, incluindo endereço e contato.
+        Usado pela tela de detalhes e pela F03 (Licenças) para vincular ao Usuário.
+      operationId: buscarUsuarioMusicaPorId
+      tags:
+        - Usuários de Música
+      responses:
+        "200":
+          description: Usuário encontrado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UsuarioMusicaResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+    put:
+      summary: Atualizar Usuário de Música
+      description: |
+        Atualiza os dados editáveis de um Usuário de Música.
+        CNPJ NÃO pode ser alterado (imutável após criação).
+        Status NÃO é alterado por este endpoint — usar endpoints específicos de ativação/inativação.
+      operationId: atualizarUsuarioMusica
+      tags:
+        - Usuários de Música
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AtualizarUsuarioMusicaRequest"
+      responses:
+        "200":
+          description: Usuário atualizado com sucesso
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UsuarioMusicaResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+      x-frontend-notes: |
+        Campo CNPJ exibido mas desabilitado (read-only).
+        Campo status não aparece no formulário de edição (gerenciado via ativar/inativar).
+      x-backend-notes: |
+        Ignorar CNPJ e status se enviados no body — não atualizar.
+
+  /usuarios-musica/{id}/inativar:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: ID do Usuário de Música
+        schema:
+          type: string
+          format: uuid
+          example: "f47ac10b-58cc-4372-a567-0e02b2c3d479"
+
+    post:
+      summary: Inativar Usuário de Música
+      description: |
+        Muda o status do Usuário para INATIVO com justificativa obrigatória.
+        Registra no histórico: data, autor (extraído do JWT) e justificativa.
+        O processo pode ser feito N vezes (sem limite).
+        Rejeita se o Usuário já estiver INATIVO.
+      operationId: inativarUsuarioMusica
+      tags:
+        - Usuários de Música
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AlterarStatusRequest"
+      responses:
+        "200":
+          description: Usuário inativado com sucesso
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UsuarioMusicaResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+      x-frontend-notes: |
+        Modal com textarea para justificativa (mínimo 10 caracteres).
+        Botão "Inativar" visível apenas para Analista e quando status = ATIVO.
+      x-backend-notes: |
+        Autor extraído do claim `preferred_username` ou `sub` do JWT.
+        Registrar em tabela historico_status_usuario.
+
+  /usuarios-musica/{id}/ativar:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: ID do Usuário de Música
+        schema:
+          type: string
+          format: uuid
+          example: "f47ac10b-58cc-4372-a567-0e02b2c3d479"
+
+    post:
+      summary: Reativar Usuário de Música
+      description: |
+        Muda o status do Usuário para ATIVO com justificativa obrigatória.
+        Registra no histórico: data, autor (extraído do JWT) e justificativa.
+        Rejeita se o Usuário já estiver ATIVO.
+      operationId: ativarUsuarioMusica
+      tags:
+        - Usuários de Música
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AlterarStatusRequest"
+      responses:
+        "200":
+          description: Usuário reativado com sucesso
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UsuarioMusicaResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+      x-frontend-notes: |
+        Modal com textarea para justificativa (mínimo 10 caracteres).
+        Botão "Reativar" visível apenas para Analista e quando status = INATIVO.
+
+  /usuarios-musica/{id}/historico-status:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: ID do Usuário de Música
+        schema:
+          type: string
+          format: uuid
+          example: "f47ac10b-58cc-4372-a567-0e02b2c3d479"
+
+    get:
+      summary: Listar histórico de status
+      description: |
+        Retorna o histórico de ativações e inativações do Usuário, ordenado do mais recente ao mais antigo.
+        Acessível por ambos os perfis (Analista e Consultor).
+      operationId: listarHistoricoStatusUsuarioMusica
+      tags:
+        - Usuários de Música
+      responses:
+        "200":
+          description: Histórico retornado com sucesso
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/HistoricoStatusResponse"
+              example:
+                - id: "c3d4e5f6-a7b8-9012-cdef-123456789012"
+                  statusAnterior: "ATIVO"
+                  statusNovo: "INATIVO"
+                  justificativa: "Empresa encerrou atividades no segmento musical"
+                  autor: "analista.arrecadacao"
+                  data: "2026-04-04T15:30:00Z"
+                - id: "d4e5f6a7-b8c9-0123-defa-234567890123"
+                  statusAnterior: null
+                  statusNovo: "ATIVO"
+                  justificativa: "Cadastro inicial"
+                  autor: "analista.arrecadacao"
+                  data: "2026-04-01T10:00:00Z"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+      x-frontend-notes: |
+        Exibir como timeline ou tabela na aba de detalhes do Usuário.
+        Ordenado do mais recente ao mais antigo.
+        Sem paginação (volume esperado é baixo).
+
+components:
+
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: "Token JWT obtido via Keycloak (Authorization Code + PKCE). Roles: analista-arrecadacao (leitura + escrita), consultor-arrecadacao (somente leitura)."
+
+  responses:
+    BadRequest:
+      description: Requisição inválida — erro de validação de campos
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ProblemDetails"
+          example:
+            type: "https://tools.ietf.org/html/rfc7231#section-6.5.1"
+            title: "Validation Error"
+            status: 400
+            detail: "Um ou mais campos são inválidos"
+            errors:
+              - field: "razaoSocial"
+                message: "Razão social deve ter no mínimo 3 caracteres"
+
+    Unauthorized:
+      description: Não autenticado — token ausente ou inválido
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ProblemDetails"
+          example:
+            type: "https://tools.ietf.org/html/rfc7231#section-6.5.1"
+            title: "Unauthorized"
+            status: 401
+            detail: "Token de autenticação ausente ou inválido"
+
+    NotFound:
+      description: Recurso não encontrado
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ProblemDetails"
+          example:
+            type: "https://tools.ietf.org/html/rfc7231#section-6.5.4"
+            title: "Resource Not Found"
+            status: 404
+            detail: "Usuário de Música com ID 'f47ac10b-58cc-4372-a567-0e02b2c3d479' não foi encontrado"
+
+    Conflict:
+      description: Conflito — CNPJ já cadastrado
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ProblemDetails"
+          example:
+            type: "https://tools.ietf.org/html/rfc7231#section-6.5.8"
+            title: "Conflict"
+            status: 409
+            detail: "Já existe um Usuário de Música cadastrado com este CNPJ: 50.997.063/0001-32"
+
+    UnprocessableEntity:
+      description: Erro de regra de negócio
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ProblemDetails"
+          example:
+            type: "https://tools.ietf.org/html/rfc7231#section-6.5.1"
+            title: "Unprocessable Entity"
+            status: 422
+            detail: "CNPJ inválido"
+
+    InternalServerError:
+      description: Erro interno do servidor
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ProblemDetails"
+          example:
+            type: "https://tools.ietf.org/html/rfc7231#section-6.6.1"
+            title: "Internal Server Error"
+            status: 500
+            detail: "An unexpected error occurred"
+            traceId: "0HN4B2E8M0T0K:00000001"
+
+  schemas:
+
+    UsuarioMusicaResponse:
+      type: object
+      description: "Representa um Usuário de Música — empresa/pessoa licenciada para uso público de música"
+      required:
+        - id
+        - razaoSocial
+        - cnpj
+        - cnpjFormatado
+        - endereco
+        - contato
+        - status
+        - criadoEm
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Identificador único do Usuário de Música
+          example: "f47ac10b-58cc-4372-a567-0e02b2c3d479"
+        razaoSocial:
+          type: string
+          maxLength: 200
+          description: Razão social da empresa
+          example: "Rádio Cidade FM Ltda"
+        nomeFantasia:
+          type: string
+          maxLength: 200
+          nullable: true
+          description: Nome fantasia (opcional)
+          example: "Rádio Cidade FM"
+        cnpj:
+          type: string
+          maxLength: 14
+          description: "CNPJ sem formatação (14 caracteres alfanuméricos)"
+          example: "50997063000132"
+        cnpjFormatado:
+          type: string
+          description: "CNPJ formatado para exibição (AA.BBB.CCC/DDDD-EE)"
+          example: "50.997.063/0001-32"
+        endereco:
+          $ref: "#/components/schemas/Endereco"
+        contato:
+          $ref: "#/components/schemas/Contato"
+        status:
+          type: string
+          enum: [ATIVO, INATIVO]
+          description: |
+            Status do Usuário de Música:
+            - `ATIVO`: Pode receber novas licenças e registrar pagamentos
+            - `INATIVO`: Não pode receber novas licenças (licenças existentes mantidas)
+          example: "ATIVO"
+        criadoEm:
+          type: string
+          format: date-time
+          description: Data de criação (ISO 8601)
+          example: "2026-04-04T10:30:00Z"
+        atualizadoEm:
+          type: string
+          format: date-time
+          description: Data da última atualização (ISO 8601)
+          example: "2026-04-04T14:22:00Z"
+
+    Endereco:
+      type: object
+      description: "Endereço completo brasileiro"
+      required:
+        - cep
+        - logradouro
+        - numero
+        - bairro
+        - cidade
+        - uf
+      properties:
+        cep:
+          type: string
+          pattern: "^\\d{8}$"
+          description: "CEP sem formatação (8 dígitos)"
+          example: "01001000"
+        logradouro:
+          type: string
+          maxLength: 200
+          description: Logradouro (rua, avenida, etc.)
+          example: "Praça da Sé"
+        numero:
+          type: string
+          maxLength: 20
+          description: Número do endereço
+          example: "1000"
+        complemento:
+          type: string
+          maxLength: 100
+          nullable: true
+          description: Complemento (sala, andar, bloco)
+          example: "Sala 301"
+        bairro:
+          type: string
+          maxLength: 100
+          description: Bairro
+          example: "Sé"
+        cidade:
+          type: string
+          maxLength: 100
+          description: Cidade
+          example: "São Paulo"
+        uf:
+          type: string
+          minLength: 2
+          maxLength: 2
+          description: "Unidade Federativa (sigla de 2 letras)"
+          example: "SP"
+
+    Contato:
+      type: object
+      description: "Dados de contato do Usuário de Música"
+      required:
+        - nomeResponsavel
+      properties:
+        nomeResponsavel:
+          type: string
+          maxLength: 200
+          description: Nome do responsável pelo estabelecimento (obrigatório)
+          example: "João Silva"
+        telefone:
+          type: string
+          maxLength: 20
+          nullable: true
+          description: "Telefone de contato (formato livre)"
+          example: "(11) 99999-8888"
+        email:
+          type: string
+          format: email
+          maxLength: 200
+          nullable: true
+          description: "Email de contato (opcional)"
+          example: "contato@radiocidade.com.br"
+
+    CriarUsuarioMusicaRequest:
+      type: object
+      description: "Dados para criação de um novo Usuário de Música. Status inicial é sempre ATIVO."
+      required:
+        - razaoSocial
+        - cnpj
+        - endereco
+        - contato
+      properties:
+        razaoSocial:
+          type: string
+          minLength: 3
+          maxLength: 200
+          description: Razão social da empresa (mínimo 3 caracteres)
+          example: "Rádio Cidade FM Ltda"
+        nomeFantasia:
+          type: string
+          maxLength: 200
+          nullable: true
+          description: Nome fantasia (opcional)
+          example: "Rádio Cidade FM"
+        cnpj:
+          type: string
+          minLength: 14
+          maxLength: 14
+          description: "CNPJ sem formatação (14 caracteres alfanuméricos). Validado via módulo 11."
+          example: "50997063000132"
+        endereco:
+          $ref: "#/components/schemas/Endereco"
+        contato:
+          $ref: "#/components/schemas/Contato"
+
+    AtualizarUsuarioMusicaRequest:
+      type: object
+      description: "Dados editáveis de um Usuário de Música. CNPJ e status NÃO são alteráveis por este endpoint."
+      required:
+        - razaoSocial
+        - endereco
+        - contato
+      properties:
+        razaoSocial:
+          type: string
+          minLength: 3
+          maxLength: 200
+          description: Razão social da empresa (mínimo 3 caracteres)
+          example: "Rádio Cidade FM Ltda"
+        nomeFantasia:
+          type: string
+          maxLength: 200
+          nullable: true
+          description: Nome fantasia (opcional)
+          example: "Rádio Cidade FM"
+        endereco:
+          $ref: "#/components/schemas/Endereco"
+        contato:
+          $ref: "#/components/schemas/Contato"
+
+    AlterarStatusRequest:
+      type: object
+      description: "Request para ativar ou inativar um Usuário de Música"
+      required:
+        - justificativa
+      properties:
+        justificativa:
+          type: string
+          minLength: 10
+          maxLength: 500
+          description: "Justificativa obrigatória (mínimo 10 caracteres)"
+          example: "Empresa encerrou atividades no segmento musical"
+
+    HistoricoStatusResponse:
+      type: object
+      description: "Registro de mudança de status no histórico"
+      required:
+        - id
+        - statusNovo
+        - justificativa
+        - autor
+        - data
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: ID único do registro de histórico
+          example: "c3d4e5f6-a7b8-9012-cdef-123456789012"
+        statusAnterior:
+          type: string
+          enum: [ATIVO, INATIVO]
+          nullable: true
+          description: "Status anterior (null no cadastro inicial)"
+          example: "ATIVO"
+        statusNovo:
+          type: string
+          enum: [ATIVO, INATIVO]
+          description: Novo status aplicado
+          example: "INATIVO"
+        justificativa:
+          type: string
+          description: Justificativa informada pelo Analista
+          example: "Empresa encerrou atividades no segmento musical"
+        autor:
+          type: string
+          description: Username do autor da mudança (extraído do JWT)
+          example: "analista.arrecadacao"
+        data:
+          type: string
+          format: date-time
+          description: Data/hora da mudança (ISO 8601)
+          example: "2026-04-04T15:30:00Z"
+
+    UsuarioMusicaListResponse:
+      type: object
+      required:
+        - data
+        - pagination
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/UsuarioMusicaResponse"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+
+    Pagination:
+      type: object
+      required:
+        - page
+        - size
+        - total
+        - totalPages
+      properties:
+        page:
+          type: integer
+          description: Página atual
+          example: 1
+        size:
+          type: integer
+          description: Itens por página
+          example: 20
+        total:
+          type: integer
+          description: Total de itens
+          example: 142
+        totalPages:
+          type: integer
+          description: Total de páginas
+          example: 8
+
+    ProblemDetails:
+      type: object
+      description: "Formato de erro RFC 7807 (ProblemDetails)"
+      required:
+        - type
+        - title
+        - status
+      properties:
+        type:
+          type: string
+          format: uri
+          description: URI de referência do tipo de erro
+          example: "https://tools.ietf.org/html/rfc7231#section-6.5.4"
+        title:
+          type: string
+          description: Título curto do erro
+          example: "Resource Not Found"
+        status:
+          type: integer
+          description: HTTP status code
+          example: 404
+        detail:
+          type: string
+          description: Descrição detalhada do erro
+          example: "Usuário de Música com ID '...' não foi encontrado"
+        instance:
+          type: string
+          description: Path da requisição que gerou o erro
+          example: "/api/v1/usuarios-musica/..."
+        traceId:
+          type: string
+          nullable: true
+          description: ID de rastreamento (presente em erros 5xx)
+          example: "0HN4B2E8M0T0K:00000001"
+        errors:
+          type: array
+          nullable: true
+          description: Detalhes de validação por campo (presente em erros 400)
+          items:
+            type: object
+            properties:
+              field:
+                type: string
+                example: "razaoSocial"
+              message:
+                type: string
+                example: "Razão social deve ter no mínimo 3 caracteres"

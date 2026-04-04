@@ -2,3 +2,9 @@
 [2m2026-04-04T21:33:21.063997Z[0m [31mERROR[0m [2mcodex_core::codex[0m[2m:[0m failed to load skill /home/tsgomes/.agents/skills/common/c4-diagram-creator/SKILL.md: invalid YAML: mapping values are not allowed in this context at line 2 column 293
 [2m2026-04-04T21:33:21.064002Z[0m [31mERROR[0m [2mcodex_core::codex[0m[2m:[0m failed to load skill /home/tsgomes/.agents/skills/common/mermaid-creator/SKILL.md: invalid YAML: mapping values are not allowed in this context at line 2 column 183
 [2m2026-04-04T21:33:21.064005Z[0m [31mERROR[0m [2mcodex_core::codex[0m[2m:[0m failed to load skill /home/tsgomes/.agents/skills/csharp/dotnet-testing/SKILL.md: missing YAML frontmatter delimited by ---
+[2m2026-04-04T21:37:06.073416Z[0m [31mERROR[0m [2mcodex_core::tools::router[0m[2m:[0m [3merror[0m[2m=[0mapply_patch verification failed: Failed to find expected lines in /home/tsgomes/mcad/.compozy/tasks/seed-rubricas/memory/MEMORY.md:
+## Shared Decisions
+
+## Shared Learnings
+- Para negar acesso real ao schema `public` para uma role de serviço no PostgreSQL, não basta `REVOKE ... FROM <role>`; o script também precisa remover os privilégios herdados de `PUBLIC`.
+- `scripts/postgres-init/02-setup-arrecadacao-schema.sql` usa `ARRECADACAO_DB_PASSWORD` via `psql \\getenv`, com fallback para `CHANGE_ME` quando a variável não estiver definida no processo de init.
