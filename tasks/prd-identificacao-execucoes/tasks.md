@@ -28,7 +28,7 @@ Mockups, types/hooks, componentes, página + roteamento.
 - [x] 3.0 Backend — Application (Commands: ResolverPendente, ResolverLote) + Testes
 - [x] 4.0 Backend — API (Endpoints, PendentesVerificadorWorker, Program.cs)
 - [x] 5.0 Frontend — Mockups no Stitch
-- [ ] 6.0 Frontend — Types, API Client e Hooks
+- [x] 6.0 Frontend — Types, API Client e Hooks
 - [ ] 7.0 Frontend — Componentes
 - [ ] 8.0 Frontend — PendentesPage + Roteamento
 

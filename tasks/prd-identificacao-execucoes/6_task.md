@@ -1,5 +1,5 @@
 ---
-status: pending
+status: completed
 parallelizable: true
 blocked_by: []
 ---
@@ -35,12 +35,12 @@ Criar tipos TypeScript, funções de API e 4 hooks React Query para a tela de pe
 
 ## Subtarefas
 
-- [ ] 6.1 Criar `pendente.ts` com todas interfaces (ExecucaoPendente, ImpactoPendente, requests, responses, filtros)
-- [ ] 6.2 Criar `pendentesApi.ts` — getPendentes, getImpactoPendentes, resolverPendente, resolverPendentesEmLote
-- [ ] 6.3 Criar `usePendentes` — queryKey com filtros, keepPreviousData
-- [ ] 6.4 Criar `useImpactoPendentes` — queryKey com sort+page
-- [ ] 6.5 Criar `useResolverPendente` — invalidate pendentes + execucoes + captacoes
-- [ ] 6.6 Criar `useResolverPendentesEmLote` — invalidate pendentes + execucoes + captacoes
+- [x] 6.1 Criar `pendente.ts` com todas interfaces (ExecucaoPendente, ImpactoPendente, requests, responses, filtros)
+- [x] 6.2 Criar `pendentesApi.ts` — getPendentes, getImpactoPendentes, resolverPendente, resolverPendentesEmLote
+- [x] 6.3 Criar `usePendentes` — queryKey com filtros, keepPreviousData
+- [x] 6.4 Criar `useImpactoPendentes` — queryKey com sort+page
+- [x] 6.5 Criar `useResolverPendente` — invalidate pendentes + execucoes + captacoes
+- [x] 6.6 Criar `useResolverPendentesEmLote` — invalidate pendentes + execucoes + captacoes
 
 ## Sequenciamento
 
@@ -50,7 +50,7 @@ Criar tipos TypeScript, funções de API e 4 hooks React Query para a tela de pe
 
 ## Critérios de Sucesso (Verificáveis)
 
-- [ ] Build: `cd frontend && npm run build`
-- [ ] TypeScript: `cd frontend && npx tsc --noEmit`
-- [ ] 4 hooks criados
-- [ ] Mutations invalidam 3 queryKeys (pendentes, execucoes, captacoes)
+- [x] Build: `cd frontend && npm run build`
+- [x] TypeScript: `cd frontend && npx tsc --noEmit`
+- [x] 4 hooks criados
+- [x] Mutations invalidam 3 queryKeys (pendentes, execucoes, captacoes)
