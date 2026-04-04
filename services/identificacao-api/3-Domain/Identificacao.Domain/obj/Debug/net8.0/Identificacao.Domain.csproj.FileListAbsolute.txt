@@ -10,3 +10,4 @@
 /home/tsgomes/mcad/services/identificacao-api/3-Domain/Identificacao.Domain/obj/Debug/net8.0/refint/Identificacao.Domain.dll
 /home/tsgomes/mcad/services/identificacao-api/3-Domain/Identificacao.Domain/obj/Debug/net8.0/Identificacao.Domain.pdb
 /home/tsgomes/mcad/services/identificacao-api/3-Domain/Identificacao.Domain/obj/Debug/net8.0/ref/Identificacao.Domain.dll
+/home/tsgomes/mcad/services/identificacao-api/3-Domain/Identificacao.Domain/obj/Debug/net8.0/Identificacao.Domain.csproj.AssemblyReference.cache

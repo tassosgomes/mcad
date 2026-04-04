@@ -17,6 +17,14 @@
           "Identificacao.Application.dll": {}
         }
       },
+      "CloudNative.CloudEvents/2.8.0": {
+        "runtime": {
+          "lib/net8.0/CloudNative.CloudEvents.dll": {
+            "assemblyVersion": "2.8.0.0",
+            "fileVersion": "2.8.0.0"
+          }
+        }
+      },
       "FluentValidation/11.11.0": {
         "runtime": {
           "lib/net8.0/FluentValidation.dll": {
@@ -114,6 +122,9 @@
         }
       },
       "Identificacao.Domain/1.0.0": {
+        "dependencies": {
+          "CloudNative.CloudEvents": "2.8.0"
+        },
         "runtime": {
           "Identificacao.Domain.dll": {
             "assemblyVersion": "1.0.0.0",
@@ -128,6 +139,13 @@
       "type": "project",
       "serviceable": false,
       "sha512": ""
+    },
+    "CloudNative.CloudEvents/2.8.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-RvabvAQV7u3FZcZL5UlRmFz3/T5nMl86GpChpRvHKRHbO+/I4LBcZ0xRqYnNfAh30gM+h/JkSBHEnbhl0zmGtA==",
+      "path": "cloudnative.cloudevents/2.8.0",
+      "hashPath": "cloudnative.cloudevents.2.8.0.nupkg.sha512"
     },
     "FluentValidation/11.11.0": {
       "type": "package",

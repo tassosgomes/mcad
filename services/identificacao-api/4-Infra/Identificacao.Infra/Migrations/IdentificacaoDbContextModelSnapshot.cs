@@ -176,6 +176,48 @@ namespace Identificacao.Infra.Migrations
                     b.ToTable("Execucoes", "identificacao");
                 });
 
+            modelBuilder.Entity("Identificacao.Domain.Entities.OutboxEvent", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Attempts")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0);
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Payload")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
+                    b.Property<DateTime?>("PublishedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("RoutingKey")
+                        .IsRequired()
+                        .HasColumnType("VARCHAR(100)");
+
+                    b.Property<string>("Subject")
+                        .IsRequired()
+                        .HasColumnType("VARCHAR(50)");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasColumnType("VARCHAR(100)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PublishedAt", "Attempts")
+                        .HasDatabaseName("ix_outbox_pendentes")
+                        .HasFilter("\"PublishedAt\" IS NULL AND \"Attempts\" < 10");
+
+                    b.ToTable("outbox_events", "identificacao");
+                });
+
             modelBuilder.Entity("Identificacao.Domain.Entities.Rubrica", b =>
                 {
                     b.Property<Guid>("Id")

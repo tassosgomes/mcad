@@ -1,5 +1,5 @@
 ---
-status: pending
+status: completed
 parallelizable: true
 blocked_by: []
 ---
@@ -40,15 +40,15 @@ Introduzir o Outbox Pattern no serviço de Identificação, copiando o padrão d
 
 ## Subtarefas
 
-- [ ] 1.1 Copiar entidade `OutboxEvent` do Cadastro (factory Criar, MarcarPublicado, IncrementarTentativa, ExcedeuTentativas)
-- [ ] 1.2 Criar `IOutboxEventWriter` + `OutboxEventWriter` (AddEvent ao DbContext)
-- [ ] 1.3 Criar `IRabbitMqPublisher` + `RabbitMqPublisher` (publica no RabbitMQ)
-- [ ] 1.4 Criar `OutboxPublisherWorker` (BackgroundService — poll, publish, mark)
-- [ ] 1.5 Criar `EventTypes` com constantes: `identificacao.rol.fechado`, `identificacao.rol.cancelado`
-- [ ] 1.6 Criar `OutboxEventConfiguration` (Fluent API — índice parcial WHERE PublishedAt IS NULL)
-- [ ] 1.7 Gerar migration: `dotnet ef migrations add AddOutboxEvents`
-- [ ] 1.8 Adicionar DbSet<OutboxEvent> ao IdentificacaoDbContext
-- [ ] 1.9 Atualizar `.env.example` com `RABBITMQ_HOST`, `RABBITMQ_PORT`, `RABBITMQ_VHOST`, `RABBITMQ_USER`, `RABBITMQ_PASSWORD`
+- [x] 1.1 Copiar entidade `OutboxEvent` do Cadastro (factory Criar, MarcarPublicado, IncrementarTentativa, ExcedeuTentativas)
+- [x] 1.2 Criar `IOutboxEventWriter` + `OutboxEventWriter` (AddEvent ao DbContext)
+- [x] 1.3 Criar `IRabbitMqPublisher` + `RabbitMqPublisher` (publica no RabbitMQ)
+- [x] 1.4 Criar `OutboxPublisherWorker` (BackgroundService — poll, publish, mark)
+- [x] 1.5 Criar `EventTypes` com constantes: `identificacao.rol.fechado`, `identificacao.rol.cancelado`
+- [x] 1.6 Criar `OutboxEventConfiguration` (Fluent API — índice parcial WHERE PublishedAt IS NULL)
+- [x] 1.7 Gerar migration: `dotnet ef migrations add AddOutboxEvents`
+- [x] 1.8 Adicionar DbSet<OutboxEvent> ao IdentificacaoDbContext
+- [x] 1.9 Atualizar `.env.example` com `RABBITMQ_HOST`, `RABBITMQ_PORT`, `RABBITMQ_VHOST`, `RABBITMQ_USER`, `RABBITMQ_PASSWORD`
 
 ## Sequenciamento
 
@@ -78,7 +78,7 @@ builder.Services.AddHostedService<OutboxPublisherWorker>();
 
 ## Critérios de Sucesso (Verificáveis)
 
-- [ ] Build: `cd services/identificacao-api && dotnet build`
-- [ ] Migration gerada com tabela outbox_events no schema identificacao
-- [ ] Índice parcial WHERE PublishedAt IS NULL presente
-- [ ] Worker compila e inicia sem erros (com RabbitMQ rodando)
+- [x] Build: `cd services/identificacao-api && dotnet build`
+- [x] Migration gerada com tabela outbox_events no schema identificacao
+- [x] Índice parcial WHERE PublishedAt IS NULL presente
+- [x] Worker compila e inicia sem erros (com RabbitMQ rodando)

@@ -1,11 +1,50 @@
 {
   "version": 3,
   "targets": {
-    "net8.0": {}
+    "net8.0": {
+      "CloudNative.CloudEvents/2.8.0": {
+        "type": "package",
+        "compile": {
+          "lib/net8.0/CloudNative.CloudEvents.dll": {
+            "related": ".pdb;.xml"
+          }
+        },
+        "runtime": {
+          "lib/net8.0/CloudNative.CloudEvents.dll": {
+            "related": ".pdb;.xml"
+          }
+        }
+      }
+    }
   },
-  "libraries": {},
+  "libraries": {
+    "CloudNative.CloudEvents/2.8.0": {
+      "sha512": "RvabvAQV7u3FZcZL5UlRmFz3/T5nMl86GpChpRvHKRHbO+/I4LBcZ0xRqYnNfAh30gM+h/JkSBHEnbhl0zmGtA==",
+      "type": "package",
+      "path": "cloudnative.cloudevents/2.8.0",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "LICENSE",
+        "cloudnative.cloudevents.2.8.0.nupkg.sha512",
+        "cloudnative.cloudevents.nuspec",
+        "lib/net8.0/CloudNative.CloudEvents.dll",
+        "lib/net8.0/CloudNative.CloudEvents.pdb",
+        "lib/net8.0/CloudNative.CloudEvents.xml",
+        "lib/netstandard2.0/CloudNative.CloudEvents.dll",
+        "lib/netstandard2.0/CloudNative.CloudEvents.pdb",
+        "lib/netstandard2.0/CloudNative.CloudEvents.xml",
+        "lib/netstandard2.1/CloudNative.CloudEvents.dll",
+        "lib/netstandard2.1/CloudNative.CloudEvents.pdb",
+        "lib/netstandard2.1/CloudNative.CloudEvents.xml",
+        "nuget-icon.png"
+      ]
+    }
+  },
   "projectFileDependencyGroups": {
-    "net8.0": []
+    "net8.0": [
+      "CloudNative.CloudEvents >= 2.8.0"
+    ]
   },
   "packageFolders": {
     "/home/tsgomes/.nuget/packages/": {}
@@ -50,6 +89,12 @@
     "frameworks": {
       "net8.0": {
         "targetAlias": "net8.0",
+        "dependencies": {
+          "CloudNative.CloudEvents": {
+            "target": "Package",
+            "version": "[2.8.0, )"
+          }
+        },
         "imports": [
           "net461",
           "net462",

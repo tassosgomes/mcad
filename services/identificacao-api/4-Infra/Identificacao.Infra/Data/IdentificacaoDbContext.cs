@@ -15,6 +15,7 @@ public class IdentificacaoDbContext : DbContext
     public DbSet<TipoUtilizacao> TiposUtilizacao => Set<TipoUtilizacao>();
     public DbSet<Upload> Uploads => Set<Upload>();
     public DbSet<ErroUpload> ErrosUpload => Set<ErroUpload>();
+    public DbSet<OutboxEvent> OutboxEvents => Set<OutboxEvent>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
