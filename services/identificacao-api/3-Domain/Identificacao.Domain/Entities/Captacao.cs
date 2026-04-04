@@ -53,4 +53,11 @@ public class Captacao
         if (Status != StatusCaptacao.Aberta)
             throw new DomainException("Apenas captações com status ABERTA podem ser modificadas.");
     }
+
+    public void Fechar()
+    {
+        ValidarAberta();
+        Status = StatusCaptacao.Fechada;
+        AtualizadoEm = DateTime.UtcNow;
+    }
 }

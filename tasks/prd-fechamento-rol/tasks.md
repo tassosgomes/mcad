@@ -27,7 +27,7 @@ Mockups, types/hooks, componentes + integração.
 ## Tarefas
 
 - [x] 1.0 Backend — Outbox Pattern (entidade, writer, publisher, worker, RabbitMQ)
-- [ ] 2.0 Backend — Domain (Captacao.Fechar) + Infra (novos métodos repo)
+- [x] 2.0 Backend — Domain (Captacao.Fechar) + Infra (novos métodos repo)
 - [ ] 3.0 Backend — Application (ValidarPreRequisitos, FecharRol) + Testes
 - [ ] 4.0 Backend — API (Endpoints, Program.cs)
 - [ ] 5.0 Frontend — Mockups no Stitch

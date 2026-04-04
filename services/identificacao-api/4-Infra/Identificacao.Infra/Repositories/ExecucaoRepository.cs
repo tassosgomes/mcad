@@ -207,6 +207,21 @@ public class ExecucaoRepository : IExecucaoRepository
             .ToListAsync(ct);
     }
 
+    public Task<int> ContarSemTipoUtilizacaoAsync(Guid captacaoId, CancellationToken ct)
+        => _context.Execucoes.CountAsync(e =>
+            e.CaptacaoId == captacaoId && e.TipoUtilizacaoId == null, ct);
+
+    public Task<int> ContarSemHorarioAsync(Guid captacaoId, CancellationToken ct)
+        => _context.Execucoes.CountAsync(e =>
+            e.CaptacaoId == captacaoId && ((e.Inicio.Hour == 0 && e.Inicio.Minute == 0 && e.Inicio.Second == 0) || (e.Fim.Hour == 0 && e.Fim.Minute == 0 && e.Fim.Second == 0)), ct);
+
+    public async Task<IEnumerable<Execucao>> ListarTodasDaCaptacaoAsync(Guid captacaoId, CancellationToken ct)
+        => await _context.Execucoes
+            .Where(e => e.CaptacaoId == captacaoId)
+            .Include(e => e.TipoUtilizacao)
+            .AsNoTracking()
+            .ToListAsync(ct);
+
     public Task AddAsync(Execucao execucao, CancellationToken ct)
     {
         _context.Execucoes.Add(execucao);

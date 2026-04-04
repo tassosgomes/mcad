@@ -1,5 +1,5 @@
 ---
-status: pending
+status: completed
 parallelizable: false
 blocked_by: [1.0]
 ---
@@ -28,9 +28,9 @@ Adicionar método `Fechar()` à entidade Captação e implementar métodos de co
 
 ## Subtarefas
 
-- [ ] 2.1 Adicionar `Captacao.Fechar()` — valida ABERTA, transiciona para FECHADA
-- [ ] 2.2 Adicionar ao IExecucaoRepository: `ContarSemTipoUtilizacaoAsync`, `ContarSemHorarioAsync`, `ListarTodasDaCaptacaoAsync`
-- [ ] 2.3 Implementar os 3 métodos no ExecucaoRepository
+- [x] 2.1 Adicionar `Captacao.Fechar()` — valida ABERTA, transiciona para FECHADA
+- [x] 2.2 Adicionar ao IExecucaoRepository: `ContarSemTipoUtilizacaoAsync`, `ContarSemHorarioAsync`, `ListarTodasDaCaptacaoAsync`
+- [x] 2.3 Implementar os 3 métodos no ExecucaoRepository
 
 ## Sequenciamento
 
@@ -70,6 +70,6 @@ public async Task<IEnumerable<Execucao>> ListarTodasDaCaptacaoAsync(Guid captaca
 
 ## Critérios de Sucesso (Verificáveis)
 
-- [ ] Build: `cd services/identificacao-api && dotnet build`
-- [ ] Captacao.Fechar() transiciona ABERTA → FECHADA
-- [ ] Fechar() em captação não ABERTA lança DomainException
+- [x] Build: `cd services/identificacao-api && dotnet build`
+- [x] Captacao.Fechar() transiciona ABERTA → FECHADA
+- [x] Fechar() em captação não ABERTA lança DomainException
