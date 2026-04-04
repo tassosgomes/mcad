@@ -1,5 +1,5 @@
 ---
-status: pending
+status: completed
 parallelizable: false
 blocked_by: [1.0]
 ---
@@ -40,11 +40,11 @@ Criar command handlers para resolução individual e em lote de execuções pend
 
 ## Subtarefas
 
-- [ ] 3.1 Criar `ResolverPendenteCommand` + validator + handler — valida PENDENTE, captação ABERTA, obra LIBERADA, chama Resolver()
-- [ ] 3.2 Criar `ResolverPendentesEmLoteCommand` + validator + handler — valida obra LIBERADA uma vez, loop com rejeição parcial
-- [ ] 3.3 Criar `ResolverLoteResponse` (resolvidas, rejeitadas, detalhesRejeitadas)
-- [ ] 3.4 Testes `ResolverPendenteCommandHandlerTests` — 6 cenários
-- [ ] 3.5 Testes `ResolverPendentesEmLoteCommandHandlerTests` — 4 cenários
+- [x] 3.1 Criar `ResolverPendenteCommand` + validator + handler — valida PENDENTE, captação ABERTA, obra LIBERADA, chama Resolver()
+- [x] 3.2 Criar `ResolverPendentesEmLoteCommand` + validator + handler — valida obra LIBERADA uma vez, loop com rejeição parcial
+- [x] 3.3 Criar `ResolverLoteResponse` (resolvidas, rejeitadas, detalhesRejeitadas)
+- [x] 3.4 Testes `ResolverPendenteCommandHandlerTests` — 6 cenários
+- [x] 3.5 Testes `ResolverPendentesEmLoteCommandHandlerTests` — 4 cenários
 
 ## Sequenciamento
 
@@ -74,7 +74,7 @@ Criar command handlers para resolução individual e em lote de execuções pend
 
 ## Critérios de Sucesso (Verificáveis)
 
-- [ ] Build: `cd services/identificacao-api && dotnet build`
-- [ ] Testes: `cd services/identificacao-api && dotnet test --filter "FullyQualifiedName~ResolverPendente"`
-- [ ] 10 cenários cobertos
-- [ ] Resolução em lote retorna resultado parcial (resolvidas + rejeitadas com motivo)
+- [x] Build: `cd services/identificacao-api && dotnet build`
+- [x] Testes: `cd services/identificacao-api && dotnet test --filter "FullyQualifiedName~ResolverPendente"`
+- [x] 10 cenários cobertos
+- [x] Resolução em lote retorna resultado parcial (resolvidas + rejeitadas com motivo)
