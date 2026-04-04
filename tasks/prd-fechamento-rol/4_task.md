@@ -1,5 +1,5 @@
 ---
-status: pending
+status: completed
 parallelizable: false
 blocked_by: [3.0]
 ---
@@ -32,10 +32,10 @@ Criar endpoints de pré-requisitos e fechamento, registrar Outbox (writer, publi
 
 ## Subtarefas
 
-- [ ] 4.1 Criar `FechamentoEndpoints.cs` — GET /captacoes/{id}/pre-requisitos + POST /captacoes/{id}/fechar
-- [ ] 4.2 Extrair analistaId do JWT no POST fechar
-- [ ] 4.3 Registrar no Program.cs: IOutboxEventWriter, IRabbitMqPublisher, OutboxPublisherWorker, mapear endpoints
-- [ ] 4.4 Testar endpoints + verificar evento no outbox após fechamento
+- [x] 4.1 Criar `FechamentoEndpoints.cs` — GET /captacoes/{id}/pre-requisitos + POST /captacoes/{id}/fechar
+- [x] 4.2 Extrair analistaId do JWT no POST fechar
+- [x] 4.3 Registrar no Program.cs: IOutboxEventWriter, IRabbitMqPublisher, OutboxPublisherWorker, mapear endpoints
+- [x] 4.4 Testar endpoints + verificar evento no outbox após fechamento
 
 ## Sequenciamento
 
@@ -71,9 +71,9 @@ public static void MapFechamentoEndpoints(this IEndpointRouteBuilder app)
 
 ## Critérios de Sucesso (Verificáveis)
 
-- [ ] Build: `cd services/identificacao-api && dotnet build`
-- [ ] Serviço inicia sem erros (com PostgreSQL + RabbitMQ)
-- [ ] GET pre-requisitos: → 200 com checklist
-- [ ] POST fechar (todos OK): → 200 com status FECHADA + eventoPublicado=true
-- [ ] POST fechar (com pendentes): → 422 EXECUCOES_PENDENTES
-- [ ] Verificar registro na tabela outbox_events após fechamento
+- [x] Build: `cd services/identificacao-api && dotnet build`
+- [x] Serviço inicia sem erros (com PostgreSQL + RabbitMQ)
+- [x] GET pre-requisitos: → 200 com checklist
+- [x] POST fechar (todos OK): → 200 com status FECHADA + eventoPublicado=true
+- [x] POST fechar (com pendentes): → 422 EXECUCOES_PENDENTES
+- [x] Verificar registro na tabela outbox_events após fechamento

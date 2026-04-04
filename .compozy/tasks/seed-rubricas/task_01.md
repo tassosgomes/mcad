@@ -1,5 +1,5 @@
 ---
-status: pending
+status: completed
 domain: Infrastructure
 type: Configuration
 scope: Full
@@ -30,10 +30,10 @@ Criar o schema PostgreSQL `arrecadacao`, o usuário dedicado `arrecadacao_svc` c
 
 ## Subtasks
 
-- [ ] 1.1 Criar script SQL para schema `arrecadacao` com usuário dedicado e grants
-- [ ] 1.2 Atualizar `docker-compose.dev.yml` com comentário/referência ao serviço arrecadacao-api (porta 5003)
-- [ ] 1.3 Validar que o script é idempotente (reexecução não falha)
-- [ ] 1.4 Testar conectividade: `arrecadacao_svc` acessa apenas schema `arrecadacao`
+- [x] 1.1 Criar script SQL para schema `arrecadacao` com usuário dedicado e grants
+- [x] 1.2 Atualizar `docker-compose.dev.yml` com comentário/referência ao serviço arrecadacao-api (porta 5003)
+- [x] 1.3 Validar que o script é idempotente (reexecução não falha)
+- [x] 1.4 Testar conectividade: `arrecadacao_svc` acessa apenas schema `arrecadacao`
 
 ## Implementation Details
 
@@ -55,10 +55,10 @@ Referência principal: TechSpec seção "Scripts de Banco de Dados" para o SQL e
 ## Tests
 
 - Validação manual (scripts SQL init não têm framework de teste automatizado):
-  - [ ] Script executa sem erro em database limpo (`docker compose down -v && docker compose up`)
-  - [ ] Script reexecuta sem erro (idempotente)
-  - [ ] `arrecadacao_svc` consegue conectar e fazer SELECT no schema `arrecadacao`
-  - [ ] `arrecadacao_svc` NÃO consegue acessar schema `cadastro` ou `public`
+  - [x] Script executa sem erro em database limpo (`docker compose down -v && docker compose up`)
+  - [x] Script reexecuta sem erro (idempotente)
+  - [x] `arrecadacao_svc` consegue conectar e fazer SELECT no schema `arrecadacao`
+  - [x] `arrecadacao_svc` NÃO consegue acessar schema `cadastro` ou `public`
 
 ## Success Criteria
 

@@ -1,5 +1,5 @@
 ---
-status: pending
+status: completed
 domain: Infrastructure
 type: Configuration
 scope: Full
@@ -34,13 +34,13 @@ Criar a estrutura completa do projeto Maven multi-module para o serviço `arreca
 
 ## Subtasks
 
-- [ ] 2.1 Criar parent POM multi-module com gestão de dependências e versões
-- [ ] 2.2 Criar módulo `arrecadacao-domain` (zero dependências externas, apenas Java SE)
-- [ ] 2.3 Criar módulo `arrecadacao-application` (depende de domain)
-- [ ] 2.4 Criar módulo `arrecadacao-infra` (depende de domain; Spring Data JPA, Flyway, Spring AMQP, CloudEvents)
-- [ ] 2.5 Criar módulo `arrecadacao-api` (depende de application + infra; Spring Boot starter, Security, Actuator)
-- [ ] 2.6 Criar módulo `arrecadacao-tests` (depende de todos; JUnit 5, Mockito, AssertJ, Testcontainers)
-- [ ] 2.7 Criar `application.yml`, `application-dev.yml`, `.gitignore`, `.env.example`
+- [x] 2.1 Criar parent POM multi-module com gestão de dependências e versões
+- [x] 2.2 Criar módulo `arrecadacao-domain` (zero dependências externas, apenas Java SE)
+- [x] 2.3 Criar módulo `arrecadacao-application` (depende de domain)
+- [x] 2.4 Criar módulo `arrecadacao-infra` (depende de domain; Spring Data JPA, Flyway, Spring AMQP, CloudEvents)
+- [x] 2.5 Criar módulo `arrecadacao-api` (depende de application + infra; Spring Boot starter, Security, Actuator)
+- [x] 2.6 Criar módulo `arrecadacao-tests` (depende de todos; JUnit 5, Mockito, AssertJ, Testcontainers)
+- [x] 2.7 Criar `application.yml`, `application-dev.yml`, `.gitignore`, `.env.example`
 
 ## Implementation Details
 
@@ -81,10 +81,10 @@ services/arrecadacao-api/
 ## Tests
 
 - Build validation (sem testes de código nesta task):
-  - [ ] `mvn clean compile` compila todos os 5 módulos sem erro
-  - [ ] `mvn clean verify -DskipTests` passa (packaging sem erros)
-  - [ ] Dependency direction correta: domain não importa Spring; application importa domain; infra importa domain + Spring
-  - [ ] `ArrecadacaoApplication.java` existe e é anotada com `@SpringBootApplication`
+  - [x] `mvn clean compile` compila todos os 5 módulos sem erro
+  - [x] `mvn clean verify -DskipTests` passa (packaging sem erros)
+  - [x] Dependency direction correta: domain não importa Spring; application importa domain; infra importa domain + Spring
+  - [x] `ArrecadacaoApplication.java` existe e é anotada com `@SpringBootApplication`
 
 ## Success Criteria
 

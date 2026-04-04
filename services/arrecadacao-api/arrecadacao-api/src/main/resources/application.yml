@@ -1,0 +1,51 @@
+server:
+  port: 5003
+
+spring:
+  application:
+    name: arrecadacao-api
+  datasource:
+    url: jdbc:postgresql://${ARRECADACAO_DB_HOST:localhost}:${ARRECADACAO_DB_PORT:5432}/${ARRECADACAO_DB_NAME:mcad}?currentSchema=${ARRECADACAO_DB_SCHEMA:arrecadacao}
+    username: ${ARRECADACAO_DB_USER:arrecadacao_svc}
+    password: ${ARRECADACAO_DB_PASSWORD:}
+    hikari:
+      maximum-pool-size: 10
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        default_schema: arrecadacao
+  flyway:
+    enabled: true
+    schemas: arrecadacao
+    locations: classpath:db/migration
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USER:mcad}
+    password: ${RABBITMQ_PASSWORD:mcad}
+    virtual-host: ${RABBITMQ_VHOST:mcad}
+  mvc:
+    problemdetails:
+      enabled: true
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${OIDC_AUTHORITY:http://localhost:8080/realms/mcad}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: when-authorized
+
+app:
+  cors:
+    allowed-origins: ${ARRECADACAO_CORS_ALLOWED_ORIGINS:http://localhost:5173}
+  security:
+    auth-enabled: ${AUTH_ENABLED:true}

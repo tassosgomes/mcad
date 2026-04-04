@@ -1,4 +1,5 @@
 using FluentAssertions;
+using Identificacao.Application.Common;
 using Identificacao.Application.Common.Exceptions;
 using Identificacao.Application.Fechamento.Commands;
 using Identificacao.Application.Fechamento.Queries;
@@ -6,7 +7,6 @@ using Identificacao.Application.Fechamento.Responses;
 using Identificacao.Domain.Entities;
 using Identificacao.Domain.Exceptions;
 using Identificacao.Domain.Interfaces;
-using MediatR;
 using Moq;
 
 namespace Identificacao.Tests.Application;
@@ -16,7 +16,7 @@ public class FecharRolCommandHandlerTests
     private readonly Mock<ICaptacaoRepository> _captacaoRepoMock;
     private readonly Mock<IExecucaoRepository> _execucaoRepoMock;
     private readonly Mock<IOutboxEventWriter> _outboxWriterMock;
-    private readonly Mock<IRequestHandler<ValidarPreRequisitosQuery, PreRequisitosResponse>> _preReqHandlerMock;
+    private readonly Mock<IQueryHandler<ValidarPreRequisitosQuery, PreRequisitosResponse>> _preReqHandlerMock;
     private readonly FecharRolCommandHandler _handler;
 
     public FecharRolCommandHandlerTests()
@@ -24,7 +24,7 @@ public class FecharRolCommandHandlerTests
         _captacaoRepoMock = new Mock<ICaptacaoRepository>();
         _execucaoRepoMock = new Mock<IExecucaoRepository>();
         _outboxWriterMock = new Mock<IOutboxEventWriter>();
-        _preReqHandlerMock = new Mock<IRequestHandler<ValidarPreRequisitosQuery, PreRequisitosResponse>>();
+        _preReqHandlerMock = new Mock<IQueryHandler<ValidarPreRequisitosQuery, PreRequisitosResponse>>();
 
         _handler = new FecharRolCommandHandler(
             _captacaoRepoMock.Object, _execucaoRepoMock.Object, _outboxWriterMock.Object, _preReqHandlerMock.Object);
@@ -52,14 +52,14 @@ public class FecharRolCommandHandlerTests
         _captacaoRepoMock.Setup(r => r.GetByIdAsync(captacao.Id, It.IsAny<CancellationToken>())).ReturnsAsync(captacao);
 
         var okResponse = new PreRequisitosResponse(captacao.Id, true, new List<PreRequisitoItem>(), null!);
-        _preReqHandlerMock.Setup(h => h.Handle(It.IsAny<ValidarPreRequisitosQuery>(), It.IsAny<CancellationToken>()))
+        _preReqHandlerMock.Setup(h => h.HandleAsync(It.IsAny<ValidarPreRequisitosQuery>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(okResponse);
         
         _execucaoRepoMock.Setup(r => r.ListarTodasDaCaptacaoAsync(captacao.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new List<Execucao>());
 
         var cmd = new FecharRolCommand(captacao.Id, analistaId);
-        var result = await _handler.Handle(cmd, CancellationToken.None);
+        var result = await _handler.HandleAsync(cmd, CancellationToken.None);
 
         result.Sucesso.Should().BeTrue();
         result.Status.Should().Be("FECHADA");
@@ -78,11 +78,11 @@ public class FecharRolCommandHandlerTests
             new("zero_pendentes", "Zero pendentes", false, "Detalhes")
         }, null!);
 
-        _preReqHandlerMock.Setup(h => h.Handle(It.IsAny<ValidarPreRequisitosQuery>(), It.IsAny<CancellationToken>()))
+        _preReqHandlerMock.Setup(h => h.HandleAsync(It.IsAny<ValidarPreRequisitosQuery>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(badResponse);
 
         var cmd = new FecharRolCommand(captacao.Id, analistaId);
-        var act = () => _handler.Handle(cmd, CancellationToken.None);
+        var act = () => _handler.HandleAsync(cmd, CancellationToken.None);
 
         var ex = await act.Should().ThrowAsync<PreRequisitosException>();
         ex.Which.Code.Should().Be("zero_pendentes");
@@ -96,7 +96,7 @@ public class FecharRolCommandHandlerTests
         _captacaoRepoMock.Setup(r => r.GetByIdAsync(captacao.Id, It.IsAny<CancellationToken>())).ReturnsAsync(captacao);
 
         var cmd = new FecharRolCommand(captacao.Id, Guid.NewGuid()); // Diferente
-        var act = () => _handler.Handle(cmd, CancellationToken.None);
+        var act = () => _handler.HandleAsync(cmd, CancellationToken.None);
 
         await act.Should().ThrowAsync<DomainException>(); // ValidarPropriedade throws DomainException
     }
@@ -109,7 +109,7 @@ public class FecharRolCommandHandlerTests
         _captacaoRepoMock.Setup(r => r.GetByIdAsync(captacao.Id, It.IsAny<CancellationToken>())).ReturnsAsync(captacao);
 
         var cmd = new FecharRolCommand(captacao.Id, analistaId);
-        var act = () => _handler.Handle(cmd, CancellationToken.None);
+        var act = () => _handler.HandleAsync(cmd, CancellationToken.None);
 
         await act.Should().ThrowAsync<DomainException>(); // ValidarAberta throws DomainException
     }
@@ -122,7 +122,7 @@ public class FecharRolCommandHandlerTests
         _captacaoRepoMock.Setup(r => r.GetByIdAsync(captacao.Id, It.IsAny<CancellationToken>())).ReturnsAsync(captacao);
 
         var okResponse = new PreRequisitosResponse(captacao.Id, true, new List<PreRequisitoItem>(), null!);
-        _preReqHandlerMock.Setup(h => h.Handle(It.IsAny<ValidarPreRequisitosQuery>(), It.IsAny<CancellationToken>()))
+        _preReqHandlerMock.Setup(h => h.HandleAsync(It.IsAny<ValidarPreRequisitosQuery>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(okResponse);
 
         var tipo = TipoUtilizacao.Criar(Guid.NewGuid(), "T1", "Tipo1", 100);
@@ -136,7 +136,7 @@ public class FecharRolCommandHandlerTests
             .ReturnsAsync(new List<Execucao> { execucao });
 
         var cmd = new FecharRolCommand(captacao.Id, analistaId);
-        var result = await _handler.Handle(cmd, CancellationToken.None);
+        var result = await _handler.HandleAsync(cmd, CancellationToken.None);
 
         _outboxWriterMock.Verify(w => w.AddEvent("identificacao.rol.fechado", captacao.Id.ToString(), 
             It.Is<object>(o => ((Identificacao.Application.Fechamento.Payloads.RolFechadoPayload)o).Execucoes.ElementAt(0).Peso == 100)), Times.Once);
@@ -150,7 +150,7 @@ public class FecharRolCommandHandlerTests
         _captacaoRepoMock.Setup(r => r.GetByIdAsync(captacao.Id, It.IsAny<CancellationToken>())).ReturnsAsync(captacao);
 
         var okResponse = new PreRequisitosResponse(captacao.Id, true, new List<PreRequisitoItem>(), null!);
-        _preReqHandlerMock.Setup(h => h.Handle(It.IsAny<ValidarPreRequisitosQuery>(), It.IsAny<CancellationToken>()))
+        _preReqHandlerMock.Setup(h => h.HandleAsync(It.IsAny<ValidarPreRequisitosQuery>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(okResponse);
 
         var execucao = Execucao.Criar(captacao.Id, Guid.NewGuid(), null, "Obra1", null, null, "Int", new TimeOnly(1,0), new TimeOnly(2,0), 1, null, null, Identificacao.Domain.Enums.StatusExecucao.Identificada);
@@ -159,7 +159,7 @@ public class FecharRolCommandHandlerTests
             .ReturnsAsync(new List<Execucao> { execucao });
 
         var cmd = new FecharRolCommand(captacao.Id, analistaId);
-        var result = await _handler.Handle(cmd, CancellationToken.None);
+        var result = await _handler.HandleAsync(cmd, CancellationToken.None);
 
         _outboxWriterMock.Verify(w => w.AddEvent("identificacao.rol.fechado", captacao.Id.ToString(), 
             It.Is<object>(o => ((Identificacao.Application.Fechamento.Payloads.RolFechadoPayload)o).Execucoes.ElementAt(0).Peso == null)), Times.Once);

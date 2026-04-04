@@ -2,12 +2,12 @@ using MediatR;
 using Identificacao.Application.Fechamento.Responses;
 using Identificacao.Domain.Interfaces;
 using Identificacao.Domain.Exceptions;
-
+using Identificacao.Application.Common;
 using Identificacao.Application.Common.Exceptions;
 
 namespace Identificacao.Application.Fechamento.Queries;
 
-public class ValidarPreRequisitosQueryHandler : IRequestHandler<ValidarPreRequisitosQuery, PreRequisitosResponse>
+public class ValidarPreRequisitosQueryHandler : IQueryHandler<ValidarPreRequisitosQuery, PreRequisitosResponse>
 {
     private readonly ICaptacaoRepository _captacaoRepo;
     private readonly IExecucaoRepository _execucaoRepo;
@@ -23,7 +23,7 @@ public class ValidarPreRequisitosQueryHandler : IRequestHandler<ValidarPreRequis
         _cadastroClient = cadastroClient;
     }
 
-    public async Task<PreRequisitosResponse> Handle(ValidarPreRequisitosQuery query, CancellationToken ct)
+    public async Task<PreRequisitosResponse> HandleAsync(ValidarPreRequisitosQuery query, CancellationToken ct)
     {
         var captacao = await _captacaoRepo.GetByIdAsync(query.CaptacaoId, ct)
             ?? throw new NotFoundException($"Captação {query.CaptacaoId} não encontrada.");

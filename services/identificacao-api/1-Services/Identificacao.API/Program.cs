@@ -48,6 +48,14 @@ builder.Services.AddScoped<CsvParser>();
 builder.Services.AddHostedService<CsvProcessorWorker>();
 builder.Services.AddHostedService<Identificacao.Application.Pendentes.Services.PendentesVerificadorWorker>();
 
+// ─── Outbox / RabbitMQ / Events ───────────────────────────────────────
+builder.Services.AddScoped<IOutboxEventWriter, Identificacao.Infra.Events.OutboxEventWriter>();
+builder.Services.AddSingleton<Identificacao.Domain.Interfaces.IRabbitMqPublisher>(sp =>
+    new Identificacao.Infra.Events.RabbitMqPublisher(
+        sp.GetRequiredService<Microsoft.Extensions.Configuration.IConfiguration>(),
+        sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<Identificacao.Infra.Events.RabbitMqPublisher>>()));
+builder.Services.AddHostedService<Identificacao.Infra.Events.OutboxPublisherWorker>();
+
 // HttpClient para Cadastro
 var cadastroBaseUrl = Environment.GetEnvironmentVariable("CADASTRO_API_BASE_URL")
     ?? "http://localhost:5001/api/v1";
@@ -174,6 +182,7 @@ app.UseAuthorization();
 
 // Map Endpoints
 app.MapHealthChecks("/health");
+app.MapFechamentoEndpoints();
 app.MapRubricaEndpoints();
 app.MapCaptacaoEndpoints();
 app.MapExecucaoEndpoints();

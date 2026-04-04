@@ -1,6 +1,4 @@
-using System.Text.Json;
-using MediatR;
-using Identificacao.Application.Fechamento.Commands;
+using Identificacao.Application.Common;
 using Identificacao.Application.Fechamento.Responses;
 using Identificacao.Application.Fechamento.Payloads;
 using Identificacao.Application.Fechamento.Queries;
@@ -11,18 +9,18 @@ using Identificacao.Application.Common.Exceptions;
 
 namespace Identificacao.Application.Fechamento.Commands;
 
-public class FecharRolCommandHandler : IRequestHandler<FecharRolCommand, FechamentoResponse>
+public class FecharRolCommandHandler : ICommandHandler<FecharRolCommand, FechamentoResponse>
 {
     private readonly ICaptacaoRepository _captacaoRepo;
     private readonly IExecucaoRepository _execucaoRepo;
     private readonly IOutboxEventWriter _outboxWriter;
-    private readonly IRequestHandler<ValidarPreRequisitosQuery, PreRequisitosResponse> _preRequisitosHandler;
+    private readonly IQueryHandler<ValidarPreRequisitosQuery, PreRequisitosResponse> _preRequisitosHandler;
 
     public FecharRolCommandHandler(
         ICaptacaoRepository captacaoRepo,
         IExecucaoRepository execucaoRepo,
         IOutboxEventWriter outboxWriter,
-        IRequestHandler<ValidarPreRequisitosQuery, PreRequisitosResponse> preRequisitosHandler)
+        IQueryHandler<ValidarPreRequisitosQuery, PreRequisitosResponse> preRequisitosHandler)
     {
         _captacaoRepo = captacaoRepo;
         _execucaoRepo = execucaoRepo;
@@ -30,7 +28,7 @@ public class FecharRolCommandHandler : IRequestHandler<FecharRolCommand, Fechame
         _preRequisitosHandler = preRequisitosHandler;
     }
 
-    public async Task<FechamentoResponse> Handle(FecharRolCommand cmd, CancellationToken ct)
+    public async Task<FechamentoResponse> HandleAsync(FecharRolCommand cmd, CancellationToken ct)
     {
         var captacao = await _captacaoRepo.GetByIdAsync(cmd.CaptacaoId, ct)
             ?? throw new NotFoundException($"Captação {cmd.CaptacaoId} não encontrada.");
@@ -38,7 +36,7 @@ public class FecharRolCommandHandler : IRequestHandler<FecharRolCommand, Fechame
         captacao.ValidarAberta();
         captacao.ValidarPropriedade(cmd.AnalistaId);
 
-        var preRequisitos = await _preRequisitosHandler.Handle(
+        var preRequisitos = await _preRequisitosHandler.HandleAsync(
             new ValidarPreRequisitosQuery(cmd.CaptacaoId), ct);
 
         if (!preRequisitos.TodosAtendidos)

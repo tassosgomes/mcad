@@ -8,8 +8,8 @@
 
 | # | Título | Status | Complexidade | Dependências |
 |---|--------|--------|-------------|--------------|
-| 01 | Scripts SQL + Docker Compose | pending | low | — |
-| 02 | Maven multi-module scaffold | pending | high | — |
+| 01 | Scripts SQL + Docker Compose | completed | low | — |
+| 02 | Maven multi-module scaffold | completed | high | — |
 | 03 | Domain layer — Rubrica, OutboxEvent, interfaces | pending | medium | task_02 |
 | 04 | Infra persistence — JPA, Flyway, seed | pending | medium | task_03 |
 | 05 | Infra events — Outbox + RabbitMQ | pending | high | task_04 |

@@ -49,7 +49,7 @@ public class ValidarPreRequisitosQueryHandlerTests
         _execucaoRepoMock.Setup(r => r.ContarSemHorarioAsync(captacao.Id, It.IsAny<CancellationToken>())).ReturnsAsync(0);
 
         var query = new ValidarPreRequisitosQuery(captacao.Id);
-        var result = await _handler.Handle(query, CancellationToken.None);
+        var result = await _handler.HandleAsync(query, CancellationToken.None);
 
         result.TodosAtendidos.Should().BeTrue();
         result.Itens.Should().HaveCount(5);
@@ -64,7 +64,7 @@ public class ValidarPreRequisitosQueryHandlerTests
         _execucaoRepoMock.Setup(r => r.ContarPorCaptacaoAsync(captacao.Id, It.IsAny<CancellationToken>())).ReturnsAsync(0);
 
         var query = new ValidarPreRequisitosQuery(captacao.Id);
-        var result = await _handler.Handle(query, CancellationToken.None);
+        var result = await _handler.HandleAsync(query, CancellationToken.None);
 
         result.TodosAtendidos.Should().BeFalse();
         result.Itens.Should().ContainSingle(i => i.Id == "min_execucoes" && !i.Atendido);
@@ -80,7 +80,7 @@ public class ValidarPreRequisitosQueryHandlerTests
         _execucaoRepoMock.Setup(r => r.ContarPendentesAsync(captacao.Id, It.IsAny<CancellationToken>())).ReturnsAsync(3);
 
         var query = new ValidarPreRequisitosQuery(captacao.Id);
-        var result = await _handler.Handle(query, CancellationToken.None);
+        var result = await _handler.HandleAsync(query, CancellationToken.None);
 
         result.TodosAtendidos.Should().BeFalse();
         result.Itens.Should().ContainSingle(i => i.Id == "zero_pendentes" && !i.Atendido);
@@ -96,7 +96,7 @@ public class ValidarPreRequisitosQueryHandlerTests
         _execucaoRepoMock.Setup(r => r.ContarSemTipoUtilizacaoAsync(captacao.Id, It.IsAny<CancellationToken>())).ReturnsAsync(2);
 
         var query = new ValidarPreRequisitosQuery(captacao.Id);
-        var result = await _handler.Handle(query, CancellationToken.None);
+        var result = await _handler.HandleAsync(query, CancellationToken.None);
 
         result.TodosAtendidos.Should().BeFalse();
         result.Itens.Should().ContainSingle(i => i.Id == "classificacao" && !i.Atendido);
@@ -112,7 +112,7 @@ public class ValidarPreRequisitosQueryHandlerTests
         _execucaoRepoMock.Setup(r => r.ContarSemHorarioAsync(captacao.Id, It.IsAny<CancellationToken>())).ReturnsAsync(5);
 
         var query = new ValidarPreRequisitosQuery(captacao.Id);
-        var result = await _handler.Handle(query, CancellationToken.None);
+        var result = await _handler.HandleAsync(query, CancellationToken.None);
 
         result.TodosAtendidos.Should().BeFalse();
         result.Itens.Should().ContainSingle(i => i.Id == "horarios" && !i.Atendido);
@@ -129,7 +129,7 @@ public class ValidarPreRequisitosQueryHandlerTests
         _execucaoRepoMock.Setup(r => r.ListarTodasDaCaptacaoAsync(captacao.Id, It.IsAny<CancellationToken>())).ReturnsAsync(new List<Execucao>());
 
         var query = new ValidarPreRequisitosQuery(captacao.Id);
-        var result = await _handler.Handle(query, CancellationToken.None);
+        var result = await _handler.HandleAsync(query, CancellationToken.None);
 
         result.Itens.Should().HaveCount(3);
         result.Itens.Should().NotContain(i => i.Id == "classificacao");
@@ -152,7 +152,7 @@ public class ValidarPreRequisitosQueryHandlerTests
             .ReturnsAsync(new ObraResumoDto(Guid.NewGuid(), "Obra", "Iswc", "PENDENTE"));
 
         var query = new ValidarPreRequisitosQuery(captacao.Id);
-        var result = await _handler.Handle(query, CancellationToken.None);
+        var result = await _handler.HandleAsync(query, CancellationToken.None);
 
         result.TodosAtendidos.Should().BeFalse();
         result.Itens.Should().ContainSingle(i => i.Id == "obras_liberadas" && !i.Atendido);
