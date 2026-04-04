@@ -1,5 +1,5 @@
 ---
-status: pending
+status: completed
 parallelizable: false
 blocked_by: [2.0, 3.0]
 ---
@@ -38,11 +38,11 @@ Criar os 4 endpoints de pendentes, o background job de re-verificação automát
 
 ## Subtarefas
 
-- [ ] 4.1 Criar `PendenteEndpoints.cs` — GET /pendentes, GET /pendentes/impacto, POST /pendentes/{id}/resolver, POST /pendentes/resolver-lote
-- [ ] 4.2 Extrair analistaId do JWT nos endpoints de escrita
-- [ ] 4.3 Criar `PendentesVerificadorWorker` — poll a cada 5min, busca pendentes com obraId, consulta Cadastro por IDs únicos, resolve automaticamente se LIBERADO
-- [ ] 4.4 Registrar no Program.cs: `AddHostedService<PendentesVerificadorWorker>`, mapear `PendenteEndpoints`
-- [ ] 4.5 Testar endpoints + worker
+- [x] 4.1 Criar `PendenteEndpoints.cs` — GET /pendentes, GET /pendentes/impacto, POST /pendentes/{id}/resolver, POST /pendentes/resolver-lote
+- [x] 4.2 Extrair analistaId do JWT nos endpoints de escrita
+- [x] 4.3 Criar `PendentesVerificadorWorker` — poll a cada 5min, busca pendentes com obraId, consulta Cadastro por IDs únicos, resolve automaticamente se LIBERADO
+- [x] 4.4 Registrar no Program.cs: `AddHostedService<PendentesVerificadorWorker>`, mapear `PendenteEndpoints`
+- [x] 4.5 Testar endpoints + worker
 
 ## Sequenciamento
 
@@ -112,11 +112,11 @@ app.MapPendenteEndpoints();
 
 ## Critérios de Sucesso (Verificáveis)
 
-- [ ] Build: `cd services/identificacao-api && dotnet build`
-- [ ] Serviço inicia sem erros
-- [ ] GET pendentes: `curl http://localhost:5100/api/v1/pendentes` → 200
-- [ ] GET impacto: `curl http://localhost:5100/api/v1/pendentes/impacto` → 200 com agrupamento
-- [ ] POST resolver: → 200 com status IDENTIFICADA
-- [ ] POST resolver-lote: → 200 com resolvidas + rejeitadas
-- [ ] POST com obra não LIBERADA: → 422 OBRA_NAO_LIBERADA
-- [ ] Worker loga re-verificação a cada 5min
+- [x] Build: `cd services/identificacao-api && dotnet build`
+- [x] Serviço inicia sem erros
+- [x] GET pendentes: `curl http://localhost:5100/api/v1/pendentes` → 200
+- [x] GET impacto: `curl http://localhost:5100/api/v1/pendentes/impacto` → 200 com agrupamento
+- [x] POST resolver: → 200 com status IDENTIFICADA
+- [x] POST resolver-lote: → 200 com resolvidas + rejeitadas
+- [x] POST com obra não LIBERADA: → 422 OBRA_NAO_LIBERADA
+- [x] Worker loga re-verificação a cada 5min

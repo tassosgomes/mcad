@@ -43,9 +43,9 @@ public class ResolverPendenteCommandHandlerTests
     {
         var captacao = CriarCaptacao(StatusCaptacao.Aberta);
         var execucao = CriarExecucao(captacao, StatusExecucao.Pendente);
-        var command = new ResolverPendenteCommand(captacao.Id, execucao.Id, Guid.NewGuid(), null);
+        var command = new ResolverPendenteCommand(execucao.Id, Guid.NewGuid(), null);
 
-        _execucaoRepoMock.Setup(r => r.GetByIdAsync(captacao.Id, execucao.Id, It.IsAny<CancellationToken>())).ReturnsAsync(execucao);
+        _execucaoRepoMock.Setup(r => r.GetByExecucaoIdAsync(execucao.Id, It.IsAny<CancellationToken>())).ReturnsAsync(execucao);
         _cadastroClientMock.Setup(c => c.GetObraByIdAsync(command.ObraId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new ObraResumoDto(command.ObraId, "Obra Teste", "BR-1", "LIBERADO"));
 
@@ -61,9 +61,9 @@ public class ResolverPendenteCommandHandlerTests
     {
         var captacao = CriarCaptacao(StatusCaptacao.Aberta);
         var execucao = CriarExecucao(captacao, StatusExecucao.Pendente);
-        var command = new ResolverPendenteCommand(captacao.Id, execucao.Id, Guid.NewGuid(), null);
+        var command = new ResolverPendenteCommand(execucao.Id, Guid.NewGuid(), null);
 
-        _execucaoRepoMock.Setup(r => r.GetByIdAsync(captacao.Id, execucao.Id, It.IsAny<CancellationToken>())).ReturnsAsync(execucao);
+        _execucaoRepoMock.Setup(r => r.GetByExecucaoIdAsync(execucao.Id, It.IsAny<CancellationToken>())).ReturnsAsync(execucao);
         _cadastroClientMock.Setup(c => c.GetObraByIdAsync(command.ObraId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new ObraResumoDto(command.ObraId, "Obra Teste", "BR-1", "PENDENTE"));
 
@@ -77,9 +77,9 @@ public class ResolverPendenteCommandHandlerTests
     {
         var captacao = CriarCaptacao(StatusCaptacao.Aberta);
         var execucao = CriarExecucao(captacao, StatusExecucao.Identificada);
-        var command = new ResolverPendenteCommand(captacao.Id, execucao.Id, Guid.NewGuid(), null);
+        var command = new ResolverPendenteCommand(execucao.Id, Guid.NewGuid(), null);
 
-        _execucaoRepoMock.Setup(r => r.GetByIdAsync(captacao.Id, execucao.Id, It.IsAny<CancellationToken>())).ReturnsAsync(execucao);
+        _execucaoRepoMock.Setup(r => r.GetByExecucaoIdAsync(execucao.Id, It.IsAny<CancellationToken>())).ReturnsAsync(execucao);
 
         Func<Task> act = async () => await _handler.HandleAsync(command, CancellationToken.None);
 
@@ -91,9 +91,9 @@ public class ResolverPendenteCommandHandlerTests
     {
         var captacao = CriarCaptacao(StatusCaptacao.Fechada);
         var execucao = CriarExecucao(captacao, StatusExecucao.Pendente);
-        var command = new ResolverPendenteCommand(captacao.Id, execucao.Id, Guid.NewGuid(), null);
+        var command = new ResolverPendenteCommand(execucao.Id, Guid.NewGuid(), null);
 
-        _execucaoRepoMock.Setup(r => r.GetByIdAsync(captacao.Id, execucao.Id, It.IsAny<CancellationToken>())).ReturnsAsync(execucao);
+        _execucaoRepoMock.Setup(r => r.GetByExecucaoIdAsync(execucao.Id, It.IsAny<CancellationToken>())).ReturnsAsync(execucao);
 
         Func<Task> act = async () => await _handler.HandleAsync(command, CancellationToken.None);
 
@@ -107,9 +107,9 @@ public class ResolverPendenteCommandHandlerTests
         var execucao = CriarExecucao(captacao, StatusExecucao.Pendente);
         var obraId = Guid.NewGuid();
         var fonogramaId = Guid.NewGuid();
-        var command = new ResolverPendenteCommand(captacao.Id, execucao.Id, obraId, fonogramaId);
+        var command = new ResolverPendenteCommand(execucao.Id, obraId, fonogramaId);
 
-        _execucaoRepoMock.Setup(r => r.GetByIdAsync(captacao.Id, execucao.Id, It.IsAny<CancellationToken>())).ReturnsAsync(execucao);
+        _execucaoRepoMock.Setup(r => r.GetByExecucaoIdAsync(execucao.Id, It.IsAny<CancellationToken>())).ReturnsAsync(execucao);
         
         _cadastroClientMock.Setup(c => c.GetFonogramaByIdAsync(fonogramaId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new FonogramaResumoDto(fonogramaId, obraId, "Fono Teste", "BR-2", "Singer", "LIBERADO"));
@@ -132,9 +132,9 @@ public class ResolverPendenteCommandHandlerTests
         var execucao = CriarExecucao(captacao, StatusExecucao.Pendente);
         var obraId = Guid.NewGuid();
         var fonogramaId = Guid.NewGuid();
-        var command = new ResolverPendenteCommand(captacao.Id, execucao.Id, obraId, fonogramaId);
+        var command = new ResolverPendenteCommand(execucao.Id, obraId, fonogramaId);
 
-        _execucaoRepoMock.Setup(r => r.GetByIdAsync(captacao.Id, execucao.Id, It.IsAny<CancellationToken>())).ReturnsAsync(execucao);
+        _execucaoRepoMock.Setup(r => r.GetByExecucaoIdAsync(execucao.Id, It.IsAny<CancellationToken>())).ReturnsAsync(execucao);
         
         _cadastroClientMock.Setup(c => c.GetFonogramaByIdAsync(fonogramaId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new FonogramaResumoDto(fonogramaId, obraId, "Fono Teste", "BR-2", "Singer", "BLOQUEADO"));

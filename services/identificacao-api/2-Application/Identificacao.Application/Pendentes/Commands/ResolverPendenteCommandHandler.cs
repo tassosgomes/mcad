@@ -19,7 +19,7 @@ public class ResolverPendenteCommandHandler : ICommandHandler<ResolverPendenteCo
 
     public async Task<bool> HandleAsync(ResolverPendenteCommand command, CancellationToken cancellationToken)
     {
-        var execucao = await _execucaoRepo.GetByIdAsync(command.CaptacaoId, command.ExecucaoId, cancellationToken);
+        var execucao = await _execucaoRepo.GetByExecucaoIdAsync(command.ExecucaoId, cancellationToken);
         if (execucao == null)
             throw new NotFoundException("Execução não encontrada.");
 

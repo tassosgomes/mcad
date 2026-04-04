@@ -46,6 +46,7 @@ builder.Services.AddScoped<IUploadRepository, UploadRepository>();
 builder.Services.AddScoped<IErroUploadRepository, ErroUploadRepository>();
 builder.Services.AddScoped<CsvParser>();
 builder.Services.AddHostedService<CsvProcessorWorker>();
+builder.Services.AddHostedService<Identificacao.Application.Pendentes.Services.PendentesVerificadorWorker>();
 
 // HttpClient para Cadastro
 var cadastroBaseUrl = Environment.GetEnvironmentVariable("CADASTRO_API_BASE_URL")
@@ -178,6 +179,7 @@ app.MapCaptacaoEndpoints();
 app.MapExecucaoEndpoints();
 app.MapTipoUtilizacaoEndpoints();
 app.MapUploadEndpoints();
+app.MapPendenteEndpoints();
 
 // Executa Migrations no Startup
 using (var scope = app.Services.CreateScope())

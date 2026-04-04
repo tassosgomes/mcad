@@ -18,8 +18,18 @@ public class ExecucaoRepository : IExecucaoRepository
     public async Task<Execucao?> GetByIdAsync(Guid captacaoId, Guid id, CancellationToken ct)
     {
         return await _context.Execucoes
+            .Include(e => e.Captacao)
+            .ThenInclude(c => c.Rubrica)
             .Include(e => e.TipoUtilizacao)
             .FirstOrDefaultAsync(e => e.CaptacaoId == captacaoId && e.Id == id, ct);
+    }
+
+    public async Task<Execucao?> GetByExecucaoIdAsync(Guid id, CancellationToken ct)
+    {
+        return await _context.Execucoes
+            .Include(e => e.Captacao)
+            .ThenInclude(c => c.Rubrica)
+            .FirstOrDefaultAsync(e => e.Id == id, ct);
     }
 
     public async Task<(IEnumerable<Execucao> Items, int Total)> ListarAsync(

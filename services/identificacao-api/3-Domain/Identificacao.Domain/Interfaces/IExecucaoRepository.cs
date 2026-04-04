@@ -5,6 +5,7 @@ namespace Identificacao.Domain.Interfaces;
 public interface IExecucaoRepository
 {
     Task<Execucao?> GetByIdAsync(Guid captacaoId, Guid id, CancellationToken ct);
+    Task<Execucao?> GetByExecucaoIdAsync(Guid id, CancellationToken ct);
     Task<(IEnumerable<Execucao> Items, int Total)> ListarAsync(
         Guid captacaoId, string? status, string sort, int page, int size, CancellationToken ct);
     Task<int> ContarPorCaptacaoAsync(Guid captacaoId, CancellationToken ct);
