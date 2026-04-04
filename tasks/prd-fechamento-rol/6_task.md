@@ -1,5 +1,5 @@
 ---
-status: pending
+status: completed
 parallelizable: true
 blocked_by: []
 ---
@@ -25,10 +25,10 @@ blocked_by: []
 
 ## Subtarefas
 
-- [ ] 6.1 Criar `fechamento.ts` (PreRequisitoItem, ResumoFechamento, PreRequisitosResponse, FechamentoResponse)
-- [ ] 6.2 Criar `fechamentoApi.ts` (getPreRequisitos, fecharRol)
-- [ ] 6.3 Criar `usePreRequisitos` — staleTime 0, enabled quando modal aberto
-- [ ] 6.4 Criar `useFecharRol` — mutation, invalidate captacoes + pendentes
+- [x] 6.1 Criar `fechamento.ts` (PreRequisitoItem, ResumoFechamento, PreRequisitosResponse, FechamentoResponse)
+- [x] 6.2 Criar `fechamentoApi.ts` (getPreRequisitos, fecharRol)
+- [x] 6.3 Criar `usePreRequisitos` — staleTime 0, enabled quando modal aberto
+- [x] 6.4 Criar `useFecharRol` — mutation, invalidate captacoes + pendentes
 
 ## Sequenciamento
 
@@ -38,7 +38,7 @@ blocked_by: []
 
 ## Critérios de Sucesso (Verificáveis)
 
-- [ ] Build: `cd frontend && npm run build`
-- [ ] TypeScript: `cd frontend && npx tsc --noEmit`
-- [ ] usePreRequisitos com staleTime 0 (sempre dados frescos)
-- [ ] useFecharRol invalida captacoes e pendentes
+- [x] Build: `cd frontend && npm run build`
+- [x] TypeScript: `cd frontend && npx tsc --noEmit`
+- [x] usePreRequisitos com staleTime 0 (sempre dados frescos)
+- [x] useFecharRol invalida captacoes e pendentes

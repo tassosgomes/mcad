@@ -31,7 +31,7 @@ Mockups, types/hooks, componentes + integração.
 - [x] 3.0 Backend — Application (ValidarPreRequisitos, FecharRol) + Testes
 - [x] 4.0 Backend — API (Endpoints, Program.cs)
 - [x] 5.0 Frontend — Mockups no Stitch
-- [ ] 6.0 Frontend — Types, API Client e Hooks
+- [x] 6.0 Frontend — Types, API Client e Hooks
 - [ ] 7.0 Frontend — Componentes + Integração CaptacaoDetailPage
 
 ## Rastreabilidade RF → Tasks

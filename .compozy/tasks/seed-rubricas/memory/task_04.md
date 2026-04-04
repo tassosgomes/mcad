@@ -9,9 +9,11 @@ Keep only task-local execution context here. Do not duplicate facts that are obv
 ## Important Decisions
 - `AGENTS.md` e `CLAUDE.md` não existem em `/home/tsgomes/mcad`; a execução segue com os demais documentos mandatórios.
 - A implementação ficará restrita a `arrecadacao-domain`, `arrecadacao-infra`, `arrecadacao-tests` e tracking/memory desta task.
+- `JpaOutboxEventRepository` implementa tanto `OutboxEventRepository` quanto `OutboxEventWriter` para manter a escrita do outbox no adapter JPA sem adiantar a mensageria da task_05.
 
 ## Learnings
 - O módulo `arrecadacao-tests` já depende de `spring-boot-starter-test` e Testcontainers PostgreSQL, então é o ponto natural para os testes de integração desta task.
+- A dependência extra `flyway-database-postgresql` não estava disponível no cache local e falhou por DNS ao resolver Maven Central; a task segue somente com `flyway-core`, que já está presente no ambiente.
 
 ## Files / Surfaces
 - `services/arrecadacao-api/arrecadacao-domain/src/main/java/...`
@@ -21,5 +23,6 @@ Keep only task-local execution context here. Do not duplicate facts that are obv
 
 ## Errors / Corrections
 - `sed` na raiz para `AGENTS.md` e `CLAUDE.md` falhou porque os arquivos não existem no repositório.
+- O primeiro `mvn -pl arrecadacao-tests -am test` falhou na fase `arrecadacao-infra` por não resolver `org.flywaydb:flyway-database-postgresql:10.10.0`; a dependência foi removida para nova validação.
 
 ## Ready for Next Run
