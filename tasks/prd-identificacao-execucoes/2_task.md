@@ -1,5 +1,5 @@
 ---
-status: pending
+status: completed
 parallelizable: false
 blocked_by: [1.0]
 ---
@@ -33,10 +33,10 @@ Criar queries e handlers para listagem centralizada de pendentes e visão de imp
 
 ## Subtarefas
 
-- [ ] 2.1 Criar `ExecucaoPendenteResponse` com dados da captação (rubrica, período, analista, status)
-- [ ] 2.2 Criar `ImpactoPendenteResponse` com agrupamento + captações detalhadas
-- [ ] 2.3 Criar `ListarPendentesQuery` + handler — filtros, paginação, sort, mapping
-- [ ] 2.4 Criar `ListarImpactoPendentesQuery` + handler — agrupamento + detalhe de captações (segundo query)
+- [x] 2.1 Criar `ExecucaoPendenteResponse` com dados da captação (rubrica, período, analista, status)
+- [x] 2.2 Criar `ImpactoPendenteResponse` com agrupamento + captações detalhadas
+- [x] 2.3 Criar `ListarPendentesQuery` + handler — filtros, paginação, sort, mapping
+- [x] 2.4 Criar `ListarImpactoPendentesQuery` + handler — agrupamento + detalhe de captações (segundo query)
 
 ## Sequenciamento
 
@@ -77,6 +77,6 @@ foreach (var grupo in agrupados.Items)
 
 ## Critérios de Sucesso (Verificáveis)
 
-- [ ] Build: `cd services/identificacao-api && dotnet build`
-- [ ] ListarPendentes retorna execuções com dados da captação
-- [ ] ListarImpacto agrupa por ISRC/ISWC com contagem correta de captações
+- [x] Build: `cd services/identificacao-api && dotnet build`
+- [x] ListarPendentes retorna execuções com dados da captação
+- [x] ListarImpacto agrupa por ISRC/ISWC com contagem correta de captações

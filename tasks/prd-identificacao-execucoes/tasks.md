@@ -24,7 +24,7 @@ Mockups, types/hooks, componentes, página + roteamento.
 ## Tarefas
 
 - [x] 1.0 Backend — Domain (Execucao.Resolver) + Infra (queries de pendentes)
-- [ ] 2.0 Backend — Application (Queries: ListarPendentes, ListarImpacto)
+- [x] 2.0 Backend — Application (Queries: ListarPendentes, ListarImpacto)
 - [ ] 3.0 Backend — Application (Commands: ResolverPendente, ResolverLote) + Testes
 - [ ] 4.0 Backend — API (Endpoints, PendentesVerificadorWorker, Program.cs)
 - [ ] 5.0 Frontend — Mockups no Stitch
