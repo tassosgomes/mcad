@@ -84,4 +84,18 @@ public class Execucao
         Status = status;
         AtualizadoEm = DateTime.UtcNow;
     }
+    public void Resolver(Guid obraId, Guid? fonogramaId, string obraTitulo,
+        string? fonogramaIsrc, string? obraIswc, string interpretes)
+    {
+        if (Status != StatusExecucao.Pendente)
+            throw new DomainException("Execução já está identificada.");
+        ObraId = obraId;
+        FonogramaId = fonogramaId;
+        ObraTitulo = obraTitulo ?? throw new ArgumentNullException(nameof(obraTitulo));
+        FonogramaIsrc = fonogramaIsrc;
+        ObraIswc = obraIswc;
+        Interpretes = interpretes ?? "";
+        Status = StatusExecucao.Identificada;
+        AtualizadoEm = DateTime.UtcNow;
+    }
 }

@@ -82,4 +82,42 @@ public class ExecucaoTests
         execucao.Status.Should().Be(StatusExecucao.Identificada);
         execucao.Quantidade.Should().Be(2);
     }
+    [Fact]
+    public void Resolver_ExecucaoPendente_TransicionaParaIdentificadaEAtualizaDados()
+    {
+        // Arrange
+        var execucao = Execucao.Criar(
+            Guid.NewGuid(), Guid.NewGuid(), null, "Obra Provisoria", null, null, "", 
+            new TimeOnly(14, 30, 0), new TimeOnly(14, 31, 0), 1, null, null, StatusExecucao.Pendente);
+
+        var obraId = Guid.NewGuid();
+        var fonogramaId = Guid.NewGuid();
+
+        // Act
+        execucao.Resolver(obraId, fonogramaId, "Titulo Resolvido", "BRUM99999999", "T-000000000-1", "Artista 1");
+
+        // Assert
+        execucao.Status.Should().Be(StatusExecucao.Identificada);
+        execucao.ObraId.Should().Be(obraId);
+        execucao.FonogramaId.Should().Be(fonogramaId);
+        execucao.ObraTitulo.Should().Be("Titulo Resolvido");
+        execucao.FonogramaIsrc.Should().Be("BRUM99999999");
+        execucao.ObraIswc.Should().Be("T-000000000-1");
+        execucao.Interpretes.Should().Be("Artista 1");
+    }
+
+    [Fact]
+    public void Resolver_ExecucaoNaoPendente_LancaDomainException()
+    {
+        // Arrange
+        var execucao = Execucao.Criar(
+            Guid.NewGuid(), Guid.NewGuid(), null, "Obra Final", null, null, "", 
+            new TimeOnly(14, 30, 0), new TimeOnly(14, 31, 0), 1, null, null, StatusExecucao.Identificada);
+
+        // Act & Assert
+        Action action = () => execucao.Resolver(Guid.NewGuid(), null, "Novo Titulo", null, null, "");
+
+        action.Should().Throw<DomainException>()
+            .WithMessage("Execução já está identificada.");
+    }
 }

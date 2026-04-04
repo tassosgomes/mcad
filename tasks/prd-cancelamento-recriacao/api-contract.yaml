@@ -1,0 +1,315 @@
+openapi: 3.1.0
+
+info:
+  title: "Cancelamento e Recriação API"
+  description: |
+    API para cancelamento de Rols fechados com justificativa obrigatória,
+    opções de recriação e bloqueio pós-distribuição.
+
+    **Contrato gerado a partir do PRD:** `tasks/prd-cancelamento-recriacao/prd.md`
+    **Data de geração:** 2026-04-04
+
+    ## Serviços Envolvidos
+    - **Identificação API** (`:5100`) — cancelamento, recriação, consumer de evento
+
+    ## Premissas
+    - Mesmos padrões: JWT Bearer, RFC 7807, camelCase
+    - Cancelamento como ação: `POST /captacoes/{id}/cancelar`
+    - Opção de recriação enviada no body do POST (não em endpoint separado)
+    - Consumer de `distribuicao.rol.processado` é interno (sem endpoint)
+    - Evento `identificacao.rol.cancelado` via Outbox Pattern
+  version: "1.0.0"
+  contact:
+    name: "Time de Identificação"
+
+servers:
+  - url: http://localhost:5100/api/v1
+    description: Identificação API — desenvolvimento local
+
+security:
+  - BearerAuth: []
+
+tags:
+  - name: Cancelamento
+    description: "Cancelamento de Rols fechados e opções de recriação"
+
+# ─── Paths ───────────────────────────────────────────────────────────────────
+paths:
+
+  /captacoes/{captacaoId}/cancelar:
+    parameters:
+      - name: captacaoId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          example: "c1d2e3f4-5678-90ab-cdef-123456789012"
+
+    post:
+      summary: Cancelar Rol fechado
+      description: |
+        Cancela uma captação FECHADA com justificativa obrigatória.
+        Publica evento `identificacao.rol.cancelado` via Outbox Pattern.
+        Bloqueado se a Distribuição já processou o Rol.
+
+        O analista escolhe uma opção de recriação:
+        - `COPIAR_EXECUCOES`: nova captação ABERTA com execuções copiadas (status recalculado)
+        - `RECRIAR_VAZIA`: nova captação ABERTA sem execuções
+        - `APENAS_CANCELAR`: nenhuma nova captação
+
+        **Regras:** RN-05, RN-08, RN-11
+      operationId: cancelarRol
+      tags:
+        - Cancelamento
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CancelarRolRequest"
+      responses:
+        "200":
+          description: Rol cancelado com sucesso
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CancelamentoResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          description: Regra de negócio violada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetails"
+              examples:
+                statusInvalido:
+                  summary: Captação não está FECHADA
+                  value:
+                    type: "https://tools.ietf.org/html/rfc7807#section-6.5.1"
+                    title: "Unprocessable Entity"
+                    status: 422
+                    detail: "Apenas captações com status FECHADA podem ser canceladas. Para captações ABERTAS, utilize a exclusão"
+                    code: "STATUS_INVALIDO"
+                distribuicaoProcessada:
+                  summary: Distribuição já processou o Rol
+                  value:
+                    type: "https://tools.ietf.org/html/rfc7807#section-6.5.1"
+                    title: "Unprocessable Entity"
+                    status: 422
+                    detail: "Este Rol já foi processado pela Distribuição e não pode ser cancelado"
+                    code: "DISTRIBUICAO_PROCESSADA"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+      x-frontend-notes: "Modal com textarea de justificativa + 3 radio buttons para opção de recriação. Botão danger. Se opção A ou B, redirecionar para nova captação. Se C, voltar à listagem"
+      x-backend-notes: "Transação atômica: update status CANCELADA + insert outbox event + (opcionalmente) insert nova captação + insert execuções copiadas. Para opção A com muitas execuções, considerar batch"
+
+  /captacoes/{captacaoId}/pode-cancelar:
+    parameters:
+      - name: captacaoId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+
+    get:
+      summary: Verificar se o Rol pode ser cancelado
+      description: |
+        Retorna se a captação pode ser cancelada e o motivo caso não possa.
+        Usado pelo frontend para habilitar/desabilitar botão "Cancelar Rol".
+      operationId: podeCancelar
+      tags:
+        - Cancelamento
+      responses:
+        "200":
+          description: Resultado da verificação
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PodeCancelarResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+      x-frontend-notes: "Chamar ao carregar detalhe da captação FECHADA. Se podeCancelar=false, desabilitar botão com tooltip do motivo"
+
+# ─── Components ──────────────────────────────────────────────────────────────
+components:
+
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: "Token JWT via Keycloak. Roles: analista-identificacao (cancelar), consultor-identificacao (read)"
+
+  responses:
+    BadRequest:
+      description: Requisição inválida
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ProblemDetails"
+    Unauthorized:
+      description: Não autenticado
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ProblemDetails"
+    Forbidden:
+      description: Sem permissão
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ProblemDetails"
+    NotFound:
+      description: Recurso não encontrado
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ProblemDetails"
+    InternalServerError:
+      description: Erro interno
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ProblemDetails"
+
+  schemas:
+
+    # ── Requests ──
+    CancelarRolRequest:
+      type: object
+      required:
+        - justificativa
+        - opcaoRecriacao
+      properties:
+        justificativa:
+          type: string
+          minLength: 10
+          maxLength: 1000
+          description: "Motivo do cancelamento (obrigatório, min 10 caracteres)"
+          example: "Execuções da faixa horária 14h-15h foram registradas com tipo de utilização incorreto (BK em vez de TA)"
+        opcaoRecriacao:
+          type: string
+          enum: [COPIAR_EXECUCOES, RECRIAR_VAZIA, APENAS_CANCELAR]
+          description: |
+            Opção de recriação:
+            - `COPIAR_EXECUCOES`: nova captação ABERTA com execuções copiadas (novos IDs, status recalculado via Cadastro)
+            - `RECRIAR_VAZIA`: nova captação ABERTA para mesma rubrica+período, sem execuções
+            - `APENAS_CANCELAR`: nenhuma nova captação criada
+          example: "COPIAR_EXECUCOES"
+
+    # ── Responses ──
+    CancelamentoResponse:
+      type: object
+      required:
+        - captacaoCanceladaId
+        - status
+        - justificativa
+        - canceladoEm
+        - opcaoRecriacao
+        - eventoPublicado
+      properties:
+        captacaoCanceladaId:
+          type: string
+          format: uuid
+          description: "ID da captação cancelada"
+          example: "c1d2e3f4-5678-90ab-cdef-123456789012"
+        status:
+          type: string
+          enum: [CANCELADA]
+          example: "CANCELADA"
+        justificativa:
+          type: string
+          example: "Execuções da faixa horária 14h-15h foram registradas com tipo de utilização incorreto"
+        canceladoEm:
+          type: string
+          format: date-time
+          example: "2026-01-16T09:00:00Z"
+        opcaoRecriacao:
+          type: string
+          enum: [COPIAR_EXECUCOES, RECRIAR_VAZIA, APENAS_CANCELAR]
+          example: "COPIAR_EXECUCOES"
+        novaCaptacaoId:
+          type: string
+          format: uuid
+          nullable: true
+          description: "ID da nova captação (null se opcao = APENAS_CANCELAR)"
+          example: "d2e3f4a5-6789-0abc-def1-234567890123"
+        execucoesCopiadas:
+          type: integer
+          nullable: true
+          description: "Quantidade de execuções copiadas (somente opcao COPIAR_EXECUCOES)"
+          example: 150
+        eventoPublicado:
+          type: boolean
+          description: "Evento identificacao.rol.cancelado salvo no outbox"
+          example: true
+
+    PodeCancelarResponse:
+      type: object
+      required:
+        - captacaoId
+        - podeCancelar
+      properties:
+        captacaoId:
+          type: string
+          format: uuid
+          example: "c1d2e3f4-5678-90ab-cdef-123456789012"
+        podeCancelar:
+          type: boolean
+          description: "true se o Rol pode ser cancelado"
+          example: false
+        motivo:
+          type: string
+          nullable: true
+          description: "Motivo quando não pode cancelar"
+          example: "Este Rol já foi processado pela Distribuição"
+        distribuicaoProcessada:
+          type: boolean
+          description: "Se a Distribuição já processou este Rol"
+          example: true
+        distribuicaoProcessadaEm:
+          type: string
+          format: date-time
+          nullable: true
+          description: "Data em que a Distribuição processou"
+          example: "2026-01-16T02:00:00Z"
+
+    # ── Compartilhados ──
+    ProblemDetails:
+      type: object
+      required:
+        - type
+        - title
+        - status
+        - detail
+      properties:
+        type:
+          type: string
+          format: uri
+        title:
+          type: string
+        status:
+          type: integer
+        detail:
+          type: string
+        code:
+          type: string
+          nullable: true
+        traceId:
+          type: string
+          nullable: true

@@ -13,7 +13,7 @@ CREATE SCHEMA IF NOT EXISTS cdc_staging;
 -- Staging: Associações (sem FK)
 -- ---------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS cdc_staging.associacoes (
-    codigo   INTEGER PRIMARY KEY,
+    codigo   BIGINT PRIMARY KEY,
     nome     VARCHAR(200) NOT NULL,
     sigla    VARCHAR(20) NOT NULL,
     cnpj     VARCHAR(18) NOT NULL
@@ -23,14 +23,14 @@ CREATE TABLE IF NOT EXISTS cdc_staging.associacoes (
 -- Staging: Titulares (FK via associacao_codigo)
 -- ---------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS cdc_staging.titulares (
-    codigo            INTEGER PRIMARY KEY,
+    codigo            BIGINT PRIMARY KEY,
     nome              VARCHAR(200) NOT NULL,
     tipo              VARCHAR(2) NOT NULL,
     cpf               VARCHAR(11),
     cnpj              VARCHAR(14),
     nacionalidade     VARCHAR(100),
     cae_ipi           VARCHAR(20),
-    associacao_codigo INTEGER NOT NULL,
+    associacao_codigo BIGINT NOT NULL,
     status            VARCHAR(15) NOT NULL,
     criado_em         VARCHAR(30),
     atualizado_em     VARCHAR(30)
@@ -40,7 +40,7 @@ CREATE TABLE IF NOT EXISTS cdc_staging.titulares (
 -- Staging: Obras Musicais (self-ref via obra_depurada_codigo)
 -- ---------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS cdc_staging.obras_musicais (
-    codigo                INTEGER PRIMARY KEY,
+    codigo                BIGINT PRIMARY KEY,
     titulo                VARCHAR(300) NOT NULL,
     subtitulo             VARCHAR(300),
     tipo                  VARCHAR(15) NOT NULL,
@@ -49,7 +49,7 @@ CREATE TABLE IF NOT EXISTS cdc_staging.obras_musicais (
     status                VARCHAR(20) NOT NULL,
     bloqueio_justificativa VARCHAR(500),
     dominio_publico       BOOLEAN NOT NULL DEFAULT false,
-    obra_depurada_codigo  INTEGER,
+    obra_depurada_codigo  BIGINT,
     criado_em             VARCHAR(30),
     atualizado_em         VARCHAR(30)
 );
@@ -58,8 +58,8 @@ CREATE TABLE IF NOT EXISTS cdc_staging.obras_musicais (
 -- Staging: Titularidades Autorais (FKs via obra_codigo + titular_codigo)
 -- ---------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS cdc_staging.titularidades_autorais (
-    obra_codigo    INTEGER NOT NULL,
-    titular_codigo INTEGER NOT NULL,
+    obra_codigo    BIGINT NOT NULL,
+    titular_codigo BIGINT NOT NULL,
     categoria      VARCHAR(10) NOT NULL,
     percentual     VARCHAR(20) NOT NULL,
     criado_em      VARCHAR(30),
@@ -70,16 +70,16 @@ CREATE TABLE IF NOT EXISTS cdc_staging.titularidades_autorais (
 -- Staging: Fonogramas (FK via obra_codigo, self-ref via fonograma_depurado_codigo)
 -- ---------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS cdc_staging.fonogramas (
-    codigo                    INTEGER PRIMARY KEY,
+    codigo                    BIGINT PRIMARY KEY,
     isrc                      VARCHAR(12),
-    obra_codigo               INTEGER NOT NULL,
+    obra_codigo               BIGINT NOT NULL,
     pais_origem               VARCHAR(100),
     data_gravacao             VARCHAR(20),
     data_lancamento           VARCHAR(20),
     status                    VARCHAR(25) NOT NULL,
     url_audio                 VARCHAR(500),
     bloqueio_justificativa    VARCHAR(500),
-    fonograma_depurado_codigo INTEGER,
+    fonograma_depurado_codigo BIGINT,
     percentuais_desatualizados BOOLEAN NOT NULL DEFAULT false,
     criado_em                 VARCHAR(30),
     atualizado_em             VARCHAR(30)
@@ -89,8 +89,8 @@ CREATE TABLE IF NOT EXISTS cdc_staging.fonogramas (
 -- Staging: Participações Conexas (FKs via fonograma_codigo + titular_codigo)
 -- ---------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS cdc_staging.participacoes_conexas (
-    fonograma_codigo INTEGER NOT NULL,
-    titular_codigo   INTEGER NOT NULL,
+    fonograma_codigo BIGINT NOT NULL,
+    titular_codigo   BIGINT NOT NULL,
     categoria        VARCHAR(25) NOT NULL,
     percentual       VARCHAR(20),
     criado_em        VARCHAR(30),
@@ -101,9 +101,9 @@ CREATE TABLE IF NOT EXISTS cdc_staging.participacoes_conexas (
 -- Staging: Histórico Bloqueios (FK polimórfica via entidade_codigo + tipo)
 -- ---------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS cdc_staging.historico_bloqueios (
-    codigo          INTEGER PRIMARY KEY,
+    codigo          BIGINT PRIMARY KEY,
     entidade_tipo   VARCHAR(15) NOT NULL,
-    entidade_codigo INTEGER NOT NULL,
+    entidade_codigo BIGINT NOT NULL,
     acao            VARCHAR(15) NOT NULL,
     justificativa   VARCHAR(500),
     data_hora       VARCHAR(30)
@@ -310,27 +310,21 @@ $$;
 CREATE OR REPLACE PROCEDURE cdc_staging.adjust_sequences()
 LANGUAGE plpgsql AS $$
 DECLARE
-    max_assoc   INTEGER;
-    max_titular INTEGER;
-    max_obra    INTEGER;
-    max_fono    INTEGER;
+    max_assoc   BIGINT;
+    max_titular BIGINT;
+    max_obra    BIGINT;
+    max_fono    BIGINT;
 BEGIN
     SELECT COALESCE(MAX(codigo), 0) INTO max_assoc   FROM cadastro.associacoes;
     SELECT COALESCE(MAX(codigo), 0) INTO max_titular FROM cadastro.titulares;
     SELECT COALESCE(MAX(codigo), 0) INTO max_obra    FROM cadastro.obras_musicais;
     SELECT COALESCE(MAX(codigo), 0) INTO max_fono    FROM cadastro.fonogramas;
 
-    -- Cria sequences se não existirem (para quando mcad começar a gerar codigos)
-    EXECUTE format('CREATE SEQUENCE IF NOT EXISTS cadastro.seq_associacao_codigo START WITH %s', max_assoc + 1);
-    EXECUTE format('CREATE SEQUENCE IF NOT EXISTS cadastro.seq_titular_codigo START WITH %s', max_titular + 1);
-    EXECUTE format('CREATE SEQUENCE IF NOT EXISTS cadastro.seq_obra_codigo START WITH %s', max_obra + 1);
-    EXECUTE format('CREATE SEQUENCE IF NOT EXISTS cadastro.seq_fonograma_codigo START WITH %s', max_fono + 1);
-
-    -- Ajusta se já existirem
-    PERFORM setval('cadastro.seq_associacao_codigo', max_assoc) WHERE max_assoc > 0;
-    PERFORM setval('cadastro.seq_titular_codigo', max_titular) WHERE max_titular > 0;
-    PERFORM setval('cadastro.seq_obra_codigo', max_obra) WHERE max_obra > 0;
-    PERFORM setval('cadastro.seq_fonograma_codigo', max_fono) WHERE max_fono > 0;
+    -- Ajusta sequences existentes (nomes conforme migration AddCodigo_CampoCodigo)
+    PERFORM setval('cadastro.seq_associacoes_codigo', max_assoc) WHERE max_assoc > 0;
+    PERFORM setval('cadastro.seq_titulares_codigo', max_titular) WHERE max_titular > 0;
+    PERFORM setval('cadastro.seq_obras_codigo', max_obra) WHERE max_obra > 0;
+    PERFORM setval('cadastro.seq_fonogramas_codigo', max_fono) WHERE max_fono > 0;
 
     RAISE NOTICE 'Sequences ajustadas — assoc:%, titular:%, obra:%, fono:%',
         max_assoc, max_titular, max_obra, max_fono;

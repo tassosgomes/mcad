@@ -1,0 +1,351 @@
+openapi: 3.1.0
+
+info:
+  title: "Fechamento do Rol API"
+  description: |
+    API para fechamento do Rol de Execuções com validação de pré-requisitos
+    e publicação de evento via Outbox Pattern.
+
+    **Contrato gerado a partir do PRD:** `tasks/prd-fechamento-rol/prd.md`
+    **Data de geração:** 2026-04-04
+
+    ## Serviços Envolvidos
+    - **Identificação API** (`:5100`) — validação de pré-requisitos, fechamento, evento outbox
+
+    ## Premissas
+    - Mesmos padrões: JWT Bearer, RFC 7807, camelCase
+    - Fechamento como ação no recurso captação: `POST /captacoes/{id}/fechar`
+    - Validação de pré-requisitos como endpoint separado (frontend consulta antes de habilitar botão)
+    - Evento `identificacao.rol.fechado` publicado via Outbox Pattern (sem endpoint — interno)
+  version: "1.0.0"
+  contact:
+    name: "Time de Identificação"
+
+servers:
+  - url: http://localhost:5100/api/v1
+    description: Identificação API — desenvolvimento local
+
+security:
+  - BearerAuth: []
+
+tags:
+  - name: Fechamento do Rol
+    description: "Validação e fechamento do Rol de Execuções"
+
+# ─── Paths ───────────────────────────────────────────────────────────────────
+paths:
+
+  /captacoes/{captacaoId}/pre-requisitos:
+    parameters:
+      - name: captacaoId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          example: "c1d2e3f4-5678-90ab-cdef-123456789012"
+
+    get:
+      summary: Validar pré-requisitos de fechamento
+      description: |
+        Retorna checklist de pré-requisitos para fechamento do Rol.
+        Cada item indica se está atendido ou não, com detalhe do problema.
+        Usado pelo frontend para exibir checklist no modal de fechamento.
+        Todos os usuários podem consultar.
+      operationId: validarPreRequisitos
+      tags:
+        - Fechamento do Rol
+      responses:
+        "200":
+          description: Checklist de pré-requisitos
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PreRequisitosResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+      x-frontend-notes: "Chamar ao abrir modal de fechamento. Exibir como checklist com ✅/❌. Habilitar botão somente se todos atendidos"
+      x-backend-notes: "Consultar Cadastro para verificar status das obras/fonogramas referenciadas. Batch por IDs únicos para performance. Validações condicionais por rubrica"
+
+  /captacoes/{captacaoId}/fechar:
+    parameters:
+      - name: captacaoId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          example: "c1d2e3f4-5678-90ab-cdef-123456789012"
+
+    post:
+      summary: Fechar o Rol de Execuções
+      description: |
+        Ação explícita e irreversível. Valida todos os pré-requisitos,
+        transiciona captação para FECHADA e publica evento `identificacao.rol.fechado`
+        via Outbox Pattern.
+
+        Somente o analista dono pode fechar (RN-08).
+        Todos os pré-requisitos devem estar atendidos (RF-01).
+      operationId: fecharRol
+      tags:
+        - Fechamento do Rol
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: Rol fechado com sucesso
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FechamentoResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          description: Pré-requisitos não atendidos ou estado inválido
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetails"
+              examples:
+                semExecucoes:
+                  summary: Captação sem execuções
+                  value:
+                    type: "https://tools.ietf.org/html/rfc7807#section-6.5.1"
+                    title: "Unprocessable Entity"
+                    status: 422
+                    detail: "A captação deve ter ao menos 1 execução para ser fechada"
+                    code: "SEM_EXECUCOES"
+                pendentes:
+                  summary: Execuções pendentes
+                  value:
+                    type: "https://tools.ietf.org/html/rfc7807#section-6.5.1"
+                    title: "Unprocessable Entity"
+                    status: 422
+                    detail: "3 execuções pendentes de identificação. Resolva antes de fechar"
+                    code: "EXECUCOES_PENDENTES"
+                    pendencias:
+                      - item: "Execuções pendentes"
+                        atendido: false
+                        detalhe: "3 execuções pendentes de identificação"
+                obrasNaoLiberadas:
+                  summary: Obras/fonogramas não liberadas
+                  value:
+                    type: "https://tools.ietf.org/html/rfc7807#section-6.5.1"
+                    title: "Unprocessable Entity"
+                    status: 422
+                    detail: "2 execuções referenciam obras/fonogramas não liberadas no Cadastro"
+                    code: "OBRAS_NAO_LIBERADAS"
+                semClassificacao:
+                  summary: Audiovisual sem tipo de utilização
+                  value:
+                    type: "https://tools.ietf.org/html/rfc7807#section-6.5.1"
+                    title: "Unprocessable Entity"
+                    status: 422
+                    detail: "5 execuções sem tipo de utilização (obrigatório para TV Aberta)"
+                    code: "CLASSIFICACAO_INCOMPLETA"
+                semHorario:
+                  summary: Audiovisual sem início/fim
+                  value:
+                    type: "https://tools.ietf.org/html/rfc7807#section-6.5.1"
+                    title: "Unprocessable Entity"
+                    status: 422
+                    detail: "1 execução sem horário de início/fim (obrigatório para TV Aberta)"
+                    code: "HORARIO_INCOMPLETO"
+                statusInvalido:
+                  summary: Captação não está ABERTA
+                  value:
+                    type: "https://tools.ietf.org/html/rfc7807#section-6.5.1"
+                    title: "Unprocessable Entity"
+                    status: 422
+                    detail: "Apenas captações com status ABERTA podem ser fechadas"
+                    code: "STATUS_INVALIDO"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+      x-frontend-notes: "Chamar após checklist estar toda ✅. Toast de sucesso. Atualizar status da captação para FECHADA. Esconder botões de edição"
+      x-backend-notes: "Re-validar todos os pré-requisitos server-side antes de fechar (não confiar na validação do GET). Transação atômica: update status + insert outbox event. Consultar Cadastro para status das obras"
+
+# ─── Components ──────────────────────────────────────────────────────────────
+components:
+
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: "Token JWT via Keycloak. Roles: analista-identificacao (fechar), consultor-identificacao (read)"
+
+  responses:
+    Unauthorized:
+      description: Não autenticado
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ProblemDetails"
+    Forbidden:
+      description: Sem permissão
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ProblemDetails"
+    NotFound:
+      description: Recurso não encontrado
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ProblemDetails"
+    InternalServerError:
+      description: Erro interno
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ProblemDetails"
+
+  schemas:
+
+    # ── Pré-Requisitos ──
+    PreRequisitosResponse:
+      type: object
+      required:
+        - captacaoId
+        - todosAtendidos
+        - itens
+        - resumo
+      properties:
+        captacaoId:
+          type: string
+          format: uuid
+          example: "c1d2e3f4-5678-90ab-cdef-123456789012"
+        todosAtendidos:
+          type: boolean
+          description: "true se todos os pré-requisitos estão ✅"
+          example: false
+        itens:
+          type: array
+          items:
+            $ref: "#/components/schemas/PreRequisitoItem"
+        resumo:
+          $ref: "#/components/schemas/ResumoFechamento"
+
+    PreRequisitoItem:
+      type: object
+      required:
+        - id
+        - descricao
+        - atendido
+      properties:
+        id:
+          type: string
+          description: "Identificador do pré-requisito"
+          example: "min_execucoes"
+        descricao:
+          type: string
+          description: "Descrição legível"
+          example: "Ao menos 1 execução registrada"
+        atendido:
+          type: boolean
+          example: true
+        detalhe:
+          type: string
+          nullable: true
+          description: "Detalhe do problema quando não atendido"
+          example: null
+
+    ResumoFechamento:
+      type: object
+      required:
+        - totalExecucoes
+        - identificadas
+        - pendentes
+        - rubrica
+        - periodo
+        - exigeClassificacao
+      properties:
+        totalExecucoes:
+          type: integer
+          example: 150
+        identificadas:
+          type: integer
+          example: 150
+        pendentes:
+          type: integer
+          example: 0
+        rubrica:
+          type: string
+          example: "TV Aberta"
+        periodo:
+          type: string
+          format: date
+          example: "2026-01-15"
+        exigeClassificacao:
+          type: boolean
+          example: true
+
+    # ── Fechamento ──
+    FechamentoResponse:
+      type: object
+      required:
+        - captacaoId
+        - status
+        - fechadoEm
+        - totalExecucoes
+        - eventoPublicado
+      properties:
+        captacaoId:
+          type: string
+          format: uuid
+          example: "c1d2e3f4-5678-90ab-cdef-123456789012"
+        status:
+          type: string
+          enum: [FECHADA]
+          example: "FECHADA"
+        fechadoEm:
+          type: string
+          format: date-time
+          example: "2026-01-15T18:30:00Z"
+        totalExecucoes:
+          type: integer
+          description: "Total de execuções no Rol fechado"
+          example: 150
+        eventoPublicado:
+          type: boolean
+          description: "true se evento foi salvo no outbox (será publicado assincronamente)"
+          example: true
+
+    # ── Compartilhados ──
+    ProblemDetails:
+      type: object
+      required:
+        - type
+        - title
+        - status
+        - detail
+      properties:
+        type:
+          type: string
+          format: uri
+        title:
+          type: string
+        status:
+          type: integer
+        detail:
+          type: string
+        code:
+          type: string
+          nullable: true
+        traceId:
+          type: string
+          nullable: true
+        pendencias:
+          type: array
+          nullable: true
+          description: "Lista de pré-requisitos não atendidos (quando code indica falha de pré-requisitos)"
+          items:
+            $ref: "#/components/schemas/PreRequisitoItem"

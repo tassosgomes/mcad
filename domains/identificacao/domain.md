@@ -43,7 +43,7 @@ Sem um processo estruturado de captação e identificação, a Distribuição n�
 
 | Entidade | Descrição | Atributos Principais | Relacionamentos |
 |---|---|---|---|
-| Captação | Contêiner que agrupa todas as execuções de uma rubrica em um dia específico. Criada pelo Analista, transita pelos estados Aberta → Fechada ou Cancelada. Representa o Rol de Execuções quando no estado Fechado. | rubrica, período (data diária `YYYY-MM-DD`), usuário de música (texto livre), status (ABERTA / FECHADA / CANCELADA), analista responsável | possui: Execuções |
+| Captação | Contêiner que agrupa todas as execuções de uma rubrica em um dia específico. Criada pelo Analista, transita pelos estados Aberta → Fechada ou Cancelada. Representa o Rol de Execuções quando no estado Fechado. | rubrica, período (data diária `YYYY-MM-DD`), usuário de música (texto livre), status (ABERTA / FECHADA / CANCELADA), analista responsável, distribuicaoProcessada (bool — flag de bloqueio de cancelamento), justificativaCancelamento (texto) | possui: Execuções |
 | Execução | Registro de uma obra/fonograma executado dentro de uma captação. Acumula contagem de ocorrências. Pode estar Identificada (vinculada a obra/fonograma do Cadastro) ou Pendente de Identificação. | ISRC ou ISWC informado, obra_id (resolvido), fonograma_id (resolvido), tipo de utilização, quantidade de ocorrências, status (IDENTIFICADA / PENDENTE) | pertence a: Captação; referencia: Obra e Fonograma (Cadastro) |
 | Tipo de Utilização | Classificação do uso da música com fator de peso. Seed fixo, não editável pelo usuário. | sigla, descrição, peso (fator decimal) | atribuído a: Execução |
 | Rubrica | Segmento de utilização musical que contextualiza uma captação. Cada rubrica determina se suas execuções exigem classificação por tipo de utilização. Seed fixo. | sigla, nome, exige classificação (boolean) | usada por: Captação |
@@ -80,9 +80,9 @@ Sem um processo estruturado de captação e identificação, a Distribuição n�
 | F01 | Gestão de Captações | Criar, listar e acompanhar captações por rubrica + período. Garante unicidade de Rol não-cancelado por rubrica+período. | Must Have | `done` | `tasks/prd-gestao-captacoes/prd.md` |
 | F02 | Registro Manual de Execuções | Formulário para inclusão individual de execuções com busca integrada ao Cadastro (ISRC, ISWC, título, titular), campos condicionais por rubrica, criação inline de obra/fonograma pendente. | Must Have | `done` | `tasks/prd-registro-manual-execucoes/prd.md` |
 | F03 | Upload de Execuções via CSV | Layout CSV (`;` separador, UTF-8), upload para MinIO, processamento assíncrono com agrupamento de linhas idênticas, identificação automática, relatório de erros por linha/coluna. Até 10.000 linhas. | Must Have | `prd-ready` | `tasks/prd-upload-csv-execucoes/prd.md` |
-| F04 | Identificação de Execuções | Resolução automática de ISRC/ISWC consultando o Cadastro via HTTP. Execuções sem match ficam como Pendentes. Tela de gestão para identificação manual das pendentes. | Must Have | `planned` | — |
-| F05 | Fechamento do Rol | Ação explícita do Analista responsável. Valida pré-requisitos e publica `identificacao.rol.fechado`. | Must Have | `planned` | — |
-| F06 | Cancelamento e Recriação | Cancelar um Rol fechado (publica `identificacao.rol.cancelado`) e recriar do zero para o mesmo período. | Must Have | `planned` | — |
+| F04 | Identificação de Execuções | Tela centralizada de pendentes com indicador de impacto (captações afetadas), resolução manual (vincular a obra/fonograma LIBERADA), resolução em lote, re-verificação automática via background job. | Must Have | `prd-ready` | `tasks/prd-identificacao-execucoes/prd.md` |
+| F05 | Fechamento do Rol | Ação explícita e irreversível do Analista. Valida pré-requisitos (zero pendentes, min 1 execução, classificação audiovisual). Publica `identificacao.rol.fechado` via Outbox Pattern. Payload diferenciado: audiovisual (tempo+peso) vs áudio (quantidade). | Must Have | `prd-ready` | `tasks/prd-fechamento-rol/prd.md` |
+| F06 | Cancelamento e Recriação | Cancelar Rol fechado com justificativa obrigatória (publica `identificacao.rol.cancelado`). Bloqueado se Distribuição já processou (`distribuicao.rol.processado`). 3 opções de recriação: copiar execuções, recriar vazia ou apenas cancelar. | Must Have | `prd-ready` | `tasks/prd-cancelamento-recriacao/prd.md` |
 
 **Prioridades (MoSCoW):** `Must Have` · `Should Have` · `Could Have` · `Won't Have`
 **Status possíveis:** `planned` · `prd-ready` · `in-progress` · `done` · `out-of-scope`
@@ -139,7 +139,7 @@ Sem um processo estruturado de captação e identificação, a Distribuição n�
 - `identificacao.rol.cancelado` — Rol invalidado; Distribuição deve desconsiderar qualquer snapshot baseado neste Rol
 
 ### Consome (Subscribes)
-Nenhum — consulta o Cadastro on-demand via HTTP.
+- `distribuicao.rol.processado` — indica que o Rol foi usado no cálculo de distribuição. Ao receber, marca a captação como processada (`distribuicaoProcessada = true`), bloqueando cancelamento (F06).
 
 ---
 
@@ -166,7 +166,7 @@ Nenhum — consulta o Cadastro on-demand via HTTP.
 
 ## 9. Questões em Aberto (Open Questions)
 
-- [ ] O fechamento do Rol (F05) deve ser **bloqueado** se ainda existirem execuções pendentes de identificação, ou apenas exibir um alerta e permitir fechar mesmo assim?
+- [x] ~~O fechamento do Rol (F05) deve ser bloqueado se existirem pendentes?~~ → Resolvido: **bloqueado**. Zero pendentes é pré-requisito obrigatório.
 - [ ] No CSV, uma linha representa uma execução única ou pode conter a quantidade de ocorrências como coluna? (Impacta o layout e a RN-03)
 - [ ] A consulta ao Cadastro via HTTP deve validar apenas a existência da obra/fonograma ou também o status LIBERADO? (Execuções de obras BLOQUEADAS devem ficar pendentes ou ser aceitas?)
 

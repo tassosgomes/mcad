@@ -10,6 +10,10 @@ public interface IExecucaoRepository
     Task<int> ContarPorCaptacaoAsync(Guid captacaoId, CancellationToken ct);
     Task<int> ContarIdentificadasAsync(Guid captacaoId, CancellationToken ct);
     Task<int> ContarPendentesAsync(Guid captacaoId, CancellationToken ct);
+    Task<(IEnumerable<Execucao> Items, int Total)> ListarPendentesAsync(Guid? captacaoId, Guid? rubricaId, DateOnly? periodoInicio, DateOnly? periodoFim, string? q, string sort, int page, int size, CancellationToken ct);
+    Task<(IEnumerable<Identificacao.Domain.Models.ImpactoPendenteModel> Items, int Total)> ListarImpactoPendentesAsync(Guid? captacaoId, Guid? rubricaId, DateOnly? periodoInicio, DateOnly? periodoFim, string? q, string sort, int page, int size, CancellationToken ct);
+    Task<IEnumerable<Execucao>> ListarPendentesPorIdentificadorAsync(string identificador, string tipo, CancellationToken ct);
+    Task<IEnumerable<Execucao>> ListarPendentesComObraIdAsync(CancellationToken ct);
     Task AddAsync(Execucao execucao, CancellationToken ct);
     Task RemoveAsync(Execucao execucao, CancellationToken ct);
     Task SaveChangesAsync(CancellationToken ct);

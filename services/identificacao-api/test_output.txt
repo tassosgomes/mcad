@@ -1,0 +1,81 @@
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+  Identificacao.Domain -> /home/tsgomes/mcad/services/identificacao-api/3-Domain/Identificacao.Domain/bin/Debug/net8.0/Identificacao.Domain.dll
+  Identificacao.Application -> /home/tsgomes/mcad/services/identificacao-api/2-Application/Identificacao.Application/bin/Debug/net8.0/Identificacao.Application.dll
+  Identificacao.Infra -> /home/tsgomes/mcad/services/identificacao-api/4-Infra/Identificacao.Infra/bin/Debug/net8.0/Identificacao.Infra.dll
+  Identificacao.API -> /home/tsgomes/mcad/services/identificacao-api/1-Services/Identificacao.API/bin/Debug/net8.0/Identificacao.API.dll
+/usr/lib/dotnet/sdk/10.0.104/Microsoft.Common.CurrentVersion.targets(2437,5): warning MSB3277: Found conflicts between different versions of "Microsoft.EntityFrameworkCore.Relational" that could not be resolved. [/home/tsgomes/mcad/services/identificacao-api/5-Tests/Identificacao.Tests/Identificacao.Tests.csproj]
+/usr/lib/dotnet/sdk/10.0.104/Microsoft.Common.CurrentVersion.targets(2437,5): warning MSB3277: There was a conflict between "Microsoft.EntityFrameworkCore.Relational, Version=9.0.1.0, Culture=neutral, PublicKeyToken=adb9793829ddae60" and "Microsoft.EntityFrameworkCore.Relational, Version=9.0.4.0, Culture=neutral, PublicKeyToken=adb9793829ddae60". [/home/tsgomes/mcad/services/identificacao-api/5-Tests/Identificacao.Tests/Identificacao.Tests.csproj]
+/usr/lib/dotnet/sdk/10.0.104/Microsoft.Common.CurrentVersion.targets(2437,5): warning MSB3277:     "Microsoft.EntityFrameworkCore.Relational, Version=9.0.1.0, Culture=neutral, PublicKeyToken=adb9793829ddae60" was chosen because it was primary and "Microsoft.EntityFrameworkCore.Relational, Version=9.0.4.0, Culture=neutral, PublicKeyToken=adb9793829ddae60" was not. [/home/tsgomes/mcad/services/identificacao-api/5-Tests/Identificacao.Tests/Identificacao.Tests.csproj]
+/usr/lib/dotnet/sdk/10.0.104/Microsoft.Common.CurrentVersion.targets(2437,5): warning MSB3277:     References which depend on "Microsoft.EntityFrameworkCore.Relational, Version=9.0.1.0, Culture=neutral, PublicKeyToken=adb9793829ddae60" [/home/tsgomes/.nuget/packages/microsoft.entityframeworkcore.relational/9.0.1/lib/net8.0/Microsoft.EntityFrameworkCore.Relational.dll]. [/home/tsgomes/mcad/services/identificacao-api/5-Tests/Identificacao.Tests/Identificacao.Tests.csproj]
+/usr/lib/dotnet/sdk/10.0.104/Microsoft.Common.CurrentVersion.targets(2437,5): warning MSB3277:         /home/tsgomes/.nuget/packages/microsoft.entityframeworkcore.relational/9.0.1/lib/net8.0/Microsoft.EntityFrameworkCore.Relational.dll [/home/tsgomes/mcad/services/identificacao-api/5-Tests/Identificacao.Tests/Identificacao.Tests.csproj]
+/usr/lib/dotnet/sdk/10.0.104/Microsoft.Common.CurrentVersion.targets(2437,5): warning MSB3277:           Project file item includes which caused reference "/home/tsgomes/.nuget/packages/microsoft.entityframeworkcore.relational/9.0.1/lib/net8.0/Microsoft.EntityFrameworkCore.Relational.dll". [/home/tsgomes/mcad/services/identificacao-api/5-Tests/Identificacao.Tests/Identificacao.Tests.csproj]
+/usr/lib/dotnet/sdk/10.0.104/Microsoft.Common.CurrentVersion.targets(2437,5): warning MSB3277:             /home/tsgomes/.nuget/packages/microsoft.entityframeworkcore.relational/9.0.1/lib/net8.0/Microsoft.EntityFrameworkCore.Relational.dll [/home/tsgomes/mcad/services/identificacao-api/5-Tests/Identificacao.Tests/Identificacao.Tests.csproj]
+/usr/lib/dotnet/sdk/10.0.104/Microsoft.Common.CurrentVersion.targets(2437,5): warning MSB3277:     References which depend on or have been unified to "Microsoft.EntityFrameworkCore.Relational, Version=9.0.4.0, Culture=neutral, PublicKeyToken=adb9793829ddae60" []. [/home/tsgomes/mcad/services/identificacao-api/5-Tests/Identificacao.Tests/Identificacao.Tests.csproj]
+/usr/lib/dotnet/sdk/10.0.104/Microsoft.Common.CurrentVersion.targets(2437,5): warning MSB3277:         /home/tsgomes/mcad/services/identificacao-api/1-Services/Identificacao.API/bin/Debug/net8.0/Identificacao.API.dll [/home/tsgomes/mcad/services/identificacao-api/5-Tests/Identificacao.Tests/Identificacao.Tests.csproj]
+/usr/lib/dotnet/sdk/10.0.104/Microsoft.Common.CurrentVersion.targets(2437,5): warning MSB3277:           Project file item includes which caused reference "/home/tsgomes/mcad/services/identificacao-api/1-Services/Identificacao.API/bin/Debug/net8.0/Identificacao.API.dll". [/home/tsgomes/mcad/services/identificacao-api/5-Tests/Identificacao.Tests/Identificacao.Tests.csproj]
+/usr/lib/dotnet/sdk/10.0.104/Microsoft.Common.CurrentVersion.targets(2437,5): warning MSB3277:             /home/tsgomes/mcad/services/identificacao-api/1-Services/Identificacao.API/bin/Debug/net8.0/Identificacao.API.dll [/home/tsgomes/mcad/services/identificacao-api/5-Tests/Identificacao.Tests/Identificacao.Tests.csproj]
+/usr/lib/dotnet/sdk/10.0.104/Microsoft.Common.CurrentVersion.targets(2437,5): warning MSB3277:         /home/tsgomes/mcad/services/identificacao-api/4-Infra/Identificacao.Infra/bin/Debug/net8.0/Identificacao.Infra.dll [/home/tsgomes/mcad/services/identificacao-api/5-Tests/Identificacao.Tests/Identificacao.Tests.csproj]
+/usr/lib/dotnet/sdk/10.0.104/Microsoft.Common.CurrentVersion.targets(2437,5): warning MSB3277:           Project file item includes which caused reference "/home/tsgomes/mcad/services/identificacao-api/4-Infra/Identificacao.Infra/bin/Debug/net8.0/Identificacao.Infra.dll". [/home/tsgomes/mcad/services/identificacao-api/5-Tests/Identificacao.Tests/Identificacao.Tests.csproj]
+/usr/lib/dotnet/sdk/10.0.104/Microsoft.Common.CurrentVersion.targets(2437,5): warning MSB3277:             /home/tsgomes/mcad/services/identificacao-api/4-Infra/Identificacao.Infra/bin/Debug/net8.0/Identificacao.Infra.dll [/home/tsgomes/mcad/services/identificacao-api/5-Tests/Identificacao.Tests/Identificacao.Tests.csproj]
+/usr/lib/dotnet/sdk/10.0.104/Microsoft.Common.CurrentVersion.targets(2437,5): warning MSB3277:             /home/tsgomes/mcad/services/identificacao-api/1-Services/Identificacao.API/bin/Debug/net8.0/Identificacao.API.dll [/home/tsgomes/mcad/services/identificacao-api/5-Tests/Identificacao.Tests/Identificacao.Tests.csproj]
+/usr/lib/dotnet/sdk/10.0.104/Microsoft.Common.CurrentVersion.targets(2437,5): warning MSB3277: Found conflicts between different versions of "System.Text.Json" that could not be resolved. [/home/tsgomes/mcad/services/identificacao-api/5-Tests/Identificacao.Tests/Identificacao.Tests.csproj]
+/usr/lib/dotnet/sdk/10.0.104/Microsoft.Common.CurrentVersion.targets(2437,5): warning MSB3277: There was a conflict between "System.Text.Json, Version=8.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51" and "System.Text.Json, Version=9.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51". [/home/tsgomes/mcad/services/identificacao-api/5-Tests/Identificacao.Tests/Identificacao.Tests.csproj]
+/usr/lib/dotnet/sdk/10.0.104/Microsoft.Common.CurrentVersion.targets(2437,5): warning MSB3277:     "System.Text.Json, Version=8.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51" was chosen because it was primary and "System.Text.Json, Version=9.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51" was not. [/home/tsgomes/mcad/services/identificacao-api/5-Tests/Identificacao.Tests/Identificacao.Tests.csproj]
+/usr/lib/dotnet/sdk/10.0.104/Microsoft.Common.CurrentVersion.targets(2437,5): warning MSB3277:     References which depend on "System.Text.Json, Version=8.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51" [/usr/lib/dotnet/packs/Microsoft.NETCore.App.Ref/8.0.25/ref/net8.0/System.Text.Json.dll]. [/home/tsgomes/mcad/services/identificacao-api/5-Tests/Identificacao.Tests/Identificacao.Tests.csproj]
+/usr/lib/dotnet/sdk/10.0.104/Microsoft.Common.CurrentVersion.targets(2437,5): warning MSB3277:         /usr/lib/dotnet/packs/Microsoft.NETCore.App.Ref/8.0.25/ref/net8.0/System.Text.Json.dll [/home/tsgomes/mcad/services/identificacao-api/5-Tests/Identificacao.Tests/Identificacao.Tests.csproj]
+/usr/lib/dotnet/sdk/10.0.104/Microsoft.Common.CurrentVersion.targets(2437,5): warning MSB3277:           Project file item includes which caused reference "/usr/lib/dotnet/packs/Microsoft.NETCore.App.Ref/8.0.25/ref/net8.0/System.Text.Json.dll". [/home/tsgomes/mcad/services/identificacao-api/5-Tests/Identificacao.Tests/Identificacao.Tests.csproj]
+/usr/lib/dotnet/sdk/10.0.104/Microsoft.Common.CurrentVersion.targets(2437,5): warning MSB3277:             /usr/lib/dotnet/packs/Microsoft.NETCore.App.Ref/8.0.25/ref/net8.0/System.Text.Json.dll [/home/tsgomes/mcad/services/identificacao-api/5-Tests/Identificacao.Tests/Identificacao.Tests.csproj]
+/usr/lib/dotnet/sdk/10.0.104/Microsoft.Common.CurrentVersion.targets(2437,5): warning MSB3277:     References which depend on or have been unified to "System.Text.Json, Version=9.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51" []. [/home/tsgomes/mcad/services/identificacao-api/5-Tests/Identificacao.Tests/Identificacao.Tests.csproj]
+/usr/lib/dotnet/sdk/10.0.104/Microsoft.Common.CurrentVersion.targets(2437,5): warning MSB3277:         /home/tsgomes/mcad/services/identificacao-api/1-Services/Identificacao.API/bin/Debug/net8.0/Identificacao.API.dll [/home/tsgomes/mcad/services/identificacao-api/5-Tests/Identificacao.Tests/Identificacao.Tests.csproj]
+/usr/lib/dotnet/sdk/10.0.104/Microsoft.Common.CurrentVersion.targets(2437,5): warning MSB3277:           Project file item includes which caused reference "/home/tsgomes/mcad/services/identificacao-api/1-Services/Identificacao.API/bin/Debug/net8.0/Identificacao.API.dll". [/home/tsgomes/mcad/services/identificacao-api/5-Tests/Identificacao.Tests/Identificacao.Tests.csproj]
+/usr/lib/dotnet/sdk/10.0.104/Microsoft.Common.CurrentVersion.targets(2437,5): warning MSB3277:             /home/tsgomes/mcad/services/identificacao-api/1-Services/Identificacao.API/bin/Debug/net8.0/Identificacao.API.dll [/home/tsgomes/mcad/services/identificacao-api/5-Tests/Identificacao.Tests/Identificacao.Tests.csproj]
+  Identificacao.Tests -> /home/tsgomes/mcad/services/identificacao-api/5-Tests/Identificacao.Tests/bin/Debug/net8.0/Identificacao.Tests.dll
+Test run for /home/tsgomes/mcad/services/identificacao-api/5-Tests/Identificacao.Tests/bin/Debug/net8.0/Identificacao.Tests.dll (.NETCoreApp,Version=v8.0)
+VSTest version 18.0.1 (x64)
+
+Starting test execution, please wait...
+A total of 1 test files matched the specified pattern.
+  Failed Identificacao.Tests.Infra.ExecucaoRepositoryTests.ListarImpactoPendentesAsync_DeveAgruparCorretamentePorISRCeISWC [2 s]
+  Error Message:
+   System.InvalidOperationException : The LINQ expression 'DbSet<Execucao>()
+    .Where(e => (int)e.Status == 1)
+    .GroupBy(e => new { 
+        Identificador = e.FonogramaIsrc != null ? e.FonogramaIsrc : e.ObraIswc != null ? e.ObraIswc : "desconhecido", 
+        Tipo = e.FonogramaIsrc != null ? "isrc" : e.ObraIswc != null ? "iswc" : "desconhecido"
+     })
+    .Select(g => new ImpactoPendenteModel(
+        g.Key.Identificador, 
+        g.Key.Tipo, 
+        g
+            .AsQueryable()
+            .Max(e0 => e0.ObraTitulo), 
+        g
+            .AsQueryable()
+            .Count(), 
+        g
+            .AsQueryable()
+            .Select(e0 => e0.CaptacaoId)
+            .Distinct()
+            .Count()
+    ))
+    .OrderByDescending(e2 => e2.QuantidadeExecucoes)' could not be translated. Either rewrite the query in a form that can be translated, or switch to client evaluation explicitly by inserting a call to 'AsEnumerable', 'AsAsyncEnumerable', 'ToList', or 'ToListAsync'. See https://go.microsoft.com/fwlink/?linkid=2101038 for more information.
+  Stack Trace:
+     at Microsoft.EntityFrameworkCore.Query.QueryableMethodTranslatingExpressionVisitor.Translate(Expression expression)
+   at Microsoft.EntityFrameworkCore.Query.QueryCompilationContext.CreateQueryExecutorExpression[TResult](Expression query)
+   at Microsoft.EntityFrameworkCore.Query.QueryCompilationContext.CreateQueryExecutor[TResult](Expression query)
+   at Microsoft.EntityFrameworkCore.Storage.Database.CompileQuery[TResult](Expression query, Boolean async)
+   at Microsoft.EntityFrameworkCore.Query.Internal.QueryCompiler.CompileQueryCore[TResult](IDatabase database, Expression query, IModel model, Boolean async)
+   at Microsoft.EntityFrameworkCore.Query.Internal.QueryCompiler.<>c__DisplayClass11_0`1.<ExecuteCore>b__0()
+   at Microsoft.EntityFrameworkCore.Query.Internal.CompiledQueryCache.GetOrAddQuery[TResult](Object cacheKey, Func`1 compiler)
+   at Microsoft.EntityFrameworkCore.Query.Internal.QueryCompiler.ExecuteCore[TResult](Expression query, Boolean async, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.QueryCompiler.ExecuteAsync[TResult](Expression query, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.EntityQueryProvider.ExecuteAsync[TResult](Expression expression, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.EntityQueryable`1.GetAsyncEnumerator(CancellationToken cancellationToken)
+   at System.Runtime.CompilerServices.ConfiguredCancelableAsyncEnumerable`1.GetAsyncEnumerator()
+   at Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.ToListAsync[TSource](IQueryable`1 source, CancellationToken cancellationToken)
+   at Identificacao.Infra.Repositories.ExecucaoRepository.ListarImpactoPendentesAsync(Nullable`1 captacaoId, Nullable`1 rubricaId, Nullable`1 periodoInicio, Nullable`1 periodoFim, String q, String sort, Int32 page, Int32 size, CancellationToken ct) in /home/tsgomes/mcad/services/identificacao-api/4-Infra/Identificacao.Infra/Repositories/ExecucaoRepository.cs:line 166
+   at Identificacao.Tests.Infra.ExecucaoRepositoryTests.ListarImpactoPendentesAsync_DeveAgruparCorretamentePorISRCeISWC() in /home/tsgomes/mcad/services/identificacao-api/5-Tests/Identificacao.Tests/Infra/ExecucaoRepositoryTests.cs:line 49
+--- End of stack trace from previous location ---
+
+Failed!  - Failed:     1, Passed:     0, Skipped:     0, Total:     1, Duration: 2 s - Identificacao.Tests.dll (net8.0)

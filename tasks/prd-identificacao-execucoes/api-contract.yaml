@@ -1,0 +1,599 @@
+openapi: 3.1.0
+
+info:
+  title: "Identificação de Execuções API"
+  description: |
+    API para gestão centralizada de execuções pendentes de identificação,
+    com resolução manual, resolução em lote e re-verificação automática.
+
+    **Contrato gerado a partir do PRD:** `tasks/prd-identificacao-execucoes/prd.md`
+    **Data de geração:** 2026-04-04
+
+    ## Serviços Envolvidos
+    - **Identificação API** (`:5100`) — tela de pendentes, resolução, re-verificação
+
+    ## Premissas
+    - Mesmos padrões: JWT Bearer, page/size, RFC 7807, camelCase
+    - Recurso dedicado: `/pendentes` (não sub-recurso de captação)
+    - Resolução reutiliza busca do Cadastro (GET /busca — já existe desde F02)
+    - Background job de re-verificação não tem endpoint — é interno
+  version: "1.0.0"
+  contact:
+    name: "Time de Identificação"
+
+servers:
+  - url: http://localhost:5100/api/v1
+    description: Identificação API — desenvolvimento local
+
+security:
+  - BearerAuth: []
+
+tags:
+  - name: Pendentes
+    description: "Gestão centralizada de execuções pendentes de identificação"
+
+# ─── Paths ───────────────────────────────────────────────────────────────────
+paths:
+
+  /pendentes:
+    get:
+      summary: Listar execuções pendentes
+      description: |
+        Lista centralizada de todas as execuções com status PENDENTE do sistema,
+        com indicador de impacto (quantas captações cada ISRC/ISWC afeta).
+        Todos os usuários podem visualizar.
+      operationId: listarPendentes
+      tags:
+        - Pendentes
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: size
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: captacaoId
+          in: query
+          description: Filtrar por captação específica
+          schema:
+            type: string
+            format: uuid
+        - name: rubricaId
+          in: query
+          description: Filtrar por rubrica
+          schema:
+            type: string
+            format: uuid
+        - name: periodoInicio
+          in: query
+          description: Filtrar por período — data inicial (inclusive)
+          schema:
+            type: string
+            format: date
+        - name: periodoFim
+          in: query
+          description: Filtrar por período — data final (inclusive)
+          schema:
+            type: string
+            format: date
+        - name: q
+          in: query
+          description: Buscar por ISRC ou ISWC
+          schema:
+            type: string
+            example: "BRUM99999999"
+        - name: sort
+          in: query
+          description: "Campos: `criadoEm`, `captacao`, `isrc`. Prefixo `-` para DESC"
+          schema:
+            type: string
+            default: "-criadoEm"
+      responses:
+        "200":
+          description: Lista de pendentes com indicador de impacto
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PendenteListResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+      x-frontend-notes: "Tela dedicada /identificacao/pendentes. Exibir badge de impacto (N captações) por linha"
+      x-backend-notes: "Agrupar contagem de captações por ISRC/ISWC via subquery. Índice em (Status, ObraId) para performance"
+
+  /pendentes/{id}/resolver:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: ID da execução pendente
+        schema:
+          type: string
+          format: uuid
+          example: "e1f2a3b4-5678-90ab-cdef-123456789012"
+
+    post:
+      summary: Resolver execução pendente
+      description: |
+        Vincula uma execução PENDENTE a uma obra/fonograma LIBERADA do Cadastro.
+        Status da execução muda de PENDENTE → IDENTIFICADA.
+        Somente Analista pode resolver. A captação deve estar ABERTA.
+      operationId: resolverPendente
+      tags:
+        - Pendentes
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ResolverPendenteRequest"
+      responses:
+        "200":
+          description: Execução resolvida
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExecucaoPendenteResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          description: Regra de negócio violada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetails"
+              examples:
+                captacaoFechada:
+                  summary: Captação não está ABERTA
+                  value:
+                    type: "https://tools.ietf.org/html/rfc7807#section-6.5.1"
+                    title: "Unprocessable Entity"
+                    status: 422
+                    detail: "Não é possível resolver pendentes de uma captação com status FECHADA"
+                    code: "STATUS_INVALIDO"
+                obraNaoLiberada:
+                  summary: Obra/fonograma não está LIBERADA
+                  value:
+                    type: "https://tools.ietf.org/html/rfc7807#section-6.5.1"
+                    title: "Unprocessable Entity"
+                    status: 422
+                    detail: "Obra/fonograma selecionada não está liberada. A execução continuará pendente"
+                    code: "OBRA_NAO_LIBERADA"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+      x-frontend-notes: "Reutilizar BuscaCadastroAutocomplete (F02) para seleção de obra/fonograma"
+      x-backend-notes: "Consultar Cadastro para validar status LIBERADO da obra/fonograma antes de resolver"
+
+  /pendentes/resolver-lote:
+    post:
+      summary: Resolver pendentes em lote
+      description: |
+        Resolve múltiplas execuções pendentes com mesmo ISRC/ISWC de uma vez,
+        vinculando todas a uma obra/fonograma LIBERADA.
+        O analista envia a lista de IDs de execuções a resolver (confirmação por execução).
+        Execuções de captações FECHADAS são rejeitadas.
+      operationId: resolverPendentesEmLote
+      tags:
+        - Pendentes
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ResolverLoteRequest"
+      responses:
+        "200":
+          description: Resultado da resolução em lote
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResolverLoteResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "422":
+          description: Obra/fonograma não liberada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetails"
+              example:
+                type: "https://tools.ietf.org/html/rfc7807#section-6.5.1"
+                title: "Unprocessable Entity"
+                status: 422
+                detail: "Obra/fonograma selecionada não está liberada"
+                code: "OBRA_NAO_LIBERADA"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+      x-frontend-notes: "Analista seleciona obra/fonograma → sistema lista execuções afetadas com checkboxes → confirma seleção → POST com IDs selecionados"
+      x-backend-notes: "Validar que todas as execuções existem e estão PENDENTES. Validar captação ABERTA para cada. Rejeitar individuais que não atendem, resolver as demais"
+
+  /pendentes/impacto:
+    get:
+      summary: Listar ISRC/ISWC pendentes com impacto
+      description: |
+        Retorna lista agrupada de ISRC/ISWC não identificados com contagem
+        de execuções e captações afetadas. Usado para priorização.
+      operationId: listarImpactoPendentes
+      tags:
+        - Pendentes
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: size
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: sort
+          in: query
+          description: "Campos: `totalExecucoes`, `totalCaptacoes`. Prefixo `-` para DESC"
+          schema:
+            type: string
+            default: "-totalCaptacoes"
+      responses:
+        "200":
+          description: Lista agrupada de pendentes por ISRC/ISWC
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ImpactoPendenteListResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+      x-frontend-notes: "Visão de priorização: mostrar ISRC/ISWC com mais captações afetadas no topo. Clicar para expandir e ver execuções individuais"
+      x-backend-notes: "GROUP BY ISRC/ISWC com COUNT DISTINCT captacaoId e COUNT execucaoId"
+
+# ─── Components ──────────────────────────────────────────────────────────────
+components:
+
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: "Token JWT via Keycloak. Roles: analista-identificacao (resolve), consultor-identificacao (read)"
+
+  responses:
+    BadRequest:
+      description: Requisição inválida
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ProblemDetails"
+    Unauthorized:
+      description: Não autenticado
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ProblemDetails"
+    Forbidden:
+      description: Sem permissão
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ProblemDetails"
+    NotFound:
+      description: Recurso não encontrado
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ProblemDetails"
+    InternalServerError:
+      description: Erro interno
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ProblemDetails"
+
+  schemas:
+
+    # ── Execução Pendente ──
+    ExecucaoPendente:
+      type: object
+      required:
+        - id
+        - captacaoId
+        - captacaoRubrica
+        - captacaoPeriodo
+        - captacaoAnalistaResponsavel
+        - obraTitulo
+        - status
+        - criadoEm
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "e1f2a3b4-5678-90ab-cdef-123456789012"
+        captacaoId:
+          type: string
+          format: uuid
+          example: "c1d2e3f4-5678-90ab-cdef-123456789012"
+        captacaoRubrica:
+          type: string
+          description: "Nome da rubrica da captação"
+          example: "TV Aberta"
+        captacaoPeriodo:
+          type: string
+          format: date
+          example: "2026-01-15"
+        captacaoStatus:
+          type: string
+          description: "Status da captação (ABERTA ou FECHADA)"
+          example: "ABERTA"
+        captacaoAnalistaResponsavel:
+          type: string
+          description: "Nome do analista dono da captação"
+          example: "Maria Silva"
+        obraId:
+          type: string
+          format: uuid
+          nullable: true
+          example: "a1b2c3d4-1111-2222-3333-444444444444"
+        fonogramaId:
+          type: string
+          format: uuid
+          nullable: true
+          example: null
+        obraTitulo:
+          type: string
+          description: "Título da obra (snapshot ou vazio se ISRC desconhecido)"
+          example: ""
+        fonogramaIsrc:
+          type: string
+          nullable: true
+          example: "BRUM99999999"
+        obraIswc:
+          type: string
+          nullable: true
+          example: null
+        interpretes:
+          type: string
+          example: ""
+        inicio:
+          type: string
+          description: "HH:mm:ss"
+          example: "14:30:00"
+        fim:
+          type: string
+          description: "HH:mm:ss"
+          example: "14:33:45"
+        quantidade:
+          type: integer
+          example: 1
+        status:
+          type: string
+          enum: [PENDENTE]
+          example: "PENDENTE"
+        criadoEm:
+          type: string
+          format: date-time
+          example: "2026-01-15T14:30:00Z"
+
+    # ── Impacto Agrupado ──
+    ImpactoPendente:
+      type: object
+      required:
+        - identificador
+        - tipoIdentificador
+        - totalExecucoes
+        - totalCaptacoes
+      properties:
+        identificador:
+          type: string
+          description: "ISRC ou ISWC pendente"
+          example: "BRUM99999999"
+        tipoIdentificador:
+          type: string
+          enum: [isrc, iswc, desconhecido]
+          description: "Tipo do identificador"
+          example: "isrc"
+        obraTitulo:
+          type: string
+          nullable: true
+          description: "Título da obra (se disponível no snapshot)"
+          example: ""
+        totalExecucoes:
+          type: integer
+          description: "Total de execuções pendentes com este identificador"
+          example: 15
+        totalCaptacoes:
+          type: integer
+          description: "Número de captações distintas afetadas"
+          example: 3
+        captacoes:
+          type: array
+          description: "Resumo das captações afetadas"
+          items:
+            type: object
+            properties:
+              captacaoId:
+                type: string
+                format: uuid
+              rubrica:
+                type: string
+              periodo:
+                type: string
+                format: date
+              execucoesPendentes:
+                type: integer
+
+    # ── Requests ──
+    ResolverPendenteRequest:
+      type: object
+      required:
+        - obraId
+      properties:
+        obraId:
+          type: string
+          format: uuid
+          description: "ID da obra LIBERADA selecionada da busca"
+          example: "a1b2c3d4-1111-2222-3333-444444444444"
+        fonogramaId:
+          type: string
+          format: uuid
+          nullable: true
+          description: "ID do fonograma LIBERADO (opcional)"
+          example: "f1e2d3c4-5555-6666-7777-888888888888"
+
+    ResolverLoteRequest:
+      type: object
+      required:
+        - execucaoIds
+        - obraId
+      properties:
+        execucaoIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+          description: "IDs das execuções pendentes a resolver (confirmadas pelo analista)"
+          example: ["e1f2a3b4-0001-0000-0000-000000000001", "e1f2a3b4-0001-0000-0000-000000000002"]
+        obraId:
+          type: string
+          format: uuid
+          description: "ID da obra LIBERADA"
+          example: "a1b2c3d4-1111-2222-3333-444444444444"
+        fonogramaId:
+          type: string
+          format: uuid
+          nullable: true
+          description: "ID do fonograma LIBERADO (opcional)"
+          example: "f1e2d3c4-5555-6666-7777-888888888888"
+
+    # ── Responses ──
+    ExecucaoPendenteResponse:
+      allOf:
+        - $ref: "#/components/schemas/ExecucaoPendente"
+        - type: object
+          properties:
+            status:
+              type: string
+              enum: [IDENTIFICADA]
+              description: "Status após resolução"
+
+    ResolverLoteResponse:
+      type: object
+      required:
+        - resolvidas
+        - rejeitadas
+      properties:
+        resolvidas:
+          type: integer
+          description: "Quantidade de execuções resolvidas com sucesso"
+          example: 12
+        rejeitadas:
+          type: integer
+          description: "Quantidade rejeitadas (captação FECHADA ou outro impedimento)"
+          example: 3
+        detalhesRejeitadas:
+          type: array
+          items:
+            type: object
+            properties:
+              execucaoId:
+                type: string
+                format: uuid
+              motivo:
+                type: string
+                example: "Captação com status FECHADA"
+
+    PendenteListResponse:
+      type: object
+      required:
+        - data
+        - pagination
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/ExecucaoPendente"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+
+    ImpactoPendenteListResponse:
+      type: object
+      required:
+        - data
+        - pagination
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/ImpactoPendente"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+
+    # ── Compartilhados ──
+    Pagination:
+      type: object
+      required:
+        - page
+        - size
+        - total
+        - totalPages
+      properties:
+        page:
+          type: integer
+          example: 1
+        size:
+          type: integer
+          example: 20
+        total:
+          type: integer
+          example: 45
+        totalPages:
+          type: integer
+          example: 3
+
+    ProblemDetails:
+      type: object
+      required:
+        - type
+        - title
+        - status
+        - detail
+      properties:
+        type:
+          type: string
+          format: uri
+        title:
+          type: string
+        status:
+          type: integer
+        detail:
+          type: string
+        code:
+          type: string
+          nullable: true
+        traceId:
+          type: string
+          nullable: true

@@ -13,6 +13,7 @@
           "Identificacao.Application": "1.0.0",
           "Identificacao.Domain": "1.0.0",
           "Identificacao.Infra": "1.0.0",
+          "Microsoft.EntityFrameworkCore.InMemory": "8.0.0",
           "Microsoft.NET.Test.Sdk": "17.6.0",
           "Moq": "4.20.72",
           "xunit": "2.4.2"
@@ -114,6 +115,17 @@
           "lib/net8.0/Microsoft.EntityFrameworkCore.Abstractions.dll": {
             "assemblyVersion": "9.0.4.0",
             "fileVersion": "9.0.425.16310"
+          }
+        }
+      },
+      "Microsoft.EntityFrameworkCore.InMemory/8.0.0": {
+        "dependencies": {
+          "Microsoft.EntityFrameworkCore": "9.0.4"
+        },
+        "runtime": {
+          "lib/net8.0/Microsoft.EntityFrameworkCore.InMemory.dll": {
+            "assemblyVersion": "8.0.0.0",
+            "fileVersion": "8.0.23.53103"
           }
         }
       },
@@ -890,6 +902,13 @@
       "sha512": "sha512-E0pkWzI0liqu2ogqJ1kohk2eGkYRhf5tI75HGF6IQDARsshY/0w+prGyLvNuUeV7B8I7vYQZ4CzAKYKxw7b9gQ==",
       "path": "microsoft.entityframeworkcore.abstractions/9.0.4",
       "hashPath": "microsoft.entityframeworkcore.abstractions.9.0.4.nupkg.sha512"
+    },
+    "Microsoft.EntityFrameworkCore.InMemory/8.0.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-/pT9FOO0BxGSRscK/ekEb6TdiP3+nnyhPLElE1yuVG/QaZLaBAuM3RoywBHdIxWoFALaOS7ktXlKzuMX3khJ4A==",
+      "path": "microsoft.entityframeworkcore.inmemory/8.0.0",
+      "hashPath": "microsoft.entityframeworkcore.inmemory.8.0.0.nupkg.sha512"
     },
     "Microsoft.EntityFrameworkCore.Relational/9.0.1": {
       "type": "package",
