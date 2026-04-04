@@ -1,0 +1,95 @@
+.tableContainer {
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.thead {
+  background-color: var(--color-background);
+  border-bottom: 2px solid var(--color-border);
+}
+
+.th {
+  padding: 1rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.thSortable {
+  padding: 1rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  user-select: none;
+  transition: color 0.2s;
+}
+.thSortable:hover {
+  color: var(--color-text);
+}
+
+.row {
+  border-bottom: 1px solid var(--color-border);
+  transition: background-color 0.2s;
+}
+.row:hover {
+  background-color: rgba(var(--color-primary-rgb), 0.02);
+}
+
+.td {
+  padding: 1rem;
+  font-size: 0.875rem;
+  vertical-align: middle;
+}
+
+.titleWrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.title {
+  font-weight: 500;
+  color: var(--color-text);
+}
+
+.subtitle {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+  font-family: var(--font-mono);
+}
+
+.captacaoLink {
+  color: var(--color-primary);
+  text-decoration: none;
+  font-weight: 500;
+}
+.captacaoLink:hover {
+  text-decoration: underline;
+}
+
+.actionsCell {
+  text-align: right;
+  width: 120px;
+}
+
+.emptyState {
+  padding: 3rem;
+  text-align: center;
+  color: var(--color-text-muted);
+  background-color: var(--color-surface);
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-lg);
+}

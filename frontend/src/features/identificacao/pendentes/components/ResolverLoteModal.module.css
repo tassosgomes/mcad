@@ -1,0 +1,86 @@
+.checkboxList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  max-height: 250px;
+  overflow-y: auto;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 0.5rem;
+  background-color: var(--color-background);
+}
+
+.checkboxItem {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+
+.checkboxItem:hover:not(.disabled) {
+  background-color: rgba(var(--color-primary-rgb), 0.05);
+}
+
+.checkboxItem.disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.checkboxInput {
+  margin: 0;
+  cursor: inherit;
+}
+
+.itemLabel {
+  flex: 1;
+  font-size: 0.875rem;
+  color: var(--color-text);
+  display: flex;
+  justify-content: space-between;
+}
+
+.motivo {
+  font-size: 0.75rem;
+  color: var(--color-danger);
+  font-style: italic;
+}
+
+.resultBox {
+  background-color: var(--color-background);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 1rem;
+  margin-top: 1rem;
+}
+
+.resultTitle {
+  font-size: 0.875rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.resultResolvidas {
+  color: var(--color-success);
+  margin-bottom: 0.25rem;
+  font-size: 0.875rem;
+}
+
+.resultRejeitadas {
+  color: var(--color-danger);
+  margin-bottom: 0.25rem;
+  font-size: 0.875rem;
+}
+
+.resultDetalhes {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+  margin-left: 1rem;
+  list-style-type: none;
+  padding: 0;
+}
+
+.resultDetalhes li {
+  margin-bottom: 0.125rem;
+}

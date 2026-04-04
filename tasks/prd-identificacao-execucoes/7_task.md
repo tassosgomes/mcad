@@ -1,5 +1,5 @@
 ---
-status: pending
+status: completed
 parallelizable: false
 blocked_by: [5.0, 6.0]
 ---
@@ -34,11 +34,11 @@ Implementar 5 componentes: PendentesTable, PendentesFilters, ImpactoView (accord
 
 ## Subtarefas
 
-- [ ] 7.1 Criar `PendentesTable` + CSS — colunas: título/ISRC, captação (link), responsável, horário, qtd, botão "Resolver". Link na captação → `/identificacao/captacoes/{id}`
-- [ ] 7.2 Criar `PendentesFilters` + CSS — filtros: captação (select), rubrica (select), período (date range), ISRC/ISWC (texto com debounce)
-- [ ] 7.3 Criar `ImpactoView` + CSS — accordion por ISRC/ISWC, drill-down com captações, badges (totalExecucoes, totalCaptacoes), botão "Resolver todas"
-- [ ] 7.4 Criar `ResolverPendenteModal` + CSS — preview da execução + BuscaCadastroAutocomplete + botão confirmar. Tratamento OBRA_NAO_LIBERADA → toast
-- [ ] 7.5 Criar `ResolverLoteModal` + CSS — step 1: selecionar obra (autocomplete), step 2: lista checkboxes (todas marcadas, FECHADAS desabilitadas), step 3: confirmar. Resultado: "12 resolvidas, 3 rejeitadas" + detalhes
+- [x] 7.1 Criar `PendentesTable` + CSS — colunas: título/ISRC, captação (link), responsável, horário, qtd, botão "Resolver". Link na captação → `/identificacao/captacoes/{id}`
+- [x] 7.2 Criar `PendentesFilters` + CSS — filtros: captação (select), rubrica (select), período (date range), ISRC/ISWC (texto com debounce)
+- [x] 7.3 Criar `ImpactoView` + CSS — accordion por ISRC/ISWC, drill-down com captações, badges (totalExecucoes, totalCaptacoes), botão "Resolver todas"
+- [x] 7.4 Criar `ResolverPendenteModal` + CSS — preview da execução + BuscaCadastroAutocomplete + botão confirmar. Tratamento OBRA_NAO_LIBERADA → toast
+- [x] 7.5 Criar `ResolverLoteModal` + CSS — step 1: selecionar obra (autocomplete), step 2: lista checkboxes (todas marcadas, FECHADAS desabilitadas), step 3: confirmar. Resultado: "12 resolvidas, 3 rejeitadas" + detalhes
 
 ## Sequenciamento
 
@@ -113,9 +113,9 @@ Implementar 5 componentes: PendentesTable, PendentesFilters, ImpactoView (accord
 
 ## Critérios de Sucesso (Verificáveis)
 
-- [ ] Build: `cd frontend && npm run build`
-- [ ] TypeScript: `cd frontend && npx tsc --noEmit`
-- [ ] Link na captação navega corretamente
-- [ ] Accordion expande/colapsa
-- [ ] ResolverLoteModal: checkboxes, FECHADAS desabilitadas, resultado parcial
-- [ ] BuscaCadastroAutocomplete reutilizado sem duplicação
+- [x] Build: `cd frontend && npm run build`
+- [x] TypeScript: `cd frontend && npx tsc --noEmit`
+- [x] Link na captação navega corretamente
+- [x] Accordion expande/colapsa
+- [x] ResolverLoteModal: checkboxes, FECHADAS desabilitadas, resultado parcial
+- [x] BuscaCadastroAutocomplete reutilizado sem duplicação
