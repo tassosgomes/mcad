@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "dgSpecHash": "1AsmAlzc6tU=",
+  "dgSpecHash": "Dgv6NLiHzGw=",
   "success": true,
   "projectFilePath": "/home/tsgomes/mcad/services/identificacao-api/1-Services/Identificacao.API/Identificacao.API.csproj",
   "expectedPackageFiles": [
@@ -11,6 +11,8 @@
     "/home/tsgomes/.nuget/packages/fluentvalidation/11.11.0/fluentvalidation.11.11.0.nupkg.sha512",
     "/home/tsgomes/.nuget/packages/fluentvalidation.dependencyinjectionextensions/11.11.0/fluentvalidation.dependencyinjectionextensions.11.11.0.nupkg.sha512",
     "/home/tsgomes/.nuget/packages/humanizer.core/2.14.1/humanizer.core.2.14.1.nupkg.sha512",
+    "/home/tsgomes/.nuget/packages/mediatr/12.2.0/mediatr.12.2.0.nupkg.sha512",
+    "/home/tsgomes/.nuget/packages/mediatr.contracts/2.0.1/mediatr.contracts.2.0.1.nupkg.sha512",
     "/home/tsgomes/.nuget/packages/microsoft.aspnetcore.authentication.jwtbearer/8.0.0/microsoft.aspnetcore.authentication.jwtbearer.8.0.0.nupkg.sha512",
     "/home/tsgomes/.nuget/packages/microsoft.bcl.asyncinterfaces/7.0.0/microsoft.bcl.asyncinterfaces.7.0.0.nupkg.sha512",
     "/home/tsgomes/.nuget/packages/microsoft.build.framework/17.8.3/microsoft.build.framework.17.8.3.nupkg.sha512",

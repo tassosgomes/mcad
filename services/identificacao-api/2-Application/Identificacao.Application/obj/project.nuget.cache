@@ -1,11 +1,13 @@
 {
   "version": 2,
-  "dgSpecHash": "FbhE9LznBwg=",
+  "dgSpecHash": "98GOf9wPpmA=",
   "success": true,
   "projectFilePath": "/home/tsgomes/mcad/services/identificacao-api/2-Application/Identificacao.Application/Identificacao.Application.csproj",
   "expectedPackageFiles": [
     "/home/tsgomes/.nuget/packages/cloudnative.cloudevents/2.8.0/cloudnative.cloudevents.2.8.0.nupkg.sha512",
     "/home/tsgomes/.nuget/packages/fluentvalidation/11.11.0/fluentvalidation.11.11.0.nupkg.sha512",
+    "/home/tsgomes/.nuget/packages/mediatr/12.2.0/mediatr.12.2.0.nupkg.sha512",
+    "/home/tsgomes/.nuget/packages/mediatr.contracts/2.0.1/mediatr.contracts.2.0.1.nupkg.sha512",
     "/home/tsgomes/.nuget/packages/microsoft.extensions.configuration.abstractions/8.0.0/microsoft.extensions.configuration.abstractions.8.0.0.nupkg.sha512",
     "/home/tsgomes/.nuget/packages/microsoft.extensions.dependencyinjection.abstractions/8.0.1/microsoft.extensions.dependencyinjection.abstractions.8.0.1.nupkg.sha512",
     "/home/tsgomes/.nuget/packages/microsoft.extensions.diagnostics.abstractions/8.0.0/microsoft.extensions.diagnostics.abstractions.8.0.0.nupkg.sha512",

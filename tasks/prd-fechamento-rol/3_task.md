@@ -1,5 +1,5 @@
 ---
-status: pending
+status: completed
 parallelizable: false
 blocked_by: [2.0]
 ---
@@ -40,12 +40,12 @@ Implementar query de pré-requisitos e command de fechamento com payload diferen
 
 ## Subtarefas
 
-- [ ] 3.1 Criar `PreRequisitosResponse`, `PreRequisitoItem`, `ResumoFechamento` (DTOs)
-- [ ] 3.2 Criar `ValidarPreRequisitosQuery` + handler — 5 itens, condicionais por rubrica, consulta Cadastro para obras LIBERADAS
-- [ ] 3.3 Criar `FechamentoResponse`, `RolFechadoPayload`, `ExecucaoRolPayload` (DTOs)
-- [ ] 3.4 Criar `FecharRolCommand` + handler — re-valida server-side, fecha, monta payload diferenciado, outbox atômico
-- [ ] 3.5 Testes `ValidarPreRequisitosQueryHandlerTests` — 7 cenários
-- [ ] 3.6 Testes `FecharRolCommandHandlerTests` — 6 cenários
+- [x] 3.1 Criar `PreRequisitosResponse`, `PreRequisitoItem`, `ResumoFechamento` (DTOs)
+- [x] 3.2 Criar `ValidarPreRequisitosQuery` + handler — 5 itens, condicionais por rubrica, consulta Cadastro para obras LIBERADAS
+- [x] 3.3 Criar `FechamentoResponse`, `RolFechadoPayload`, `ExecucaoRolPayload` (DTOs)
+- [x] 3.4 Criar `FecharRolCommand` + handler — re-valida server-side, fecha, monta payload diferenciado, outbox atômico
+- [x] 3.5 Testes `ValidarPreRequisitosQueryHandlerTests` — 7 cenários
+- [x] 3.6 Testes `FecharRolCommandHandlerTests` — 6 cenários
 
 ## Sequenciamento
 
@@ -82,8 +82,8 @@ Implementar query de pré-requisitos e command de fechamento com payload diferen
 
 ## Critérios de Sucesso (Verificáveis)
 
-- [ ] Build: `cd services/identificacao-api && dotnet build`
-- [ ] Testes: `cd services/identificacao-api && dotnet test --filter "FullyQualifiedName~Fechamento"`
-- [ ] 13 cenários cobertos
-- [ ] Evento outbox criado na mesma transação do fechamento
-- [ ] Payload audiovisual inclui tempo+peso, áudio tem campos null
+- [x] Build: `cd services/identificacao-api && dotnet build`
+- [x] Testes: `cd services/identificacao-api && dotnet test --filter "FullyQualifiedName~Fechamento"`
+- [x] 13 cenários cobertos
+- [x] Evento outbox criado na mesma transação do fechamento
+- [x] Payload audiovisual inclui tempo+peso, áudio tem campos null

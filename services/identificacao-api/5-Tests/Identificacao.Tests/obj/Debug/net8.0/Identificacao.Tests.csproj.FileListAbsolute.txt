@@ -158,3 +158,5 @@
 /home/tsgomes/mcad/services/identificacao-api/5-Tests/Identificacao.Tests/bin/Debug/net8.0/Microsoft.Extensions.FileProviders.Abstractions.dll
 /home/tsgomes/mcad/services/identificacao-api/5-Tests/Identificacao.Tests/bin/Debug/net8.0/Microsoft.Extensions.Hosting.Abstractions.dll
 /home/tsgomes/mcad/services/identificacao-api/5-Tests/Identificacao.Tests/bin/Debug/net8.0/RabbitMQ.Client.dll
+/home/tsgomes/mcad/services/identificacao-api/5-Tests/Identificacao.Tests/bin/Debug/net8.0/MediatR.dll
+/home/tsgomes/mcad/services/identificacao-api/5-Tests/Identificacao.Tests/bin/Debug/net8.0/MediatR.Contracts.dll
