@@ -30,7 +30,7 @@ Mockups, types/hooks, componentes, página + roteamento.
 - [x] 5.0 Frontend — Mockups no Stitch
 - [x] 6.0 Frontend — Types, API Client e Hooks
 - [x] 7.0 Frontend — Componentes
-- [ ] 8.0 Frontend — PendentesPage + Roteamento
+- [x] 8.0 Frontend — PendentesPage + Roteamento
 
 ## Rastreabilidade RF → Tasks
 

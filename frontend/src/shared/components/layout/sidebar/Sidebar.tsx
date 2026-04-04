@@ -26,6 +26,7 @@ const navigation = [
     requiredRoles: ['analista-identificacao', 'consultor-identificacao'],
     children: [
       { label: 'Captações', path: '/identificacao/captacoes' },
+      { label: 'Pendentes', path: '/identificacao/pendentes' },
     ]
   },
   { label: 'Arrecadação', icon: Banknote, basePath: '/arrecadacao', disabled: true, requiredRoles: [] },

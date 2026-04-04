@@ -1,5 +1,5 @@
 ---
-status: pending
+status: completed
 parallelizable: false
 blocked_by: [4.0, 7.0]
 ---
@@ -32,11 +32,11 @@ Criar a PendentesPage com tabs (Lista / Impacto), integrar todos os componentes,
 
 ## Subtarefas
 
-- [ ] 8.1 Criar `PendentesPage.tsx` — tabs "Lista" e "Impacto", gerencia estado de tab ativa, filtros, modais de resolução (individual + lote)
-- [ ] 8.2 Criar `pendentes/index.ts` (barrel export)
-- [ ] 8.3 Modificar `identificacao/index.tsx` — adicionar `<Route path="pendentes" element={<PendentesPage />} />`
-- [ ] 8.4 Modificar `Sidebar.tsx` — adicionar `{ label: 'Pendentes', path: '/identificacao/pendentes' }` nos children de Identificação
-- [ ] 8.5 Teste end-to-end manual:
+- [x] 8.1 Criar `PendentesPage.tsx` — tabs "Lista" e "Impacto", gerencia estado de tab ativa, filtros, modais de resolução (individual + lote)
+- [x] 8.2 Criar `pendentes/index.ts` (barrel export)
+- [x] 8.3 Modificar `identificacao/index.tsx` — adicionar `<Route path="pendentes" element={<PendentesPage />} />`
+- [x] 8.4 Modificar `Sidebar.tsx` — adicionar `{ label: 'Pendentes', path: '/identificacao/pendentes' }` nos children de Identificação
+- [x] 8.5 Teste end-to-end manual:
   - Navegar para /identificacao/pendentes → lista de pendentes
   - Filtrar por rubrica → lista filtra
   - Tab Impacto → agrupamento por ISRC com contagem
@@ -122,11 +122,11 @@ export function PendentesPage() {
 
 ## Critérios de Sucesso (Verificáveis)
 
-- [ ] Build: `cd frontend && npm run build`
-- [ ] TypeScript: `cd frontend && npx tsc --noEmit`
-- [ ] Navegação `/identificacao/pendentes` renderiza a página
-- [ ] Sidebar mostra "Pendentes" como sub-item de Identificação
-- [ ] Tabs Lista/Impacto alternam corretamente
-- [ ] Resolução individual → toast sucesso → pendente desaparece
-- [ ] Resolução em lote → resultado parcial exibido
-- [ ] Link na captação navega para detalhe
+- [x] Build: `cd frontend && npm run build`
+- [x] TypeScript: `cd frontend && npx tsc --noEmit`
+- [x] Navegação `/identificacao/pendentes` renderiza a página
+- [x] Sidebar mostra "Pendentes" como sub-item de Identificação
+- [x] Tabs Lista/Impacto alternam corretamente
+- [x] Resolução individual → toast sucesso → pendente desaparece
+- [x] Resolução em lote → resultado parcial exibido
+- [x] Link na captação navega para detalhe
