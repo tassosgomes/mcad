@@ -1,5 +1,5 @@
 ---
-status: pending
+status: completed
 parallelizable: true
 blocked_by: []
 ---
@@ -29,12 +29,12 @@ Adicionar campos e métodos à entidade Captação para cancelamento e bloqueio 
 
 ## Subtarefas
 
-- [ ] 1.1 Adicionar campos à Captacao: `DistribuicaoProcessada` (bool), `DistribuicaoProcessadaEm` (DateTime?), `JustificativaCancelamento` (string?), `CanceladoEm` (DateTime?)
-- [ ] 1.2 Adicionar método `Cancelar(justificativa)` — valida FECHADA + não processada → CANCELADA
-- [ ] 1.3 Adicionar método `MarcarDistribuicaoProcessada(processadoEm)` — flag true
-- [ ] 1.4 Atualizar CaptacaoConfiguration com novos campos
-- [ ] 1.5 Gerar migration: `dotnet ef migrations add AddCancelamentoFields`
-- [ ] 1.6 Testes `CaptacaoCancelamentoTests` — 4 cenários
+- [x] 1.1 Adicionar campos à Captacao: `DistribuicaoProcessada` (bool), `DistribuicaoProcessadaEm` (DateTime?), `JustificativaCancelamento` (string?), `CanceladoEm` (DateTime?)
+- [x] 1.2 Adicionar método `Cancelar(justificativa)` — valida FECHADA + não processada → CANCELADA
+- [x] 1.3 Adicionar método `MarcarDistribuicaoProcessada(processadoEm)` — flag true
+- [x] 1.4 Atualizar CaptacaoConfiguration com novos campos
+- [x] 1.5 Gerar migration: `dotnet ef migrations add AddCancelamentoFields`
+- [x] 1.6 Testes `CaptacaoCancelamentoTests` — 4 cenários
 
 ## Detalhes de Implementação
 

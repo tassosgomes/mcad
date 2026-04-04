@@ -1,5 +1,5 @@
 ---
-status: pending
+status: completed
 parallelizable: false
 blocked_by: [2.0]
 ---
@@ -40,11 +40,11 @@ Implementar query de verificação prévia e command de cancelamento com 3 opç�
 
 ## Subtarefas
 
-- [ ] 3.1 Criar `PodeCancelarResponse`, `CancelamentoResponse`, `RolCanceladoPayload` (DTOs)
-- [ ] 3.2 Criar `PodeCancelarQuery` + handler — checa FECHADA + não processada
-- [ ] 3.3 Criar `CancelarRolCommand` + validator (justificativa min 10, opcaoRecriacao enum) + handler
-- [ ] 3.4 No handler: cancelar + outbox + recriação condicional (COPIAR_EXECUCOES com batch + reconsulta Cadastro, RECRIAR_VAZIA, APENAS_CANCELAR)
-- [ ] 3.5 Testes `CancelarRolCommandHandlerTests` — 7 cenários
+- [x] 3.1 Criar `PodeCancelarResponse`, `CancelamentoResponse`, `RolCanceladoPayload` (DTOs)
+- [x] 3.2 Criar `PodeCancelarQuery` + handler — checa FECHADA + não processada
+- [x] 3.3 Criar `CancelarRolCommand` + validator (justificativa min 10, opcaoRecriacao enum) + handler
+- [x] 3.4 No handler: cancelar + outbox + recriação condicional (COPIAR_EXECUCOES com batch + reconsulta Cadastro, RECRIAR_VAZIA, APENAS_CANCELAR)
+- [x] 3.5 Testes `CancelarRolCommandHandlerTests` — 7 cenários
 
 ## Sequenciamento
 

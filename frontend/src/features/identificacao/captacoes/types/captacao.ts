@@ -29,6 +29,9 @@ export interface Captacao {
   analistaResponsavel: AnalistaResumo;
   criadoEm: string;         // ISO 8601
   atualizadoEm: string;     // ISO 8601
+  distribuicaoProcessada: boolean;
+  justificativaCancelamento?: string;
+  canceladoEm?: string;     // ISO 8601
 }
 
 export interface CaptacaoDetalhe extends Captacao {

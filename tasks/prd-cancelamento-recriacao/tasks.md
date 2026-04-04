@@ -14,13 +14,13 @@ Implementação do cancelamento de Rols fechados com justificativa, 3 opções d
 
 ## Tarefas
 
-- [ ] 1.0 Backend — Domain (Captacao: Cancelar, MarcarDistribuicao) + Migration
-- [ ] 2.0 Backend — Infra (DistribuicaoEventConsumer)
-- [ ] 3.0 Backend — Application (PodeCancelar, CancelarRol) + Testes
-- [ ] 4.0 Backend — API (Endpoints, Program.cs)
-- [ ] 5.0 Frontend — Mockups no Stitch
-- [ ] 6.0 Frontend — Types, API Client e Hooks
-- [ ] 7.0 Frontend — Componentes + Integração CaptacaoDetailPage
+- [x] 1.0 Backend — Domain (Captacao: Cancelar, MarcarDistribuicao) + Migration
+- [x] 2.0 Backend — Infra (DistribuicaoEventConsumer)
+- [x] 3.0 Backend — Application (PodeCancelar, CancelarRol) + Testes
+- [x] 4.0 Backend — API (Endpoints, Program.cs)
+- [x] 5.0 Frontend — Mockups no Stitch
+- [x] 6.0 Frontend — Types, API Client e Hooks
+- [x] 7.0 Frontend — Componentes + Integração CaptacaoDetailPage
 
 ## Rastreabilidade RF → Tasks
 

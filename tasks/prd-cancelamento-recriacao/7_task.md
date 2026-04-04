@@ -1,5 +1,5 @@
 ---
-status: pending
+status: completed
 parallelizable: false
 blocked_by: [4.0, 5.0, 6.0]
 ---
@@ -32,14 +32,14 @@ Criar CancelarRolButton (com verificação prévia), CancelarRolModal (justifica
 
 ## Subtarefas
 
-- [ ] 7.1 Criar `CancelarRolButton` — consulta usePodeCancelar, desabilitado se não pode (tooltip com motivo)
-- [ ] 7.2 Criar `CancelarRolModal` + CSS — textarea justificativa (min 10 chars) + 3 radio buttons com descrição + botão danger. Default: COPIAR_EXECUCOES
-- [ ] 7.3 Criar `CancelamentoBanner` + CSS — banner vermelho claro com justificativa e data para captações CANCELADAS
-- [ ] 7.4 Integrar na CaptacaoDetailPage:
+- [x] 7.1 Criar `CancelarRolButton` — consulta usePodeCancelar, desabilitado se não pode (tooltip com motivo)
+- [x] 7.2 Criar `CancelarRolModal` + CSS — textarea justificativa (min 10 chars) + 3 radio buttons com descrição + botão danger. Default: COPIAR_EXECUCOES
+- [x] 7.3 Criar `CancelamentoBanner` + CSS — banner vermelho claro com justificativa e data para captações CANCELADAS
+- [x] 7.4 Integrar na CaptacaoDetailPage:
   - FECHADA + dono + não processada → CancelarRolButton visível
   - CANCELADA → CancelamentoBanner no topo
   - Pós-cancelamento → navegação condicional (nova captação ou listagem)
-- [ ] 7.5 Teste end-to-end manual:
+- [x] 7.5 Teste end-to-end manual:
   - Captação FECHADA não processada → botão "Cancelar Rol" visível
   - Captação processada → botão desabilitado com tooltip
   - Cancelar com COPIAR_EXECUCOES → navega para nova captação
@@ -129,11 +129,11 @@ const { data: podeCancelar } = usePodeCancelar(captacaoId, captacao.status === '
 
 ## Critérios de Sucesso (Verificáveis)
 
-- [ ] Build: `cd frontend && npm run build`
-- [ ] TypeScript: `cd frontend && npx tsc --noEmit`
-- [ ] Botão desabilitado se distribuição processada
-- [ ] Radio buttons com descrição legível
-- [ ] Justificativa min 10 chars (validação client-side)
-- [ ] Toast com contagem de execuções copiadas (opção A)
-- [ ] Navegação condicional funciona (nova captação / listagem)
-- [ ] Banner vermelho com justificativa para CANCELADA
+- [x] Build: `cd frontend && npm run build`
+- [x] TypeScript: `cd frontend && npx tsc --noEmit`
+- [x] Botão desabilitado se distribuição processada
+- [x] Radio buttons com descrição legível
+- [x] Justificativa min 10 chars (validação client-side)
+- [x] Toast com contagem de execuções copiadas (opção A)
+- [x] Navegação condicional funciona (nova captação / listagem)
+- [x] Banner vermelho com justificativa para CANCELADA

@@ -1,5 +1,5 @@
 ---
-status: pending
+status: completed
 parallelizable: false
 blocked_by: [3.0]
 ---
@@ -30,11 +30,11 @@ Criar endpoints de verificação e cancelamento, registrar DistribuicaoEventCons
 
 ## Subtarefas
 
-- [ ] 4.1 Criar `CancelamentoEndpoints.cs` — GET /captacoes/{id}/pode-cancelar + POST /captacoes/{id}/cancelar
-- [ ] 4.2 Extrair analistaId do JWT no POST cancelar
-- [ ] 4.3 Registrar `DistribuicaoEventConsumer` como HostedService no Program.cs
-- [ ] 4.4 Mapear CancelamentoEndpoints
-- [ ] 4.5 Testar endpoints
+- [x] 4.1 Criar `CancelamentoEndpoints.cs` — GET /captacoes/{id}/pode-cancelar + POST /captacoes/{id}/cancelar
+- [x] 4.2 Extrair analistaId do JWT no POST cancelar
+- [x] 4.3 Registrar `DistribuicaoEventConsumer` como HostedService no Program.cs
+- [x] 4.4 Mapear CancelamentoEndpoints
+- [x] 4.5 Testar endpoints
 
 ## Sequenciamento
 

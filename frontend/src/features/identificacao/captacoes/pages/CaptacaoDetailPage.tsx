@@ -21,6 +21,8 @@ import { UploadsSection } from '../components/UploadsSection';
 import { FecharRolButton } from '../components/FecharRolButton';
 import { FecharRolModal } from '../components/FecharRolModal';
 import { useFecharRol } from '../hooks/useFecharRol';
+import { CancelarRolButton } from '../components/CancelarRolButton';
+import { CancelamentoBanner } from '../components/CancelamentoBanner';
 
 export function CaptacaoDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -43,8 +45,9 @@ export function CaptacaoDetailPage() {
 
   const isFechada = captacao.status?.toUpperCase() === 'FECHADA';
   const currentUserId = user?.profile.sub;
+  const isOwner = captacao.analistaResponsavel.id === currentUserId;
   const canWrite = hasRole('analista-identificacao');
-  const canEdit = canWrite && captacao.analistaResponsavel.id === currentUserId && !isFechada;
+  const canEdit = canWrite && isOwner && !isFechada && captacao.status !== 'CANCELADA';
   const canDelete = canEdit && captacao.status?.toUpperCase() === 'ABERTA';
 
   const temExecucoes = captacao.resumoExecucoes.total > 0;
@@ -118,8 +121,11 @@ export function CaptacaoDetailPage() {
         action={
           <div className={styles.headerActions}>
             <Badge variant={getStatusVariant(captacao.status) as any}>{captacao.status}</Badge>
-            {canEdit && captacao.status?.toUpperCase() === 'ABERTA' && (
+            {captacao.status?.toUpperCase() === 'ABERTA' && isOwner && canWrite && (
               <FecharRolButton onClick={() => setIsFecharModalOpen(true)} />
+            )}
+            {captacao.status?.toUpperCase() === 'FECHADA' && isOwner && canWrite && (
+              <CancelarRolButton captacao={captacao} />
             )}
             {canDelete && (
               <Button variant="danger" onClick={() => setIsDeleteModalOpen(true)}>
@@ -129,6 +135,13 @@ export function CaptacaoDetailPage() {
           </div>
         }
       />
+
+      {captacao.status?.toUpperCase() === 'CANCELADA' && captacao.justificativaCancelamento && (
+        <CancelamentoBanner 
+          justificativa={captacao.justificativaCancelamento} 
+          canceladoEm={captacao.canceladoEm} 
+        />
+      )}
 
       <div className={styles.resumoCards}>
         <div className={styles.card}>

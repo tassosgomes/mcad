@@ -1,5 +1,5 @@
 ---
-status: pending
+status: completed
 parallelizable: true
 blocked_by: []
 ---
@@ -27,11 +27,11 @@ blocked_by: []
 
 ## Subtarefas
 
-- [ ] 6.1 Criar `cancelamento.ts` (OpcaoRecriacao, CancelarRolRequest, CancelamentoResponse, PodeCancelarResponse)
-- [ ] 6.2 Atualizar `captacao.ts` com novos campos da Captação
-- [ ] 6.3 Criar `cancelamentoApi.ts` (podeCancelar, cancelarRol)
-- [ ] 6.4 Criar `usePodeCancelar` — staleTime 0, enabled quando FECHADA
-- [ ] 6.5 Criar `useCancelarRol` — mutation com navegação condicional (novaCaptacaoId → detalhe, senão → listagem)
+- [x] 6.1 Criar `cancelamento.ts` (OpcaoRecriacao, CancelarRolRequest, CancelamentoResponse, PodeCancelarResponse)
+- [x] 6.2 Atualizar `captacao.ts` com novos campos da Captação
+- [x] 6.3 Criar `cancelamentoApi.ts` (podeCancelar, cancelarRol)
+- [x] 6.4 Criar `usePodeCancelar` — staleTime 0, enabled quando FECHADA
+- [x] 6.5 Criar `useCancelarRol` — mutation com navegação condicional (novaCaptacaoId → detalhe, senão → listagem)
 
 ## Sequenciamento
 
@@ -41,6 +41,6 @@ blocked_by: []
 
 ## Critérios de Sucesso (Verificáveis)
 
-- [ ] Build: `cd frontend && npm run build`
-- [ ] TypeScript: `cd frontend && npx tsc --noEmit`
-- [ ] useCancelarRol navega para nova captação se novaCaptacaoId preenchido
+- [x] Build: `cd frontend && npm run build`
+- [x] TypeScript: `cd frontend && npx tsc --noEmit`
+- [x] useCancelarRol navega para nova captação se novaCaptacaoId preenchido
