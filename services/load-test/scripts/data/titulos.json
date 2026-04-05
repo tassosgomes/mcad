@@ -11,7 +11,10 @@
     "Profana", "Pura", "Impura", "Divina", "Humana", "Celestial", "Terrena",
     "Aberta", "Fechada", "Vazia", "Cheia", "Ultima", "Primeira", "Infinita",
     "Finita", "Longa", "Curta", "Alta", "Baixa", "Grande", "Pequena",
-    "Enorme", "Minuscula", "Veloz", "Lenta", "Urgente", "Paciente", "Gentil"
+    "Enorme", "Minuscula", "Veloz", "Lenta", "Urgente", "Paciente", "Gentil",
+    "Brava", "Mansa", "Encantada", "Acesa", "Apagada",
+    "Dourada", "Prateada", "Azulada", "Rosada", "Negra", "Branca", "Vermelha",
+    "Sagaz", "Nobre", "Humilde", "Fiel", "Rebelde", "Sonora", "Florida"
   ],
   "substantivos": [
     "Saudade", "Amor", "Paixao", "Dor", "Alegria", "Tristeza", "Esperanca",
@@ -26,7 +29,7 @@
     "Prece", "Oracao", "Bencao", "Graca", "Paz", "Guerra", "Batalha", "Vitoria",
     "Derrota", "Luta", "Conquista", "Perda", "Ganho", "Jornada", "Historia",
     "Segredo", "Verdade", "Mentira", "Sonho", "Realidade", "Fantasia", "Ilusao",
-    "Magia", "Mistero", "Segredo", "Legado", "Heranca", "Raiz", "Asa", "Voo",
+    "Magia", "Misterio", "Legado", "Heranca", "Raiz", "Asa", "Voo",
     "Queda", "Renascer", "Primavera", "Verao", "Outono", "Inverno"
   ]
 }
