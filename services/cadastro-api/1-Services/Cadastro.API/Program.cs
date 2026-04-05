@@ -49,9 +49,10 @@ builder.Services.AddScoped<IParticipacaoRepository, ParticipacaoRepository>();
 builder.Services.AddScoped<IHistoricoBloqueioRepository, HistoricoBloqueioRepository>();
 
 // ─── HttpClient + Polly ────────────────────────────────────────────────
+var iswcBaseUrl = Environment.GetEnvironmentVariable("ISWC_BASE_URL") ?? "https://iswc.tasso.dev.br/";
 builder.Services.AddHttpClient<IIswcService, Cadastro.Infra.ExternalServices.IswcService>(client =>
 {
-    client.BaseAddress = new Uri("https://iswc.tasso.dev.br/");
+    client.BaseAddress = new Uri(iswcBaseUrl);
     client.Timeout = TimeSpan.FromSeconds(10);
 }).AddTransientHttpErrorPolicy(p => p.RetryAsync(2));
 

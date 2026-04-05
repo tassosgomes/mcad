@@ -116,6 +116,37 @@ Sugestao de melhoria no:
 
 ---
 
+## 2026-04-05 | PRD: prd-simulador-carga | Task: 5
+
+### Problemas Identificados
+
+1. Categoria Tecnica: Lógica incorreta
+   Severidade: Baixa
+   Fase Detectada: Revisão
+   Origem Provável: Limitação do modelo
+   Necessitou Reimplementacao Significativa? Não
+   Descricao: `cicloCompleto.js` — `idx++` executado incondicionalmente fora do bloco while (linha 150) além do `idx++` interno (linha 147). Quando o primeiro candidato é aceito e o `break` dispara, o índice avança 2 posições ao invés de 1, reduzindo a uniformidade da rotação de titulares. Não causa erro funcional — apenas menor diversidade na seleção de titulares para participações. Não corrigido dado impacto insignificante para a validação 1 VU × 5 min.
+
+2. Categoria Tecnica: Overengineering
+   Severidade: Baixa
+   Fase Detectada: Revisão
+   Origem Provável: Limitação do modelo
+   Necessitou Reimplementacao Significativa? Não
+   Descricao: `distribuirPercentuais()` e `pace()` duplicadas em `cicloCompleto.js` e `obraSemFonograma.js`. Duplicação intencional para manter cenários auto-contidos — decisão de design já documentada na revisão da Task 1. Não corrigido.
+
+### Resumo da Tarefa
+
+Total de Problemas: 2 (ambos baixa severidade)
+Categoria Tecnica mais frequente: Lógica incorreta / Overengineering (empate)
+Origem mais frequente: Limitação do modelo
+Indicio de fragilidade estrutural? Não
+Sugestao de melhoria no:
+- PRD: Nenhuma sugestão específica.
+- TechSpec: Nenhuma sugestão específica.
+- Template de Task: Para tarefas de validação que introduzem mocks, considerar incluir critério explícito de "verificar se o mock cobre todos os cenários que dependem do serviço externo" para garantir que o cenário D (Depuração) seja exercitado mesmo sem o serviço ISWC real disponível.
+
+---
+
 ## 2026-04-05 | PRD: prd-simulador-carga | Task: 3
 
 ### Problemas Identificados

@@ -1,0 +1,50 @@
+# docker-compose override para validação funcional: 1 VU × 5 minutos
+#
+# Inclui um mock ISWC local (porta 8090) para habilitar o cenário D (Depuração).
+# O mock responde ao POST /api/iswc com um ISWC gerado aleatoriamente.
+#
+# Uso RECOMENDADO — via script validate.sh (Linux/WSL2):
+#   cd services/load-test
+#   ./validate.sh
+#
+# Uso manual via docker-compose:
+#   1. Inicie o mock ISWC:
+#      docker-compose -f docker-compose.validation.yml up mock-iswc -d
+#
+#   2. Reinicie a cadastro-api com ISWC_BASE_URL apontando para o mock:
+#      cd services/cadastro-api
+#      ISWC_BASE_URL=http://localhost:8090 dotnet run
+#
+#   3. Execute o simulador:
+#      docker-compose -f docker-compose.yml -f docker-compose.validation.yml up simulador --build
+#
+# Variáveis de ambiente do simulador:
+#   API_BASE_URL       — URL da API (default: host.docker.internal pois API roda no host)
+#   VUS                — Virtual users (1 para validação)
+#   DURATION           — Duração (5m para validação)
+#   PACE_MULTIPLIER    — 5 → delays divididos por 5: 2-3s vira 0.4-0.6s entre calls
+#   KEYCLOAK_URL       — Token endpoint do Keycloak
+
+services:
+  # Mock do serviço ISWC externo — responde ao POST /api/iswc com ISWC gerado
+  mock-iswc:
+    build:
+      context: ./mock-iswc
+      dockerfile: Dockerfile
+    image: mcad-mock-iswc
+    container_name: mcad-mock-iswc
+    ports:
+      - "8090:8090"
+    restart: "no"
+
+  simulador:
+    environment:
+      # WSL2/macOS: usar host.docker.internal para acessar serviços no host
+      - API_BASE_URL=http://host.docker.internal:5001/api/v1
+      - VUS=1
+      - DURATION=5m
+      # PACE_MULTIPLIER=5 → delays divididos por 5: 2-3s vira 0.4-0.6s entre calls,
+      # think time 5-10s vira 1-2s — permite mais iterações em 5 minutos.
+      - PACE_MULTIPLIER=5
+      - KEYCLOAK_URL=http://host.docker.internal:8080/realms/mcad/protocol/openid-connect/token
+    restart: "no"

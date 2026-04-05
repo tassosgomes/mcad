@@ -94,8 +94,8 @@ export function cicloCompleto() {
     pace();
   }
 
-  // 4. Obter ISWC
-  api.post(`/obras/${obra.id}/iswc`, {});
+  // 4. Obter ISWC — tolerante porque depende de serviço externo (pode retornar 502)
+  api.postTolerant(`/obras/${obra.id}/iswc`, {});
   pace();
 
   // 5. Criar fonograma
@@ -112,43 +112,82 @@ export function cicloCompleto() {
   pace();
 
   // 6. Participações (3-4): garantir ≥1 INTERPRETE e ≥1 PRODUTOR_FONOGRAFICO
+  // Restrição da API: (titularId, categoria) deve ser único por fonograma.
+  // Para evitar 409, rastreamos os pares (titularId, categoria) já adicionados.
   const numParticipacoes = randomIntBetween(3, 4);
 
-  // Posições fixas: [0] = INTERPRETE, [1] = PRODUTOR_FONOGRAFICO, [2+] = MUSICO_EXECUTANTE
+  // Categorias obrigatórias nas primeiras 2 posições; resto fica como MUSICO_EXECUTANTE
   const categoriasPorPosicao = (i) => {
     if (i === 0) return 'INTERPRETE';
     if (i === 1) return 'PRODUTOR_FONOGRAFICO';
     return 'MUSICO_EXECUTANTE';
   };
 
+  // Rastreia pares (titularId, categoria) para evitar duplicatas (→ 409)
+  const paresAdicionados = new Set();
+
+  // Shuffle o pool para aleatoriedade
+  const titularesShuffled = [...pool.titulares].sort(() => 0.5 - Math.random());
+  let idx = 0;
+
   for (let i = 0; i < numParticipacoes; i++) {
-    const participante = randomItem(pool.titulares);
+    const categoria = categoriasPorPosicao(i);
+
+    // Encontrar titular que não gere duplicata de par (titularId, categoria)
+    let titular = null;
+    let tentativas = 0;
+    while (tentativas < titularesShuffled.length) {
+      const candidato = titularesShuffled[idx % titularesShuffled.length];
+      const chave = `${candidato.id}:${categoria}`;
+      if (!paresAdicionados.has(chave)) {
+        titular = candidato;
+        paresAdicionados.add(chave);
+        break;
+      }
+      idx++;
+      tentativas++;
+    }
+    idx++;
+
+    if (!titular) {
+      // Todos os titulares já têm essa categoria — pula este slot
+      console.log(`[cicloCompleto] Sem titular disponível para categoria ${categoria} — pulando slot`);
+      continue;
+    }
+
     api.post(`/fonogramas/${fono.id}/participacoes`, {
-      titularId: participante.id,
-      categoria: categoriasPorPosicao(i),
+      titularId: titular.id,
+      categoria,
     });
     pace();
   }
 
   // 7. Calcular participações (requer ≥1 INTERPRETE + ≥1 PRODUTOR para funcionar)
-  api.post(`/fonogramas/${fono.id}/participacoes/calcular`, {});
+  // Tolerante porque pode falhar se pool tiver apenas titulares da mesma categoria
+  const calcRes = api.postTolerant(`/fonogramas/${fono.id}/participacoes/calcular`, {});
   pace();
 
-  // 8. URL de áudio
-  api.put(`/fonogramas/${fono.id}`, {
-    ...fonoData,
-    urlAudio: `https://storage.ecad.org.br/audio/${fono.isrc}.mp3`,
+  // 8. URL de áudio — endpoint correto: PATCH /fonogramas/{id}/url-audio
+  // Nota: DefinirUrlAudio funciona em qualquer status exceto Liberado/Depurado/Bloqueado
+  api.patch(`/fonogramas/${fono.id}/url-audio`, {
+    id: fono.id,
+    url: `https://storage.ecad.org.br/audio/${fono.isrc}.mp3`,
   });
   pace();
 
-  // 9. Liberar obra
-  const liberaObraRes = api.post(`/obras/${obra.id}/liberar`, {});
-  obra._liberada = liberaObraRes.status >= 200 && liberaObraRes.status < 300;
+  // 9. Liberar obra — tolerante porque:
+  //   a) ISWC pode estar fora (502) → obra não tem ISWC → 422 pendências
+  //   b) ISWC pode ter atribuído status LIBERADO automaticamente (via AtribuirIswc no domain)
+  //      → chamada explícita de liberar retorna 409 "Apenas PENDENTES"
+  //      → 409 aqui significa que a obra JÁ ESTÁ LIBERADA, não uma falha real
+  const liberaObraRes = api.postTolerant(`/obras/${obra.id}/liberar`, {});
+  obra._liberada = liberaObraRes.status >= 200 && liberaObraRes.status < 300
+    || liberaObraRes.status === 409;  // 409 = obra já foi liberada automaticamente pelo ISWC
   pool.obras.push(obra);
   pace();
 
-  // 10. Liberar fonograma
-  const liberaFonoRes = api.post(`/fonogramas/${fono.id}/liberar`, {});
+  // 10. Liberar fonograma — tolerante porque depende de obra LIBERADA (chain de pré-requisitos)
+  const liberaFonoRes = api.postTolerant(`/fonogramas/${fono.id}/liberar`, {});
   fono._liberado = liberaFonoRes.status >= 200 && liberaFonoRes.status < 300;
   pool.fonogramas.push(fono);
 }

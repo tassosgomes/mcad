@@ -87,10 +87,11 @@ export function obraSemFonograma() {
     pace();
   }
 
-  // 3. Obter ISWC
-  api.post(`/obras/${obra.id}/iswc`, {});
+  // 3. Obter ISWC — tolerante porque depende de serviço externo (pode retornar 502)
+  // Nota: AtribuirIswc no domain muda o status da obra para LIBERADO automaticamente.
+  // Por isso, _liberada é definida como true se ISWC foi obtido com sucesso.
+  const iswcRes = api.postTolerant(`/obras/${obra.id}/iswc`, {});
+  obra._liberada = iswcRes.status >= 200 && iswcRes.status < 300;
 
-  // Obra sem fonograma adicionada ao pool como pendente (_liberada = false)
-  obra._liberada = false;
   pool.obras.push(obra);
 }
