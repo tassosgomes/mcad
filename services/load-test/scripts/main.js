@@ -1,8 +1,8 @@
 /**
  * main.js — Simulador de Carga (Robô de Cadastro)
  *
- * Orquestrador principal: define options, realiza seleção ponderada de cenários
- * e adiciona think time entre ciclos.
+ * Orquestrador principal: define options k6, carrega associações no setup(),
+ * realiza seleção ponderada de cenários e adiciona think time entre ciclos.
  *
  * Cenários:
  *   A — Ciclo Completo     60%
@@ -17,7 +17,8 @@ import { obraSemFonograma } from './scenarios/obraSemFonograma.js';
 import { edicao } from './scenarios/edicao.js';
 import { depuracao } from './scenarios/depuracao.js';
 import { bloqueio } from './scenarios/bloqueio.js';
-import { metrics } from './helpers/metrics.js';
+import { api } from './helpers/api.js';
+import { pool } from './helpers/pool.js';
 
 // ---------------------------------------------------------------------------
 // Opções k6
@@ -37,11 +38,11 @@ export const options = {
 // ---------------------------------------------------------------------------
 
 const SCENARIOS = [
-  { weight: 60, fn: cicloCompleto,     name: 'cicloCompleto' },
+  { weight: 60, fn: cicloCompleto,    name: 'cicloCompleto'    },
   { weight: 15, fn: obraSemFonograma, name: 'obraSemFonograma' },
-  { weight: 10, fn: edicao,           name: 'edicao' },
-  { weight: 10, fn: depuracao,        name: 'depuracao' },
-  { weight: 5,  fn: bloqueio,         name: 'bloqueio' },
+  { weight: 10, fn: edicao,           name: 'edicao'           },
+  { weight: 10, fn: depuracao,        name: 'depuracao'        },
+  { weight: 5,  fn: bloqueio,         name: 'bloqueio'         },
 ];
 
 const TOTAL_WEIGHT = SCENARIOS.reduce((acc, s) => acc + s.weight, 0);
@@ -61,30 +62,81 @@ function randomIntBetween(min, max) {
 }
 
 // ---------------------------------------------------------------------------
-// Controle de progresso (log a cada 1000 entidades criadas)
+// Setup — executado uma vez antes dos VUs iniciarem
+// Carrega as associações existentes do servidor e passa via data para os VUs.
 // ---------------------------------------------------------------------------
 
-// k6 não suporta estado global mutável entre VUs; o log de progresso
-// é feito com base nos contadores por iteração (cada VU verifica localmente)
+export function setup() {
+  console.log('[setup] Carregando associacoes do servidor...');
+
+  const res = api.get('/associacoes');
+
+  let associacoes = [];
+
+  if (res.status >= 200 && res.status < 300) {
+    try {
+      const body = JSON.parse(res.body);
+      // A API pode retornar array direto ou { data: [...] } ou { items: [...] }
+      if (Array.isArray(body)) {
+        associacoes = body;
+      } else if (Array.isArray(body.data)) {
+        associacoes = body.data;
+      } else if (Array.isArray(body.items)) {
+        associacoes = body.items;
+      } else {
+        console.warn('[setup] Resposta inesperada de /associacoes — usando IDs fixos');
+      }
+    } catch (e) {
+      console.warn(`[setup] Erro ao parsear /associacoes: ${e} — usando IDs fixos`);
+    }
+  } else {
+    console.warn(`[setup] GET /associacoes retornou status=${res.status} — usando IDs fixos`);
+  }
+
+  // Fallback: 7 associações ECAD com IDs fixos
+  if (associacoes.length === 0) {
+    associacoes = [
+      { id: 1, nome: 'ABRAMUS' },
+      { id: 2, nome: 'AMAR' },
+      { id: 3, nome: 'ASSIM' },
+      { id: 4, nome: 'SOCINPRO' },
+      { id: 5, nome: 'UBC' },
+      { id: 6, nome: 'SICAM' },
+      { id: 7, nome: 'SBACEM' },
+    ];
+  }
+
+  console.log(`[setup] ${associacoes.length} associacoes carregadas`);
+
+  // Retorna data — compartilhado com todos os VUs como parâmetro read-only
+  return { associacoes };
+}
+
+// ---------------------------------------------------------------------------
+// Controle de progresso (log a cada ~50 iterações por VU)
+// ---------------------------------------------------------------------------
+
 let _iteracaoLocal = 0;
-const LOG_INTERVAL = 50; // a cada 50 iterações por VU (aproximação do log global)
+const LOG_INTERVAL = 50;
 
 // ---------------------------------------------------------------------------
 // Default function — executada por cada VU em loop durante a duração
 // ---------------------------------------------------------------------------
 
-export default function () {
+export default function (data) {
+  // Inicializa o pool do VU com as associações carregadas no setup()
+  // A função é idempotente (só executa na primeira chamada por VU)
+  pool.setupPool(data);
+
   _iteracaoLocal++;
 
   // Seleciona cenário ponderado
   const scenario = selectScenario();
 
   // Log periódico de progresso por VU
-  // Nota: Counters k6 são objetos opacos; não expõem valor durante execução.
-  // O summary completo com totais é exibido automaticamente pelo k6 ao final.
   if (_iteracaoLocal % LOG_INTERVAL === 0) {
     console.log(
-      `[VU ${__VU}] iteracao=${_iteracaoLocal} | cenario=${scenario.name}`
+      `[VU ${__VU}] iteracao=${_iteracaoLocal} | cenario=${scenario.name} | titulares=${pool.titulares.length} | obras=${pool.obras.length} | fonogramas=${pool.fonogramas.length}`
     );
   }
 
