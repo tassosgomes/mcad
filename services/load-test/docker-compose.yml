@@ -1,0 +1,13 @@
+services:
+  simulador:
+    build: .
+    environment:
+      # network_mode: host — o container compartilha a rede do host (Linux).
+      # Usar localhost para acessar serviços locais. No macOS/Windows, substituir
+      # por host.docker.internal e remover network_mode: host.
+      - API_BASE_URL=http://localhost:5001/api/v1
+      - VUS=20
+      - DURATION=16d
+      - PACE_MULTIPLIER=1
+    network_mode: host
+    restart: unless-stopped

@@ -1,0 +1,32 @@
+{
+  "adjetivos": [
+    "Saudosa", "Alegre", "Triste", "Bela", "Linda", "Bonita", "Doce",
+    "Amarga", "Suave", "Forte", "Leve", "Profunda", "Serena", "Intensa",
+    "Apaixonada", "Distante", "Perdida", "Esquecida", "Eterna", "Breve",
+    "Simples", "Rara", "Especial", "Unica", "Nova", "Velha", "Antiga",
+    "Moderna", "Selvagem", "Livre", "Presa", "Calma", "Inquieta", "Sonhadora",
+    "Corajosa", "Timida", "Discreta", "Exuberante", "Delicada", "Robusta",
+    "Transparente", "Opaca", "Vibrante", "Silenciosa", "Barulhenta", "Quente",
+    "Fria", "Morna", "Ardente", "Gelada", "Reluzente", "Misteriosa", "Sagrada",
+    "Profana", "Pura", "Impura", "Divina", "Humana", "Celestial", "Terrena",
+    "Aberta", "Fechada", "Vazia", "Cheia", "Ultima", "Primeira", "Infinita",
+    "Finita", "Longa", "Curta", "Alta", "Baixa", "Grande", "Pequena",
+    "Enorme", "Minuscula", "Veloz", "Lenta", "Urgente", "Paciente", "Gentil"
+  ],
+  "substantivos": [
+    "Saudade", "Amor", "Paixao", "Dor", "Alegria", "Tristeza", "Esperanca",
+    "Fe", "Coragem", "Medo", "Solidao", "Companhia", "Lembranca", "Esquecimento",
+    "Mar", "Rio", "Montanha", "Vale", "Floresta", "Campo", "Cidade", "Vila",
+    "Noite", "Dia", "Manha", "Tarde", "Ceu", "Terra", "Sol", "Lua", "Estrela",
+    "Chuva", "Vento", "Fogo", "Agua", "Neve", "Bruma", "Aurora", "Crepsculo",
+    "Caminho", "Estrada", "Trilha", "Viagem", "Destino", "Partida", "Chegada",
+    "Volta", "Reencontro", "Despedida", "Abraco", "Beijo", "Toque", "Olhar",
+    "Sorriso", "Lagrima", "Suspiro", "Silencio", "Cantico", "Melodia", "Harmonia",
+    "Ritmo", "Danca", "Musica", "Som", "Voz", "Eco", "Sussurro", "Grito",
+    "Prece", "Oracao", "Bencao", "Graca", "Paz", "Guerra", "Batalha", "Vitoria",
+    "Derrota", "Luta", "Conquista", "Perda", "Ganho", "Jornada", "Historia",
+    "Segredo", "Verdade", "Mentira", "Sonho", "Realidade", "Fantasia", "Ilusao",
+    "Magia", "Mistero", "Segredo", "Legado", "Heranca", "Raiz", "Asa", "Voo",
+    "Queda", "Renascer", "Primavera", "Verao", "Outono", "Inverno"
+  ]
+}
