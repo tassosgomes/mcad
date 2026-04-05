@@ -11,4 +11,4 @@ Simulador k6 em container Docker com 5 cenários ponderados, geradores de dados 
 - [x] 3.0 Data: nomes.json (~200+200) + titulos.json + generos.json
 - [x] 4.0 Cenários: cicloCompleto + obraSemFonograma + edicao + depuracao + bloqueio
 - [x] 5.0 Validação: 1 VU × 5 min → cenários funcionam, dados válidos, sem erros
-- [ ] 6.0 Carga: 20 VUs × 1 hora → sem deadlocks, métricas corretas, README documentado
+- [x] 6.0 Carga: 20 VUs × 1 hora → sem deadlocks, métricas corretas, README documentado

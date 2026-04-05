@@ -163,3 +163,34 @@ Sugestao de melhoria no:
 - PRD: Nenhuma sugestao especifica.
 - TechSpec: Nenhuma sugestao especifica.
 - Template de Task: Nenhuma sugestao especifica.
+
+---
+
+## 2026-04-05 | PRD: prd-simulador-carga | Task: 6
+
+### Problemas Identificados
+
+1. Categoria Tecnica: Erro de configuracao
+   Severidade: Media
+   Fase Detectada: Revisao
+   Origem Provavel: Limitacao do modelo
+   Necessitou Reimplementacao Significativa? Nao
+   Descricao: `docker-compose.carga.yml` definia `API_BASE_URL` e `KEYCLOAK_URL` com `host.docker.internal`. O arquivo base `docker-compose.yml` usa `network_mode: host` (Linux). O merge de ambos resulta em container com `network_mode: host` tentando resolver `host.docker.internal`, hostname indisponivel nesse modo no Linux — causaria falha de conectividade silenciosa no ambiente principal de uso (WSL2). Corrigido para `localhost` com comentario sobre macOS/Windows.
+
+2. Categoria Tecnica: Problema de seguranca
+   Severidade: Baixa
+   Fase Detectada: Revisao
+   Origem Provavel: Contexto insuficiente
+   Necessitou Reimplementacao Significativa? Nao
+   Descricao: `README.md` documenta `KEYCLOAK_PASSWORD` com valor default `Analista123!` na tabela de variaveis. Credencial de usuario de teste hardcoded em documentacao. Nao corrigido — contexto de PoC local, sem impacto de seguranca real.
+
+### Resumo da Tarefa
+
+Total de Problemas: 2 (1 media, 1 baixa)
+Categoria Tecnica mais frequente: Erro de configuracao
+Origem mais frequente: Limitacao do modelo
+Indicio de fragilidade estrutural? Nao
+Sugestao de melhoria no:
+- PRD: Incluir nota sobre plataforma alvo de execucao (Linux/WSL2 vs macOS/Windows) nos requisitos de container, especificando qual comportamento de rede e esperado. Isso complementaria a sugestao ja registrada na Task 1.
+- TechSpec: Os exemplos de `docker-compose.yml` no Design de Implementacao usam `network_mode: host` mas o arquivo de carga gerado usou `host.docker.internal`, mostrando que overrides nao foram pensados em conjunto. Incluir nota sobre consistencia de URL entre arquivos override.
+- Template de Task: Para tarefas que geram arquivos Docker Compose override, incluir instrucao explicita para validar o merge resultante via `docker-compose config` antes de considerar completo.

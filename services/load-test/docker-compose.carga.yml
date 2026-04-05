@@ -1,0 +1,39 @@
+# docker-compose override para teste de carga: 20 VUs × 1 hora
+#
+# Valida concorrência: sem deadlocks, sem unique violations espúrias,
+# sequences funcionam sob load, métricas dentro dos critérios de aceitação.
+#
+# Critérios de sucesso:
+#   - Error rate < 5%
+#   - p95 latência < 2s
+#   - ~2.500+ entidades criadas em 1h
+#   - Zero deadlocks no PostgreSQL
+#
+# Uso:
+#   cd services/load-test
+#   docker-compose -f docker-compose.yml -f docker-compose.carga.yml up --build
+#
+# Acompanhar progresso:
+#   docker logs -f simulador
+#
+# Parar:
+#   docker-compose -f docker-compose.yml -f docker-compose.carga.yml down
+#
+# Verificar no banco (em outra aba):
+#   psql -h localhost -U postgres -d mcad -c "SELECT count(*) FROM cadastro.obras_musicais;"
+#   psql -h localhost -U postgres -d mcad -c "SELECT count(*) FROM cadastro.fonogramas;"
+#   psql -h localhost -U postgres -d mcad -c "SELECT count(*) FROM cadastro.titulares;"
+
+services:
+  simulador:
+    container_name: simulador
+    environment:
+      # network_mode: host herdado do docker-compose.yml — usar localhost no Linux.
+      # No macOS/Windows (sem network_mode: host), substituir por host.docker.internal.
+      - API_BASE_URL=http://localhost:5001/api/v1
+      - VUS=20
+      - DURATION=1h
+      # PACE_MULTIPLIER=1 → ritmo real: 2-3s entre calls, 5-10s entre cenários
+      - PACE_MULTIPLIER=1
+      - KEYCLOAK_URL=http://localhost:8080/realms/mcad/protocol/openid-connect/token
+    restart: "no"
