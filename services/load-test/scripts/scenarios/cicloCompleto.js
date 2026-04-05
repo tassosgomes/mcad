@@ -1,9 +1,9 @@
 /**
  * Cenário A — Ciclo Completo (60%)
  *
- * Fluxo: criar titular (se pool < 500) → criar obra → titularidades (2-3) →
- *        obter ISWC → criar fonograma → participações (3-4) → calcular →
- *        url áudio → liberar obra → liberar fonograma
+ * Fluxo: criar titular (se pool < 500) → criar obra → titularidades (2-3, soma 100%) →
+ *        obter ISWC → criar fonograma → participações (3-4, ≥1 interprete + ≥1 produtor) →
+ *        calcular → url áudio → liberar obra → liberar fonograma
  */
 import { sleep } from 'k6';
 import { api } from '../helpers/api.js';
@@ -14,9 +14,38 @@ import { metrics } from '../helpers/metrics.js';
 const PACE_MULTIPLIER = parseFloat(__ENV.PACE_MULTIPLIER || '1');
 
 function pace() {
-  // 2-3 segundos entre calls, ajustado pelo PACE_MULTIPLIER
   const baseDelay = randomIntBetween(2, 3);
   sleep(baseDelay / PACE_MULTIPLIER);
+}
+
+/**
+ * Gera n percentuais inteiros (centésimos de %) que somam exatamente 100%.
+ * Mínimo de 1% por participante (100 centésimos), máximo de 60% (6000 centésimos).
+ *
+ * @param {number} n - Número de percentuais a gerar
+ * @returns {number[]} - Array com n valores em percentual (ex: [45.00, 30.00, 25.00])
+ */
+function distribuirPercentuais(n) {
+  const parts = [];
+  let remaining = 10000; // 100% em centésimos de %
+
+  for (let i = 0; i < n - 1; i++) {
+    // Garante que os restantes consigam ter pelo menos 1% cada
+    const min = 100; // 1%
+    const max = remaining - (n - i - 1) * min;
+    const limit = Math.min(max, 6000); // máximo 60%
+    if (limit <= min) {
+      parts.push(min / 100);
+      remaining -= min;
+    } else {
+      const part = randomIntBetween(min, limit);
+      parts.push(part / 100);
+      remaining -= part;
+    }
+  }
+
+  parts.push(Math.round(remaining) / 100); // último recebe o restante exato
+  return parts; // ex: [45.00, 30.00, 25.00]
 }
 
 export function cicloCompleto() {
@@ -47,25 +76,20 @@ export function cicloCompleto() {
   metrics.obrasCriadas.add(1);
   pace();
 
-  // 3. Titularidades (2-3)
+  // 3. Titularidades (2-3): percentuais gerados somando exatamente 100%
   const numTitularidades = randomIntBetween(2, 3);
-  const titularesDisponiveis = pool.titulares.length >= numTitularidades
+  const titularesDisp = pool.titulares.length >= numTitularidades
     ? pool.getTitularesAleatorios(numTitularidades)
     : [titular];
 
-  let percentualRestante = 100;
-  for (let i = 0; i < titularesDisponiveis.length; i++) {
-    const isUltimo = i === titularesDisponiveis.length - 1;
-    const pct = isUltimo
-      ? percentualRestante
-      : Math.min(randomIntBetween(20, 60), percentualRestante - (titularesDisponiveis.length - i - 1) * 5);
-    percentualRestante -= pct;
+  const percentuais = distribuirPercentuais(titularesDisp.length);
 
-    const t = titularesDisponiveis[i];
+  for (let i = 0; i < titularesDisp.length; i++) {
+    const t = titularesDisp[i];
     api.post(`/obras/${obra.id}/titularidades`, {
       titularId: t.id,
       categoria: t.tipo === 'PJ' ? 'EDITOR' : 'AUTOR',
-      percentual: Math.round(pct * 10000) / 10000,
+      percentual: percentuais[i],
     });
     pace();
   }
@@ -78,7 +102,7 @@ export function cicloCompleto() {
   const fonoData = gen.fonograma(obra.id);
   const fonoRes = api.post('/fonogramas', fonoData);
   if (fonoRes.status < 200 || fonoRes.status >= 300) {
-    // Obra criada mas fonograma falhou — ainda salva a obra
+    // Obra criada mas fonograma falhou — salva obra como pendente
     obra._liberada = false;
     pool.obras.push(obra);
     return;
@@ -87,20 +111,26 @@ export function cicloCompleto() {
   metrics.fonogramasCriados.add(1);
   pace();
 
-  // 6. Participações (3-4)
+  // 6. Participações (3-4): garantir ≥1 INTERPRETE e ≥1 PRODUTOR_FONOGRAFICO
   const numParticipacoes = randomIntBetween(3, 4);
-  const categorias = ['INTERPRETE', 'PRODUTOR_FONOGRAFICO', 'MUSICO_EXECUTANTE'];
+
+  // Posições fixas: [0] = INTERPRETE, [1] = PRODUTOR_FONOGRAFICO, [2+] = MUSICO_EXECUTANTE
+  const categoriasPorPosicao = (i) => {
+    if (i === 0) return 'INTERPRETE';
+    if (i === 1) return 'PRODUTOR_FONOGRAFICO';
+    return 'MUSICO_EXECUTANTE';
+  };
+
   for (let i = 0; i < numParticipacoes; i++) {
-    const categoria = i < categorias.length ? categorias[i] : 'MUSICO_EXECUTANTE';
     const participante = randomItem(pool.titulares);
     api.post(`/fonogramas/${fono.id}/participacoes`, {
       titularId: participante.id,
-      categoria,
+      categoria: categoriasPorPosicao(i),
     });
     pace();
   }
 
-  // 7. Calcular participações
+  // 7. Calcular participações (requer ≥1 INTERPRETE + ≥1 PRODUTOR para funcionar)
   api.post(`/fonogramas/${fono.id}/participacoes/calcular`, {});
   pace();
 

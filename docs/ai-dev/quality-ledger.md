@@ -71,6 +71,51 @@ Sugestao de melhoria no:
 
 ---
 
+## 2026-04-05 | PRD: prd-simulador-carga | Task: 4
+
+### Problemas Identificados
+
+1. Categoria Tecnica: Falha de integração
+   Severidade: Alta
+   Fase Detectada: Revisão
+   Origem Provável: Lacuna na TechSpec
+   Necessitou Reimplementacao Significativa? Não
+   Descricao: `edicao.js` — PUT /titulares enviava apenas `{ nome }`. O contrato `AtualizarTitularRequest` da cadastro-api exige tambem `Nacionalidade`, `AssociacaoId` e `Status`. Todas as chamadas de edicao de titular retornariam 400. Corrigido adicionando os campos obrigatorios lidos do objeto no pool.
+
+2. Categoria Tecnica: Falha de integração
+   Severidade: Alta
+   Fase Detectada: Revisão
+   Origem Provável: Lacuna na TechSpec
+   Necessitou Reimplementacao Significativa? Não
+   Descricao: `edicao.js` — PUT /obras enviava payload parcial (`{ titulo }` e/ou `{ genero }`) sem o campo `Tipo` que e obrigatorio em `AtualizarObraRequest`. Todas as chamadas de edicao de obra retornariam 400. Corrigido para sempre incluir `titulo`, `tipo` e `genero`.
+
+3. Categoria Tecnica: Falha de integração
+   Severidade: Alta
+   Fase Detectada: Revisão
+   Origem Provável: Lacuna na TechSpec
+   Necessitou Reimplementacao Significativa? Não
+   Descricao: `edicao.js` — PUT /fonogramas enviava apenas `{ paisOrigem }`. O contrato `AtualizarFonogramaRequest` exige tambem `Isrc`. Todas as chamadas de edicao de fonograma retornariam 400. Corrigido adicionando `isrc: fono.isrc`.
+
+4. Categoria Tecnica: Falha de integração
+   Severidade: Alta
+   Fase Detectada: Revisão
+   Origem Provável: Lacuna na TechSpec
+   Necessitou Reimplementacao Significativa? Não
+   Descricao: `depuracao.js` — PUT /fonogramas (para provocar 409) e POST /fonogramas/{id}/depurar enviavam payload sem `PaisOrigem`. Tanto `AtualizarFonogramaRequest` quanto `DepurarFonogramaRequest` exigem `Isrc` e `PaisOrigem`. A validacao retornaria 400 antes da verificacao de status LIBERADO, impedindo o fluxo de depuracao. Corrigido adicionando `paisOrigem: fono.paisOrigem || 'Brasil'` em ambos os payloads.
+
+### Resumo da Tarefa
+
+Total de Problemas: 4 (todos alta severidade)
+Categoria Tecnica mais frequente: Falha de integração
+Origem mais frequente: Lacuna na TechSpec
+Indicio de fragilidade estrutural? Sim — os contratos da API (campos obrigatorios nos requests de atualização) nao estao documentados na TechSpec nem nos exemplos de codigo da Task. Os exemplos mostravam payloads parciais (ex: `{ titulo }`, `{ isrc }`), induzindo implementacao incompleta.
+Sugestao de melhoria no:
+- PRD: Nenhuma sugestao especifica.
+- TechSpec: Incluir tabela de contratos de request para cada endpoint usado pelos cenarios (especialmente PUT), listando campos obrigatorios vs opcionais. Os pseudocodigos de exemplo devem usar payloads completos conforme o contrato real da API.
+- Template de Task: Para tarefas de simulacao/integracao, incluir referencia explicita aos contratos de request dos endpoints utilizados, ou instrucao para o implementador verificar os endpoints antes de codificar os payloads.
+
+---
+
 ## 2026-04-05 | PRD: prd-simulador-carga | Task: 3
 
 ### Problemas Identificados

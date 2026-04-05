@@ -1,8 +1,8 @@
 /**
  * Cenário B — Obra sem Fonograma (15%)
  *
- * Fluxo: criar obra → titularidades (2-3) → obter ISWC
- * O fonograma será criado em ciclo futuro.
+ * Fluxo: criar obra → titularidades (2-3, soma 100%) → obter ISWC.
+ * O fonograma será criado em ciclo futuro por outro VU que pega obra do pool.
  */
 import { sleep } from 'k6';
 import { api } from '../helpers/api.js';
@@ -17,8 +17,37 @@ function pace() {
   sleep(baseDelay / PACE_MULTIPLIER);
 }
 
+/**
+ * Gera n percentuais que somam exatamente 100%.
+ * Mesma lógica do cicloCompleto para consistência.
+ *
+ * @param {number} n
+ * @returns {number[]}
+ */
+function distribuirPercentuais(n) {
+  const parts = [];
+  let remaining = 10000;
+
+  for (let i = 0; i < n - 1; i++) {
+    const min = 100;
+    const max = remaining - (n - i - 1) * min;
+    const limit = Math.min(max, 6000);
+    if (limit <= min) {
+      parts.push(min / 100);
+      remaining -= min;
+    } else {
+      const part = randomIntBetween(min, limit);
+      parts.push(part / 100);
+      remaining -= part;
+    }
+  }
+
+  parts.push(Math.round(remaining) / 100);
+  return parts;
+}
+
 export function obraSemFonograma() {
-  // Necessita ao menos um titular no pool
+  // Necessita ao menos um titular no pool — cria se não existir
   if (pool.titulares.length === 0) {
     const data = gen.titular();
     const res = api.post('/titulares', data);
@@ -27,7 +56,7 @@ export function obraSemFonograma() {
       pool.titulares.push(titular);
       metrics.titularesCriados.add(1);
     } else {
-      return;
+      return; // sem titular, abandona cenário
     }
     pace();
   }
@@ -40,24 +69,20 @@ export function obraSemFonograma() {
   metrics.obrasCriadas.add(1);
   pace();
 
-  // 2. Titularidades (2-3)
+  // 2. Titularidades (2-3): percentuais que somam exatamente 100%
   const numTitularidades = randomIntBetween(2, 3);
-  const titulares = pool.getTitularesAleatorios(numTitularidades);
-  const listaTitulares = titulares.length > 0 ? titulares : [randomItem(pool.titulares)];
+  const titularesDisp = pool.titulares.length >= numTitularidades
+    ? pool.getTitularesAleatorios(numTitularidades)
+    : [randomItem(pool.titulares)];
 
-  let percentualRestante = 100;
-  for (let i = 0; i < listaTitulares.length; i++) {
-    const isUltimo = i === listaTitulares.length - 1;
-    const pct = isUltimo
-      ? percentualRestante
-      : Math.min(randomIntBetween(20, 60), percentualRestante - (listaTitulares.length - i - 1) * 5);
-    percentualRestante -= pct;
+  const percentuais = distribuirPercentuais(titularesDisp.length);
 
-    const t = listaTitulares[i];
+  for (let i = 0; i < titularesDisp.length; i++) {
+    const t = titularesDisp[i];
     api.post(`/obras/${obra.id}/titularidades`, {
       titularId: t.id,
       categoria: t.tipo === 'PJ' ? 'EDITOR' : 'AUTOR',
-      percentual: Math.round(pct * 10000) / 10000,
+      percentual: percentuais[i],
     });
     pace();
   }
@@ -65,7 +90,7 @@ export function obraSemFonograma() {
   // 3. Obter ISWC
   api.post(`/obras/${obra.id}/iswc`, {});
 
-  // Obra sem fonograma — marcada como não liberada
+  // Obra sem fonograma adicionada ao pool como pendente (_liberada = false)
   obra._liberada = false;
   pool.obras.push(obra);
 }
