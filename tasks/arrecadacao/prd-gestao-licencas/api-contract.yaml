@@ -1,0 +1,793 @@
+openapi: 3.1.0
+
+info:
+  title: "Arrecadação API — Licenças"
+  description: |
+    API para gestão de Licenças do ECAD — contratos de licenciamento que vinculam
+    Usuários de Música a Rubricas com vigência e ciclo de vida auditável.
+
+    **Contrato gerado a partir do PRD:** `tasks/arrecadacao/prd-gestao-licencas/prd.md`
+    **Data de geração:** 2026-04-04
+
+    ## Premissas Adotadas
+    - Autenticação JWT Bearer via Keycloak
+    - Roles: analista-arrecadacao (leitura + escrita), consultor-arrecadacao (somente leitura)
+    - Paginação server-side: page/size (default page=1, size=20)
+    - Ordenação server-side: campo + direção (default: -dataInicio DESC). Prefixo `-` para DESC
+    - Filtros combinados com AND
+    - Ciclo de vida de status: ATIVA ↔ SUSPENSA → ENCERRADA (irreversível)
+    - Transição direta ATIVA → ENCERRADA é proibida (deve suspender primeiro)
+    - Múltiplas licenças simultâneas para o mesmo par Usuário+Rubrica são permitidas
+    - usuarioMusica e rubrica expandidos na resposta (não apenas IDs)
+    - dataInicio/dataFim como `date` (vigência por dia, não por hora)
+    - Erros seguem RFC 7807 (ProblemDetails)
+    - Campos JSON em camelCase
+  version: "1.0.0"
+  contact:
+    name: "Time de Plataforma ECAD"
+
+servers:
+  - url: http://localhost:5003/api/v1
+    description: Desenvolvimento local (arrecadacao-api)
+
+security:
+  - BearerAuth: []
+
+tags:
+  - name: Licenças
+    description: "Gestão de Licenças — contratos de uso público de música com ciclo de vida auditável"
+
+paths:
+
+  /licencas:
+    get:
+      summary: Listar licenças com paginação e filtros
+      description: |
+        Retorna lista paginada de Licenças com filtros e ordenação server-side.
+        Filtros são combinados com AND. Busca por razaoSocial e rubricaSigla é parcial e case-insensitive.
+        Retorna usuarioMusica e rubrica expandidos (não apenas IDs).
+      operationId: listarLicencas
+      tags:
+        - Licenças
+      parameters:
+        - name: page
+          in: query
+          description: Número da página (começa em 1)
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+            example: 1
+        - name: size
+          in: query
+          description: Itens por página (máx 100)
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+            example: 20
+        - name: sort
+          in: query
+          description: "Campo de ordenação. Prefixo `-` para DESC. Campos: `dataInicio`, `status`"
+          schema:
+            type: string
+            default: "-dataInicio"
+            example: "-dataInicio"
+        - name: usuarioMusicaId
+          in: query
+          description: Filtro exato por ID do Usuário de Música (UUID)
+          schema:
+            type: string
+            format: uuid
+            example: "f47ac10b-58cc-4372-a567-0e02b2c3d479"
+        - name: razaoSocial
+          in: query
+          description: Filtro por razão social do Usuário de Música (parcial, case-insensitive)
+          schema:
+            type: string
+            example: "rádio"
+        - name: rubricaSigla
+          in: query
+          description: Filtro por sigla da Rubrica (parcial, case-insensitive)
+          schema:
+            type: string
+            example: "EXEC"
+        - name: status
+          in: query
+          description: Filtro por status (exato)
+          schema:
+            type: string
+            enum: [ATIVA, SUSPENSA, ENCERRADA]
+            example: "ATIVA"
+        - name: vigente
+          in: query
+          description: "`true` = dataFim null OU dataFim >= hoje; `false` = dataFim < hoje"
+          schema:
+            type: boolean
+            example: true
+      responses:
+        "200":
+          description: Lista paginada de licenças
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LicencaListResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+      x-frontend-notes: |
+        Debounce de 300ms nos campos de texto (razaoSocial, rubricaSigla).
+        Filtro de status como dropdown (Todos / Ativa / Suspensa / Encerrada).
+        Toggle "Apenas vigentes" para o filtro vigente=true.
+        Badge de status: ATIVA (verde), SUSPENSA (amarelo), ENCERRADA (cinza).
+        Colunas clicáveis para alternar ordenação (toggle ASC/DESC via prefixo `-`).
+      x-backend-notes: |
+        Índices recomendados: usuario_musica_id, rubrica_id, status, data_inicio DESC.
+        Join com usuario_musica e rubrica para filtros e dados expandidos.
+        Filtro vigente: WHERE data_fim IS NULL OR data_fim >= CURRENT_DATE (para true).
+
+    post:
+      summary: Criar nova Licença
+      description: |
+        Cria uma Licença vinculando um Usuário de Música ATIVO a uma Rubrica com vigência definida.
+        Status inicial é sempre ATIVA. Registra entrada inicial no histórico de status.
+
+        **Regras de negócio aplicadas:**
+        - RF-02: Múltiplas licenças simultâneas para o mesmo par Usuário+Rubrica são permitidas
+        - RF-03: Usuário deve estar com status ATIVO
+        - RF-04: dataInicio deve ser >= data atual
+        - RF-05: dataFim deve ser > dataInicio (se informada)
+      operationId: criarLicenca
+      tags:
+        - Licenças
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CriarLicencaRequest"
+      responses:
+        "201":
+          description: Licença criada com sucesso
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LicencaResponse"
+          headers:
+            Location:
+              description: URL do recurso criado
+              schema:
+                type: string
+                example: "/api/v1/licencas/a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+      x-frontend-notes: |
+        Campo dataInicio com date picker bloqueando datas passadas.
+        Campo dataFim opcional — checkbox "Vigência indefinida" que limpa e desabilita o campo.
+        Busca de Usuário de Música via autocomplete (GET /usuarios-musica?status=ATIVO).
+        Busca de Rubrica via autocomplete (GET /rubricas).
+        Após sucesso, redirecionar para detalhe da licença criada com toast de confirmação.
+      x-backend-notes: |
+        Status inicial hardcoded como ATIVA — não aceitar no request body.
+        Registrar no histórico: statusAnterior=null, statusNovo=ATIVA, justificativa="Licença criada", autor=JWT.
+        Validar existência do usuarioMusicaId e rubricaId antes de criar.
+
+  /licencas/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: ID único da Licença (UUID)
+        schema:
+          type: string
+          format: uuid
+          example: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+
+    get:
+      summary: Buscar Licença por ID
+      description: |
+        Retorna os dados completos de uma Licença, com usuarioMusica e rubrica expandidos.
+        Usado pela tela de detalhes e por F04 para validar licença antes de registrar pagamento.
+      operationId: buscarLicencaPorId
+      tags:
+        - Licenças
+      responses:
+        "200":
+          description: Licença encontrada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LicencaResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /licencas/{id}/suspender:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: ID da Licença a suspender
+        schema:
+          type: string
+          format: uuid
+          example: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+
+    post:
+      summary: Suspender Licença (ATIVA → SUSPENSA)
+      description: |
+        Muda o status da Licença de ATIVA para SUSPENSA com justificativa obrigatória.
+        Registra no histórico: data, autor (extraído do JWT), statusAnterior=ATIVA, statusNovo=SUSPENSA.
+        Rejeita se a Licença não estiver ATIVA.
+
+        Licenças SUSPENSAS ainda podem receber registros de pagamento (F04 — RF-10).
+      operationId: suspenderLicenca
+      tags:
+        - Licenças
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TransicaoStatusRequest"
+            example:
+              justificativa: "Pendência financeira identificada — aguardando regularização"
+      responses:
+        "200":
+          description: Licença suspensa com sucesso
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LicencaResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+      x-frontend-notes: |
+        Modal com textarea para justificativa (mínimo 10 caracteres).
+        Botão "Suspender" visível apenas para Analista e quando status = ATIVA.
+      x-backend-notes: |
+        Autor extraído do claim `preferred_username` ou `sub` do JWT.
+        Registrar em tabela historico_status_licenca.
+
+  /licencas/{id}/reativar:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: ID da Licença a reativar
+        schema:
+          type: string
+          format: uuid
+          example: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+
+    post:
+      summary: Reativar Licença (SUSPENSA → ATIVA)
+      description: |
+        Muda o status da Licença de SUSPENSA para ATIVA com justificativa obrigatória.
+        Registra no histórico: data, autor (extraído do JWT), statusAnterior=SUSPENSA, statusNovo=ATIVA.
+        Rejeita se a Licença não estiver SUSPENSA.
+      operationId: reativarLicenca
+      tags:
+        - Licenças
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TransicaoStatusRequest"
+            example:
+              justificativa: "Pendência financeira regularizada — licença reativada"
+      responses:
+        "200":
+          description: Licença reativada com sucesso
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LicencaResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+      x-frontend-notes: |
+        Modal com textarea para justificativa (mínimo 10 caracteres).
+        Botão "Reativar" visível apenas para Analista e quando status = SUSPENSA.
+
+  /licencas/{id}/encerrar:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: ID da Licença a encerrar
+        schema:
+          type: string
+          format: uuid
+          example: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+
+    post:
+      summary: Encerrar Licença (SUSPENSA → ENCERRADA)
+      description: |
+        Muda o status da Licença de SUSPENSA para ENCERRADA com justificativa obrigatória.
+        Registra no histórico: data, autor (extraído do JWT), statusAnterior=SUSPENSA, statusNovo=ENCERRADA.
+        Operação **irreversível** — ENCERRADA é estado terminal, sem transições de saída.
+
+        **Rejeita se:**
+        - Licença estiver ATIVA (retorna 422 com instrução para suspender primeiro)
+        - Licença já estiver ENCERRADA
+      operationId: encerrarLicenca
+      tags:
+        - Licenças
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TransicaoStatusRequest"
+            example:
+              justificativa: "Contrato de licenciamento rescindido pelo Usuário de Música"
+      responses:
+        "200":
+          description: Licença encerrada com sucesso
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LicencaResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+      x-frontend-notes: |
+        Modal de confirmação com aviso de irreversibilidade + textarea para justificativa (mín. 10 chars).
+        Botão "Encerrar" visível apenas para Analista e quando status = SUSPENSA.
+        Após encerramento, desabilitar todos os botões de transição na tela de detalhe.
+      x-backend-notes: |
+        Se status = ATIVA, retornar 422 com mensagem orientativa: "Suspenda a licença antes de encerrá-la."
+        Se status = ENCERRADA, retornar 422: "Licença já está ENCERRADA."
+
+  /licencas/{id}/historico-status:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: ID da Licença
+        schema:
+          type: string
+          format: uuid
+          example: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+
+    get:
+      summary: Listar histórico de transições de status
+      description: |
+        Retorna o histórico completo de transições de status da Licença,
+        ordenado do mais recente ao mais antigo.
+        Inclui o registro inicial de criação (statusAnterior=null, statusNovo=ATIVA).
+        Acessível por ambos os perfis (Analista e Consultor).
+      operationId: listarHistoricoStatusLicenca
+      tags:
+        - Licenças
+      responses:
+        "200":
+          description: Histórico retornado com sucesso
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/HistoricoStatusLicencaResponse"
+              example:
+                - id: "c3d4e5f6-a7b8-9012-cdef-123456789012"
+                  statusAnterior: "ATIVA"
+                  statusNovo: "SUSPENSA"
+                  justificativa: "Pendência financeira identificada — aguardando regularização"
+                  autor: "analista.arrecadacao"
+                  data: "2026-04-10T14:30:00Z"
+                - id: "d4e5f6a7-b8c9-0123-defa-234567890123"
+                  statusAnterior: null
+                  statusNovo: "ATIVA"
+                  justificativa: "Licença criada"
+                  autor: "analista.arrecadacao"
+                  data: "2026-04-05T10:30:00Z"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+      x-frontend-notes: |
+        Exibir como timeline ou tabela na aba de histórico do detalhe da Licença.
+        Ordenado do mais recente ao mais antigo.
+        Sem paginação (volume esperado é baixo — média < 10 entradas por licença).
+
+components:
+
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: "Token JWT obtido via Keycloak (Authorization Code + PKCE). Roles: analista-arrecadacao (leitura + escrita), consultor-arrecadacao (somente leitura)."
+
+  responses:
+    BadRequest:
+      description: Requisição inválida — erro de validação de campos
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ProblemDetails"
+          example:
+            type: "https://tools.ietf.org/html/rfc7231#section-6.5.1"
+            title: "Validation Error"
+            status: 400
+            detail: "Um ou mais campos são inválidos"
+            errors:
+              - field: "dataInicio"
+                message: "dataInicio é obrigatória"
+              - field: "justificativa"
+                message: "justificativa deve ter no mínimo 10 caracteres"
+
+    Unauthorized:
+      description: Não autenticado — token ausente ou inválido
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ProblemDetails"
+          example:
+            type: "https://tools.ietf.org/html/rfc7231#section-6.5.1"
+            title: "Unauthorized"
+            status: 401
+            detail: "Token de autenticação ausente ou inválido"
+
+    Forbidden:
+      description: Sem permissão — role insuficiente para esta operação
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ProblemDetails"
+          example:
+            type: "https://tools.ietf.org/html/rfc7231#section-6.5.3"
+            title: "Forbidden"
+            status: 403
+            detail: "Perfil 'consultor-arrecadacao' não possui permissão para esta operação"
+
+    NotFound:
+      description: Recurso não encontrado
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ProblemDetails"
+          example:
+            type: "https://tools.ietf.org/html/rfc7231#section-6.5.4"
+            title: "Resource Not Found"
+            status: 404
+            detail: "Licença com ID 'a1b2c3d4-e5f6-7890-abcd-ef1234567890' não foi encontrada"
+
+    UnprocessableEntity:
+      description: Erro de regra de negócio
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ProblemDetails"
+          example:
+            type: "https://tools.ietf.org/html/rfc7231#section-6.5.1"
+            title: "Unprocessable Entity"
+            status: 422
+            detail: "Usuário de Música está INATIVO e não pode receber novas licenças"
+
+    InternalServerError:
+      description: Erro interno do servidor
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ProblemDetails"
+          example:
+            type: "https://tools.ietf.org/html/rfc7231#section-6.6.1"
+            title: "Internal Server Error"
+            status: 500
+            detail: "An unexpected error occurred"
+            traceId: "0HN4B2E8M0T0K:00000001"
+
+  schemas:
+
+    LicencaResponse:
+      type: object
+      description: "Representa uma Licença — contrato de licenciamento de uso público de música"
+      required:
+        - id
+        - usuarioMusica
+        - rubrica
+        - dataInicio
+        - status
+        - criadoEm
+        - atualizadoEm
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Identificador único da Licença
+          example: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+        usuarioMusica:
+          $ref: "#/components/schemas/UsuarioMusicaResumo"
+        rubrica:
+          $ref: "#/components/schemas/RubricaResumo"
+        dataInicio:
+          type: string
+          format: date
+          description: Data de início da vigência (ISO 8601 date)
+          example: "2026-04-05"
+        dataFim:
+          type: string
+          format: date
+          nullable: true
+          description: Data de fim da vigência (ISO 8601 date). null = vigência indefinida
+          example: null
+        status:
+          type: string
+          enum: [ATIVA, SUSPENSA, ENCERRADA]
+          description: |
+            Status atual da Licença:
+            - `ATIVA`: Vigente, pode receber pagamentos (F04)
+            - `SUSPENSA`: Suspensa temporariamente, ainda pode receber pagamentos (F04)
+            - `ENCERRADA`: Encerrada definitivamente (estado terminal irreversível)
+          example: "ATIVA"
+        criadoEm:
+          type: string
+          format: date-time
+          description: Data/hora de criação (ISO 8601)
+          example: "2026-04-05T10:30:00Z"
+        atualizadoEm:
+          type: string
+          format: date-time
+          description: Data/hora da última atualização (ISO 8601)
+          example: "2026-04-05T10:30:00Z"
+
+    UsuarioMusicaResumo:
+      type: object
+      description: "Dados resumidos do Usuário de Música para exibição nas respostas de Licença"
+      required:
+        - id
+        - razaoSocial
+        - cnpjFormatado
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: ID do Usuário de Música
+          example: "f47ac10b-58cc-4372-a567-0e02b2c3d479"
+        razaoSocial:
+          type: string
+          description: Razão social da empresa
+          example: "Rádio Cidade FM Ltda"
+        cnpjFormatado:
+          type: string
+          description: "CNPJ formatado para exibição (AA.BBB.CCC/DDDD-EE)"
+          example: "50.997.063/0001-32"
+
+    RubricaResumo:
+      type: object
+      description: "Dados resumidos da Rubrica para exibição nas respostas de Licença"
+      required:
+        - id
+        - sigla
+        - nome
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: ID da Rubrica
+          example: "b2c3d4e5-f6a7-8901-bcde-f12345678901"
+        sigla:
+          type: string
+          description: Sigla da Rubrica
+          example: "EXEC_PUB"
+        nome:
+          type: string
+          description: Nome completo da Rubrica
+          example: "Execução Pública"
+
+    CriarLicencaRequest:
+      type: object
+      description: "Dados para criação de uma nova Licença. Status inicial é sempre ATIVA."
+      required:
+        - usuarioMusicaId
+        - rubricaId
+        - dataInicio
+      properties:
+        usuarioMusicaId:
+          type: string
+          format: uuid
+          description: "ID do Usuário de Música (deve estar com status ATIVO)"
+          example: "f47ac10b-58cc-4372-a567-0e02b2c3d479"
+        rubricaId:
+          type: string
+          format: uuid
+          description: ID da Rubrica
+          example: "b2c3d4e5-f6a7-8901-bcde-f12345678901"
+        dataInicio:
+          type: string
+          format: date
+          description: "Data de início da vigência (deve ser >= data atual)"
+          example: "2026-04-05"
+        dataFim:
+          type: string
+          format: date
+          nullable: true
+          description: "Data de fim da vigência (deve ser > dataInicio se informada). null ou ausente = vigência indefinida"
+          example: null
+
+    TransicaoStatusRequest:
+      type: object
+      description: "Request para transições de status de uma Licença (suspender, reativar, encerrar)"
+      required:
+        - justificativa
+      properties:
+        justificativa:
+          type: string
+          minLength: 10
+          maxLength: 500
+          description: "Justificativa obrigatória para a transição de status (mínimo 10 caracteres)"
+          example: "Pendência financeira identificada — aguardando regularização"
+
+    HistoricoStatusLicencaResponse:
+      type: object
+      description: "Registro de transição de status no histórico de uma Licença"
+      required:
+        - id
+        - statusNovo
+        - justificativa
+        - autor
+        - data
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: ID único do registro de histórico
+          example: "c3d4e5f6-a7b8-9012-cdef-123456789012"
+        statusAnterior:
+          type: string
+          enum: [ATIVA, SUSPENSA, ENCERRADA]
+          nullable: true
+          description: "Status anterior à transição (null no registro inicial de criação)"
+          example: "ATIVA"
+        statusNovo:
+          type: string
+          enum: [ATIVA, SUSPENSA, ENCERRADA]
+          description: Novo status aplicado após a transição
+          example: "SUSPENSA"
+        justificativa:
+          type: string
+          description: "Justificativa informada pelo Analista (ou 'Licença criada' no registro inicial)"
+          example: "Pendência financeira identificada — aguardando regularização"
+        autor:
+          type: string
+          description: "Username do autor da mudança (extraído do claim preferred_username do JWT)"
+          example: "analista.arrecadacao"
+        data:
+          type: string
+          format: date-time
+          description: Data/hora da transição (ISO 8601)
+          example: "2026-04-10T14:30:00Z"
+
+    LicencaListResponse:
+      type: object
+      required:
+        - data
+        - pagination
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/LicencaResponse"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+
+    Pagination:
+      type: object
+      required:
+        - page
+        - size
+        - total
+        - totalPages
+      properties:
+        page:
+          type: integer
+          description: Página atual
+          example: 1
+        size:
+          type: integer
+          description: Itens por página
+          example: 20
+        total:
+          type: integer
+          description: Total de itens
+          example: 47
+        totalPages:
+          type: integer
+          description: Total de páginas
+          example: 3
+
+    ProblemDetails:
+      type: object
+      description: "Formato de erro RFC 7807 (ProblemDetails)"
+      required:
+        - type
+        - title
+        - status
+      properties:
+        type:
+          type: string
+          format: uri
+          description: URI de referência do tipo de erro
+          example: "https://tools.ietf.org/html/rfc7231#section-6.5.4"
+        title:
+          type: string
+          description: Título curto do erro
+          example: "Resource Not Found"
+        status:
+          type: integer
+          description: HTTP status code
+          example: 404
+        detail:
+          type: string
+          description: Descrição detalhada do erro
+          example: "Licença com ID 'a1b2c3d4-...' não foi encontrada"
+        instance:
+          type: string
+          description: Path da requisição que gerou o erro
+          example: "/api/v1/licencas/a1b2c3d4-..."
+        traceId:
+          type: string
+          nullable: true
+          description: ID de rastreamento (presente em erros 5xx)
+          example: "0HN4B2E8M0T0K:00000001"
+        errors:
+          type: array
+          nullable: true
+          description: Detalhes de validação por campo (presente em erros 400)
+          items:
+            type: object
+            properties:
+              field:
+                type: string
+                example: "dataInicio"
+              message:
+                type: string
+                example: "dataInicio não pode ser anterior à data atual"

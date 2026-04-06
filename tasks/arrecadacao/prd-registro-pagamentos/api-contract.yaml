@@ -1,0 +1,871 @@
+openapi: 3.1.0
+
+info:
+  title: "Arrecadação API — Registro de Pagamentos (F04)"
+  description: |
+    API para gestão da UDA (Unidade de Direito Autoral) e registro de pagamentos
+    de direitos autorais contra Licenças ativas no mini-ECAD.
+
+    **Contrato gerado a partir do PRD:** `tasks/arrecadacao/prd-registro-pagamentos/prd.md`
+    **Data de geração:** 2026-04-05
+
+    ## Premissas Adotadas
+    - Autenticação JWT Bearer via Keycloak
+    - Roles: analista-arrecadacao (leitura + escrita), consultor-arrecadacao (somente leitura)
+    - Valores monetários retornados como `string` (BigDecimal no backend — sem perda de precisão no JavaScript)
+    - UDA é entidade global append-only: cada ajuste insere novo registro, nunca altera os anteriores
+    - Valor vigente da UDA = registro com maior `dataVigencia` <= data atual
+    - Período do pagamento = mês corrente (YYYY-MM), preenchido automaticamente pelo backend
+    - Unicidade: 1 pagamento CONFIRMADO por `(licença, período)` — constraint parcial no banco
+    - Pagamento é imutável após registro (estorno via F06)
+    - Erros seguem RFC 7807 (ProblemDetails)
+    - Campos JSON em camelCase
+    - Paginação server-side: page/size (default page=1, size=20)
+    - Ordenação: campo + direção via prefixo `-` para DESC
+  version: "1.0.0"
+  contact:
+    name: "Time de Plataforma ECAD"
+
+servers:
+  - url: http://localhost:5003/api/v1
+    description: Desenvolvimento local (arrecadacao-api)
+
+security:
+  - BearerAuth: []
+
+tags:
+  - name: UDA
+    description: "Gestão da Unidade de Direito Autoral — histórico de valores e consulta da UDA vigente"
+  - name: Pagamentos
+    description: "Registro e consulta de pagamentos de direitos autorais em UDAs"
+
+paths:
+
+  /uda/vigente:
+    get:
+      summary: Consultar valor vigente da UDA
+      description: |
+        Retorna o registro de UDA com maior `dataVigencia` menor ou igual à data atual.
+        Usado pelo frontend para exibir o valor que será aplicado antes do registro de pagamento.
+      operationId: consultarUdaVigente
+      tags:
+        - UDA
+      responses:
+        "200":
+          description: Valor vigente da UDA retornado com sucesso
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UdaResponse"
+              example:
+                id: "e1f2a3b4-c5d6-7890-ef12-34567890abcd"
+                valor: "107.310000"
+                dataVigencia: "2026-01-01"
+                criadoEm: "2026-01-01T00:00:00Z"
+                criadoPor: null
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          description: Nenhum valor de UDA vigente para a data atual
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetails"
+              example:
+                type: "https://tools.ietf.org/html/rfc7231#section-6.5.4"
+                title: "Resource Not Found"
+                status: 404
+                detail: "Não há valor de UDA vigente para a data atual (2026-04-05)"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+      x-frontend-notes: |
+        Exibir o valor formatado como moeda (R$) no formulário de registro de pagamento.
+        Chamar este endpoint ao abrir o modal/formulário de registro para garantir valor atualizado.
+        Se retornar 404, bloquear o formulário de registro com mensagem "Nenhum valor de UDA configurado".
+      x-backend-notes: |
+        Query: SELECT * FROM arrecadacao.uda_valor WHERE data_vigencia <= CURRENT_DATE ORDER BY data_vigencia DESC LIMIT 1.
+        Retornar 404 se nenhum registro encontrado.
+
+  /uda:
+    post:
+      summary: Ajustar valor da UDA (novo registro)
+      description: |
+        Insere um novo registro de valor para a UDA com uma data de vigência.
+        Operação append-only — registros anteriores não são alterados.
+        A data de vigência pode ser futura (pré-agendamento de reajuste).
+        Exclusivo para perfil analista-arrecadacao.
+      operationId: ajustarUda
+      tags:
+        - UDA
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AjustarUdaRequest"
+            example:
+              valor: "115.00"
+              dataVigencia: "2026-07-01"
+      responses:
+        "201":
+          description: Novo valor de UDA registrado com sucesso
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UdaResponse"
+              example:
+                id: "f2e3d4c5-b6a7-8901-cdef-234567890abc"
+                valor: "115.000000"
+                dataVigencia: "2026-07-01"
+                criadoEm: "2026-04-05T10:00:00Z"
+                criadoPor: "analista.arrecadacao"
+          headers:
+            Location:
+              description: URL do recurso criado
+              schema:
+                type: string
+                example: "/api/v1/uda/f2e3d4c5-b6a7-8901-cdef-234567890abc"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+      x-frontend-notes: |
+        Campo `dataVigencia` usa date picker — permitir datas futuras (pré-agendamento).
+        Campo `valor` aceita até 6 casas decimais; separador decimal = ponto.
+        Após sucesso, exibir toast de confirmação e atualizar o card da UDA vigente se a data for <= hoje.
+        Botão visível apenas para perfil Analista.
+      x-backend-notes: |
+        `criadoPor` extraído do claim `preferred_username` do JWT. Nunca aceitar do body.
+        Armazenar `valor` como NUMERIC(18,6) — 6 casas decimais de precisão.
+        Não verificar duplicidade de data de vigência — múltiplos registros para a mesma data são tecnicamente permitidos, mas o mais recente (por `criado_em`) vence.
+
+  /uda/historico:
+    get:
+      summary: Histórico completo de valores da UDA
+      description: |
+        Retorna todos os registros históricos de valor da UDA, ordenados por `dataVigencia` DESC.
+        Sem paginação — volume esperado é baixo (ajustes são eventos raros).
+        Acessível por ambos os perfis (Analista e Consultor).
+      operationId: listarHistoricoUda
+      tags:
+        - UDA
+      responses:
+        "200":
+          description: Histórico retornado com sucesso (array vazio se não houver registros)
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/UdaResponse"
+              example:
+                - id: "f2e3d4c5-b6a7-8901-cdef-234567890abc"
+                  valor: "115.000000"
+                  dataVigencia: "2026-07-01"
+                  criadoEm: "2026-04-05T10:00:00Z"
+                  criadoPor: "analista.arrecadacao"
+                - id: "e1f2a3b4-c5d6-7890-ef12-34567890abcd"
+                  valor: "107.310000"
+                  dataVigencia: "2026-01-01"
+                  criadoEm: "2026-01-01T00:00:00Z"
+                  criadoPor: null
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+      x-frontend-notes: |
+        Exibir como tabela ou timeline ordenada por dataVigencia DESC.
+        Registro com `criadoPor = null` é o seed inicial — exibir "Sistema" ou "—".
+        Destacar visualmente o registro vigente (maior dataVigencia <= hoje).
+      x-backend-notes: |
+        ORDER BY data_vigencia DESC, criado_em DESC.
+        Retornar array vazio [] com status 200 se não houver registros (nunca 404).
+
+  /pagamentos:
+    get:
+      summary: Listar pagamentos com paginação e filtros
+      description: |
+        Retorna lista paginada de pagamentos com filtros e ordenação server-side.
+        Filtros são combinados com AND.
+        Busca por razão social do Usuário de Música é parcial e case-insensitive.
+      operationId: listarPagamentos
+      tags:
+        - Pagamentos
+      parameters:
+        - name: page
+          in: query
+          description: Número da página (começa em 1)
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+            example: 1
+        - name: size
+          in: query
+          description: Itens por página (máx 100)
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+            example: 20
+        - name: sort
+          in: query
+          description: "Campo de ordenação. Prefixo `-` para DESC. Campos: `dataRegistro`, `valorBruto`, `periodo`"
+          schema:
+            type: string
+            default: "-dataRegistro"
+            example: "-dataRegistro"
+        - name: usuarioMusicaId
+          in: query
+          description: Filtro por ID do Usuário de Música (exato)
+          schema:
+            type: string
+            format: uuid
+            example: "f47ac10b-58cc-4372-a567-0e02b2c3d479"
+        - name: razaoSocial
+          in: query
+          description: Filtro por razão social do Usuário de Música (parcial, case-insensitive)
+          schema:
+            type: string
+            example: "rádio"
+        - name: rubricaSigla
+          in: query
+          description: Filtro por sigla da Rubrica (exato, case-insensitive)
+          schema:
+            type: string
+            example: "RFM"
+        - name: periodo
+          in: query
+          description: "Filtro por período de referência (formato YYYY-MM)"
+          schema:
+            type: string
+            pattern: "^\\d{4}-(0[1-9]|1[0-2])$"
+            example: "2026-04"
+        - name: status
+          in: query
+          description: Filtro por status do pagamento (exato)
+          schema:
+            type: string
+            enum: [CONFIRMADO, ESTORNADO]
+            example: "CONFIRMADO"
+      responses:
+        "200":
+          description: Lista paginada de pagamentos
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PagamentoListResponse"
+              example:
+                data:
+                  - id: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+                    licenca:
+                      id: "b2c3d4e5-f6a7-8901-bcde-f12345678901"
+                      numero: "LIC-2026-00042"
+                      status: "ATIVA"
+                      usuarioMusica:
+                        id: "f47ac10b-58cc-4372-a567-0e02b2c3d479"
+                        razaoSocial: "Rádio Cidade FM Ltda"
+                        cnpj: "50997063000132"
+                      rubrica:
+                        id: "c3d4e5f6-a7b8-9012-cdef-123456789012"
+                        sigla: "RFM"
+                        nome: "Rádio FM"
+                    quantidadeUdas: "2.500000"
+                    valorUdaNoMomento: "107.310000"
+                    valorBruto: "268.275000"
+                    periodo: "2026-04"
+                    status: "CONFIRMADO"
+                    dataRegistro: "2026-04-05T14:30:00Z"
+                    criadoEm: "2026-04-05T14:30:00Z"
+                    atualizadoEm: "2026-04-05T14:30:00Z"
+                pagination:
+                  page: 1
+                  size: 20
+                  total: 87
+                  totalPages: 5
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+      x-frontend-notes: |
+        Debounce de 300ms no campo de texto `razaoSocial`.
+        Filtro `periodo` como input de mês/ano (ex: <input type="month">).
+        Filtro `status` como dropdown (Todos / Confirmado / Estornado).
+        Colunas clicáveis para alternar ordenação (toggle ASC/DESC via prefixo `-`).
+        Badge de status: CONFIRMADO (verde), ESTORNADO (vermelho).
+        Valores `valorBruto` exibidos formatados como moeda (R$).
+      x-backend-notes: |
+        JOIN com licenca, usuario_musica e rubrica para suportar filtros.
+        Filtro `razaoSocial` usa ILIKE com % em ambos os lados.
+        Filtro `rubricaSigla` usa ILIKE case-insensitive.
+        Índices recomendados: pagamento.licenca_id, pagamento.periodo, pagamento.status.
+
+    post:
+      summary: Registrar pagamento em UDAs contra licença
+      description: |
+        Registra um novo pagamento de direitos autorais em UDAs para uma Licença existente.
+
+        O backend executa atomicamente em transação única:
+        1. Busca e valida a Licença (deve ser ATIVA ou SUSPENSA)
+        2. Busca a UDA vigente (data_vigencia <= hoje)
+        3. Calcula valorBruto = quantidadeUdas × valorUdaVigente
+        4. Persiste o pagamento com status CONFIRMADO e periodo = mês corrente
+        5. Insere evento no Outbox (arrecadacao.pagamento.registrado)
+
+        Exclusivo para perfil analista-arrecadacao.
+      operationId: registrarPagamento
+      tags:
+        - Pagamentos
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegistrarPagamentoRequest"
+            example:
+              licencaId: "b2c3d4e5-f6a7-8901-bcde-f12345678901"
+              quantidadeUdas: "2.5"
+      responses:
+        "201":
+          description: Pagamento registrado com sucesso
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PagamentoResponse"
+              example:
+                id: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+                licenca:
+                  id: "b2c3d4e5-f6a7-8901-bcde-f12345678901"
+                  numero: "LIC-2026-00042"
+                  status: "ATIVA"
+                  usuarioMusica:
+                    id: "f47ac10b-58cc-4372-a567-0e02b2c3d479"
+                    razaoSocial: "Rádio Cidade FM Ltda"
+                    cnpj: "50997063000132"
+                  rubrica:
+                    id: "c3d4e5f6-a7b8-9012-cdef-123456789012"
+                    sigla: "RFM"
+                    nome: "Rádio FM"
+                quantidadeUdas: "2.500000"
+                valorUdaNoMomento: "107.310000"
+                valorBruto: "268.275000"
+                periodo: "2026-04"
+                status: "CONFIRMADO"
+                dataRegistro: "2026-04-05T14:30:00Z"
+                criadoEm: "2026-04-05T14:30:00Z"
+                atualizadoEm: "2026-04-05T14:30:00Z"
+          headers:
+            Location:
+              description: URL do recurso criado
+              schema:
+                type: string
+                example: "/api/v1/pagamentos/a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          description: Licença não encontrada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetails"
+              example:
+                type: "https://tools.ietf.org/html/rfc7231#section-6.5.4"
+                title: "Resource Not Found"
+                status: 404
+                detail: "Licença com ID 'b2c3d4e5-f6a7-8901-bcde-f12345678901' não foi encontrada"
+        "409":
+          description: "Conflito — já existe pagamento CONFIRMADO para esta licença no período corrente"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetails"
+              example:
+                type: "https://tools.ietf.org/html/rfc7231#section-6.5.8"
+                title: "Conflict"
+                status: 409
+                detail: "Já existe pagamento confirmado para a licença 'LIC-2026-00042' no período 2026-04"
+        "422":
+          description: "Erro de regra de negócio (licença encerrada ou UDA não configurada)"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetails"
+              examples:
+                licencaEncerrada:
+                  summary: Licença com status ENCERRADA
+                  value:
+                    type: "https://tools.ietf.org/html/rfc7231#section-6.5.1"
+                    title: "Unprocessable Entity"
+                    status: 422
+                    detail: "Não é possível registrar pagamento para licença com status ENCERRADA"
+                semUdaVigente:
+                  summary: Nenhuma UDA vigente configurada
+                  value:
+                    type: "https://tools.ietf.org/html/rfc7231#section-6.5.1"
+                    title: "Unprocessable Entity"
+                    status: 422
+                    detail: "Não há valor de UDA vigente para a data atual (2026-04-05)"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+      x-frontend-notes: |
+        Buscar GET /uda/vigente ao abrir o formulário e exibir o valor atual da UDA.
+        Calcular e exibir preview do valorBruto = quantidadeUdas × valorUdaVigente em tempo real.
+        Tratar 409 com mensagem amigável: "Já existe um pagamento registrado para esta licença em [mês/ano]."
+        Tratar 422 (licença encerrada) com mensagem: "Esta licença está encerrada e não pode receber pagamentos."
+        Após sucesso (201), redirecionar para /pagamentos/{id} com toast de confirmação.
+        Botão visível apenas para perfil Analista.
+      x-backend-notes: |
+        Toda a operação deve ser atômica (transação única).
+        Calcular periodo = formato(LocalDate.now(), "yyyy-MM").
+        Capturar DataIntegrityViolationException da constraint única e converter em 409.
+        Publicar evento no Outbox dentro da mesma transação (garantia de consistência).
+        Formato do evento CloudEvents: type="arrecadacao.pagamento.registrado", source="/arrecadacao/pagamentos".
+
+  /pagamentos/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: ID único do pagamento (UUID)
+        schema:
+          type: string
+          format: uuid
+          example: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+
+    get:
+      summary: Buscar pagamento por ID
+      description: |
+        Retorna os dados completos de um pagamento específico com os dados da licença,
+        usuário de música e rubrica expandidos.
+        Acessível por ambos os perfis (Analista e Consultor).
+      operationId: buscarPagamentoPorId
+      tags:
+        - Pagamentos
+      responses:
+        "200":
+          description: Pagamento encontrado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PagamentoResponse"
+              example:
+                id: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+                licenca:
+                  id: "b2c3d4e5-f6a7-8901-bcde-f12345678901"
+                  numero: "LIC-2026-00042"
+                  status: "ATIVA"
+                  usuarioMusica:
+                    id: "f47ac10b-58cc-4372-a567-0e02b2c3d479"
+                    razaoSocial: "Rádio Cidade FM Ltda"
+                    cnpj: "50997063000132"
+                  rubrica:
+                    id: "c3d4e5f6-a7b8-9012-cdef-123456789012"
+                    sigla: "RFM"
+                    nome: "Rádio FM"
+                quantidadeUdas: "2.500000"
+                valorUdaNoMomento: "107.310000"
+                valorBruto: "268.275000"
+                periodo: "2026-04"
+                status: "CONFIRMADO"
+                dataRegistro: "2026-04-05T14:30:00Z"
+                criadoEm: "2026-04-05T14:30:00Z"
+                atualizadoEm: "2026-04-05T14:30:00Z"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+      x-frontend-notes: |
+        Exibir `valorUdaNoMomento` com rótulo "Valor UDA (na data do registro)" para deixar claro que é snapshot histórico.
+        Badge de status: CONFIRMADO (verde), ESTORNADO (vermelho).
+        Botão "Estornar" visível apenas para Analista quando `status = CONFIRMADO` (ação implementada em F06).
+        Formatar todos os valores decimais como moeda (R$).
+      x-backend-notes: |
+        JOIN com licenca, usuario_musica e rubrica.
+        Nenhuma lógica de negócio — apenas leitura direta.
+
+components:
+
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: "Token JWT obtido via Keycloak (Authorization Code + PKCE). Roles: analista-arrecadacao (leitura + escrita), consultor-arrecadacao (somente leitura)."
+
+  responses:
+    BadRequest:
+      description: Requisição inválida — erro de validação de campos
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ProblemDetails"
+          example:
+            type: "https://tools.ietf.org/html/rfc7231#section-6.5.1"
+            title: "Validation Error"
+            status: 400
+            detail: "Um ou mais campos são inválidos"
+            errors:
+              - field: "quantidadeUdas"
+                message: "A quantidade de UDAs deve ser maior que zero"
+
+    Unauthorized:
+      description: Não autenticado — token ausente ou inválido
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ProblemDetails"
+          example:
+            type: "https://tools.ietf.org/html/rfc7231#section-6.5.1"
+            title: "Unauthorized"
+            status: 401
+            detail: "Token de autenticação ausente ou inválido"
+
+    Forbidden:
+      description: Sem permissão — perfil consultor-arrecadacao não pode executar esta operação
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ProblemDetails"
+          example:
+            type: "https://tools.ietf.org/html/rfc7231#section-6.5.3"
+            title: "Forbidden"
+            status: 403
+            detail: "Acesso negado: perfil consultor-arrecadacao não possui permissão para esta operação"
+
+    NotFound:
+      description: Recurso não encontrado
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ProblemDetails"
+          example:
+            type: "https://tools.ietf.org/html/rfc7231#section-6.5.4"
+            title: "Resource Not Found"
+            status: 404
+            detail: "Pagamento com ID 'a1b2c3d4-e5f6-7890-abcd-ef1234567890' não foi encontrado"
+
+    InternalServerError:
+      description: Erro interno do servidor
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ProblemDetails"
+          example:
+            type: "https://tools.ietf.org/html/rfc7231#section-6.6.1"
+            title: "Internal Server Error"
+            status: 500
+            detail: "An unexpected error occurred"
+            traceId: "0HN4B2E8M0T0K:00000001"
+
+  schemas:
+
+    UdaResponse:
+      type: object
+      description: "Representa um registro histórico de valor da UDA (Unidade de Direito Autoral)"
+      required:
+        - id
+        - valor
+        - dataVigencia
+        - criadoEm
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Identificador único do registro de valor
+          example: "e1f2a3b4-c5d6-7890-ef12-34567890abcd"
+        valor:
+          type: string
+          description: "Valor da UDA em R$ como string decimal (alta precisão, 6 casas decimais)"
+          example: "107.310000"
+        dataVigencia:
+          type: string
+          format: date
+          description: "Data a partir da qual este valor está vigente (YYYY-MM-DD)"
+          example: "2026-01-01"
+        criadoEm:
+          type: string
+          format: date-time
+          description: Data/hora de criação do registro (ISO 8601)
+          example: "2026-01-01T00:00:00Z"
+        criadoPor:
+          type: string
+          nullable: true
+          description: "Username do autor da inserção (null para registros de seed Flyway)"
+          example: "analista.arrecadacao"
+
+    AjustarUdaRequest:
+      type: object
+      description: "Request para inserir um novo registro de valor da UDA"
+      required:
+        - valor
+        - dataVigencia
+      properties:
+        valor:
+          type: string
+          description: "Novo valor da UDA em R$ como string decimal. Deve ser > 0."
+          example: "115.00"
+        dataVigencia:
+          type: string
+          format: date
+          description: "Data a partir da qual o novo valor estará vigente (YYYY-MM-DD). Pode ser futura."
+          example: "2026-07-01"
+
+    RubricaResumo:
+      type: object
+      description: "Resumo de Rubrica para exibição no contexto de pagamentos"
+      required:
+        - id
+        - sigla
+        - nome
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Identificador único da Rubrica
+          example: "c3d4e5f6-a7b8-9012-cdef-123456789012"
+        sigla:
+          type: string
+          description: Sigla da Rubrica (ex: RFM, RTV)
+          example: "RFM"
+        nome:
+          type: string
+          description: Nome completo da Rubrica
+          example: "Rádio FM"
+
+    UsuarioMusicaResumo:
+      type: object
+      description: "Resumo de Usuário de Música para exibição no contexto de pagamentos"
+      required:
+        - id
+        - razaoSocial
+        - cnpj
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Identificador único do Usuário de Música
+          example: "f47ac10b-58cc-4372-a567-0e02b2c3d479"
+        razaoSocial:
+          type: string
+          description: Razão social da empresa
+          example: "Rádio Cidade FM Ltda"
+        cnpj:
+          type: string
+          description: "CNPJ sem formatação (14 caracteres alfanuméricos)"
+          example: "50997063000132"
+
+    LicencaResumo:
+      type: object
+      description: "Resumo de Licença com Usuário de Música e Rubrica expandidos"
+      required:
+        - id
+        - numero
+        - status
+        - usuarioMusica
+        - rubrica
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Identificador único da Licença
+          example: "b2c3d4e5-f6a7-8901-bcde-f12345678901"
+        numero:
+          type: string
+          description: Número de identificação da licença (gerado pelo sistema)
+          example: "LIC-2026-00042"
+        status:
+          type: string
+          enum: [ATIVA, SUSPENSA, ENCERRADA]
+          description: Status atual da Licença
+          example: "ATIVA"
+        usuarioMusica:
+          $ref: "#/components/schemas/UsuarioMusicaResumo"
+        rubrica:
+          $ref: "#/components/schemas/RubricaResumo"
+
+    PagamentoResponse:
+      type: object
+      description: "Representa um pagamento de direitos autorais registrado no sistema"
+      required:
+        - id
+        - licenca
+        - quantidadeUdas
+        - valorUdaNoMomento
+        - valorBruto
+        - periodo
+        - status
+        - dataRegistro
+        - criadoEm
+        - atualizadoEm
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Identificador único do pagamento
+          example: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+        licenca:
+          $ref: "#/components/schemas/LicencaResumo"
+        quantidadeUdas:
+          type: string
+          description: "Quantidade de UDAs pagas como string decimal (6 casas decimais)"
+          example: "2.500000"
+        valorUdaNoMomento:
+          type: string
+          description: |
+            Snapshot do valor da UDA vigente no momento do registro (string decimal, imutável).
+            Preserva o valor histórico independente de reajustes posteriores da UDA.
+          example: "107.310000"
+        valorBruto:
+          type: string
+          description: "Valor bruto calculado: quantidadeUdas × valorUdaNoMomento (string decimal)"
+          example: "268.275000"
+        periodo:
+          type: string
+          description: "Período de referência do pagamento (YYYY-MM). Preenchido automaticamente pelo backend com o mês corrente."
+          pattern: "^\\d{4}-(0[1-9]|1[0-2])$"
+          example: "2026-04"
+        status:
+          type: string
+          enum: [CONFIRMADO, ESTORNADO]
+          description: |
+            Status do pagamento:
+            - `CONFIRMADO`: Pagamento ativo e válido para cálculo de verba
+            - `ESTORNADO`: Pagamento cancelado via F06 (Estorno de Pagamentos)
+          example: "CONFIRMADO"
+        dataRegistro:
+          type: string
+          format: date-time
+          description: Momento em que o pagamento foi registrado (ISO 8601)
+          example: "2026-04-05T14:30:00Z"
+        criadoEm:
+          type: string
+          format: date-time
+          description: Timestamp de criação do registro (ISO 8601)
+          example: "2026-04-05T14:30:00Z"
+        atualizadoEm:
+          type: string
+          format: date-time
+          description: Timestamp da última atualização (ISO 8601)
+          example: "2026-04-05T14:30:00Z"
+
+    RegistrarPagamentoRequest:
+      type: object
+      description: |
+        Request para registrar um novo pagamento em UDAs.
+        O campo `periodo` NÃO deve ser enviado — o backend preenche automaticamente com o mês corrente.
+        O campo `valorBruto` NÃO deve ser enviado — calculado automaticamente pelo backend.
+      required:
+        - licencaId
+        - quantidadeUdas
+      properties:
+        licencaId:
+          type: string
+          format: uuid
+          description: "ID da Licença à qual o pagamento deve ser vinculado. Deve ser ATIVA ou SUSPENSA."
+          example: "b2c3d4e5-f6a7-8901-bcde-f12345678901"
+        quantidadeUdas:
+          type: string
+          description: |
+            Quantidade de UDAs a pagar, como string decimal.
+            Deve ser maior que zero. Frações são permitidas (ex: "2.5", "0.75", "10").
+          example: "2.5"
+
+    PagamentoListResponse:
+      type: object
+      description: "Resposta paginada para listagem de pagamentos"
+      required:
+        - data
+        - pagination
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/PagamentoResponse"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+
+    Pagination:
+      type: object
+      required:
+        - page
+        - size
+        - total
+        - totalPages
+      properties:
+        page:
+          type: integer
+          description: Página atual
+          example: 1
+        size:
+          type: integer
+          description: Itens por página
+          example: 20
+        total:
+          type: integer
+          description: Total de itens
+          example: 87
+        totalPages:
+          type: integer
+          description: Total de páginas
+          example: 5
+
+    ProblemDetails:
+      type: object
+      description: "Formato de erro RFC 7807 (ProblemDetails)"
+      required:
+        - type
+        - title
+        - status
+      properties:
+        type:
+          type: string
+          format: uri
+          description: URI de referência do tipo de erro
+          example: "https://tools.ietf.org/html/rfc7231#section-6.5.4"
+        title:
+          type: string
+          description: Título curto do erro
+          example: "Resource Not Found"
+        status:
+          type: integer
+          description: HTTP status code
+          example: 404
+        detail:
+          type: string
+          description: Descrição detalhada do erro
+          example: "Pagamento com ID 'a1b2c3d4-e5f6-7890-abcd-ef1234567890' não foi encontrado"
+        instance:
+          type: string
+          description: Path da requisição que gerou o erro
+          example: "/api/v1/pagamentos/a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+        traceId:
+          type: string
+          nullable: true
+          description: ID de rastreamento (presente em erros 5xx)
+          example: "0HN4B2E8M0T0K:00000001"
+        errors:
+          type: array
+          nullable: true
+          description: Detalhes de validação por campo (presente em erros 400)
+          items:
+            type: object
+            properties:
+              field:
+                type: string
+                example: "quantidadeUdas"
+              message:
+                type: string
+                example: "A quantidade de UDAs deve ser maior que zero"

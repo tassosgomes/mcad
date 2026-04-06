@@ -71,11 +71,11 @@ Sem um registro estruturado de arrecadação, a Distribuição não sabe quanto 
 
 | # | Feature | Descrição | Prioridade | Status | PRD |
 |---|---|---|---|---|---|
-| F01 | Seed de Rubricas | Carga inicial das 7 rubricas via migration. Publicação de eventos `arrecadacao.rubrica.criada` para sincronização com Identificação e Distribuição (event-driven ACL). Dados não editáveis pelo usuário. | Must Have | `planned` | — |
-| F02 | Gestão de Usuários de Música | CRUD completo de usuários de música: razão social, nome fantasia, CNPJ alfanumérico, endereço, contato e status. Validação de unicidade por CNPJ. | Must Have | `planned` | — |
-| F03 | Gestão de Licenças | Criar, consultar e encerrar licenças que vinculam um Usuário de Música a uma Rubrica com vigência. Um mesmo usuário pode ter licenças em múltiplas rubricas. | Must Have | `planned` | — |
-| F04 | Registro de Pagamentos | Registrar pagamentos com valor bruto contra uma licença ativa em um período mensal. Listagem e consulta com filtros por rubrica, período e usuário. | Must Have | `planned` | — |
-| F05 | Cálculo e Disponibilização de Verba Líquida | Calcular verba líquida por rubrica+período (85% do bruto) e publicar evento `arrecadacao.verba.disponivel` incrementalmente a cada pagamento confirmado. Tela de acompanhamento com totais por rubrica/período. | Must Have | `planned` | — |
+| F01 | Seed de Rubricas | Carga inicial das 7 rubricas via migration. Publicação de eventos `arrecadacao.rubrica.criada` para sincronização com Identificação e Distribuição (event-driven ACL). Dados não editáveis pelo usuário. | Must Have | `prd-ready` | `tasks/arrecadacao/prd-seed-rubricas/prd.md` |
+| F02 | Gestão de Usuários de Música | CRUD completo de usuários de música: razão social, nome fantasia, CNPJ alfanumérico, endereço, contato e status. Validação de unicidade por CNPJ. | Must Have | `prd-ready` | `tasks/arrecadacao/prd-gestao-usuarios-musica/prd.md` |
+| F03 | Gestão de Licenças | Criar, consultar e encerrar licenças que vinculam um Usuário de Música a uma Rubrica com vigência. Um mesmo usuário pode ter licenças em múltiplas rubricas. | Must Have | `prd-ready` | `tasks/arrecadacao/prd-gestao-licencas/prd.md` |
+| F04 | Registro de Pagamentos | Registrar pagamentos em UDAs contra uma licença ativa/suspensa no período atual. Gestão da UDA como entidade de referência com histórico. | Must Have | `prd-ready` | `tasks/arrecadacao/prd-registro-pagamentos/prd.md` |
+| F05 | Cálculo e Disponibilização de Verba Líquida | Calcular verba líquida por rubrica+período (85% do bruto) e publicar evento `arrecadacao.verba.disponivel` incrementalmente. Lock durante distribuição. Tela de acompanhamento com visão detalhada e agregada. | Must Have | `prd-ready` | `tasks/arrecadacao/prd-calculo-verba-liquida/prd.md` |
 | F06 | Estorno de Pagamento | Cancelar pagamento com justificativa obrigatória. Recalcula verba líquida da rubrica+período afetado e publica evento `arrecadacao.pagamento.estornado` para Distribuição considerar o extorno na próxima execução. | Must Have | `planned` | — |
 
 **Prioridades (MoSCoW):** `Must Have` · `Should Have` · `Could Have` · `Won't Have`
