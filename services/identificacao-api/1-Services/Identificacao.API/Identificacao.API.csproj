@@ -15,7 +15,9 @@
     </PackageReference>
     <PackageReference Include="Microsoft.Extensions.Http.Polly" Version="8.0.0" />
     <PackageReference Include="Minio" Version="7.0.0" />
+    <PackageReference Include="Saunter" Version="0.13.0" />
     <PackageReference Include="Scrutor" Version="5.0.1" />
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="6.9.0" />
   </ItemGroup>
 
   <PropertyGroup>

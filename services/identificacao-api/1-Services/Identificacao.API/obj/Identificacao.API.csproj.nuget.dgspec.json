@@ -78,9 +78,17 @@
               "target": "Package",
               "version": "[7.0.0, )"
             },
+            "Saunter": {
+              "target": "Package",
+              "version": "[0.13.0, )"
+            },
             "Scrutor": {
               "target": "Package",
               "version": "[5.0.1, )"
+            },
+            "Swashbuckle.AspNetCore": {
+              "target": "Package",
+              "version": "[6.9.0, )"
             }
           },
           "imports": [

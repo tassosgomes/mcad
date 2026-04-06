@@ -1,0 +1,34 @@
+# Test profile — connects to docker-compose.dev.yml PostgreSQL
+# Run: docker compose -f docker-compose.dev.yml up -d
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/mcad?currentSchema=arrecadacao,cadastro,public
+    username: gestauto
+    password: gestauto123
+  flyway:
+    url: jdbc:postgresql://localhost:5432/mcad
+    user: gestauto
+    password: gestauto123
+    schemas: arrecadacao
+    clean-disabled: false
+    baseline-on-migrate: true
+    baseline-version: "0"
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        default_schema: arrecadacao
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: mcad
+    password: mcad
+    virtual-host: mcad
+
+app:
+  security:
+    auth-enabled: false
+  outbox:
+    publisher:
+      poll-interval-ms: 99999999

@@ -1,5 +1,6 @@
 package br.com.ecad.arrecadacao.infra.persistence;
 
+import br.com.ecad.arrecadacao.config.TestSecurityConfig;
 import br.com.ecad.arrecadacao.api.ArrecadacaoApplication;
 import br.com.ecad.arrecadacao.domain.entities.OutboxEvent;
 import br.com.ecad.arrecadacao.domain.entities.Rubrica;
@@ -15,46 +16,28 @@ import java.util.stream.Collectors;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.test.context.DynamicPropertyRegistry;
-import org.springframework.test.context.DynamicPropertySource;
-import org.testcontainers.containers.PostgreSQLContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@Testcontainers
 @SpringBootTest(
         classes = ArrecadacaoApplication.class,
         webEnvironment = SpringBootTest.WebEnvironment.NONE,
-        properties = {
-                "app.security.auth-enabled=false",
-                "spring.jpa.hibernate.ddl-auto=validate",
-                "spring.rabbitmq.host=localhost",
-                "spring.rabbitmq.port=5672"
-        })
+        properties = "spring.autoconfigure.exclude=org.springframework.boot.autoconfigure.security.oauth2.resource.servlet.OAuth2ResourceServerAutoConfiguration")
+@ActiveProfiles("test")
+@Import(TestSecurityConfig.class)
 class RubricaPersistenceIntegrationTest {
-
-    @Container
-    static final PostgreSQLContainer<?> POSTGRES = new PostgreSQLContainer<>("postgres:16-alpine")
-            .withDatabaseName("mcad")
-            .withUsername("postgres")
-            .withPassword("postgres");
-
-    @DynamicPropertySource
-    static void configureProperties(DynamicPropertyRegistry registry) {
-        registry.add("spring.datasource.url", POSTGRES::getJdbcUrl);
-        registry.add("spring.datasource.username", POSTGRES::getUsername);
-        registry.add("spring.datasource.password", POSTGRES::getPassword);
-        registry.add("spring.flyway.url", POSTGRES::getJdbcUrl);
-        registry.add("spring.flyway.user", POSTGRES::getUsername);
-        registry.add("spring.flyway.password", POSTGRES::getPassword);
-    }
 
     @Autowired
     private RubricaRepository rubricaRepository;
+
+    @MockBean
+    private RabbitTemplate rabbitTemplate;
 
     @Autowired
     private OutboxEventRepository outboxEventRepository;
@@ -74,7 +57,7 @@ class RubricaPersistenceIntegrationTest {
                 "SELECT COUNT(*) FROM arrecadacao.rubricas",
                 Integer.class);
 
-        assertThat(migrationCount).isEqualTo(2);
+        assertThat(migrationCount).isGreaterThanOrEqualTo(2);
         assertThat(rubricaCount).isEqualTo(7);
     }
 

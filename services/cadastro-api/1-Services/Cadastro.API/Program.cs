@@ -1,5 +1,7 @@
+using Cadastro.API.AsyncApi;
 using Cadastro.API.Endpoints;
 using Cadastro.API.Infrastructure;
+using Cadastro.API.Swagger;
 using Cadastro.Application.Associacoes.Queries;
 using Cadastro.Application.Common.CQRS;
 using Cadastro.Application.Titulares.Commands;
@@ -80,6 +82,12 @@ builder.Services.Scan(scan => scan
 // ─── FluentValidation — Validators ────────────────────────────────────
 builder.Services.AddValidatorsFromAssemblyContaining<CriarTitularCommandValidator>();
 
+// ─── Swagger (documentação REST) ──────────────────────────────────────
+builder.Services.AddSwaggerDocs();
+
+// ─── AsyncAPI (Saunter — documentação de eventos) ─────────────────────
+builder.Services.AddAsyncApiDocs();
+
 // ─── Health Checks ─────────────────────────────────────────────────────
 builder.Services.AddHealthChecks();
 
@@ -153,10 +161,16 @@ var app = builder.Build();
 app.UseExceptionHandler();
 app.UseCors();
 
+// Swagger e AsyncAPI antes do auth — middleware short-circuits antes da auth rodar
+app.UseSwaggerDocs();
+
 if (authEnabled)
 {
     app.UseAuthentication();
-    app.UseAuthorization();
+    app.UseWhen(
+        ctx => !ctx.Request.Path.StartsWithSegments("/asyncapi")
+            && !ctx.Request.Path.StartsWithSegments("/swagger"),
+        inner => inner.UseAuthorization());
 }
 else
 {
@@ -187,6 +201,9 @@ app.MapTitularidadeEndpoints();
 app.MapFonogramaEndpoints();
 app.MapParticipacaoEndpoints();
 app.MapBuscaEndpoints();
+
+// ─── AsyncAPI (documentação de eventos — pública) ─────────────────────
+app.MapAsyncApiDocs();
 
 // ─── Health Check ─────────────────────────────────────────────────────
 app.MapHealthChecks("/health").AllowAnonymous();

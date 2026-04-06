@@ -1,0 +1,675 @@
+asyncapi: '2.6.0'
+
+info:
+  title: Cadastro API — Eventos Assíncronos
+  version: '1.0.0'
+  description: |
+    Eventos publicados pelo domínio de **Cadastro** via RabbitMQ.
+
+    Todos os eventos seguem a especificação **CloudEvents 1.0** em modo estruturado JSON
+    (`Content-Type: application/cloudevents+json`) e são entregues com garantia
+    **at-least-once** através do padrão **Transactional Outbox** (tabela `cadastro.outbox_events`).
+
+    ### Arquitetura de entrega
+
+    ```
+    Command Handler
+        │  AddEvent() → outbox_events (mesma transação)
+        ▼
+    OutboxPublisherWorker (BackgroundService)
+        │  polling a cada 5 s • lote de 100 • máx 10 tentativas
+        ▼
+    RabbitMQ Exchange: cadastro.events (topic, durable)
+        │  routing key = event type
+        ▼
+    Consumidores (Identificação, Distribuição, …)
+    ```
+
+    ### Formato CloudEvents
+
+    Cada mensagem entregue ao broker tem o envelope CloudEvents 1.0:
+
+    ```json
+    {
+      "specversion": "1.0",
+      "type": "cadastro.obra.liberada",
+      "source": "urn:cadastro-api",
+      "subject": "<entityId>",
+      "id": "<uuid>",
+      "time": "2026-04-05T10:30:00Z",
+      "datacontenttype": "application/json",
+      "data": { ... }
+    }
+    ```
+  contact:
+    name: mini-ECAD
+  license:
+    name: Internal
+
+servers:
+  development:
+    url: amqp://localhost:5672
+    protocol: amqp
+    description: RabbitMQ local — sobe via `docker compose -f docker-compose.dev.yml up`
+    security:
+      - userPassword: []
+    bindings:
+      amqp:
+        vhost: mcad
+
+defaultContentType: application/cloudevents+json
+
+channels:
+
+  # ── Obras ─────────────────────────────────────────────────────────────────
+
+  cadastro.obra.liberada:
+    description: >
+      Publicado quando uma obra musical tem seu status alterado para **LIBERADA**,
+      tornando-a disponível para uso por outros domínios.
+    bindings:
+      amqp:
+        is: routingKey
+        exchange:
+          name: cadastro.events
+          type: topic
+          durable: true
+          autoDelete: false
+    publish:
+      operationId: publicarObraLiberada
+      summary: Obra liberada para uso
+      tags:
+        - name: obras
+      message:
+        $ref: '#/components/messages/ObraLiberada'
+
+  cadastro.obra.bloqueada:
+    description: >
+      Publicado quando uma obra é **bloqueada** por irregularidade ou pendência,
+      impedindo seu uso por outros domínios até nova liberação.
+    bindings:
+      amqp:
+        is: routingKey
+        exchange:
+          name: cadastro.events
+          type: topic
+          durable: true
+          autoDelete: false
+    publish:
+      operationId: publicarObraBloqueada
+      summary: Obra bloqueada com justificativa
+      tags:
+        - name: obras
+      message:
+        $ref: '#/components/messages/ObraBloqueada'
+
+  cadastro.obra.dominio-publico:
+    description: >
+      Publicado quando o flag **domínio público** de uma obra é alterado.
+      Obras em domínio público não requerem pagamento de direitos autorais.
+    bindings:
+      amqp:
+        is: routingKey
+        exchange:
+          name: cadastro.events
+          type: topic
+          durable: true
+          autoDelete: false
+    publish:
+      operationId: publicarObraDominioPublico
+      summary: Flag de domínio público alterado
+      tags:
+        - name: obras
+      message:
+        $ref: '#/components/messages/ObraDominioPublico'
+
+  cadastro.obra.depurada:
+    description: >
+      Publicado após o processo de **depuração** de uma obra duplicada.
+      A obra original é depurada e uma nova obra canônica é criada em seu lugar.
+    bindings:
+      amqp:
+        is: routingKey
+        exchange:
+          name: cadastro.events
+          type: topic
+          durable: true
+          autoDelete: false
+    publish:
+      operationId: publicarObraDepurada
+      summary: Obra duplicada depurada — nova obra canônica criada
+      tags:
+        - name: obras
+      message:
+        $ref: '#/components/messages/ObraDepurada'
+
+  # ── Fonogramas ────────────────────────────────────────────────────────────
+
+  cadastro.fonograma.liberado:
+    description: >
+      Publicado quando um fonograma tem seu status alterado para **LIBERADO**,
+      ficando disponível para identificação e distribuição.
+    bindings:
+      amqp:
+        is: routingKey
+        exchange:
+          name: cadastro.events
+          type: topic
+          durable: true
+          autoDelete: false
+    publish:
+      operationId: publicarFonogramaLiberado
+      summary: Fonograma liberado para uso
+      tags:
+        - name: fonogramas
+      message:
+        $ref: '#/components/messages/FonogramaLiberado'
+
+  cadastro.fonograma.bloqueado:
+    description: >
+      Publicado quando um fonograma é **bloqueado** com justificativa.
+    bindings:
+      amqp:
+        is: routingKey
+        exchange:
+          name: cadastro.events
+          type: topic
+          durable: true
+          autoDelete: false
+    publish:
+      operationId: publicarFonogramaBloqueado
+      summary: Fonograma bloqueado com justificativa
+      tags:
+        - name: fonogramas
+      message:
+        $ref: '#/components/messages/FonogramaBloqueado'
+
+  cadastro.fonograma.depurado:
+    description: >
+      Publicado após a **depuração** de um fonograma duplicado.
+      O fonograma original é depurado e um novo fonograma canônico é criado.
+    bindings:
+      amqp:
+        is: routingKey
+        exchange:
+          name: cadastro.events
+          type: topic
+          durable: true
+          autoDelete: false
+    publish:
+      operationId: publicarFonogramaDepurado
+      summary: Fonograma duplicado depurado — novo fonograma canônico criado
+      tags:
+        - name: fonogramas
+      message:
+        $ref: '#/components/messages/FonogramaDepurado'
+
+  # ── Titulares ─────────────────────────────────────────────────────────────
+
+  cadastro.titular.criado:
+    description: >
+      Publicado quando um novo **titular de direitos** (PF ou PJ) é criado no cadastro.
+      Permite que outros domínios mantenham cópia local do cadastro de titulares.
+    bindings:
+      amqp:
+        is: routingKey
+        exchange:
+          name: cadastro.events
+          type: topic
+          durable: true
+          autoDelete: false
+    publish:
+      operationId: publicarTitularCriado
+      summary: Novo titular de direitos cadastrado
+      tags:
+        - name: titulares
+      message:
+        $ref: '#/components/messages/TitularCriado'
+
+# ── Components ────────────────────────────────────────────────────────────────
+
+components:
+
+  securitySchemes:
+    userPassword:
+      type: userPassword
+
+  schemas:
+
+    CloudEventsEnvelope:
+      description: Envelope CloudEvents 1.0 — campos comuns a todos os eventos
+      type: object
+      required:
+        - specversion
+        - type
+        - source
+        - subject
+        - id
+        - time
+        - datacontenttype
+      properties:
+        specversion:
+          type: string
+          const: '1.0'
+          description: Versão da especificação CloudEvents
+        type:
+          type: string
+          description: Tipo do evento (routing key)
+          example: cadastro.obra.liberada
+        source:
+          type: string
+          const: urn:cadastro-api
+          description: Origem do evento
+        subject:
+          type: string
+          format: uuid
+          description: ID da entidade de domínio afetada
+        id:
+          type: string
+          format: uuid
+          description: Identificador único do evento (UUID v4)
+        time:
+          type: string
+          format: date-time
+          description: Timestamp de criação do evento (UTC)
+        datacontenttype:
+          type: string
+          const: application/json
+
+    ObraLiberadaData:
+      type: object
+      required: [obraId, titulo]
+      properties:
+        obraId:
+          type: string
+          format: uuid
+          description: ID da obra liberada
+        titulo:
+          type: string
+          description: Título da obra
+        iswc:
+          type: string
+          nullable: true
+          description: Código ISWC (International Standard Musical Work Code)
+          example: T-123.456.789-0
+
+    ObraBloqueadaData:
+      type: object
+      required: [obraId, titulo, justificativa]
+      properties:
+        obraId:
+          type: string
+          format: uuid
+        titulo:
+          type: string
+        justificativa:
+          type: string
+          description: Motivo do bloqueio
+
+    ObraDominioPublicoData:
+      type: object
+      required: [obraId, titulo, dominioPublico]
+      properties:
+        obraId:
+          type: string
+          format: uuid
+        titulo:
+          type: string
+        dominioPublico:
+          type: boolean
+          description: true = obra em domínio público; false = com direitos ativos
+
+    ObraDepuradaData:
+      type: object
+      required: [obraId, titulo, novaObraId]
+      properties:
+        obraId:
+          type: string
+          format: uuid
+          description: ID da obra original que foi depurada
+        titulo:
+          type: string
+          description: Título da obra original
+        iswcOriginal:
+          type: string
+          nullable: true
+          description: ISWC da obra original (se existia)
+        novaObraId:
+          type: string
+          format: uuid
+          description: ID da nova obra canônica criada após depuração
+
+    FonogramaLiberadoData:
+      type: object
+      required: [fonogramaId, isrc, obraId]
+      properties:
+        fonogramaId:
+          type: string
+          format: uuid
+        isrc:
+          type: string
+          description: Código ISRC (International Standard Recording Code) — 12 caracteres
+          example: BRUM72100001
+          minLength: 12
+          maxLength: 12
+        obraId:
+          type: string
+          format: uuid
+          description: ID da obra à qual o fonograma pertence
+
+    FonogramaBloqueadoData:
+      type: object
+      required: [fonogramaId, isrc, justificativa]
+      properties:
+        fonogramaId:
+          type: string
+          format: uuid
+        isrc:
+          type: string
+          minLength: 12
+          maxLength: 12
+        justificativa:
+          type: string
+
+    FonogramaDepuradoData:
+      type: object
+      required: [fonogramaId, isrcOriginal, novoFonogramaId, obraId]
+      properties:
+        fonogramaId:
+          type: string
+          format: uuid
+          description: ID do fonograma original depurado
+        isrcOriginal:
+          type: string
+          minLength: 12
+          maxLength: 12
+          description: ISRC do fonograma original
+        novoFonogramaId:
+          type: string
+          format: uuid
+          description: ID do novo fonograma canônico criado após depuração
+        obraId:
+          type: string
+          format: uuid
+          description: ID da obra à qual ambos os fonogramas pertencem
+
+    TitularCriadoData:
+      type: object
+      required: [titularId, nome, tipo, documento]
+      properties:
+        titularId:
+          type: string
+          format: uuid
+        nome:
+          type: string
+        tipo:
+          type: string
+          enum: [PF, PJ]
+          description: Pessoa Física ou Pessoa Jurídica
+        documento:
+          type: string
+          description: CPF formatado (PF) ou CNPJ alfanumérico (PJ)
+          example: 123.456.789-09
+
+  messages:
+
+    ObraLiberada:
+      name: ObraLiberada
+      title: Obra Liberada
+      summary: Uma obra musical foi liberada para uso
+      contentType: application/cloudevents+json
+      traits:
+        - $ref: '#/components/messageTraits/CloudEventTrait'
+      payload:
+        allOf:
+          - $ref: '#/components/schemas/CloudEventsEnvelope'
+          - type: object
+            properties:
+              type:
+                const: cadastro.obra.liberada
+              data:
+                $ref: '#/components/schemas/ObraLiberadaData'
+      examples:
+        - name: Exemplo
+          payload:
+            specversion: '1.0'
+            type: cadastro.obra.liberada
+            source: urn:cadastro-api
+            subject: 8a7c2e5d-0001-0000-0000-000000000001
+            id: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+            time: '2026-04-05T10:30:00Z'
+            datacontenttype: application/json
+            data:
+              obraId: 8a7c2e5d-0001-0000-0000-000000000001
+              titulo: Aquarela do Brasil
+              iswc: T-010.000.007-9
+
+    ObraBloqueada:
+      name: ObraBloqueada
+      title: Obra Bloqueada
+      summary: Uma obra musical foi bloqueada com justificativa
+      contentType: application/cloudevents+json
+      traits:
+        - $ref: '#/components/messageTraits/CloudEventTrait'
+      payload:
+        allOf:
+          - $ref: '#/components/schemas/CloudEventsEnvelope'
+          - type: object
+            properties:
+              type:
+                const: cadastro.obra.bloqueada
+              data:
+                $ref: '#/components/schemas/ObraBloqueadaData'
+      examples:
+        - name: Exemplo
+          payload:
+            specversion: '1.0'
+            type: cadastro.obra.bloqueada
+            source: urn:cadastro-api
+            subject: 8a7c2e5d-0001-0000-0000-000000000001
+            id: 3fa85f64-5717-4562-b3fc-2c963f66afb7
+            time: '2026-04-05T11:00:00Z'
+            datacontenttype: application/json
+            data:
+              obraId: 8a7c2e5d-0001-0000-0000-000000000001
+              titulo: Aquarela do Brasil
+              justificativa: Conflito de autoria identificado — pendente de resolução
+
+    ObraDominioPublico:
+      name: ObraDominioPublico
+      title: Obra Domínio Público Alterado
+      summary: Flag de domínio público de uma obra foi alterado
+      contentType: application/cloudevents+json
+      traits:
+        - $ref: '#/components/messageTraits/CloudEventTrait'
+      payload:
+        allOf:
+          - $ref: '#/components/schemas/CloudEventsEnvelope'
+          - type: object
+            properties:
+              type:
+                const: cadastro.obra.dominio-publico
+              data:
+                $ref: '#/components/schemas/ObraDominioPublicoData'
+      examples:
+        - name: Exemplo
+          payload:
+            specversion: '1.0'
+            type: cadastro.obra.dominio-publico
+            source: urn:cadastro-api
+            subject: 8a7c2e5d-0001-0000-0000-000000000002
+            id: 3fa85f64-5717-4562-b3fc-2c963f66afc8
+            time: '2026-04-05T12:00:00Z'
+            datacontenttype: application/json
+            data:
+              obraId: 8a7c2e5d-0001-0000-0000-000000000002
+              titulo: Sabiá
+              dominioPublico: true
+
+    ObraDepurada:
+      name: ObraDepurada
+      title: Obra Depurada
+      summary: Obra duplicada depurada — nova obra canônica criada
+      contentType: application/cloudevents+json
+      traits:
+        - $ref: '#/components/messageTraits/CloudEventTrait'
+      payload:
+        allOf:
+          - $ref: '#/components/schemas/CloudEventsEnvelope'
+          - type: object
+            properties:
+              type:
+                const: cadastro.obra.depurada
+              data:
+                $ref: '#/components/schemas/ObraDepuradaData'
+      examples:
+        - name: Exemplo
+          payload:
+            specversion: '1.0'
+            type: cadastro.obra.depurada
+            source: urn:cadastro-api
+            subject: 8a7c2e5d-0001-0000-0000-000000000003
+            id: 3fa85f64-5717-4562-b3fc-2c963f66afd9
+            time: '2026-04-05T13:00:00Z'
+            datacontenttype: application/json
+            data:
+              obraId: 8a7c2e5d-0001-0000-0000-000000000003
+              titulo: Garota de Ipanema (duplicata)
+              iswcOriginal: null
+              novaObraId: 9b8d3f6e-0002-0000-0000-000000000001
+
+    FonogramaLiberado:
+      name: FonogramaLiberado
+      title: Fonograma Liberado
+      summary: Um fonograma foi liberado para identificação e distribuição
+      contentType: application/cloudevents+json
+      traits:
+        - $ref: '#/components/messageTraits/CloudEventTrait'
+      payload:
+        allOf:
+          - $ref: '#/components/schemas/CloudEventsEnvelope'
+          - type: object
+            properties:
+              type:
+                const: cadastro.fonograma.liberado
+              data:
+                $ref: '#/components/schemas/FonogramaLiberadoData'
+      examples:
+        - name: Exemplo
+          payload:
+            specversion: '1.0'
+            type: cadastro.fonograma.liberado
+            source: urn:cadastro-api
+            subject: ccee4a80-0001-0000-0000-000000000001
+            id: 3fa85f64-5717-4562-b3fc-2c963f66afea
+            time: '2026-04-05T14:00:00Z'
+            datacontenttype: application/json
+            data:
+              fonogramaId: ccee4a80-0001-0000-0000-000000000001
+              isrc: BRUM72100001
+              obraId: 8a7c2e5d-0001-0000-0000-000000000001
+
+    FonogramaBloqueado:
+      name: FonogramaBloqueado
+      title: Fonograma Bloqueado
+      summary: Um fonograma foi bloqueado com justificativa
+      contentType: application/cloudevents+json
+      traits:
+        - $ref: '#/components/messageTraits/CloudEventTrait'
+      payload:
+        allOf:
+          - $ref: '#/components/schemas/CloudEventsEnvelope'
+          - type: object
+            properties:
+              type:
+                const: cadastro.fonograma.bloqueado
+              data:
+                $ref: '#/components/schemas/FonogramaBloqueadoData'
+      examples:
+        - name: Exemplo
+          payload:
+            specversion: '1.0'
+            type: cadastro.fonograma.bloqueado
+            source: urn:cadastro-api
+            subject: ccee4a80-0001-0000-0000-000000000002
+            id: 3fa85f64-5717-4562-b3fc-2c963f66affb
+            time: '2026-04-05T15:00:00Z'
+            datacontenttype: application/json
+            data:
+              fonogramaId: ccee4a80-0001-0000-0000-000000000002
+              isrc: BRUM72100002
+              justificativa: Inconsistência nos metadados de masterização
+
+    FonogramaDepurado:
+      name: FonogramaDepurado
+      title: Fonograma Depurado
+      summary: Fonograma duplicado depurado — novo fonograma canônico criado
+      contentType: application/cloudevents+json
+      traits:
+        - $ref: '#/components/messageTraits/CloudEventTrait'
+      payload:
+        allOf:
+          - $ref: '#/components/schemas/CloudEventsEnvelope'
+          - type: object
+            properties:
+              type:
+                const: cadastro.fonograma.depurado
+              data:
+                $ref: '#/components/schemas/FonogramaDepuradoData'
+      examples:
+        - name: Exemplo
+          payload:
+            specversion: '1.0'
+            type: cadastro.fonograma.depurado
+            source: urn:cadastro-api
+            subject: ccee4a80-0001-0000-0000-000000000003
+            id: 3fa85f64-5717-4562-b3fc-2c963f66af0c
+            time: '2026-04-05T16:00:00Z'
+            datacontenttype: application/json
+            data:
+              fonogramaId: ccee4a80-0001-0000-0000-000000000003
+              isrcOriginal: BRUM72100003
+              novoFonogramaId: ddff5b91-0001-0000-0000-000000000001
+              obraId: 8a7c2e5d-0001-0000-0000-000000000001
+
+    TitularCriado:
+      name: TitularCriado
+      title: Titular Criado
+      summary: Novo titular de direitos cadastrado no sistema
+      contentType: application/cloudevents+json
+      traits:
+        - $ref: '#/components/messageTraits/CloudEventTrait'
+      payload:
+        allOf:
+          - $ref: '#/components/schemas/CloudEventsEnvelope'
+          - type: object
+            properties:
+              type:
+                const: cadastro.titular.criado
+              data:
+                $ref: '#/components/schemas/TitularCriadoData'
+      examples:
+        - name: Exemplo PF
+          payload:
+            specversion: '1.0'
+            type: cadastro.titular.criado
+            source: urn:cadastro-api
+            subject: aa112233-0001-0000-0000-000000000001
+            id: 3fa85f64-5717-4562-b3fc-2c963f66af1d
+            time: '2026-04-05T17:00:00Z'
+            datacontenttype: application/json
+            data:
+              titularId: aa112233-0001-0000-0000-000000000001
+              nome: João da Silva
+              tipo: PF
+              documento: 123.456.789-09
+
+  messageTraits:
+    CloudEventTrait:
+      contentType: application/cloudevents+json
+      headers:
+        type: object
+        properties:
+          content-type:
+            type: string
+            const: application/cloudevents+json

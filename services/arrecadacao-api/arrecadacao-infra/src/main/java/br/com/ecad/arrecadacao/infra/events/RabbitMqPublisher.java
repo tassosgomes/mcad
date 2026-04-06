@@ -1,6 +1,5 @@
 package br.com.ecad.arrecadacao.infra.events;
 
-import br.com.ecad.arrecadacao.api.config.RabbitMqConfig;
 import br.com.ecad.arrecadacao.domain.entities.OutboxEvent;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -56,7 +55,7 @@ public class RabbitMqPublisher {
         properties.setDeliveryMode(MessageDeliveryMode.PERSISTENT);
 
         rabbitTemplate.send(
-                RabbitMqConfig.ARRECADACAO_EVENTS_EXCHANGE,
+                "arrecadacao.events",
                 outboxEvent.getRoutingKey(),
                 new Message(body, properties));
 

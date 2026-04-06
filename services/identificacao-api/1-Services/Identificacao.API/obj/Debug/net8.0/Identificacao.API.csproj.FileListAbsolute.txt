@@ -165,3 +165,14 @@
 /home/tsgomes/mcad/services/identificacao-api/1-Services/Identificacao.API/bin/Debug/net8.0/RabbitMQ.Client.dll
 /home/tsgomes/mcad/services/identificacao-api/1-Services/Identificacao.API/bin/Debug/net8.0/MediatR.dll
 /home/tsgomes/mcad/services/identificacao-api/1-Services/Identificacao.API/bin/Debug/net8.0/MediatR.Contracts.dll
+/home/tsgomes/mcad/services/identificacao-api/1-Services/Identificacao.API/bin/Debug/net8.0/Microsoft.OpenApi.dll
+/home/tsgomes/mcad/services/identificacao-api/1-Services/Identificacao.API/bin/Debug/net8.0/Namotion.Reflection.dll
+/home/tsgomes/mcad/services/identificacao-api/1-Services/Identificacao.API/bin/Debug/net8.0/Newtonsoft.Json.dll
+/home/tsgomes/mcad/services/identificacao-api/1-Services/Identificacao.API/bin/Debug/net8.0/NJsonSchema.dll
+/home/tsgomes/mcad/services/identificacao-api/1-Services/Identificacao.API/bin/Debug/net8.0/NJsonSchema.Annotations.dll
+/home/tsgomes/mcad/services/identificacao-api/1-Services/Identificacao.API/bin/Debug/net8.0/NJsonSchema.NewtonsoftJson.dll
+/home/tsgomes/mcad/services/identificacao-api/1-Services/Identificacao.API/bin/Debug/net8.0/Saunter.dll
+/home/tsgomes/mcad/services/identificacao-api/1-Services/Identificacao.API/bin/Debug/net8.0/Swashbuckle.AspNetCore.Swagger.dll
+/home/tsgomes/mcad/services/identificacao-api/1-Services/Identificacao.API/bin/Debug/net8.0/Swashbuckle.AspNetCore.SwaggerGen.dll
+/home/tsgomes/mcad/services/identificacao-api/1-Services/Identificacao.API/bin/Debug/net8.0/Swashbuckle.AspNetCore.SwaggerUI.dll
+/home/tsgomes/mcad/services/identificacao-api/1-Services/Identificacao.API/obj/Debug/net8.0/Identificacao.API.MvcApplicationPartsAssemblyInfo.cs

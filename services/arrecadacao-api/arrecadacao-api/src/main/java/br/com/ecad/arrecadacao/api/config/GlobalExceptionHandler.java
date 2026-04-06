@@ -10,11 +10,56 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     ProblemDetail handleUnexpectedException(Exception exception) {
+        // Let Spring Security handle its own exceptions (AccessDeniedException, etc.)
+        if (exception instanceof org.springframework.security.access.AccessDeniedException accessDenied) {
+            throw accessDenied;
+        }
         ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(
             HttpStatus.INTERNAL_SERVER_ERROR,
             "Unexpected error while processing the request."
         );
         problemDetail.setTitle("Internal Server Error");
         return problemDetail;
+    }
+
+    @ExceptionHandler(org.springframework.security.access.AccessDeniedException.class)
+    ProblemDetail handleAccessDenied(org.springframework.security.access.AccessDeniedException ex) {
+        ProblemDetail pd = ProblemDetail.forStatusAndDetail(HttpStatus.FORBIDDEN, "Acesso negado: " + ex.getMessage());
+        pd.setTitle("Forbidden");
+        return pd;
+    }
+
+    @ExceptionHandler(br.com.ecad.arrecadacao.domain.exceptions.EntidadeNaoEncontradaException.class)
+    ProblemDetail handleNotFound(br.com.ecad.arrecadacao.domain.exceptions.EntidadeNaoEncontradaException ex) {
+        ProblemDetail pd = ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, ex.getMessage());
+        pd.setTitle("Resource Not Found");
+        pd.setType(java.net.URI.create("https://tools.ietf.org/html/rfc7231#section-6.5.4"));
+        return pd;
+    }
+
+    @ExceptionHandler(br.com.ecad.arrecadacao.domain.exceptions.CnpjDuplicadoException.class)
+    ProblemDetail handleConflict(br.com.ecad.arrecadacao.domain.exceptions.CnpjDuplicadoException ex) {
+        ProblemDetail pd = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, ex.getMessage());
+        pd.setTitle("Conflict");
+        pd.setType(java.net.URI.create("https://tools.ietf.org/html/rfc7231#section-6.5.8"));
+        return pd;
+    }
+
+    @ExceptionHandler({IllegalArgumentException.class, IllegalStateException.class})
+    ProblemDetail handleUnprocessable(RuntimeException ex) {
+        ProblemDetail pd = ProblemDetail.forStatusAndDetail(HttpStatus.UNPROCESSABLE_ENTITY, ex.getMessage());
+        pd.setTitle("Unprocessable Entity");
+        return pd;
+    }
+
+    @ExceptionHandler(org.springframework.web.bind.MethodArgumentNotValidException.class)
+    ProblemDetail handleValidation(org.springframework.web.bind.MethodArgumentNotValidException ex) {
+        ProblemDetail pd = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, "Um ou mais campos sao invalidos");
+        pd.setTitle("Validation Error");
+        java.util.List<String> errors = ex.getBindingResult().getFieldErrors().stream()
+                .map(err -> err.getField() + ": " + err.getDefaultMessage())
+                .toList();
+        pd.setProperty("errors", errors);
+        return pd;
     }
 }

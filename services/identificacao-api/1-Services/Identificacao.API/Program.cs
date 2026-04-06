@@ -1,5 +1,7 @@
 using DotNetEnv;
 using FluentValidation;
+using Identificacao.API.AsyncApi;
+using Identificacao.API.Swagger;
 using Identificacao.API.Endpoints;
 using Identificacao.API.Infrastructure;
 using Identificacao.Application.Common;
@@ -159,6 +161,12 @@ builder.Services.AddCors(options =>
     options.AddDefaultPolicy(policy =>
         policy.WithOrigins("http://localhost:5173").AllowAnyHeader().AllowAnyMethod()));
 
+// ─── Swagger (documentação REST) ──────────────────────────────────────
+builder.Services.AddSwaggerDocs();
+
+// ─── AsyncAPI (Saunter — documentação de eventos) ─────────────────────
+builder.Services.AddAsyncApiDocs();
+
 // Health Checks
 builder.Services.AddHealthChecks();
 
@@ -173,12 +181,25 @@ app.UseCors();
 // Exception Handling
 app.UseExceptionHandler();
 
+// Swagger antes do auth — middleware short-circuits antes da auth rodar
+app.UseSwaggerDocs();
+
 // Autenticação / Autorização
 if (authEnabled)
 {
     app.UseAuthentication();
+    app.UseWhen(
+        ctx => !ctx.Request.Path.StartsWithSegments("/asyncapi")
+            && !ctx.Request.Path.StartsWithSegments("/swagger"),
+        inner => inner.UseAuthorization());
 }
-app.UseAuthorization();
+else
+{
+    app.UseAuthorization();
+}
+
+// ─── AsyncAPI (documentação de eventos — pública) ─────────────────────
+app.MapAsyncApiDocs();
 
 // Map Endpoints
 app.MapHealthChecks("/health");
