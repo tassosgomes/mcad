@@ -1,0 +1,24 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.card {
+  background: var(--color-bg-floor);
+  border: 1px solid rgba(67, 70, 85, 0.1);
+  border-radius: var(--radius-xl);
+  padding: var(--space-8);
+}
+
+@media (max-width: 600px) {
+  .card {
+    padding: var(--space-4);
+  }
+}
