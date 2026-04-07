@@ -29,7 +29,16 @@ const navigation = [
       { label: 'Pendentes', path: '/identificacao/pendentes' },
     ]
   },
-  { label: 'Arrecadação', icon: Banknote, basePath: '/arrecadacao', disabled: true, requiredRoles: [] },
+  { 
+    label: 'Arrecadação', 
+    icon: Banknote, 
+    basePath: '/arrecadacao', 
+    disabled: false, 
+    requiredRoles: ['analista-arrecadacao', 'consultor-arrecadacao'],
+    children: [
+      { label: 'Licenças', path: '/arrecadacao/licencas' },
+    ],
+  },
   { label: 'Distribuição', icon: Split, basePath: '/distribuicao', disabled: true, requiredRoles: [] },
 ];
 
@@ -44,7 +53,8 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
   // Always open first section for now
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({
     'Cadastro': true,
-    'Identificação': true
+    'Identificação': true,
+    'Arrecadação': true,
   });
 
   const toggleSection = (label: string) => {

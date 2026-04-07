@@ -6,6 +6,7 @@ import { CallbackPage, LoggedOutPage, ProtectedRoute, RequireRole, SilentCallbac
 
 const CadastroRoutes = lazy(() => import('@features/cadastro'));
 const IdentificacaoRoutes = lazy(() => import('@features/identificacao'));
+const ArrecadacaoRoutes = lazy(() => import('@features/arrecadacao'));
 
 export const router = createBrowserRouter([
   {
@@ -45,6 +46,16 @@ export const router = createBrowserRouter([
           <RequireRole roles={['analista-identificacao', 'consultor-identificacao']}>
             <Suspense fallback={<Loading />}>
               <IdentificacaoRoutes />
+            </Suspense>
+          </RequireRole>
+        ) 
+      },
+      { 
+        path: 'arrecadacao/*', 
+        element: (
+          <RequireRole roles={['analista-arrecadacao', 'consultor-arrecadacao']}>
+            <Suspense fallback={<Loading />}>
+              <ArrecadacaoRoutes />
             </Suspense>
           </RequireRole>
         ) 
