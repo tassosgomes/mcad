@@ -3,7 +3,7 @@
 > **Domínio:** Arrecadação (D03)
 > **Feature ID:** F01
 > **Prioridade:** Must Have
-> **Status:** `planned`
+> **Status:** `done`
 > **Data:** 2026-04-04
 
 ---
