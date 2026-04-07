@@ -1,8 +1,10 @@
 package br.com.ecad.arrecadacao.api.controllers;
 
+import br.com.ecad.arrecadacao.application.commands.EstornarPagamentoCommand;
 import br.com.ecad.arrecadacao.application.commands.RegistrarPagamentoCommand;
 import br.com.ecad.arrecadacao.application.cqrs.CommandDispatcher;
 import br.com.ecad.arrecadacao.application.cqrs.QueryDispatcher;
+import br.com.ecad.arrecadacao.application.dto.EstornarPagamentoRequest;
 import br.com.ecad.arrecadacao.application.dto.PageResponse;
 import br.com.ecad.arrecadacao.application.dto.PagamentoResponse;
 import br.com.ecad.arrecadacao.application.dto.RegistrarPagamentoRequest;
@@ -37,14 +39,14 @@ public class PagamentoController {
 
     @GetMapping
     public ResponseEntity<PageResponse<PagamentoResponse>> listar(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size,
-            @RequestParam(defaultValue = "-dataRegistro") String sort,
-            @RequestParam(required = false) UUID usuarioMusicaId,
-            @RequestParam(required = false) String razaoSocial,
-            @RequestParam(required = false) String rubricaSigla,
-            @RequestParam(required = false) String periodo,
-            @RequestParam(required = false) StatusPagamento status) {
+            @RequestParam(name = "page", defaultValue = "0") int page,
+            @RequestParam(name = "size", defaultValue = "20") int size,
+            @RequestParam(name = "sort", defaultValue = "-dataRegistro") String sort,
+            @RequestParam(name = "usuarioMusicaId", required = false) UUID usuarioMusicaId,
+            @RequestParam(name = "razaoSocial", required = false) String razaoSocial,
+            @RequestParam(name = "rubricaSigla", required = false) String rubricaSigla,
+            @RequestParam(name = "periodo", required = false) String periodo,
+            @RequestParam(name = "status", required = false) StatusPagamento status) {
         var query = new ListarPagamentosQuery(page, size, sort,
             usuarioMusicaId, razaoSocial, rubricaSigla, periodo, status);
         return ResponseEntity.ok(queryDispatcher.dispatch(query));
@@ -63,7 +65,18 @@ public class PagamentoController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<PagamentoResponse> buscarPorId(@PathVariable UUID id) {
+    public ResponseEntity<PagamentoResponse> buscarPorId(@PathVariable("id") UUID id) {
         return ResponseEntity.ok(queryDispatcher.dispatch(new BuscarPagamentoPorIdQuery(id)));
+    }
+
+    @PostMapping("/{id}/estornar")
+    @PreAuthorize("hasRole('analista-arrecadacao')")
+    public ResponseEntity<PagamentoResponse> estornar(
+            @PathVariable("id") UUID id,
+            @Valid @RequestBody EstornarPagamentoRequest request,
+            Authentication auth) {
+        LOGGER.info("Reversing payment: id={}, user={}", id, auth.getName());
+        var cmd = new EstornarPagamentoCommand(id, request.justificativa(), auth.getName());
+        return ResponseEntity.ok(commandDispatcher.dispatch(cmd));
     }
 }

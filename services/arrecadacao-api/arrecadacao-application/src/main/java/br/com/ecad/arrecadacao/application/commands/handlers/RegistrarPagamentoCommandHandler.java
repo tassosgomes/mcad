@@ -120,7 +120,9 @@ public class RegistrarPagamentoCommandHandler
             pagamento.getStatus().name(),
             pagamento.getDataRegistro(),
             pagamento.getCriadoEm(),
-            pagamento.getAtualizadoEm()
+            pagamento.getAtualizadoEm(),
+            // F06 — novos pagamentos sao sempre CONFIRMADO, campos de estorno sao null
+            null, null, null
         );
     }
 

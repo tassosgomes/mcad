@@ -13,5 +13,9 @@ public record PagamentoResponse(
     String status,
     Instant dataRegistro,
     Instant criadoEm,
-    Instant atualizadoEm
+    Instant atualizadoEm,
+    // F06 — campos de estorno (nullable quando CONFIRMADO)
+    String justificativaEstorno,
+    String estornadoPor,
+    Instant estornadoEm
 ) {}

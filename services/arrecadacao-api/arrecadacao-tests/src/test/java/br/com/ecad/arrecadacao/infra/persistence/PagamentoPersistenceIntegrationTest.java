@@ -2,6 +2,7 @@ package br.com.ecad.arrecadacao.infra.persistence;
 
 import br.com.ecad.arrecadacao.application.specification.PagamentoSpecification;
 import br.com.ecad.arrecadacao.config.TestSecurityConfig;
+import br.com.ecad.arrecadacao.config.VerbaServiceTestConfig;
 import br.com.ecad.arrecadacao.domain.entities.Licenca;
 import br.com.ecad.arrecadacao.domain.entities.Pagamento;
 import br.com.ecad.arrecadacao.domain.entities.Rubrica;
@@ -35,7 +36,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
         webEnvironment = SpringBootTest.WebEnvironment.NONE,
         properties = "spring.autoconfigure.exclude=org.springframework.boot.autoconfigure.security.oauth2.resource.servlet.OAuth2ResourceServerAutoConfiguration")
 @ActiveProfiles("test")
-@Import(TestSecurityConfig.class)
+@Import({TestSecurityConfig.class, VerbaServiceTestConfig.class})
 @Transactional
 class PagamentoPersistenceIntegrationTest {
 
@@ -72,9 +73,9 @@ class PagamentoPersistenceIntegrationTest {
     // ── tests ──────────────────────────────────────────────────────────────────
 
     @Test
-    void deveExecutarOitoMigrations() {
+    void deveExecutarDezMigrations() {
         var applied = flyway.info().applied();
-        assertThat(applied).hasSize(9);
+        assertThat(applied).hasSize(10);
     }
 
     @Test
@@ -171,5 +172,62 @@ class PagamentoPersistenceIntegrationTest {
 
         // Assert — deve conter o pagamento recém-criado
         assertThat(page.getContent()).extracting("id").contains(pag.getId());
+    }
+
+    // ── Testes F06 — Estorno ───────────────────────────────────────────────────
+
+    @Test
+    void devePersistirCamposDeEstorno() {
+        // Arrange
+        var usuario = criarUsuario("Empresa Estorno", "10433218000193");
+        var rubrica = criarRubrica("REST");
+        var licenca = criarLicenca(usuario.getId(), rubrica.getId());
+
+        var pagamento = Pagamento.registrar(licenca.getId(), new BigDecimal("2.0"), new BigDecimal("107.31"));
+        pagamentoRepository.save(pagamento);
+        entityManager.flush();
+
+        // Estornar
+        String justificativa = "Pagamento registrado em duplicidade com valor incorreto.";
+        String autor = "analista@ecad.org.br";
+        pagamento.estornar(justificativa, autor);
+        pagamentoRepository.save(pagamento);
+        entityManager.flush();
+        entityManager.clear();
+
+        // Act — rebuscar do banco
+        var encontrado = pagamentoRepository.findById(pagamento.getId());
+
+        // Assert — campos de estorno persistidos
+        assertThat(encontrado).isPresent();
+        assertThat(encontrado.get().getStatus()).isEqualTo(StatusPagamento.ESTORNADO);
+        assertThat(encontrado.get().getJustificativaEstorno()).isEqualTo(justificativa);
+        assertThat(encontrado.get().getEstornadoPor()).isEqualTo(autor);
+        assertThat(encontrado.get().getEstornadoEm()).isNotNull();
+    }
+
+    @Test
+    void devePermitirNovoPagamentoAposEstorno() {
+        // Arrange — partial unique: após estorno, slot libera
+        var usuario = criarUsuario("Empresa Reuso", "19600133000127");
+        var rubrica = criarRubrica("RRE");
+        var licenca = criarLicenca(usuario.getId(), rubrica.getId());
+
+        // Primeiro pagamento CONFIRMADO
+        var pag1 = Pagamento.registrar(licenca.getId(), new BigDecimal("1.0"), new BigDecimal("107.31"));
+        pagamentoRepository.save(pag1);
+        entityManager.flush();
+
+        // Estornar o primeiro
+        pag1.estornar("Estorno de teste para liberar slot.", "analista@ecad.org.br");
+        pagamentoRepository.save(pag1);
+        entityManager.flush();
+
+        // Act — novo pagamento CONFIRMADO para mesma licença+período (slot liberado)
+        var pag2 = Pagamento.registrar(licenca.getId(), new BigDecimal("2.0"), new BigDecimal("107.31"));
+        pagamentoRepository.save(pag2);
+
+        // Assert — não deve lançar exceção de unicidade
+        assertThat(pagamentoRepository.findById(pag2.getId())).isPresent();
     }
 }

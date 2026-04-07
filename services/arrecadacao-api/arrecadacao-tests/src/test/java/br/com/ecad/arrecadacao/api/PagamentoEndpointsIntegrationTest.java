@@ -1,6 +1,7 @@
 package br.com.ecad.arrecadacao.api;
 
 import br.com.ecad.arrecadacao.config.TestSecurityConfig;
+import br.com.ecad.arrecadacao.config.VerbaServiceTestConfig;
 import br.com.ecad.arrecadacao.domain.entities.Licenca;
 import br.com.ecad.arrecadacao.domain.entities.Rubrica;
 import br.com.ecad.arrecadacao.domain.entities.UsuarioMusica;
@@ -39,7 +40,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         webEnvironment = SpringBootTest.WebEnvironment.MOCK,
         properties = "spring.autoconfigure.exclude=org.springframework.boot.autoconfigure.security.oauth2.resource.servlet.OAuth2ResourceServerAutoConfiguration")
 @ActiveProfiles("test")
-@Import(TestSecurityConfig.class)
+@Import({TestSecurityConfig.class, VerbaServiceTestConfig.class})
 @AutoConfigureMockMvc
 @Transactional
 class PagamentoEndpointsIntegrationTest {
@@ -50,15 +51,21 @@ class PagamentoEndpointsIntegrationTest {
     @Autowired SpringDataRubricaRepository rubricaRepository;
     @Autowired SpringDataLicencaRepository licencaRepository;
     @Autowired JpaPagamentoRepository pagamentoRepository;
+    @Autowired jakarta.persistence.EntityManager entityManager;
 
     @MockBean
     private RabbitTemplate rabbitTemplate;
+    // VerbaService e provido pelo VerbaServiceTestConfig como stub configuravel
+    // Nao usar @SpyBean/@MockBean pois invalida o Spring context cache
 
     private UUID licencaAtivaId;
     private UUID licencaEncerradaId;
 
     @BeforeEach
     void setUp() {
+        // Reset VerbaService stub para evitar que configuracao de um teste afete os seguintes
+        br.com.ecad.arrecadacao.config.VerbaServiceTestConfig.ConfigurableVerbaServiceStub.reset();
+
         var usuario = UsuarioMusica.criar("Empresa Pagamento", "Fantasia",
             Cnpj.criar("08673009000175"),
             Endereco.criar("12345678", "Rua Teste", "1", "", "Bairro", "Cidade", "SP"),
@@ -192,6 +199,133 @@ class PagamentoEndpointsIntegrationTest {
         mockMvc.perform(post("/api/v1/pagamentos")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(body))
+            .andExpect(status().isForbidden());
+    }
+
+    // ── Testes de Estorno (F06) ────────────────────────────────────────────────
+
+    @Test
+    @WithMockUser(roles = "analista-arrecadacao")
+    void deveEstornarPagamentoConfirmadoERetornar200() throws Exception {
+        // Arrange — registrar pagamento
+        var body = String.format("{\"licencaId\":\"%s\",\"quantidadeUdas\":\"2.5\"}", licencaAtivaId);
+        var response = mockMvc.perform(post("/api/v1/pagamentos")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(body))
+            .andExpect(status().isCreated())
+            .andReturn();
+        String pagamentoId = objectMapper.readTree(response.getResponse().getContentAsString()).get("id").asText();
+
+        // Flush e Clear persistence context para mimicar duas requests separadas
+        entityManager.flush();
+        entityManager.clear();
+        entityManager.clear();
+
+        // Act — estornar
+        String estornoBody = "{\"justificativa\":\"Pagamento registrado em duplicidade com valor incorreto.\"}";
+        mockMvc.perform(post("/api/v1/pagamentos/{id}/estornar", pagamentoId)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(estornoBody))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.status").value("ESTORNADO"))
+            .andExpect(jsonPath("$.justificativaEstorno").value("Pagamento registrado em duplicidade com valor incorreto."))
+            .andExpect(jsonPath("$.estornadoPor").isNotEmpty())
+            .andExpect(jsonPath("$.estornadoEm").isNotEmpty());
+    }
+
+    @Test
+    @WithMockUser(roles = "analista-arrecadacao")
+    void deveRetornar400ParaJustificativaCurta() throws Exception {
+        // Arrange — registrar pagamento
+        var body = String.format("{\"licencaId\":\"%s\",\"quantidadeUdas\":\"1.0\"}", licencaAtivaId);
+        var response = mockMvc.perform(post("/api/v1/pagamentos")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(body))
+            .andExpect(status().isCreated())
+            .andReturn();
+        String pagamentoId = objectMapper.readTree(response.getResponse().getContentAsString()).get("id").asText();
+
+        // Act — justificativa < 10 chars
+        String estornoBody = "{\"justificativa\":\"curta\"}";
+        mockMvc.perform(post("/api/v1/pagamentos/{id}/estornar", pagamentoId)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(estornoBody))
+            .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @WithMockUser(roles = "analista-arrecadacao")
+    void deveRetornar404ParaPagamentoInexistenteAoEstornar() throws Exception {
+        String estornoBody = "{\"justificativa\":\"Justificativa valida com mais de dez caracteres.\"}";
+        mockMvc.perform(post("/api/v1/pagamentos/{id}/estornar", java.util.UUID.randomUUID())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(estornoBody))
+            .andExpect(status().isNotFound());
+    }
+
+    @Test
+    @WithMockUser(roles = "analista-arrecadacao")
+    void deveRetornar422ParaPagamentoJaEstornado() throws Exception {
+        // Arrange — registrar e estornar uma vez
+        var body = String.format("{\"licencaId\":\"%s\",\"quantidadeUdas\":\"1.5\"}", licencaAtivaId);
+        var response = mockMvc.perform(post("/api/v1/pagamentos")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(body))
+            .andExpect(status().isCreated())
+            .andReturn();
+        String pagamentoId = objectMapper.readTree(response.getResponse().getContentAsString()).get("id").asText();
+
+        entityManager.flush();
+        entityManager.clear();
+
+        String estornoBody = "{\"justificativa\":\"Primeiro estorno valido com justificativa de tamanho adequado.\"}";
+        mockMvc.perform(post("/api/v1/pagamentos/{id}/estornar", pagamentoId)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(estornoBody))
+            .andExpect(status().isOk());
+
+        entityManager.flush();
+        entityManager.clear();
+
+        // Act — segundo estorno deve falhar com 422
+        mockMvc.perform(post("/api/v1/pagamentos/{id}/estornar", pagamentoId)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(estornoBody))
+            .andExpect(status().isUnprocessableEntity());
+    }
+
+    @Test
+    @WithMockUser(roles = "analista-arrecadacao")
+    void deveRetornar422ParaVerbaEmDistribuicao() throws Exception {
+        // Arrange — registrar pagamento
+        var body = String.format("{\"licencaId\":\"%s\",\"quantidadeUdas\":\"1.0\"}", licencaAtivaId);
+        var response = mockMvc.perform(post("/api/v1/pagamentos")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(body))
+            .andExpect(status().isCreated())
+            .andReturn();
+        String pagamentoId = objectMapper.readTree(response.getResponse().getContentAsString()).get("id").asText();
+
+        // Configurar stub: VerbaService lanca VerbaEmDistribuicaoException
+        br.com.ecad.arrecadacao.config.VerbaServiceTestConfig.ConfigurableVerbaServiceStub.forceVerbaLock();
+        entityManager.flush();
+        entityManager.clear();
+
+        // Act
+        String estornoBody = "{\"justificativa\":\"Justificativa valida com mais de dez caracteres.\"}";
+        mockMvc.perform(post("/api/v1/pagamentos/{id}/estornar", pagamentoId)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(estornoBody))
+            .andExpect(status().isUnprocessableEntity());
+    }
+
+    @Test
+    @WithMockUser(roles = "consultor-arrecadacao")
+    void deveRetornar403ParaConsultorAoEstornar() throws Exception {
+        String estornoBody = "{\"justificativa\":\"Justificativa valida com mais de dez caracteres.\"}";
+        mockMvc.perform(post("/api/v1/pagamentos/{id}/estornar", java.util.UUID.randomUUID())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(estornoBody))
             .andExpect(status().isForbidden());
     }
 }

@@ -67,7 +67,11 @@ public class ListarPagamentosQueryHandler
             pagamento.getStatus().name(),
             pagamento.getDataRegistro(),
             pagamento.getCriadoEm(),
-            pagamento.getAtualizadoEm()
+            pagamento.getAtualizadoEm(),
+            // F06 — campos de estorno (null quando CONFIRMADO)
+            pagamento.getJustificativaEstorno(),
+            pagamento.getEstornadoPor(),
+            pagamento.getEstornadoEm()
         );
     }
 

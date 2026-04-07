@@ -1,6 +1,7 @@
 package br.com.ecad.arrecadacao.api;
 
 import br.com.ecad.arrecadacao.config.TestSecurityConfig;
+import br.com.ecad.arrecadacao.config.VerbaServiceTestConfig;
 import com.jayway.jsonpath.JsonPath;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -36,7 +37,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         properties = "spring.autoconfigure.exclude=org.springframework.boot.autoconfigure.security.oauth2.resource.servlet.OAuth2ResourceServerAutoConfiguration")
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
-@Import(TestSecurityConfig.class)
+@Import({TestSecurityConfig.class, VerbaServiceTestConfig.class})
 class UsuarioMusicaEndpointsIntegrationTest {
 
     @MockBean

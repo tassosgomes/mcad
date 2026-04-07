@@ -1,6 +1,7 @@
 package br.com.ecad.arrecadacao.api;
 
 import br.com.ecad.arrecadacao.config.TestSecurityConfig;
+import br.com.ecad.arrecadacao.config.VerbaServiceTestConfig;
 import br.com.ecad.arrecadacao.domain.entities.UdaValor;
 import br.com.ecad.arrecadacao.infra.persistence.JpaUdaValorRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -30,7 +31,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         webEnvironment = SpringBootTest.WebEnvironment.MOCK,
         properties = "spring.autoconfigure.exclude=org.springframework.boot.autoconfigure.security.oauth2.resource.servlet.OAuth2ResourceServerAutoConfiguration")
 @ActiveProfiles("test")
-@Import(TestSecurityConfig.class)
+@Import({TestSecurityConfig.class, VerbaServiceTestConfig.class})
 @AutoConfigureMockMvc
 @Transactional
 class UdaEndpointsIntegrationTest {

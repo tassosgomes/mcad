@@ -28,13 +28,14 @@ import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.context.annotation.Import;
 import br.com.ecad.arrecadacao.config.TestSecurityConfig;
+import br.com.ecad.arrecadacao.config.VerbaServiceTestConfig;
 
 @SpringBootTest(
         classes = br.com.ecad.arrecadacao.api.ArrecadacaoApplication.class,
         webEnvironment = SpringBootTest.WebEnvironment.NONE,
         properties = "spring.autoconfigure.exclude=org.springframework.boot.autoconfigure.security.oauth2.resource.servlet.OAuth2ResourceServerAutoConfiguration")
 @ActiveProfiles("test")
-@Import(TestSecurityConfig.class)
+@Import({TestSecurityConfig.class, VerbaServiceTestConfig.class})
 @Transactional
 class LicencaPersistenceIntegrationTest {
 
@@ -51,7 +52,7 @@ class LicencaPersistenceIntegrationTest {
     @Test
     void deveExecutarSeisMigrations() {
         var applied = flyway.info().applied();
-        assertThat(applied).hasSize(9);
+        assertThat(applied).hasSize(10);
     }
 
     @Test

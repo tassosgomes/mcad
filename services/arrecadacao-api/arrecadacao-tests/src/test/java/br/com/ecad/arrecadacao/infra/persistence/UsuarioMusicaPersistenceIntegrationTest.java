@@ -1,6 +1,7 @@
 package br.com.ecad.arrecadacao.infra.persistence;
 
 import br.com.ecad.arrecadacao.config.TestSecurityConfig;
+import br.com.ecad.arrecadacao.config.VerbaServiceTestConfig;
 import br.com.ecad.arrecadacao.api.ArrecadacaoApplication;
 import br.com.ecad.arrecadacao.domain.entities.HistoricoStatusUsuario;
 import br.com.ecad.arrecadacao.domain.entities.UsuarioMusica;
@@ -41,7 +42,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
         webEnvironment = SpringBootTest.WebEnvironment.NONE,
         properties = "spring.autoconfigure.exclude=org.springframework.boot.autoconfigure.security.oauth2.resource.servlet.OAuth2ResourceServerAutoConfiguration")
 @ActiveProfiles("test")
-@Import(TestSecurityConfig.class)
+@Import({TestSecurityConfig.class, VerbaServiceTestConfig.class})
 class UsuarioMusicaPersistenceIntegrationTest {
 
     @Autowired

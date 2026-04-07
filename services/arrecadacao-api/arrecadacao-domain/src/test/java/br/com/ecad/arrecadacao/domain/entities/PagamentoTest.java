@@ -14,6 +14,8 @@ class PagamentoTest {
     private static final UUID LICENCA_ID = UUID.randomUUID();
     private static final BigDecimal QUANTIDADE_UDAS = new BigDecimal("2.5");
     private static final BigDecimal VALOR_UDA = new BigDecimal("107.31");
+    private static final String JUSTIFICATIVA_VALIDA = "Pagamento registrado em duplicidade com erro de valor.";
+    private static final String AUTOR_VALIDO = "analista@ecad.org.br";
 
     @Test
     void registrar_ComDadosValidos_DeveCalcularValorBrutoCorretamente() {
@@ -95,28 +97,78 @@ class PagamentoTest {
         assertThat(pagamento.getValorBruto()).isEqualByComparingTo(new BigDecimal("80.482500"));
     }
 
+    // ── Testes de Estorno (F06) ────────────────────────────────────────────────
+
     @Test
-    void estornar_DeConfirmado_DeveAlterarStatusParaEstornado() {
+    void estornar_WithConfirmado_ShouldSetEstornadoAndFillAllFields() {
         // Arrange
         Pagamento pagamento = Pagamento.registrar(LICENCA_ID, QUANTIDADE_UDAS, VALOR_UDA);
 
         // Act
-        pagamento.estornar();
+        pagamento.estornar(JUSTIFICATIVA_VALIDA, AUTOR_VALIDO);
 
         // Assert
         assertThat(pagamento.getStatus()).isEqualTo(StatusPagamento.ESTORNADO);
+        assertThat(pagamento.getJustificativaEstorno()).isEqualTo(JUSTIFICATIVA_VALIDA);
+        assertThat(pagamento.getEstornadoPor()).isEqualTo(AUTOR_VALIDO);
+        assertThat(pagamento.getEstornadoEm()).isNotNull();
         assertThat(pagamento.getAtualizadoEm()).isNotNull();
     }
 
     @Test
-    void estornar_DeEstornado_DeveLancarIllegalStateException() {
+    void estornar_WithEstornado_ShouldThrowIllegalState() {
         // Arrange — já estornado
         Pagamento pagamento = Pagamento.registrar(LICENCA_ID, QUANTIDADE_UDAS, VALOR_UDA);
-        pagamento.estornar();
+        pagamento.estornar(JUSTIFICATIVA_VALIDA, AUTOR_VALIDO);
 
         // Act & Assert — estorno de pagamento já estornado deve falhar
-        assertThatThrownBy(pagamento::estornar)
+        assertThatThrownBy(() -> pagamento.estornar(JUSTIFICATIVA_VALIDA, AUTOR_VALIDO))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("CONFIRMADOS");
+    }
+
+    @Test
+    void estornar_WithShortJustificativa_ShouldThrowIllegalArgument() {
+        // Arrange
+        Pagamento pagamento = Pagamento.registrar(LICENCA_ID, QUANTIDADE_UDAS, VALOR_UDA);
+
+        // Act & Assert — justificativa < 10 chars
+        assertThatThrownBy(() -> pagamento.estornar("curta", AUTOR_VALIDO))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("between 10 and 500");
+    }
+
+    @Test
+    void estornar_WithLongJustificativa_ShouldThrowIllegalArgument() {
+        // Arrange
+        Pagamento pagamento = Pagamento.registrar(LICENCA_ID, QUANTIDADE_UDAS, VALOR_UDA);
+        String justificativaMuitoLonga = "x".repeat(501);
+
+        // Act & Assert — justificativa > 500 chars
+        assertThatThrownBy(() -> pagamento.estornar(justificativaMuitoLonga, AUTOR_VALIDO))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("between 10 and 500");
+    }
+
+    @Test
+    void estornar_WithNullJustificativa_ShouldThrowIllegalArgument() {
+        // Arrange
+        Pagamento pagamento = Pagamento.registrar(LICENCA_ID, QUANTIDADE_UDAS, VALOR_UDA);
+
+        // Act & Assert
+        assertThatThrownBy(() -> pagamento.estornar(null, AUTOR_VALIDO))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("between 10 and 500");
+    }
+
+    @Test
+    void estornar_WithBlankAutor_ShouldThrowIllegalArgument() {
+        // Arrange
+        Pagamento pagamento = Pagamento.registrar(LICENCA_ID, QUANTIDADE_UDAS, VALOR_UDA);
+
+        // Act & Assert
+        assertThatThrownBy(() -> pagamento.estornar(JUSTIFICATIVA_VALIDA, "   "))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Autor must not be blank");
     }
 }

@@ -3,6 +3,7 @@ package br.com.ecad.arrecadacao.api.config;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
@@ -87,5 +88,13 @@ public class GlobalExceptionHandler {
         pd.setTitle("Conflict");
         pd.setType(java.net.URI.create("https://tools.ietf.org/html/rfc7231#section-6.5.8"));
         return pd;
+    }
+
+    @ExceptionHandler(br.com.ecad.arrecadacao.domain.exceptions.VerbaEmDistribuicaoException.class)
+    ResponseEntity<ProblemDetail> handleVerbaEmDistribuicao(
+            br.com.ecad.arrecadacao.domain.exceptions.VerbaEmDistribuicaoException ex) {
+        ProblemDetail pd = ProblemDetail.forStatusAndDetail(HttpStatus.UNPROCESSABLE_ENTITY, ex.getMessage());
+        pd.setTitle("Verba In Distribution");
+        return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(pd);
     }
 }

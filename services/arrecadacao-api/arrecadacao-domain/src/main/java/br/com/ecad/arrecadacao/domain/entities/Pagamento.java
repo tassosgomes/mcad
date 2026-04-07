@@ -43,6 +43,16 @@ public class Pagamento {
     @Column(name = "atualizado_em", nullable = false)
     private Instant atualizadoEm;
 
+    // F06 — campos de estorno (nullable quando CONFIRMADO)
+    @Column(name = "justificativa_estorno", length = 500)
+    private String justificativaEstorno;
+
+    @Column(name = "estornado_por", length = 200)
+    private String estornadoPor;
+
+    @Column(name = "estornado_em")
+    private Instant estornadoEm;
+
     // Read-only join for Specification and DTO mapping
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "licenca_id", insertable = false, updatable = false)
@@ -74,20 +84,33 @@ public class Pagamento {
     }
 
     /**
-     * Transiciona o status para ESTORNADO.
-     * Apenas pagamentos CONFIRMADOS podem ser estornados.
-     * Nota: usado por F06 (Estorno) — domain method preparado agora.
+     * Transiciona o status para ESTORNADO, preenchendo os campos de auditoria.
+     * Apenas pagamentos CONFIRMADOS podem ser estornados (RN-E01).
+     * Justificativa obrigatória entre 10-500 caracteres (RN-E02).
+     *
+     * @param justificativa motivo do estorno (10-500 chars)
+     * @param autor         username do autor do estorno
      */
-    public void estornar() {
+    public void estornar(String justificativa, String autor) {
         if (this.status != StatusPagamento.CONFIRMADO) {
             throw new IllegalStateException(
                 "Apenas pagamentos CONFIRMADOS podem ser estornados. Status atual: " + this.status);
         }
+        if (justificativa == null || justificativa.length() < 10 || justificativa.length() > 500) {
+            throw new IllegalArgumentException(
+                "Justificativa must be between 10 and 500 characters");
+        }
+        if (autor == null || autor.isBlank()) {
+            throw new IllegalArgumentException("Autor must not be blank");
+        }
         this.status = StatusPagamento.ESTORNADO;
+        this.justificativaEstorno = justificativa;
+        this.estornadoPor = autor;
+        this.estornadoEm = Instant.now();
         this.atualizadoEm = Instant.now();
     }
 
-    // Getters only — quantidadeUdas, valorUdaNoMomento, valorBruto sao imulaveis apos registro
+    // Getters only — quantidadeUdas, valorUdaNoMomento, valorBruto sao imutaveis apos registro
     public UUID getId() { return id; }
     public UUID getLicencaId() { return licencaId; }
     public BigDecimal getQuantidadeUdas() { return quantidadeUdas; }
@@ -99,4 +122,9 @@ public class Pagamento {
     public Instant getCriadoEm() { return criadoEm; }
     public Instant getAtualizadoEm() { return atualizadoEm; }
     public Licenca getLicenca() { return licenca; }
+
+    // F06 — getters dos campos de estorno
+    public String getJustificativaEstorno() { return justificativaEstorno; }
+    public String getEstornadoPor() { return estornadoPor; }
+    public Instant getEstornadoEm() { return estornadoEm; }
 }
