@@ -25,4 +25,9 @@ public class JpaRubricaRepository implements br.com.ecad.arrecadacao.domain.inte
     public Optional<Rubrica> findBySigla(String sigla) {
         return springDataRubricaRepository.findBySigla(sigla);
     }
+
+    @Override
+    public Optional<Rubrica> findById(java.util.UUID id) {
+        return springDataRubricaRepository.findById(id);
+    }
 }

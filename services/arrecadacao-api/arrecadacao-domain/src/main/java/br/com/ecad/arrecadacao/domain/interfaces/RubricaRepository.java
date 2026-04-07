@@ -8,4 +8,5 @@ public interface RubricaRepository {
     List<Rubrica> findAll();
 
     Optional<Rubrica> findBySigla(String sigla);
+    Optional<Rubrica> findById(java.util.UUID id);
 }
