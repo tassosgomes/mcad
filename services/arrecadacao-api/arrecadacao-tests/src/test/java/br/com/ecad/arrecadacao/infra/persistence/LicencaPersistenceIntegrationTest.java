@@ -51,7 +51,7 @@ class LicencaPersistenceIntegrationTest {
     @Test
     void deveExecutarSeisMigrations() {
         var applied = flyway.info().applied();
-        assertThat(applied).hasSize(6);
+        assertThat(applied).hasSize(9);
     }
 
     @Test

@@ -76,7 +76,7 @@ Sem um registro estruturado de arrecadação, a Distribuição não sabe quanto 
 | F03 | Gestão de Licenças | Criar, consultar e encerrar licenças que vinculam um Usuário de Música a uma Rubrica com vigência. Um mesmo usuário pode ter licenças em múltiplas rubricas. | Must Have | `prd-ready` | `tasks/arrecadacao/prd-gestao-licencas/prd.md` |
 | F04 | Registro de Pagamentos | Registrar pagamentos em UDAs contra uma licença ativa/suspensa no período atual. Gestão da UDA como entidade de referência com histórico. | Must Have | `prd-ready` | `tasks/arrecadacao/prd-registro-pagamentos/prd.md` |
 | F05 | Cálculo e Disponibilização de Verba Líquida | Calcular verba líquida por rubrica+período (85% do bruto) e publicar evento `arrecadacao.verba.disponivel` incrementalmente. Lock durante distribuição. Tela de acompanhamento com visão detalhada e agregada. | Must Have | `prd-ready` | `tasks/arrecadacao/prd-calculo-verba-liquida/prd.md` |
-| F06 | Estorno de Pagamento | Cancelar pagamento com justificativa obrigatória. Recalcula verba líquida da rubrica+período afetado e publica evento `arrecadacao.pagamento.estornado` para Distribuição considerar o extorno na próxima execução. | Must Have | `planned` | — |
+| F06 | Estorno de Pagamento | Cancelar pagamento com justificativa obrigatória. Recalcula verba líquida da rubrica+período afetado e publica evento `arrecadacao.pagamento.estornado` para Distribuição considerar o extorno na próxima execução. | Must Have | `prd-ready` | `tasks/arrecadacao/prd-estorno-pagamento/prd.md` |
 
 **Prioridades (MoSCoW):** `Must Have` · `Should Have` · `Could Have` · `Won't Have`
 **Status possíveis:** `planned` · `prd-ready` · `in-progress` · `done` · `out-of-scope`

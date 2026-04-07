@@ -1,5 +1,6 @@
 package br.com.ecad.arrecadacao.api.config;
 
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -60,6 +61,31 @@ public class GlobalExceptionHandler {
                 .map(err -> err.getField() + ": " + err.getDefaultMessage())
                 .toList();
         pd.setProperty("errors", errors);
+        return pd;
+    }
+
+    @ExceptionHandler(br.com.ecad.arrecadacao.domain.exceptions.PagamentoDuplicadoException.class)
+    ProblemDetail handlePagamentoDuplicado(br.com.ecad.arrecadacao.domain.exceptions.PagamentoDuplicadoException ex) {
+        ProblemDetail pd = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, ex.getMessage());
+        pd.setTitle("Duplicate Payment");
+        pd.setType(java.net.URI.create("https://tools.ietf.org/html/rfc7231#section-6.5.8"));
+        return pd;
+    }
+
+    @ExceptionHandler(br.com.ecad.arrecadacao.domain.exceptions.UdaVigenteNaoEncontradaException.class)
+    ProblemDetail handleUdaVigenteNaoEncontrada(br.com.ecad.arrecadacao.domain.exceptions.UdaVigenteNaoEncontradaException ex) {
+        ProblemDetail pd = ProblemDetail.forStatusAndDetail(HttpStatus.UNPROCESSABLE_ENTITY, ex.getMessage());
+        pd.setTitle("UDA Value Not Found");
+        return pd;
+    }
+
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    ProblemDetail handleDataIntegrity(DataIntegrityViolationException ex) {
+        // Safety net: partial unique constraint violation via race condition
+        ProblemDetail pd = ProblemDetail.forStatusAndDetail(
+            HttpStatus.CONFLICT, "Conflito de dados: ja existe um registro para este periodo");
+        pd.setTitle("Conflict");
+        pd.setType(java.net.URI.create("https://tools.ietf.org/html/rfc7231#section-6.5.8"));
         return pd;
     }
 }
