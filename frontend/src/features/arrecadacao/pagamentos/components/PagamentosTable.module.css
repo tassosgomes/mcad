@@ -1,0 +1,124 @@
+.tableWrapper {
+  overflow-x: auto;
+  background: var(--color-bg-floor);
+  border-radius: var(--radius-xl);
+  border: 1px solid rgba(67, 70, 85, 0.1);
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.thead tr {
+  background: var(--color-bg-surface);
+}
+
+.th {
+  padding: var(--space-4) var(--space-6);
+  text-align: left;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+}
+
+.textRight {
+  text-align: right;
+}
+
+.row {
+  background: transparent;
+  transition: background var(--transition-fast);
+}
+
+.row:hover {
+  background: var(--color-bg-surface);
+}
+
+.td {
+  padding: var(--space-4) var(--space-6);
+  vertical-align: middle;
+  border-bottom: 1px solid rgba(67, 70, 85, 0.05);
+}
+
+.primaryText {
+  display: block;
+  color: var(--color-text-primary);
+  font-weight: 600;
+  font-size: var(--text-sm);
+}
+
+.secondaryText {
+  display: block;
+  color: var(--color-text-muted);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  margin-top: 2px;
+}
+
+.chip {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  background: var(--color-bg-surface);
+  color: var(--color-accent-light);
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(67, 70, 85, 0.3);
+  text-transform: uppercase;
+  margin-right: var(--space-2);
+}
+
+.rubricaNome {
+  color: var(--color-text-secondary);
+  font-size: var(--text-sm);
+}
+
+.mono {
+  font-family: var(--font-mono);
+  color: var(--color-text-secondary);
+  font-size: var(--text-sm);
+  letter-spacing: 0.02em;
+}
+
+.valor {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  color: var(--color-text-primary);
+  font-size: var(--text-sm);
+}
+
+.actions {
+  display: flex;
+  gap: var(--space-1);
+  justify-content: flex-end;
+}
+
+.actionBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-lg);
+  color: var(--color-text-muted);
+  cursor: pointer;
+  transition: background var(--transition-fast), color var(--transition-fast);
+}
+
+.actionBtn:hover {
+  background: rgba(59, 130, 246, 0.1);
+  color: var(--color-accent);
+}
+
+.empty {
+  text-align: center;
+  padding: var(--space-12) var(--space-4);
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}

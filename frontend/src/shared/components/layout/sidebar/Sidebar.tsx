@@ -37,6 +37,8 @@ const navigation = [
     requiredRoles: ['analista-arrecadacao', 'consultor-arrecadacao'],
     children: [
       { label: 'Licenças', path: '/arrecadacao/licencas' },
+      { label: 'Pagamentos', path: '/arrecadacao/pagamentos' },
+      { label: 'UDA', path: '/arrecadacao/uda' },
     ],
   },
   { label: 'Distribuição', icon: Split, basePath: '/distribuicao', disabled: true, requiredRoles: [] },

@@ -1,0 +1,89 @@
+.tableWrapper {
+  overflow-x: auto;
+  background: var(--color-bg-floor);
+  border-radius: var(--radius-xl);
+  border: 1px solid rgba(67, 70, 85, 0.1);
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.thead tr {
+  background: var(--color-bg-surface);
+}
+
+.th {
+  padding: var(--space-4) var(--space-6);
+  text-align: left;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+}
+
+.row {
+  background: transparent;
+  transition: background var(--transition-fast);
+}
+
+.row:hover {
+  background: var(--color-bg-surface);
+}
+
+.vigenteRow {
+  background: rgba(59, 130, 246, 0.04);
+}
+
+.vigenteRow:hover {
+  background: rgba(59, 130, 246, 0.08);
+}
+
+.td {
+  padding: var(--space-4) var(--space-6);
+  vertical-align: middle;
+  border-bottom: 1px solid rgba(67, 70, 85, 0.05);
+}
+
+.valor {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  color: var(--color-text-primary);
+  font-size: var(--text-sm);
+  margin-right: var(--space-2);
+}
+
+.vigenteBadge {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #3B82F6;
+  background: rgba(59, 130, 246, 0.1);
+  border: 1px solid rgba(59, 130, 246, 0.2);
+  border-radius: var(--radius-sm);
+  padding: 2px 6px;
+}
+
+.mono {
+  font-family: var(--font-mono);
+  color: var(--color-text-secondary);
+  font-size: var(--text-sm);
+}
+
+.criadoPor {
+  color: var(--color-text-secondary);
+  font-size: var(--text-sm);
+}
+
+.loading,
+.empty {
+  text-align: center;
+  padding: var(--space-12) var(--space-4);
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}

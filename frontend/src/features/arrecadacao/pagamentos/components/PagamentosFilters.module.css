@@ -1,0 +1,24 @@
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  align-items: center;
+}
+
+.monthInput {
+  padding: var(--space-3) var(--space-4);
+  background: var(--color-bg-floor);
+  border: 1px solid rgba(67, 70, 85, 0.2);
+  border-radius: var(--radius-lg);
+  color: var(--color-text-primary);
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  transition: border-color var(--transition-fast);
+  cursor: pointer;
+  min-width: 160px;
+}
+
+.monthInput:focus {
+  outline: none;
+  border-color: var(--color-accent);
+}
