@@ -20,6 +20,7 @@ import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.web.bind.annotation.*;
 
@@ -41,14 +42,14 @@ public class LicencaController {
 
     @GetMapping
     public ResponseEntity<PageResponse<LicencaResponse>> listar(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size,
-            @RequestParam(required = false) String sort,
-            @RequestParam(required = false) UUID usuarioMusicaId,
-            @RequestParam(required = false) String razaoSocial,
-            @RequestParam(required = false) String rubricaSigla,
-            @RequestParam(required = false) StatusLicenca status,
-            @RequestParam(required = false) Boolean vigente) {
+            @RequestParam(name = "page", defaultValue = "0") int page,
+            @RequestParam(name = "size", defaultValue = "20") int size,
+            @RequestParam(name = "sort", required = false) String sort,
+            @RequestParam(name = "usuarioMusicaId", required = false) UUID usuarioMusicaId,
+            @RequestParam(name = "razaoSocial", required = false) String razaoSocial,
+            @RequestParam(name = "rubricaSigla", required = false) String rubricaSigla,
+            @RequestParam(name = "status", required = false) StatusLicenca status,
+            @RequestParam(name = "vigente", required = false) Boolean vigente) {
         var query = new ListarLicencasQuery(page, size, sort,
             usuarioMusicaId, razaoSocial, rubricaSigla, status, vigente);
         return ResponseEntity.ok(queryDispatcher.dispatch(query));
@@ -57,9 +58,8 @@ public class LicencaController {
     @PostMapping
     @PreAuthorize("hasRole('analista-arrecadacao')")
     public ResponseEntity<LicencaResponse> criar(
-            @Valid @RequestBody CriarLicencaRequest request,
-            JwtAuthenticationToken principal) {
-        var autor = extrairAutor(principal);
+            @Valid @RequestBody CriarLicencaRequest request) {
+        var autor = extrairAutor();
         var command = new CriarLicencaCommand(
             request.usuarioMusicaId(), request.rubricaId(),
             request.dataInicio(), request.dataFim(), autor);
@@ -68,17 +68,16 @@ public class LicencaController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<LicencaResponse> buscarPorId(@PathVariable UUID id) {
+    public ResponseEntity<LicencaResponse> buscarPorId(@PathVariable("id") UUID id) {
         return ResponseEntity.ok(queryDispatcher.dispatch(new BuscarLicencaPorIdQuery(id)));
     }
 
     @PostMapping("/{id}/suspender")
     @PreAuthorize("hasRole('analista-arrecadacao')")
     public ResponseEntity<LicencaResponse> suspender(
-            @PathVariable UUID id,
-            @Valid @RequestBody TransicaoStatusRequest request,
-            JwtAuthenticationToken principal) {
-        var autor = extrairAutor(principal);
+            @PathVariable("id") UUID id,
+            @Valid @RequestBody TransicaoStatusRequest request) {
+        var autor = extrairAutor();
         var command = new SuspenderLicencaCommand(id, request.justificativa(), autor);
         return ResponseEntity.ok(commandDispatcher.dispatch(command));
     }
@@ -86,10 +85,9 @@ public class LicencaController {
     @PostMapping("/{id}/reativar")
     @PreAuthorize("hasRole('analista-arrecadacao')")
     public ResponseEntity<LicencaResponse> reativar(
-            @PathVariable UUID id,
-            @Valid @RequestBody TransicaoStatusRequest request,
-            JwtAuthenticationToken principal) {
-        var autor = extrairAutor(principal);
+            @PathVariable("id") UUID id,
+            @Valid @RequestBody TransicaoStatusRequest request) {
+        var autor = extrairAutor();
         var command = new ReativarLicencaCommand(id, request.justificativa(), autor);
         return ResponseEntity.ok(commandDispatcher.dispatch(command));
     }
@@ -97,26 +95,27 @@ public class LicencaController {
     @PostMapping("/{id}/encerrar")
     @PreAuthorize("hasRole('analista-arrecadacao')")
     public ResponseEntity<LicencaResponse> encerrar(
-            @PathVariable UUID id,
-            @Valid @RequestBody TransicaoStatusRequest request,
-            JwtAuthenticationToken principal) {
-        var autor = extrairAutor(principal);
+            @PathVariable("id") UUID id,
+            @Valid @RequestBody TransicaoStatusRequest request) {
+        var autor = extrairAutor();
         var command = new EncerrarLicencaCommand(id, request.justificativa(), autor);
         return ResponseEntity.ok(commandDispatcher.dispatch(command));
     }
 
     @GetMapping("/{id}/historico-status")
     public ResponseEntity<List<HistoricoStatusLicencaResponse>> listarHistorico(
-            @PathVariable UUID id) {
+            @PathVariable("id") UUID id) {
         return ResponseEntity.ok(
             queryDispatcher.dispatch(new ListarHistoricoStatusLicencaQuery(id)));
     }
 
-    // Extrai autor do JWT: preferred_username com fallback para sub
-    private String extrairAutor(JwtAuthenticationToken principal) {
-        var preferred = principal.getToken().getClaimAsString("preferred_username");
-        return (preferred != null && !preferred.isBlank())
-            ? preferred
-            : principal.getToken().getSubject();
+    private String extrairAutor() {
+        var auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth instanceof JwtAuthenticationToken jwt) {
+            var claims = jwt.getToken().getClaims();
+            String username = (String) claims.get("preferred_username");
+            return username != null ? username : (String) claims.get("sub");
+        }
+        return (auth != null && auth.getName() != null) ? auth.getName() : "sistema";
     }
 }
