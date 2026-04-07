@@ -32,6 +32,7 @@ import static org.assertj.core.api.Assertions.assertThat;
         properties = "spring.autoconfigure.exclude=org.springframework.boot.autoconfigure.security.oauth2.resource.servlet.OAuth2ResourceServerAutoConfiguration")
 @ActiveProfiles("test")
 @Import({TestSecurityConfig.class, VerbaServiceTestConfig.class})
+@SuppressWarnings("null")
 class RubricaPersistenceIntegrationTest {
 
     @Autowired

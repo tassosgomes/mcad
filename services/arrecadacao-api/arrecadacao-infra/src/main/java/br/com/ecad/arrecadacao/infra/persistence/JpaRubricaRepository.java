@@ -8,6 +8,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Repository
 @Transactional(readOnly = true)
+@SuppressWarnings("null")
 public class JpaRubricaRepository implements br.com.ecad.arrecadacao.domain.interfaces.RubricaRepository {
 
     private final SpringDataRubricaRepository springDataRubricaRepository;

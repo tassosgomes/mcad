@@ -38,6 +38,7 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/usuarios-musica")
+@SuppressWarnings("null")
 public class UsuarioMusicaController {
 
     private static final Logger log = LoggerFactory.getLogger(UsuarioMusicaController.class);

@@ -131,7 +131,7 @@ class UsuarioMusicaPersistenceIntegrationTest {
 
     @Test
     void deveFiltrarPorStatus() {
-        UsuarioMusica ativo = criarUsuario("Radio Ativa", "50997063000132");
+        criarUsuario("Radio Ativa", "50997063000132");
         UsuarioMusica inativo = criarUsuario("Radio Inativa", "11222333000181");
         inativo.inativar("Encerrou atividades", "analista1");
         repository.save(inativo);

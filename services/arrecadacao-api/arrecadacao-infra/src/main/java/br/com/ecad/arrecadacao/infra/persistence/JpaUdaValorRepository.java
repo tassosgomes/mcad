@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Optional;
 
 @Component
+@SuppressWarnings("null")
 public class JpaUdaValorRepository implements UdaValorRepository {
 
     private final SpringDataUdaValorRepository springData;

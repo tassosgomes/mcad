@@ -18,6 +18,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 @Component
+@SuppressWarnings("null")
 public class ListarPagamentosQueryHandler
         implements QueryHandler<ListarPagamentosQuery, PageResponse<PagamentoResponse>> {
 

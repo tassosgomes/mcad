@@ -11,9 +11,7 @@ import org.flywaydb.core.Flyway;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Pageable;
-import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.test.util.ReflectionTestUtils;
 import jakarta.persistence.EntityManager;
@@ -37,6 +35,7 @@ import br.com.ecad.arrecadacao.config.VerbaServiceTestConfig;
 @ActiveProfiles("test")
 @Import({TestSecurityConfig.class, VerbaServiceTestConfig.class})
 @Transactional
+@SuppressWarnings("null")
 class LicencaPersistenceIntegrationTest {
 
     @Autowired Flyway flyway;

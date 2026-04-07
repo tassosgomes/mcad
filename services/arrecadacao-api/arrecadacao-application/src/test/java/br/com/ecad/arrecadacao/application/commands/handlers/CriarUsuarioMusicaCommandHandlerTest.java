@@ -4,7 +4,6 @@ import br.com.ecad.arrecadacao.application.commands.CriarUsuarioMusicaCommand;
 import br.com.ecad.arrecadacao.application.dto.ContatoRequest;
 import br.com.ecad.arrecadacao.application.dto.EnderecoRequest;
 import br.com.ecad.arrecadacao.application.dto.UsuarioMusicaResponse;
-import br.com.ecad.arrecadacao.domain.entities.UsuarioMusica;
 import br.com.ecad.arrecadacao.domain.exceptions.CnpjDuplicadoException;
 import br.com.ecad.arrecadacao.domain.interfaces.HistoricoStatusUsuarioRepository;
 import br.com.ecad.arrecadacao.domain.interfaces.UsuarioMusicaRepository;

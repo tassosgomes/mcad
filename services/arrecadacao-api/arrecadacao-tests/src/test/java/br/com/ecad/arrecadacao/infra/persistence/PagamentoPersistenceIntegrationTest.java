@@ -38,6 +38,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 @ActiveProfiles("test")
 @Import({TestSecurityConfig.class, VerbaServiceTestConfig.class})
 @Transactional
+@SuppressWarnings("null")
 class PagamentoPersistenceIntegrationTest {
 
     @Autowired Flyway flyway;

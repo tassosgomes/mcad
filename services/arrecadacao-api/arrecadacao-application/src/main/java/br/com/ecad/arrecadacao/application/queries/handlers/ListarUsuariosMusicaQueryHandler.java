@@ -21,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.stream.Collectors;
 
 @Component
+@SuppressWarnings("null")
 public class ListarUsuariosMusicaQueryHandler implements QueryHandler<ListarUsuariosMusicaQuery, PageResponse<UsuarioMusicaResponse>> {
 
     private final UsuarioMusicaRepository repository;

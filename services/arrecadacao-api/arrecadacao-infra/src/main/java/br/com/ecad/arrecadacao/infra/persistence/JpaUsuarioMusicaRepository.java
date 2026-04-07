@@ -12,6 +12,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 @Repository
+@SuppressWarnings("null")
 public class JpaUsuarioMusicaRepository implements UsuarioMusicaRepository {
     private final SpringDataUsuarioMusicaRepository springData;
 

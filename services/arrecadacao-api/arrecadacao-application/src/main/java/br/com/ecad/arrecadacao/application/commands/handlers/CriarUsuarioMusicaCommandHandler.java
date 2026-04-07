@@ -2,9 +2,7 @@ package br.com.ecad.arrecadacao.application.commands.handlers;
 
 import br.com.ecad.arrecadacao.application.commands.CriarUsuarioMusicaCommand;
 import br.com.ecad.arrecadacao.application.cqrs.CommandHandler;
-import br.com.ecad.arrecadacao.application.dto.ContatoRequest;
 import br.com.ecad.arrecadacao.application.dto.ContatoResponse;
-import br.com.ecad.arrecadacao.application.dto.EnderecoRequest;
 import br.com.ecad.arrecadacao.application.dto.EnderecoResponse;
 import br.com.ecad.arrecadacao.application.dto.UsuarioMusicaResponse;
 import br.com.ecad.arrecadacao.domain.entities.HistoricoStatusUsuario;

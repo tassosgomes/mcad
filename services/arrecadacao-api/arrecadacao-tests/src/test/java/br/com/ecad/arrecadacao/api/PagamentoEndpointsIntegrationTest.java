@@ -43,6 +43,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @Import({TestSecurityConfig.class, VerbaServiceTestConfig.class})
 @AutoConfigureMockMvc
 @Transactional
+@SuppressWarnings("null")
 class PagamentoEndpointsIntegrationTest {
 
     @Autowired MockMvc mockMvc;

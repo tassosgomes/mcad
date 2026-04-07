@@ -9,6 +9,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 @Component
+@SuppressWarnings("null")
 public class OutboxEventWriterImpl implements OutboxEventWriter {
 
     private final SpringDataOutboxEventRepository springDataOutboxEventRepository;

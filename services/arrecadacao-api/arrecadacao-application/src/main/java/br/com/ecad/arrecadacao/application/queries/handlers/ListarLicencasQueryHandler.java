@@ -17,6 +17,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 @Component
+@SuppressWarnings("null")
 public class ListarLicencasQueryHandler
         implements QueryHandler<ListarLicencasQuery, PageResponse<LicencaResponse>> {
 

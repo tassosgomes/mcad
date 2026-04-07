@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.UUID;
 
 @Component
+@SuppressWarnings("null")
 public class JpaHistoricoStatusLicencaRepository implements HistoricoStatusLicencaRepository {
 
     private final SpringDataHistoricoStatusLicencaRepository springData;

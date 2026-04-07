@@ -33,7 +33,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-@SuppressWarnings("unchecked")
+@SuppressWarnings({"unchecked", "null"})
 class ListarLicencasQueryHandlerTest {
 
     @Mock
