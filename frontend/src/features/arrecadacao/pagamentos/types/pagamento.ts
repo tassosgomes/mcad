@@ -16,8 +16,14 @@ export interface Pagamento {
   periodo: string;
   status: StatusPagamento;
   dataRegistro: string;
-  criadoEm: string;
   atualizadoEm: string;
+  justificativaEstorno: string | null;
+  estornadoPor: string | null;
+  estornadoEm: string | null;
+}
+
+export interface EstornarPagamentoRequest {
+  justificativa: string;
 }
 
 export interface PagamentoListResponse {

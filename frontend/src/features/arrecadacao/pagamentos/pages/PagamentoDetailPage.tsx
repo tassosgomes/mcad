@@ -1,11 +1,14 @@
+import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, RefreshCcw } from 'lucide-react';
 import { PageHeader } from '@components/ui/page-header';
 import { Button } from '@components/ui/button';
 import { Loading } from '@components/ui/loading';
 import { ErrorState } from '@components/ui/error-state';
+import { useAuth } from '../../../../shared/auth/useAuth';
 import { usePagamento } from '../hooks/usePagamento';
 import { StatusBadgePagamento } from '../components/StatusBadgePagamento';
+import { EstornarPagamentoModal } from '../components/EstornarPagamentoModal';
 import { formatBRL, formatUdas } from '../../shared/utils/formatCurrency';
 import styles from './PagamentoDetailPage.module.css';
 
@@ -23,6 +26,8 @@ function formatDateTime(dateStr: string): string {
 export function PagamentoDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { hasRole } = useAuth();
+  const [showModal, setShowModal] = useState(false);
   const { data: pagamento, isLoading, error, refetch } = usePagamento(id!);
 
   if (isLoading) return <Loading />;
@@ -104,20 +109,49 @@ export function PagamentoDetailPage() {
         </div>
       </div>
 
-      {/* Ação Estornar — preparada para F06 */}
-      <div className={styles.acoesCard}>
-        <h2 className={styles.sectionTitle}>Ações</h2>
-        <Button
-          variant="secondary"
-          type="button"
-          disabled
-          title="Disponível na próxima versão (F06)"
-          id="btn-estornar-pagamento"
-        >
-          Estornar Pagamento
-        </Button>
-        <p className={styles.hintEstornar}>Estorno disponível na versão F06.</p>
-      </div>
+      {/* Card dados do estorno */}
+      {pagamento.status === 'ESTORNADO' && pagamento.justificativaEstorno && (
+        <div className={styles.card}>
+          <h2 className={styles.sectionTitle}>Dados do Estorno</h2>
+          <div className={styles.grid}>
+            <div className={`${styles.field} ${styles.fullWidth}`}>
+              <span className={styles.fieldLabel}>Justificativa</span>
+              <span className={styles.fieldValue}>{pagamento.justificativaEstorno}</span>
+            </div>
+            <div className={styles.field}>
+              <span className={styles.fieldLabel}>Estornado por</span>
+              <span className={styles.fieldValue}>{pagamento.estornadoPor}</span>
+            </div>
+            <div className={styles.field}>
+              <span className={styles.fieldLabel}>Data do estorno</span>
+              <span className={styles.fieldSub}>
+                {pagamento.estornadoEm ? formatDateTime(pagamento.estornadoEm) : '-'}
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Ação Estornar */}
+      {pagamento.status === 'CONFIRMADO' && hasRole('analista-arrecadacao') && (
+        <div className={styles.acoesCard}>
+          <h2 className={styles.sectionTitle}>Ações</h2>
+          <Button
+            variant="danger"
+            type="button"
+            onClick={() => setShowModal(true)}
+            id="btn-estornar-pagamento"
+          >
+            <RefreshCcw size={16} /> Estornar Pagamento
+          </Button>
+        </div>
+      )}
+
+      <EstornarPagamentoModal
+        isOpen={showModal}
+        onClose={() => setShowModal(false)}
+        pagamento={pagamento}
+      />
     </div>
   );
 }

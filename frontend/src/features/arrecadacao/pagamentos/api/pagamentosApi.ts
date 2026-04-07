@@ -3,6 +3,7 @@ import type {
   Pagamento,
   PagamentoListResponse,
   RegistrarPagamentoRequest,
+  EstornarPagamentoRequest,
   PagamentoFiltros,
 } from '../types/pagamento';
 
@@ -26,4 +27,8 @@ export function getPagamentoById(id: string): Promise<Pagamento> {
 
 export function registrarPagamento(data: RegistrarPagamentoRequest): Promise<Pagamento> {
   return apiPostArr<Pagamento>('/pagamentos', data);
+}
+
+export function estornarPagamento(id: string, data: EstornarPagamentoRequest): Promise<Pagamento> {
+  return apiPostArr<Pagamento>(`/pagamentos/${id}/estornar`, data);
 }
