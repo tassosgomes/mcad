@@ -1,0 +1,22 @@
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  align-items: center;
+  padding: var(--space-4);
+  background: var(--color-bg-floor);
+  border-radius: var(--radius-xl);
+  border: 1px solid rgba(67, 70, 85, 0.1);
+}
+
+.filters > * {
+  flex: 1 1 180px;
+  max-width: 260px;
+  min-width: 160px;
+}
+
+.filters > button {
+  flex: 0 0 auto;
+  min-width: unset;
+  max-width: unset;
+}

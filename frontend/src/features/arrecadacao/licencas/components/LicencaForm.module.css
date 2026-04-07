@@ -1,0 +1,78 @@
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-4);
+}
+
+.fullWidth {
+  grid-column: 1 / -1;
+}
+
+.dateInput {
+  width: 100%;
+  padding: var(--space-2) var(--space-3);
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  color: var(--color-text-primary);
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  transition: border-color var(--transition-fast);
+  box-sizing: border-box;
+  height: 38px;
+}
+
+.dateInput:focus {
+  outline: none;
+  border-color: var(--color-accent);
+}
+
+.hint {
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+  margin: var(--space-1) 0 0;
+}
+
+.autocompleteItem {
+  display: flex;
+  flex-direction: column;
+  padding: var(--space-2) 0;
+}
+
+.autocompleteItemHighlighted {
+  display: flex;
+  flex-direction: column;
+  padding: var(--space-2) 0;
+}
+
+.autocompleteRazaoSocial {
+  font-weight: 600;
+  color: var(--color-text-primary);
+  font-size: var(--text-sm);
+}
+
+.autocompleteCnpj {
+  color: var(--color-text-muted);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-2);
+  padding-top: var(--space-4);
+  border-top: 1px solid rgba(67, 70, 85, 0.3);
+}
+
+@media (max-width: 600px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+}
