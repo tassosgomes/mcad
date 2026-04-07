@@ -1,5 +1,5 @@
 ---
-status: pending
+status: done
 parallelizable: false
 blocked_by: ["10.0"]
 ---
@@ -45,8 +45,8 @@ Integrar os dois novos modulos (UDA e Pagamentos) no sistema de rotas e no sideb
 
 ## Subtarefas
 
-- [ ] 11.1 Adicionar 4 rotas em `routes.tsx` com lazy loading e RequireRole
-- [ ] 11.2 Adicionar sub-itens "Pagamentos" e "UDA" no sidebar
+- [x] 11.1 Adicionar 4 rotas em `routes.tsx` com lazy loading e RequireRole
+- [x] 11.2 Adicionar sub-itens "Pagamentos" e "UDA" no sidebar
 
 ## Sequenciamento
 
@@ -101,10 +101,10 @@ children: [
 
 ## Criterios de Sucesso (Verificaveis)
 
-- [ ] Build compila: `cd frontend && npm run build`
-- [ ] TypeScript sem erros: `cd frontend && npx tsc --noEmit`
-- [ ] Rota /arrecadacao/uda carrega UdaPage
-- [ ] Rota /arrecadacao/pagamentos carrega PagamentosPage
-- [ ] Rota /arrecadacao/pagamentos/novo carrega PagamentoCreatePage (apenas analista)
-- [ ] Rota /arrecadacao/pagamentos/:id carrega PagamentoDetailPage
-- [ ] Sidebar exibe "Pagamentos" e "UDA" na secao Arrecadacao
+- [x] Build compila: `cd frontend && npm run build`
+- [x] TypeScript sem erros: `cd frontend && npx tsc --noEmit`
+- [x] Rota /arrecadacao/uda carrega UdaPage
+- [x] Rota /arrecadacao/pagamentos carrega PagamentosPage
+- [x] Rota /arrecadacao/pagamentos/novo carrega PagamentoCreatePage (apenas analista)
+- [x] Rota /arrecadacao/pagamentos/:id carrega PagamentoDetailPage
+- [x] Sidebar exibe "Pagamentos" e "UDA" na secao Arrecadacao

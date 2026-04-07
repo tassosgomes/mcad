@@ -1,5 +1,5 @@
 ---
-status: pending
+status: done
 parallelizable: false
 blocked_by: ["8.0"]
 ---
@@ -58,11 +58,11 @@ Implementar os 3 componentes UDA (UdaVigenteCard, UdaHistoricoTable, AjustarUdaM
 
 ## Subtarefas
 
-- [ ] 9.1 Criar `UdaVigenteCard` com valor formatado, data vigencia, botao analista, alerta 404
-- [ ] 9.2 Criar `UdaHistoricoTable` com colunas, destaque vigente, "Sistema" para criadoPor null
-- [ ] 9.3 Criar `AjustarUdaModal` com form (valor, dataVigencia), validacao, toast sucesso
-- [ ] 9.4 Criar `UdaPage` compondo os 3 componentes
-- [ ] 9.5 Criar CSS Modules para cada componente e page
+- [x] 9.1 Criar `UdaVigenteCard` com valor formatado, data vigencia, botao analista, alerta 404
+- [x] 9.2 Criar `UdaHistoricoTable` com colunas, destaque vigente, "Sistema" para criadoPor null
+- [x] 9.3 Criar `AjustarUdaModal` com form (valor, dataVigencia), validacao, toast sucesso
+- [x] 9.4 Criar `UdaPage` compondo os 3 componentes
+- [x] 9.5 Criar CSS Modules para cada componente e page
 
 ## Sequenciamento
 
@@ -147,8 +147,8 @@ export function UdaPage() {
 
 ## Criterios de Sucesso (Verificaveis)
 
-- [ ] Build compila: `cd frontend && npm run build`
-- [ ] TypeScript sem erros: `cd frontend && npx tsc --noEmit`
-- [ ] UdaPage renderiza com card + tabela
-- [ ] AjustarUdaModal abre, valida e submete
-- [ ] formatBRL aplica formatacao correta nos valores
+- [x] Build compila: `cd frontend && npm run build`
+- [x] TypeScript sem erros: `cd frontend && npx tsc --noEmit`
+- [x] UdaPage renderiza com card + tabela
+- [x] AjustarUdaModal abre, valida e submete
+- [x] formatBRL aplica formatacao correta nos valores

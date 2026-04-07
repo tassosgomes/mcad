@@ -1,5 +1,5 @@
 ---
-status: pending
+status: done
 parallelizable: false
 blocked_by: ["9.0"]
 ---
@@ -72,14 +72,14 @@ Implementar os 4 componentes de Pagamentos (StatusBadgePagamento, PagamentosTabl
 
 ## Subtarefas
 
-- [ ] 10.1 Criar `StatusBadgePagamento` (CONFIRMADO verde, ESTORNADO vermelho)
-- [ ] 10.2 Criar `PagamentosTable` com 7 colunas, link detalhes
-- [ ] 10.3 Criar `PagamentosFilters` com 5 filtros + debounce + reset
-- [ ] 10.4 Criar `RegistrarPagamentoForm` com autocomplete licenca, preview valor, validacao
-- [ ] 10.5 Criar `PagamentosPage` (listagem com filtros e paginacao)
-- [ ] 10.6 Criar `PagamentoCreatePage` (form + redirect pos-sucesso)
-- [ ] 10.7 Criar `PagamentoDetailPage` (detalhes expandidos, botao Estornar preparado)
-- [ ] 10.8 Criar CSS Modules para todos os componentes e pages
+- [x] 10.1 Criar `StatusBadgePagamento` (CONFIRMADO verde, ESTORNADO vermelho)
+- [x] 10.2 Criar `PagamentosTable` com 7 colunas, link detalhes
+- [x] 10.3 Criar `PagamentosFilters` com 5 filtros + debounce + reset
+- [x] 10.4 Criar `RegistrarPagamentoForm` com autocomplete licenca, preview valor, validacao
+- [x] 10.5 Criar `PagamentosPage` (listagem com filtros e paginacao)
+- [x] 10.6 Criar `PagamentoCreatePage` (form + redirect pos-sucesso)
+- [x] 10.7 Criar `PagamentoDetailPage` (detalhes expandidos, botao Estornar preparado)
+- [x] 10.8 Criar CSS Modules para todos os componentes e pages
 
 ## Sequenciamento
 
@@ -192,9 +192,9 @@ export function PagamentoDetailPage() {
 
 ## Criterios de Sucesso (Verificaveis)
 
-- [ ] Build compila: `cd frontend && npm run build`
-- [ ] TypeScript sem erros: `cd frontend && npx tsc --noEmit`
-- [ ] PagamentosPage renderiza com filtros + tabela + paginacao
-- [ ] PagamentoCreatePage mostra preview em tempo real ao digitar quantidadeUdas
-- [ ] PagamentoDetailPage mostra dados expandidos com valores formatados
-- [ ] StatusBadgePagamento: CONFIRMADO verde, ESTORNADO vermelho
+- [x] Build compila: `cd frontend && npm run build`
+- [x] TypeScript sem erros: `cd frontend && npx tsc --noEmit`
+- [x] PagamentosPage renderiza com filtros + tabela + paginacao
+- [x] PagamentoCreatePage mostra preview em tempo real ao digitar quantidadeUdas
+- [x] PagamentoDetailPage mostra dados expandidos com valores formatados
+- [x] StatusBadgePagamento: CONFIRMADO verde, ESTORNADO vermelho

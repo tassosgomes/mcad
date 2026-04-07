@@ -1,5 +1,5 @@
 ---
-status: pending
+status: done
 parallelizable: false
 blocked_by: ["6.0"]
 ---
@@ -64,13 +64,13 @@ Estabelece a camada de dados frontend para os dois modulos (uda/ e pagamentos/):
 
 ## Subtarefas
 
-- [ ] 8.1 Criar `formatCurrency.ts` com `formatBRL()` e `formatUdas()`
-- [ ] 8.2 Criar `uda/types/uda.ts` com `UdaValor` e `AjustarUdaRequest`
-- [ ] 8.3 Criar `uda/api/udaApi.ts` com 3 funcoes HTTP
-- [ ] 8.4 Criar 3 hooks UDA: `useUdaVigente` (retry: false para 404), `useHistoricoUda`, `useAjustarUda`
-- [ ] 8.5 Criar `pagamentos/types/pagamento.ts` com todos os tipos
-- [ ] 8.6 Criar `pagamentos/api/pagamentosApi.ts` com 3 funcoes HTTP
-- [ ] 8.7 Criar 3 hooks Pagamentos: `usePagamentos`, `usePagamento`, `useRegistrarPagamento`
+- [x] 8.1 Criar `formatCurrency.ts` com `formatBRL()` e `formatUdas()`
+- [x] 8.2 Criar `uda/types/uda.ts` com `UdaValor` e `AjustarUdaRequest`
+- [x] 8.3 Criar `uda/api/udaApi.ts` com 3 funcoes HTTP
+- [x] 8.4 Criar 3 hooks UDA: `useUdaVigente` (retry: false para 404), `useHistoricoUda`, `useAjustarUda`
+- [x] 8.5 Criar `pagamentos/types/pagamento.ts` com todos os tipos
+- [x] 8.6 Criar `pagamentos/api/pagamentosApi.ts` com 3 funcoes HTTP
+- [x] 8.7 Criar 3 hooks Pagamentos: `usePagamentos`, `usePagamento`, `useRegistrarPagamento`
 
 ## Sequenciamento
 
@@ -208,8 +208,8 @@ export function useRegistrarPagamento() {
 
 ## Criterios de Sucesso (Verificaveis)
 
-- [ ] Build compila: `cd frontend && npm run build`
-- [ ] TypeScript sem erros: `cd frontend && npx tsc --noEmit`
-- [ ] Hooks exportados e importaveis pelos componentes
-- [ ] `formatBRL("107.310000")` retorna "R$ 107,31"
-- [ ] `formatUdas("2.500000")` retorna "2,5"
+- [x] Build compila: `cd frontend && npm run build`
+- [x] TypeScript sem erros: `cd frontend && npx tsc --noEmit`
+- [x] Hooks exportados e importaveis pelos componentes
+- [x] `formatBRL("107.310000")` retorna "R$ 107,31"
+- [x] `formatUdas("2.500000")` retorna "2,5"

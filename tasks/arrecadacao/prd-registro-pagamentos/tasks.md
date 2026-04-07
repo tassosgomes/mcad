@@ -25,17 +25,17 @@ Sequencial. Depende do backend estar disponivel (endpoints funcionais). Pode ini
 
 ## Tarefas
 
-- [ ] 1.0 Migrations V7 + V8: tabelas uda_valor (com seed) e pagamento (com partial unique)
-- [ ] 2.0 Domain Layer: enum StatusPagamento, entidades UdaValor e Pagamento, exceptions, interfaces
-- [ ] 3.0 Infrastructure: repositorios JPA e Spring Data (UdaValor + Pagamento)
-- [ ] 4.0 Commands + Handlers: AjustarUda e RegistrarPagamento (com Outbox) + testes unitarios
-- [ ] 5.0 Queries, DTOs, Specification e Handlers + testes unitarios
-- [ ] 6.0 API Layer: UdaController (3 endpoints) + PagamentoController (3 endpoints) + GlobalExceptionHandler
-- [ ] 7.0 Testes de integracao: persistencia + endpoints UDA + endpoints Pagamento
-- [ ] 8.0 Frontend: formatCurrency + types + API functions + hooks (UDA + Pagamentos)
-- [ ] 9.0 Frontend: componentes e page UDA (VigenteCard, HistoricoTable, AjustarModal, UdaPage)
-- [ ] 10.0 Frontend: componentes e pages Pagamentos (Table, Filters, Form, StatusBadge, 3 pages)
-- [ ] 11.0 Frontend: routing e sidebar
+- [x] 1.0 Migrations V7 + V8: tabelas uda_valor (com seed) e pagamento (com partial unique)
+- [x] 2.0 Domain Layer: enum StatusPagamento, entidades UdaValor e Pagamento, exceptions, interfaces
+- [x] 3.0 Infrastructure: repositorios JPA e Spring Data (UdaValor + Pagamento)
+- [x] 4.0 Commands + Handlers: AjustarUda e RegistrarPagamento (com Outbox) + testes unitarios
+- [x] 5.0 Queries, DTOs, Specification e Handlers + testes unitarios
+- [x] 6.0 API Layer: UdaController (3 endpoints) + PagamentoController (3 endpoints) + GlobalExceptionHandler
+- [x] 7.0 Testes de integracao: persistencia + endpoints UDA + endpoints Pagamento
+- [x] 8.0 Frontend: formatCurrency + types + API functions + hooks (UDA + Pagamentos)
+- [x] 9.0 Frontend: componentes e page UDA (VigenteCard, HistoricoTable, AjustarModal, UdaPage)
+- [x] 10.0 Frontend: componentes e pages Pagamentos (Table, Filters, Form, StatusBadge, 3 pages)
+- [x] 11.0 Frontend: routing e sidebar
 
 ## Rastreabilidade US -> Tasks
 
