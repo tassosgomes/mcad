@@ -23,6 +23,7 @@ export KEYCLOAK_ADMIN_USERNAME="$KEY_CLOAK_USER"
 export KEYCLOAK_ADMIN_PASSWORD="$KEY_CLOAK_PASS"
 export TARGET_REALM="${KEY_CLOAK_REALM:-mcad}"
 export CLIENT_ID="${KEYCLOAK_CLIENT_ID:-mcad-frontend}"
+export DIRECT_CLIENT_ID="${KEYCLOAK_DIRECT_CLIENT_ID:-mcad-cli}"
 export ANALISTA_USERNAME="${KEYCLOAK_ANALISTA_USERNAME:-analista.teste}"
 export ANALISTA_EMAIL="${KEYCLOAK_ANALISTA_EMAIL:-analista@mcad.dev}"
 export ANALISTA_FIRST_NAME="${KEYCLOAK_ANALISTA_FIRST_NAME:-Analista}"
@@ -33,11 +34,21 @@ export ANALISTA_IDENT_EMAIL="${KEYCLOAK_ANALISTA_IDENT_EMAIL:-analista.ident@mca
 export ANALISTA_IDENT_FIRST_NAME="${KEYCLOAK_ANALISTA_IDENT_FIRST_NAME:-Analista}"
 export ANALISTA_IDENT_LAST_NAME="${KEYCLOAK_ANALISTA_IDENT_LAST_NAME:-Identificacao}"
 export ANALISTA_IDENT_PASSWORD="${KEYCLOAK_ANALISTA_IDENT_PASSWORD:-Analista123!}"
+export ANALISTA_ARRECADACAO_USERNAME="${KEYCLOAK_ANALISTA_ARRECADACAO_USERNAME:-analista.arrec}"
+export ANALISTA_ARRECADACAO_EMAIL="${KEYCLOAK_ANALISTA_ARRECADACAO_EMAIL:-analista.arrec@mcad.dev}"
+export ANALISTA_ARRECADACAO_FIRST_NAME="${KEYCLOAK_ANALISTA_ARRECADACAO_FIRST_NAME:-Analista}"
+export ANALISTA_ARRECADACAO_LAST_NAME="${KEYCLOAK_ANALISTA_ARRECADACAO_LAST_NAME:-Arrecadacao}"
+export ANALISTA_ARRECADACAO_PASSWORD="${KEYCLOAK_ANALISTA_ARRECADACAO_PASSWORD:-Analista123!}"
 export CONSULTOR_USERNAME="${KEYCLOAK_CONSULTOR_USERNAME:-consultor.teste}"
 export CONSULTOR_EMAIL="${KEYCLOAK_CONSULTOR_EMAIL:-consultor@mcad.dev}"
 export CONSULTOR_FIRST_NAME="${KEYCLOAK_CONSULTOR_FIRST_NAME:-Consultor}"
 export CONSULTOR_LAST_NAME="${KEYCLOAK_CONSULTOR_LAST_NAME:-Teste}"
 export CONSULTOR_PASSWORD="${KEYCLOAK_CONSULTOR_PASSWORD:-Consultor123!}"
+export CONSULTOR_ARRECADACAO_USERNAME="${KEYCLOAK_CONSULTOR_ARRECADACAO_USERNAME:-consultor.arrec}"
+export CONSULTOR_ARRECADACAO_EMAIL="${KEYCLOAK_CONSULTOR_ARRECADACAO_EMAIL:-consultor.arrec@mcad.dev}"
+export CONSULTOR_ARRECADACAO_FIRST_NAME="${KEYCLOAK_CONSULTOR_ARRECADACAO_FIRST_NAME:-Consultor}"
+export CONSULTOR_ARRECADACAO_LAST_NAME="${KEYCLOAK_CONSULTOR_ARRECADACAO_LAST_NAME:-Arrecadacao}"
+export CONSULTOR_ARRECADACAO_PASSWORD="${KEYCLOAK_CONSULTOR_ARRECADACAO_PASSWORD:-Consultor123!}"
 
 python3 - <<'PY'
 import json
@@ -180,6 +191,56 @@ def ensure_client(token: str) -> dict:
     return created[0]
 
 
+def ensure_direct_access_client(token: str) -> dict:
+    existing = request_json(
+        "GET",
+        f"/admin/realms/{realm_name}/clients?clientId={urllib.parse.quote(os.environ['DIRECT_CLIENT_ID'])}",
+        token,
+    )
+    if existing:
+        client = existing[0]
+        request_json(
+            "PUT",
+            f"/admin/realms/{realm_name}/clients/{client['id']}",
+            token,
+            {
+                **client,
+                "enabled": True,
+                "publicClient": True,
+                "standardFlowEnabled": False,
+                "directAccessGrantsEnabled": True,
+                "serviceAccountsEnabled": False,
+                "redirectUris": [],
+                "webOrigins": [],
+            },
+        )
+        return request_json("GET", f"/admin/realms/{realm_name}/clients/{client['id']}", token)
+
+    request_json(
+        "POST",
+        f"/admin/realms/{realm_name}/clients",
+        token,
+        {
+            "clientId": os.environ["DIRECT_CLIENT_ID"],
+            "name": "mcad-cli",
+            "enabled": True,
+            "protocol": "openid-connect",
+            "publicClient": True,
+            "standardFlowEnabled": False,
+            "directAccessGrantsEnabled": True,
+            "serviceAccountsEnabled": False,
+            "redirectUris": [],
+            "webOrigins": [],
+        },
+    )
+    created = request_json(
+        "GET",
+        f"/admin/realms/{realm_name}/clients?clientId={urllib.parse.quote(os.environ['DIRECT_CLIENT_ID'])}",
+        token,
+    )
+    return created[0]
+
+
 def ensure_user(token: str, username: str, email: str, first_name: str, last_name: str, password: str, role_name: str) -> None:
     users = request_json(
         "GET",
@@ -260,8 +321,11 @@ admin_token = post_form(
 ensure_realm(admin_token)
 ensure_role(admin_token, "analista-cadastro", "Analista de Cadastro (leitura + escrita)")
 ensure_role(admin_token, "analista-identificacao", "Analista de Identificação (leitura + escrita)")
+ensure_role(admin_token, "analista-arrecadacao", "Analista de Arrecadação (leitura + escrita)")
 ensure_role(admin_token, "consultor", "Consultor (somente leitura)")
+ensure_role(admin_token, "consultor-arrecadacao", "Consultor de Arrecadação (somente leitura)")
 ensure_client(admin_token)
+ensure_direct_access_client(admin_token)
 ensure_user(
     admin_token,
     os.environ["ANALISTA_USERNAME"],
@@ -289,14 +353,35 @@ ensure_user(
     os.environ["ANALISTA_IDENT_PASSWORD"],
     "analista-identificacao",
 )
+ensure_user(
+    admin_token,
+    os.environ["ANALISTA_ARRECADACAO_USERNAME"],
+    os.environ["ANALISTA_ARRECADACAO_EMAIL"],
+    os.environ["ANALISTA_ARRECADACAO_FIRST_NAME"],
+    os.environ["ANALISTA_ARRECADACAO_LAST_NAME"],
+    os.environ["ANALISTA_ARRECADACAO_PASSWORD"],
+    "analista-arrecadacao",
+)
+ensure_user(
+    admin_token,
+    os.environ["CONSULTOR_ARRECADACAO_USERNAME"],
+    os.environ["CONSULTOR_ARRECADACAO_EMAIL"],
+    os.environ["CONSULTOR_ARRECADACAO_FIRST_NAME"],
+    os.environ["CONSULTOR_ARRECADACAO_LAST_NAME"],
+    os.environ["CONSULTOR_ARRECADACAO_PASSWORD"],
+    "consultor-arrecadacao",
+)
 
 print(json.dumps(
     {
         "realm": realm_name,
         "clientId": client_id,
+        "directClientId": os.environ["DIRECT_CLIENT_ID"],
         "analistaUser": os.environ["ANALISTA_USERNAME"],
         "analistaIdentUser": os.environ["ANALISTA_IDENT_USERNAME"],
+        "analistaArrecadacaoUser": os.environ["ANALISTA_ARRECADACAO_USERNAME"],
         "consultorUser": os.environ["CONSULTOR_USERNAME"],
+        "consultorArrecadacaoUser": os.environ["CONSULTOR_ARRECADACAO_USERNAME"],
     },
     indent=2,
 ))

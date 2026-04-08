@@ -8,7 +8,29 @@ import type {
   LicencaFiltros,
 } from '../types/licenca';
 
-export function getLicencas(filtros: LicencaFiltros): Promise<LicencaListResponse> {
+interface BackendPageResponse<T> {
+  items: T[];
+  metadata: {
+    page: number;
+    size: number;
+    totalElements: number;
+    totalPages: number;
+  };
+}
+
+function mapLicencaListResponse(response: BackendPageResponse<Licenca>): LicencaListResponse {
+  return {
+    data: response.items,
+    pagination: {
+      page: response.metadata.page,
+      size: response.metadata.size,
+      total: response.metadata.totalElements,
+      totalPages: response.metadata.totalPages,
+    },
+  };
+}
+
+export async function getLicencas(filtros: LicencaFiltros): Promise<LicencaListResponse> {
   const params = new URLSearchParams();
   params.set('page', String(filtros.page));
   params.set('size', String(filtros.size));
@@ -18,7 +40,8 @@ export function getLicencas(filtros: LicencaFiltros): Promise<LicencaListRespons
   if (filtros.rubricaSigla) params.set('rubricaSigla', filtros.rubricaSigla);
   if (filtros.status) params.set('status', filtros.status);
   if (filtros.vigente !== undefined) params.set('vigente', String(filtros.vigente));
-  return apiGetArr<LicencaListResponse>(`/licencas?${params}`);
+  const response = await apiGetArr<BackendPageResponse<Licenca>>(`/licencas?${params}`);
+  return mapLicencaListResponse(response);
 }
 
 export function getLicencaById(id: string): Promise<Licenca> {

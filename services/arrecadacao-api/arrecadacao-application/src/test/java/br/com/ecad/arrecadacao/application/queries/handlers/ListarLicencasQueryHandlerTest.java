@@ -122,6 +122,18 @@ class ListarLicencasQueryHandlerTest {
     }
 
     @Test
+    void consultarComSortFormatoCampoVirgulaDescGeraDesc() {
+        var query = new ListarLicencasQuery(0, 10, "criadoEm,desc", null, null, null, null, null);
+
+        var captorPageable = ArgumentCaptor.forClass(Pageable.class);
+
+        handler.handle(query);
+
+        verify(licencaRepository).findAll(any(), captorPageable.capture());
+        assertEquals(Sort.by(Sort.Direction.DESC, "criadoEm"), captorPageable.getValue().getSort());
+    }
+
+    @Test
     void consultarComFiltroStatusRepassaSpecification() {
         var query = new ListarLicencasQuery(0, 10, null, null, null, null, StatusLicenca.SUSPENSA, null);
         

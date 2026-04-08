@@ -59,6 +59,14 @@ public class ListarLicencasQueryHandler
         if (sort == null || sort.isBlank()) {
             return Sort.by(Sort.Direction.DESC, "criadoEm");
         }
+        if (sort.contains(",")) {
+            String[] parts = sort.split(",", 2);
+            String property = parts[0].trim();
+            String direction = parts[1].trim();
+            return "desc".equalsIgnoreCase(direction)
+                ? Sort.by(Sort.Direction.DESC, property)
+                : Sort.by(Sort.Direction.ASC, property);
+        }
         if (sort.startsWith("-")) {
             return Sort.by(Sort.Direction.DESC, sort.substring(1));
         }

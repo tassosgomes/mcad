@@ -22,10 +22,10 @@ CREATE TABLE arrecadacao.usuarios_musica (
 );
 
 CREATE INDEX ix_usuarios_musica_razao_social
-    ON arrecadacao.usuarios_musica USING gin (razao_social gin_trgm_ops);
+    ON arrecadacao.usuarios_musica USING gin (razao_social public.gin_trgm_ops);
 CREATE INDEX ix_usuarios_musica_cnpj
     ON arrecadacao.usuarios_musica (cnpj);
 CREATE INDEX ix_usuarios_musica_cidade
-    ON arrecadacao.usuarios_musica USING gin (cidade gin_trgm_ops);
+    ON arrecadacao.usuarios_musica USING gin (cidade public.gin_trgm_ops);
 CREATE INDEX ix_usuarios_musica_status
     ON arrecadacao.usuarios_musica (status);

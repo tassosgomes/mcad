@@ -8,10 +8,24 @@ interface HeaderProps {
   onMenuClick?: () => void;
 }
 
+const ROLE_LABELS: Array<[string, string]> = [
+  ['analista-arrecadacao', 'Analista de Arrecadação'],
+  ['analista-identificacao', 'Analista de Identificação'],
+  ['analista-cadastro', 'Analista de Cadastro'],
+  ['consultor-arrecadacao', 'Consultor de Arrecadação'],
+  ['consultor-identificacao', 'Consultor de Identificação'],
+  ['consultor', 'Consultor'],
+];
+
+function resolveRoleLabel(roles: string[]): string {
+  const matchedRole = ROLE_LABELS.find(([role]) => roles.includes(role));
+  return matchedRole?.[1] ?? 'Usuário autenticado';
+}
+
 export function Header({ onMenuClick }: HeaderProps) {
-  const { user, hasRole, logout } = useAuth();
+  const { user, roles, logout } = useAuth();
   const userName = user?.profile.name ?? user?.profile.preferred_username ?? user?.profile.sub ?? 'Usuário';
-  const roleLabel = hasRole('analista-cadastro') ? 'Analista' : 'Consultor';
+  const roleLabel = resolveRoleLabel(roles);
 
   return (
     <header className={styles.header}>

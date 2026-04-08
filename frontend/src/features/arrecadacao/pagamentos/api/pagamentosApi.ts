@@ -7,7 +7,29 @@ import type {
   PagamentoFiltros,
 } from '../types/pagamento';
 
-export function getPagamentos(filtros: PagamentoFiltros): Promise<PagamentoListResponse> {
+interface BackendPageResponse<T> {
+  items: T[];
+  metadata: {
+    page: number;
+    size: number;
+    totalElements: number;
+    totalPages: number;
+  };
+}
+
+function mapPagamentoListResponse(response: BackendPageResponse<Pagamento>): PagamentoListResponse {
+  return {
+    data: response.items,
+    pagination: {
+      page: response.metadata.page,
+      size: response.metadata.size,
+      total: response.metadata.totalElements,
+      totalPages: response.metadata.totalPages,
+    },
+  };
+}
+
+export async function getPagamentos(filtros: PagamentoFiltros): Promise<PagamentoListResponse> {
   const params = new URLSearchParams();
   params.set('page', String(filtros.page));
   params.set('size', String(filtros.size));
@@ -17,8 +39,9 @@ export function getPagamentos(filtros: PagamentoFiltros): Promise<PagamentoListR
   if (filtros.rubricaSigla) params.set('rubricaSigla', filtros.rubricaSigla);
   if (filtros.periodo) params.set('periodo', filtros.periodo);
   if (filtros.status) params.set('status', filtros.status);
-  
-  return apiGetArr<PagamentoListResponse>(`/pagamentos?${params}`);
+
+  const response = await apiGetArr<BackendPageResponse<Pagamento>>(`/pagamentos?${params}`);
+  return mapPagamentoListResponse(response);
 }
 
 export function getPagamentoById(id: string): Promise<Pagamento> {

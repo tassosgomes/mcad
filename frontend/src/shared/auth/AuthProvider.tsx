@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { useEffect, useState } from 'react';
 import type { User } from 'oidc-client-ts';
 import { Loading } from '@components/ui/loading';
+import { setArrecadacaoAuthTokenProvider } from '@services/apiArrecadacaoClient';
 import { setAuthTokenProvider } from '@services/apiClient';
 import { setIdentificacaoAuthTokenProvider } from '@services/apiIdentificacaoClient';
 import { AuthContext } from './AuthContext';
@@ -122,10 +123,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const hasRole = (role: string) => roles.includes(role);
 
   useEffect(() => {
+    setArrecadacaoAuthTokenProvider(() => user?.access_token ?? null);
     setAuthTokenProvider(() => user?.access_token ?? null);
     setIdentificacaoAuthTokenProvider(() => user?.access_token ?? null);
 
     return () => {
+      setArrecadacaoAuthTokenProvider(null);
       setAuthTokenProvider(null);
       setIdentificacaoAuthTokenProvider(null);
     };

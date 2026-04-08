@@ -41,11 +41,20 @@ kill_service() {
   rm -f "$PID_DIR/$name.pid"
 }
 
+# ── Carrega .env como variáveis de ambiente ──────────────────────────────────
+load_env() {
+  local env_file="$1"
+  if [[ -f "$env_file" ]]; then
+    set -a
+    # shellcheck disable=SC1090
+    . "$env_file"
+    set +a
+  fi
+}
+
 # ── Start ────────────────────────────────────────────────────────────────────
 cmd_start() {
-  info "Iniciando infraestrutura (Docker)..."
-  docker compose -f "$ROOT_DIR/docker-compose.dev.yml" up -d
-  success "Infraestrutura OK."
+  info "Infraestrutura remota (db/rabbitmq/keycloak/minio em tasso.dev.br)"
 
   # cadastro-api (.NET — porta 5001)
   info "Iniciando cadastro-api  → http://localhost:5001"
@@ -69,6 +78,7 @@ cmd_start() {
   info "Iniciando arrecadacao-api  → http://localhost:5003"
   (
     cd "$ROOT_DIR/services/arrecadacao-api"
+    load_env "$ROOT_DIR/services/arrecadacao-api/.env"
     mvn -pl arrecadacao-api spring-boot:run -Dspring-boot.run.profiles=dev \
       >> "$LOGS_DIR/arrecadacao-api.log" 2>&1
   ) &
@@ -100,9 +110,6 @@ cmd_stop() {
   kill_service "identificacao-api"
   kill_service "cadastro-api"
 
-  info "Parando infraestrutura (Docker)..."
-  docker compose -f "$ROOT_DIR/docker-compose.dev.yml" down
-  success "Infraestrutura parada."
   success "Stack encerrada."
 }
 

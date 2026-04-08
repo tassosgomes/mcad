@@ -91,14 +91,6 @@ builder.Services.AddAsyncApiDocs();
 // ─── Health Checks ─────────────────────────────────────────────────────
 builder.Services.AddHealthChecks();
 
-// ─── CORS (frontend dev em localhost:5173) ─────────────────────────────
-builder.Services.AddCors(options =>
-    options.AddDefaultPolicy(policy =>
-        policy
-            .WithOrigins("http://localhost:5173")
-            .AllowAnyHeader()
-            .AllowAnyMethod()));
-
 // ─── Exception Handler (GlobalExceptionHandler → ProblemDetails) ───────
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddProblemDetails();
@@ -159,7 +151,6 @@ var app = builder.Build();
 
 // ─── Middleware pipeline ───────────────────────────────────────────────
 app.UseExceptionHandler();
-app.UseCors();
 
 // Swagger e AsyncAPI antes do auth — middleware short-circuits antes da auth rodar
 app.UseSwaggerDocs();
@@ -167,10 +158,7 @@ app.UseSwaggerDocs();
 if (authEnabled)
 {
     app.UseAuthentication();
-    app.UseWhen(
-        ctx => !ctx.Request.Path.StartsWithSegments("/asyncapi")
-            && !ctx.Request.Path.StartsWithSegments("/swagger"),
-        inner => inner.UseAuthorization());
+    app.UseAuthorization();
 }
 else
 {

@@ -188,10 +188,7 @@ app.UseSwaggerDocs();
 if (authEnabled)
 {
     app.UseAuthentication();
-    app.UseWhen(
-        ctx => !ctx.Request.Path.StartsWithSegments("/asyncapi")
-            && !ctx.Request.Path.StartsWithSegments("/swagger"),
-        inner => inner.UseAuthorization());
+    app.UseAuthorization();
 }
 else
 {
