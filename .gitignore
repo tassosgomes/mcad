@@ -1,0 +1,59 @@
+# Environment and local overrides
+.env
+.env.local
+.env.*.local
+*.local
+
+# Logs and runtime artifacts
+*.log
+*.pid
+build.log
+.tmp/
+.playwright-cli/
+
+# Node / Vite / TypeScript
+**/node_modules/
+**/dist/
+**/coverage/
+**/*.tsbuildinfo
+
+# Java / Maven
+**/target/
+*.class
+
+# .NET / Visual Studio
+[Bb]in/
+[Oo]bj/
+[Dd]ebug/
+[Rr]elease/
+[Dd]ebugPublic/
+[Rr]eleases/
+[Tt]est[Rr]esult*/
+[Bb]uild[Ll]og.*
+*.rsuser
+*.user
+*.userosscache
+*.sln.docstates
+*.userprefs
+*.coverage
+*.coveragexml
+*.nupkg
+*.nuspec
+project.lock.json
+project.fragment.lock.json
+artifacts/
+.vs/
+
+# IDEs
+.vscode/
+.idea/
+.project
+.classpath
+.settings/
+
+# OS files
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
