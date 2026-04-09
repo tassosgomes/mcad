@@ -1,0 +1,29 @@
+=== TASK 05 — Visualizar Titular ===
+Data: 2026-04-08T23:55:00Z (3a re-execução — API PID 10137, binário atualizado)
+
+--- TC05-01: GET /titulares/8f445fc6 — ID existente (Analista) ---
+  HTTP=200 | id=8f445fc6-80ea-49f4-b744-b5972820bbdb | nome=QA Titular T04 Revalidado
+  tipo=PF | documento=52998224725 | documentoFormatado=529.982.247-25
+  associacao.sigla=SBACEM | status=ATIVO
+  criadoEm=2026-04-08T23:55:39.465681Z | atualizadoEm=2026-04-08T23:56:10.039927Z
+  RESULTADO: PASS — todos os campos presentes (RF-21)
+
+--- TC05-02: GET /titulares/8f445fc6 — ID existente (Consultor) ---
+  HTTP=200 | nome=QA Titular T04 Revalidado | assoc=SBACEM
+  RESULTADO: PASS — Consultor tem acesso de leitura (HU-05)
+
+--- TC05-03: GET — ID inexistente (BUG-05-01: mensagem deve ser em PT-BR) ---
+  HTTP=404 | detail="Titular com ID 'f47ac10b-58cc-4372-a567-000000000099' não foi encontrado"
+  RESULTADO: PASS — BUG-05-01 CORRIGIDO: mensagem em português
+
+--- TC05-04: GET — UUID zeros ---
+  HTTP=404 | detail="Titular com ID '00000000-0000-0000-0000-000000000000' não foi encontrado"
+  RESULTADO: PASS — UUID zeros retorna 404 com mensagem em português
+
+--- TC05-05: GET — UUID inválido (string não-UUID) ---
+  HTTP=404 (obtido) | HTTP=400 (esperado)
+  RESULTADO: FAIL — comportamento de routing ASP.NET: string não-UUID não corresponde à rota {id:guid} e resulta em 404 (comportamento sem impacto em RF-21/RF-22; não há mudança em relação às execuções anteriores)
+
+=== RESUMO TASK 05 ===
+PASS: 4 | FAIL: 1
+STATUS: FAIL (TC05-05 — comportamento de routing secundário, sem impacto nas regras de negócio)

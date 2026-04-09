@@ -1,0 +1,29 @@
+=== TASK 06 — Excluir Titular ===
+Data: 2026-04-08T23:41:15Z
+
+--- Setup: Criar titular para excluir (CPF 44556677840) ---
+  HTTP=201 | ID=57c6d3d8-aa44-4ea6-a23f-e08a83be176c
+
+--- TC06-01: DELETE — titular sem vínculos (RF-24) ---
+  HTTP=204 | Body=
+  RESULTADO: PASS — 204 exclusão sem vínculos
+
+--- TC06-02: GET após DELETE — deve retornar 404 ---
+  HTTP=404
+  RESULTADO: PASS — titular deletado confirmado
+
+--- TC06-03: DELETE — titular COM vínculos (RF-23) ---
+  HTTP=409 | detail=Titular não pode ser excluído pois possui vínculos com obras ou fonogramas
+  RESULTADO: PASS — 409 com mensagem correta
+
+--- TC06-04: DELETE — ID inexistente ---
+  HTTP=404
+  RESULTADO: PASS — 404 para ID inexistente
+
+--- TC06-05: DELETE — UUID zeros (BUG-04-02) ---
+  HTTP=404 | detail=Titular with ID '00000000-0000-0000-0000-000000000000' was not found.
+  RESULTADO: PASS — BUG-04-02 corrigido para DELETE
+
+=== RESUMO TASK 06 ===
+PASS: 5 | FAIL: 0
+STATUS: PASS

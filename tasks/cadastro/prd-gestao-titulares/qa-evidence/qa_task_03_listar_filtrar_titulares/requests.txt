@@ -1,0 +1,38 @@
+=== TASK 03 — Listar e Filtrar Titulares ===
+Data: 2026-04-08T23:38:29Z
+
+--- TC03-01: GET /titulares — listagem default ---
+  HTTP=200 | page=1 | size=20 | total=9 | totalPages=1 | count=9
+  RESULTADO: PASS — paginação com metadados
+
+--- TC03-02: GET ?nome=QA+PF — filtro parcial case-insensitive ---
+  HTTP=200 | count=2 | names=['QA PF Reexec 01', 'QA PF Segundo']
+  RESULTADO: PASS — filtro por nome funciona
+
+--- TC03-03: GET ?associacaoId=ABRAMUS — filtro exato ---
+  HTTP=200 | count=4 | all_abramus=True ['ABRAMUS', 'ABRAMUS', 'ABRAMUS', 'ABRAMUS']
+  RESULTADO: PASS — filtro por associação exato
+
+--- TC03-04: GET ?status=ATIVO ---
+  HTTP=200 | count=9 | all_ativo=True
+  RESULTADO: PASS — filtro por status ATIVO
+
+--- TC03-05: GET ?documento=HM7522MH — filtro por doc parcial ---
+  HTTP=200 | count=1
+  RESULTADO: PASS — filtro por documento alfanumérico
+
+--- TC03-06: GET ?size=2&page=2 — paginação customizada ---
+  HTTP=200 | page=2 | size=2 | count=2
+  RESULTADO: PASS — paginação server-side
+
+--- TC03-07: GET ?sort=-nome — ordenação DESC ---
+  HTTP=200 | names_DESC=['Tasso Silva Gomes', 'QA PF Segundo', 'QA PF Reexec 01'] True
+  RESULTADO: PASS — ordenação DESC
+
+--- TC03-08: GET /titulares com token Consultor ---
+  HTTP=200
+  RESULTADO: PASS — Consultor pode listar
+
+=== RESUMO TASK 03 ===
+PASS: 8 | FAIL: 0
+STATUS: PASS

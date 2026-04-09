@@ -1,0 +1,43 @@
+=== TASK 04 — Editar Titular ===
+Data: 2026-04-08T23:55:00Z (3a re-execução — API PID 10137, binário atualizado)
+
+--- SETUP: GET /associacoes ---
+  HTTP=200 | ABRAMUS=a1b2c3d4-e5f6-7890-abcd-ef1234567890 | SBACEM=d4e5f6a7-b8c9-0123-defa-234567890123
+
+--- SETUP: POST /titulares — criar titular para testes ---
+  HTTP=201 | id=8f445fc6-80ea-49f4-b744-b5972820bbdb | nome=QA Titular T04 Revalidado | assoc=ABRAMUS
+
+--- TC04-01: PUT /titulares/8f445fc6 — mudar associacaoId para SBACEM (BUG-04-01) ---
+  REQUEST: nome=QA Titular T04 Revalidado | associacaoId=d4e5f6a7(SBACEM) | caeIpi=CAE12345
+  HTTP=200 | nome=QA Titular T04 Revalidado | assoc=SBACEM | caeIpi=CAE12345
+  RESULTADO: PASS — BUG-04-01 CORRIGIDO: associação atualizada para SBACEM
+
+--- TC04-02: DB — GET após PUT verificar persistência associação SBACEM ---
+  HTTP=200 | assoc.sigla=SBACEM | assoc.id=d4e5f6a7-b8c9-0123-defa-234567890123
+  atualizadoEm: 2026-04-08T23:55:47.837822Z
+  RESULTADO: PASS — BUG-04-01 CORRIGIDO: persistência confirmada no GET subsequente
+
+--- TC04-03: PUT — alterar status para FALECIDO ---
+  HTTP=200 | status=FALECIDO
+  RESULTADO: PASS — status FALECIDO (RF-12)
+
+--- TC04-04: PUT — alterar status para TRANSFERINDO ---
+  HTTP=200 | status=TRANSFERINDO
+  RESULTADO: PASS — status TRANSFERINDO (RF-12)
+
+--- TC04-05: PUT — ID inexistente ---
+  HTTP=404 | detail=Titular com ID 'f47ac10b-...' não foi encontrado
+  RESULTADO: PASS — 404 para ID inexistente; mensagem em português
+
+--- TC04-06: PUT — UUID zeros (BUG-04-02: deve retornar 404 não 400) ---
+  HTTP=404 | detail=Titular com ID '00000000-0000-0000-0000-000000000000' não foi encontrado
+  RESULTADO: PASS — BUG-04-02 CORRIGIDO: esperado 404, obtido 404
+
+--- TC04-07: PUT — verificar imutabilidade de tipo e documento ---
+  REQUEST: tipo=PJ | documento=99999999999 (devem ser ignorados)
+  HTTP=200 | tipo=PF | documento=52998224725
+  RESULTADO: PASS — tipo e documento imutáveis (RF-11)
+
+=== RESUMO TASK 04 ===
+PASS: 7 | FAIL: 0
+STATUS: PASS

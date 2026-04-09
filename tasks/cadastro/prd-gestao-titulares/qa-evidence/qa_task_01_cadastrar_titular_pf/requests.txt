@@ -1,0 +1,36 @@
+=== TASK 01 — Cadastrar Titular PF ===
+Data: 2026-04-08T23:37:15Z
+
+--- TC01-01: POST — PF válido (CPF 98765432100) ---
+  HTTP=201 | ID=c22a4093-285c-4b07-b5bf-4ca8f80feeed | docFmt=987.654.321-00 | status=ATIVO | assoc=ABRAMUS
+  RESULTADO: PASS
+
+--- TC01-02: POST — CPF inválido (98765432199) ---
+  HTTP=422 | detail=CPF inválido
+  RESULTADO: PASS — 422 CPF inválido
+
+--- TC01-03: POST — CPF duplicado (98765432100) ---
+  HTTP=409 | detail=Já existe um titular cadastrado com este PF: 987.654.321-00
+  RESULTADO: PASS — 409 duplicado
+
+--- TC01-04: POST — sem associacaoId ---
+  HTTP=400 | Body={"title":"Validation Error","status":400,"detail":"One or more validation errors occurred.","instance":"/api/v1/titulares"}
+  RESULTADO: PASS — requisição rejeitada
+
+--- TC01-05: DB — Verificar titular c22a4093-285c-4b07-b5bf-4ca8f80feeed ---
+  DB: status=ATIVO | doc=98765432100 | tipo=PF
+  RESULTADO: PASS — persistência confirmada
+
+--- TC01-06: Status default ATIVO ---
+  RESULTADO: PASS — status=ATIVO
+
+--- TC01-07: POST — segundo PF (11122233396, UBC, CAE/IPI) ---
+  HTTP=201 | ID=1e1dace1-0980-476d-9abb-1a2bc4d6a332 | caeIpi=QA99901
+  RESULTADO: PASS — segundo PF criado com CAE/IPI
+
+=== RESUMO TASK 01 ===
+PASS: 7 | FAIL: 0
+TOTAL_TCS: 7
+STATUS: PASS
+PF_ID_01=c22a4093-285c-4b07-b5bf-4ca8f80feeed
+PF_ID_02=1e1dace1-0980-476d-9abb-1a2bc4d6a332

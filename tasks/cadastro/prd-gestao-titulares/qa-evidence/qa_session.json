@@ -1,0 +1,114 @@
+{
+  "session": {
+    "created_at": "2026-04-08T00:00:00Z",
+    "prd_path": "tasks/cadastro/prd-gestao-titulares/prd.md",
+    "techspec_path": "tasks/cadastro/prd-gestao-titulares/techspec.md",
+    "techspec_frontend_path": "tasks/cadastro/prd-gestao-titulares/techspec-frontend.md",
+    "orchestrator_version": "1.0"
+  },
+  "scope": {
+    "user_stories_in_scope": [
+      { "task_id": "qa_task_01", "slug": "cadastrar_titular_pf", "description": "HU-01: Cadastrar titular pessoa física — validação CPF, unicidade, status default ATIVO" },
+      { "task_id": "qa_task_02", "slug": "cadastrar_titular_pj", "description": "HU-02: Cadastrar titular pessoa jurídica — CNPJ alfanumérico RFB + retrocompatibilidade numérica" },
+      { "task_id": "qa_task_03", "slug": "listar_filtrar_titulares", "description": "HU-03: Listagem paginada — filtros (nome, doc, associação, status), ordenação, paginação server-side" },
+      { "task_id": "qa_task_04", "slug": "editar_titular", "description": "HU-04: Editar titular — campos mutáveis, tipo e documento imutáveis" },
+      { "task_id": "qa_task_05", "slug": "visualizar_titular", "description": "HU-05: Visualizar detalhe (Consultor read-only), 404 para ID inexistente" },
+      { "task_id": "qa_task_06", "slug": "excluir_titular", "description": "RF-23/RF-24: Exclusão de titular sem vínculos (sucesso) e com vínculos (409)" }
+    ],
+    "excluded": []
+  },
+  "environment": {
+    "frontend_url": "http://localhost:5173",
+    "base_url": "http://localhost:5001/api/v1",
+    "auth": {
+      "enabled": true,
+      "type": "bearer",
+      "token_endpoint": "https://keycloak.tasso.dev.br/realms/mcad/protocol/openid-connect/token",
+      "direct_access_client": "mcad-cli",
+      "credentials_env": {
+        "analista_username_var": "QA_ANALISTA_USERNAME",
+        "analista_password_var": "QA_ANALISTA_PASSWORD",
+        "consultor_username_var": "QA_CONSULTOR_USERNAME",
+        "consultor_password_var": "QA_CONSULTOR_PASSWORD"
+      },
+      "credentials_defaults": {
+        "analista_username": "analista.teste",
+        "analista_password": "Analista123!",
+        "consultor_username": "consultor.teste",
+        "consultor_password": "Consultor123!"
+      }
+    }
+  },
+  "database": {
+    "enabled": true,
+    "type": "postgresql",
+    "host": "db.tasso.dev.br",
+    "port": 5432,
+    "dbname": "mcad",
+    "schema": "cadastro",
+    "connection_string_env": "QA_DB_CONNECTION_STRING",
+    "connection_string_template": "Host=db.tasso.dev.br;Port=5432;Database=mcad;Username=gestauto;Password=<redacted>;Search Path=cadastro",
+    "docker_image": "postgres:16-alpine"
+  },
+  "report": {
+    "formats": ["markdown", "pdf"],
+    "output_dir": "tasks/cadastro/prd-gestao-titulares/qa-evidence"
+  },
+  "execution": {
+    "tasks": [
+      {
+        "id": "qa_task_01",
+        "slug": "cadastrar_titular_pf",
+        "description": "HU-01: Cadastrar titular pessoa física — validação CPF, unicidade, status default ATIVO",
+        "type": ["ui", "api", "db"],
+        "depends_on": [],
+        "can_run_parallel_with": []
+      },
+      {
+        "id": "qa_task_02",
+        "slug": "cadastrar_titular_pj",
+        "description": "HU-02: Cadastrar titular pessoa jurídica — CNPJ alfanumérico RFB + retrocompatibilidade numérica",
+        "type": ["ui", "api", "db"],
+        "depends_on": [],
+        "can_run_parallel_with": []
+      },
+      {
+        "id": "qa_task_03",
+        "slug": "listar_filtrar_titulares",
+        "description": "HU-03: Listagem paginada — filtros, ordenação, paginação server-side",
+        "type": ["ui", "api"],
+        "depends_on": ["qa_task_01", "qa_task_02"],
+        "can_run_parallel_with": ["qa_task_04", "qa_task_05"]
+      },
+      {
+        "id": "qa_task_04",
+        "slug": "editar_titular",
+        "description": "HU-04: Editar titular — campos mutáveis, tipo e documento imutáveis",
+        "type": ["ui", "api", "db"],
+        "depends_on": ["qa_task_01"],
+        "can_run_parallel_with": ["qa_task_03", "qa_task_05"]
+      },
+      {
+        "id": "qa_task_05",
+        "slug": "visualizar_titular",
+        "description": "HU-05: Visualizar detalhe (Consultor read-only), 404 para ID inexistente",
+        "type": ["ui", "api"],
+        "depends_on": ["qa_task_01"],
+        "can_run_parallel_with": ["qa_task_03", "qa_task_04"]
+      },
+      {
+        "id": "qa_task_06",
+        "slug": "excluir_titular",
+        "description": "RF-23/RF-24: Exclusão de titular sem vínculos (sucesso) e com vínculos (409, se F04/F06 existirem)",
+        "type": ["ui", "api", "db"],
+        "depends_on": ["qa_task_01", "qa_task_02"],
+        "can_run_parallel_with": []
+      }
+    ],
+    "phases": [
+      { "phase": 1, "mode": "sequential", "tasks": ["qa_task_01", "qa_task_02"] },
+      { "phase": 2, "mode": "parallel",   "tasks": ["qa_task_03", "qa_task_04", "qa_task_05"] },
+      { "phase": 3, "mode": "sequential", "tasks": ["qa_task_06"] }
+    ]
+  }
+}

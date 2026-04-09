@@ -1,0 +1,39 @@
+=== TASK 02 — Cadastrar Titular PJ ===
+Data: 2026-04-08T23:37:51Z
+CNPJs alfanuméricos: HM7522MH000102 | GW2TW72R000135 | KY4K2B3A000180
+
+--- TC02-01: POST — PJ CNPJ alfanumérico (HM7522MH000102) ---
+  HTTP=201 | ID=b4c692c3-f159-4721-b833-4b4d724348aa | docFmt=HM.752.2MH/0001-02 | status=ATIVO
+  RESULTADO: PASS — CNPJ alfanumérico aceito
+
+--- TC02-02: POST — PJ CNPJ alfanumérico (GW2TW72R000135) ---
+  HTTP=201 | ID=003563c4-4781-4594-8eb4-15439367f4a2 | docFmt=GW.2TW.72R/0001-35
+  RESULTADO: PASS
+
+--- TC02-03: POST — PJ CNPJ alfanumérico (KY4K2B3A000180) ---
+  HTTP=201 | ID=ce937bd3-8fef-46a9-b979-fd9505d39e74 | docFmt=KY.4K2.B3A/0001-80
+  RESULTADO: PASS
+
+--- TC02-04: POST — CNPJ numérico legado (11222333000181) ---
+  HTTP=201 | ID=500bbe2d-ed25-4a0b-bc11-426772e12f17 | docFmt=11.222.333/0001-81
+  RESULTADO: PASS — CNPJ numérico aceito (retrocompatibilidade)
+
+--- TC02-05: POST — CNPJ inválido (11222333000199) ---
+  HTTP=422 | detail=CNPJ inválido
+  RESULTADO: PASS — 422 CNPJ inválido
+
+--- TC02-06: POST — CNPJ duplicado (HM7522MH000102) ---
+  HTTP=409 | detail=Já existe um titular cadastrado com este PJ: HM.752.2MH/0001-02
+  RESULTADO: PASS — 409 duplicado
+
+--- TC02-07: Verificar formato CNPJ alfanumérico no response ---
+  CNPJ_ALFA1 formatado: 'HM.752.2MH/0001-02'
+  RESULTADO: PASS — documentoFormatado contém formatação com /
+
+=== RESUMO TASK 02 ===
+PASS: 7 | FAIL: 0
+STATUS: PASS
+PJ_ID_01=b4c692c3-f159-4721-b833-4b4d724348aa
+PJ_ID_02=003563c4-4781-4594-8eb4-15439367f4a2
+PJ_ID_03=ce937bd3-8fef-46a9-b979-fd9505d39e74
+PJ_ID_04=500bbe2d-ed25-4a0b-bc11-426772e12f17

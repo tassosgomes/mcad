@@ -206,25 +206,28 @@ TOKEN=$(curl -sk -X POST "https://keycloak.tasso.dev.br/realms/mcad/protocol/ope
 
 | CT | Descricao | RF | Resultado |
 |----|-----------|----|-----------|
-| CT-01 | Seed automatico no startup | RF-01, RF-02, RF-03 | [ ] |
-| CT-02 | API GET /associacoes | RF-08 | [ ] |
-| CT-03 | API GET /associacoes/{id} | RF-09 | [ ] |
-| CT-04 | API bloqueia escrita (405) | RF-04, RF-10 | [ ] |
-| CT-05 | API requer autenticacao | - | [ ] |
-| CT-06 | Frontend como Analista | RF-05, RF-06 | [ ] |
-| CT-07 | Frontend como Consultor | RF-06 | [ ] |
-| CT-08 | Ausencia de acoes de escrita | RF-07 | [ ] |
-| CT-09 | Performance < 1s | - | [ ] |
-| CT-10 | Tratamento de erro | - | [ ] |
+| CT-01 | Seed automatico no startup | RF-01, RF-02, RF-03 | [x] PASSOU |
+| CT-02 | API GET /associacoes | RF-08 | [x] PASSOU |
+| CT-03 | API GET /associacoes/{id} | RF-09 | [x] PASSOU |
+| CT-04 | API bloqueia escrita (405) | RF-04, RF-10 | [x] PASSOU |
+| CT-05 | API requer autenticacao | - | [x] PASSOU |
+| CT-06 | Frontend como Analista | RF-05, RF-06 | [x] PASSOU |
+| CT-07 | Frontend como Consultor | RF-06 | [x] PASSOU |
+| CT-08 | Ausencia de acoes de escrita | RF-07 | [x] PASSOU |
+| CT-09 | Performance < 1s | - | [x] PASSOU (20ms) |
+| CT-10 | Tratamento de erro | - | [x] FALHOU — sem msg de erro/retry |
 
 ---
 
 ## Observacoes do Testador
 
-_(Espaco para anotacoes durante a execucao)_
+> Executado em 2026-04-08 via Claude Code (Playwright CLI + curl + psql)
 
 | CT | Observacao |
 |----|-----------|
-| | |
-| | |
-| | |
+| CT-02 | Plano indicava `admin-cli` mas token nao tem `sub` e falha no `azp` check. Solucao: habilitar direct access grants em `mcad-frontend`. Ver qa-report.md. |
+| CT-10 | Frontend exibe area principal vazia (sem msg de erro nem botao retry) quando API esta indisponivel. Bug a corrigir. |
+| CT-10 | Restart manual da API exige `dotnet run --launch-profile http`. Binario direto nao carrega `.env`. |
+
+**Relatorio completo:** `evidencias/qa-report.md`
+**Screenshots:** pasta `evidencias/`
