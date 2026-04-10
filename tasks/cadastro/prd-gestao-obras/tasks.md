@@ -49,6 +49,8 @@ Endpoints, testes backend, componentes frontend, páginas e rotas.
 - [ ] 13.0 Feature: Componentes Especiais (IswcSection, DepuracaoBanner, DepuracaoModal, DPToggle)
 - [ ] 14.0 Feature: Páginas (ObrasPage, ObraCreatePage, ObraDetailPage)
 - [ ] 15.0 Integração: Routes + Sidebar
+- [ ] 16.0 Fix: Filtro ISWC parcial na listagem de obras (QA FALHA-A)
+- [ ] 17.0 Fix: HTTP 422 → 409 para operações em obra DEPURADA (QA FALHA-B)
 
 ## Rastreabilidade US → Tasks
 

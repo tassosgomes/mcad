@@ -22,15 +22,15 @@ public class ObraMusicalTests
     }
 
     [Fact]
-    public void Atualizar_ComStatusDepurada_DeveLancarDomainException()
+    public void Atualizar_ComStatusDepurada_DeveLancarStatusConflictException()
     {
         var obraOriginal = ObraMusical.Criar("Teste", TipoObra.Musical);
         obraOriginal.AtribuirIswc("T-123.456.789-0");
         var novaObra = ObraMusical.Criar("Novo Titulo", TipoObra.Musical);
         obraOriginal.Depurar(novaObra.Id);
-        
+
         var act = () => obraOriginal.Atualizar("Teste2", null, TipoObra.Versao, null);
-        act.Should().Throw<DomainException>();
+        act.Should().Throw<StatusConflictException>();
     }
 
     [Fact]

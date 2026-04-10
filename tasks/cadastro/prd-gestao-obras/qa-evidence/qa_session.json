@@ -1,0 +1,176 @@
+{
+  "session": {
+    "created_at": "2026-04-08T00:00:00Z",
+    "prd_path": "tasks/cadastro/prd-gestao-obras/prd.md",
+    "techspec_path": "tasks/cadastro/prd-gestao-obras/techspec.md",
+    "techspec_frontend_path": "tasks/cadastro/prd-gestao-obras/techspec-frontend.md"
+  },
+  "scope": {
+    "user_stories_in_scope": [
+      {
+        "task_id": "qa_task_01",
+        "slug": "criar-obra",
+        "description": "HU-01: Criar obra musical — cadastro de obra com titulo, ISRC opcional, associacoes de titulares e funcoes, com validacoes e persistencia"
+      },
+      {
+        "task_id": "qa_task_02",
+        "slug": "listar-e-buscar",
+        "description": "HU-03: Buscar obra na listagem — listagem paginada de obras com filtros por titulo, ISWC, ISRC e status de depuracao"
+      },
+      {
+        "task_id": "qa_task_03",
+        "slug": "editar-obra",
+        "description": "HU-04: Editar dados da obra — atualizacao de titulo, ISRC, status e associacoes de titulares com validacoes"
+      },
+      {
+        "task_id": "qa_task_04",
+        "slug": "obter-iswc",
+        "description": "HU-02: Obter ISWC via API externa — solicitacao de ISWC para obra cadastrada, integracao com API ISWC e persistencia do codigo retornado"
+      },
+      {
+        "task_id": "qa_task_05",
+        "slug": "depuracao",
+        "description": "Depuracao automatica RF-06 a RF-10 — regras de porcentagem de titulares, conflito entre obras, dominio publico automatico por tempo"
+      },
+      {
+        "task_id": "qa_task_06",
+        "slug": "dominio-publico",
+        "description": "HU-05: Dominio Publico — marcacao manual de obra como dominio publico e consulta de obras em dominio publico"
+      },
+      {
+        "task_id": "qa_task_07",
+        "slug": "exclusao",
+        "description": "Exclusao de obras — exclusao logica de obra, restricoes de exclusao (obra com ISWC ou em dominio publico) e efeito nos titulares"
+      }
+    ],
+    "excluded": []
+  },
+  "environment": {
+    "base_url": "http://localhost:5001",
+    "frontend_url": "http://localhost:5173",
+    "auth": {
+      "enabled": true,
+      "type": "bearer",
+      "token_endpoint": "http://localhost:8080/realms/mcad/protocol/openid-connect/token",
+      "realm": "mcad",
+      "client_id": "mcad-cli",
+      "grant_type": "password",
+      "profiles": {
+        "analista": {
+          "role": "analista-cadastro",
+          "credentials_env": {
+            "username_var": "QA_ANALISTA_USERNAME",
+            "password_var": "QA_ANALISTA_PASSWORD"
+          }
+        },
+        "consultor": {
+          "role": "consultor",
+          "credentials_env": {
+            "username_var": "QA_CONSULTOR_USERNAME",
+            "password_var": "QA_CONSULTOR_PASSWORD"
+          }
+        }
+      }
+    }
+  },
+  "database": {
+    "enabled": true,
+    "type": "postgresql",
+    "host": "db.tasso.dev.br",
+    "port": 5432,
+    "name": "mcad",
+    "schema": "cadastro",
+    "connection_string_env": "QA_DB_CONNECTION_STRING",
+    "credentials_env": {
+      "user_var": "SUPER_USER",
+      "pass_var": "SUPER_PASS"
+    },
+    "docker_available": true
+  },
+  "report": {
+    "formats": ["markdown", "pdf"],
+    "output_dir": "tasks/cadastro/prd-gestao-obras/qa-evidence"
+  },
+  "execution": {
+    "tasks": [
+      {
+        "id": "qa_task_01",
+        "slug": "criar-obra",
+        "description": "HU-01: Criar obra musical",
+        "type": ["api", "ui", "db"],
+        "depends_on": [],
+        "can_run_parallel_with": []
+      },
+      {
+        "id": "qa_task_02",
+        "slug": "listar-e-buscar",
+        "description": "HU-03: Buscar obra na listagem",
+        "type": ["api", "ui"],
+        "depends_on": ["qa_task_01"],
+        "can_run_parallel_with": ["qa_task_03", "qa_task_04", "qa_task_06"]
+      },
+      {
+        "id": "qa_task_03",
+        "slug": "editar-obra",
+        "description": "HU-04: Editar dados da obra",
+        "type": ["api", "ui", "db"],
+        "depends_on": ["qa_task_01"],
+        "can_run_parallel_with": ["qa_task_02", "qa_task_04", "qa_task_06"]
+      },
+      {
+        "id": "qa_task_04",
+        "slug": "obter-iswc",
+        "description": "HU-02: Obter ISWC via API externa",
+        "type": ["api", "ui", "db"],
+        "depends_on": ["qa_task_01"],
+        "can_run_parallel_with": ["qa_task_02", "qa_task_03", "qa_task_06"]
+      },
+      {
+        "id": "qa_task_05",
+        "slug": "depuracao",
+        "description": "Depuracao automatica RF-06 a RF-10",
+        "type": ["api", "ui", "db"],
+        "depends_on": ["qa_task_02", "qa_task_03", "qa_task_04", "qa_task_06"],
+        "can_run_parallel_with": []
+      },
+      {
+        "id": "qa_task_06",
+        "slug": "dominio-publico",
+        "description": "HU-05: Dominio Publico",
+        "type": ["api", "ui", "db"],
+        "depends_on": ["qa_task_01"],
+        "can_run_parallel_with": ["qa_task_02", "qa_task_03", "qa_task_04"]
+      },
+      {
+        "id": "qa_task_07",
+        "slug": "exclusao",
+        "description": "Exclusao de obras",
+        "type": ["api", "ui", "db"],
+        "depends_on": ["qa_task_05"],
+        "can_run_parallel_with": []
+      }
+    ],
+    "phases": [
+      {
+        "phase": 1,
+        "mode": "sequential",
+        "tasks": ["qa_task_01"]
+      },
+      {
+        "phase": 2,
+        "mode": "parallel",
+        "tasks": ["qa_task_02", "qa_task_03", "qa_task_04", "qa_task_06"]
+      },
+      {
+        "phase": 3,
+        "mode": "sequential",
+        "tasks": ["qa_task_05"]
+      },
+      {
+        "phase": 4,
+        "mode": "sequential",
+        "tasks": ["qa_task_07"]
+      }
+    ]
+  }
+}

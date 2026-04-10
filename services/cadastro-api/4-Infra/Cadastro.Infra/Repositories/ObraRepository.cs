@@ -29,7 +29,7 @@ public class ObraRepository : IObraRepository
             query = query.Where(o => EF.Functions.ILike(o.Titulo, $"%{filtro.Titulo}%"));
 
         if (!string.IsNullOrWhiteSpace(filtro.Iswc))
-            query = query.Where(o => o.Iswc == filtro.Iswc);
+            query = query.Where(o => o.Iswc != null && o.Iswc.Contains(filtro.Iswc));
 
         if (filtro.Tipo.HasValue)
             query = query.Where(o => o.Tipo == filtro.Tipo.Value);

@@ -63,7 +63,7 @@ public class AtualizarObraCommandHandlerTests
     }
 
     [Fact]
-    public async Task HandleAsync_ObraDepurada_DeveLancarDomainException()
+    public async Task HandleAsync_ObraDepurada_DeveLancarStatusConflictException()
     {
         var obra = ObraMusical.Criar("Velho", TipoObra.Musical);
         obra.AtribuirIswc("T-111");
@@ -73,6 +73,6 @@ public class AtualizarObraCommandHandlerTests
         var command = new AtualizarObraCommand(obra.Id, "Teste", null, "MUSICAL", "Rock");
 
         var act = () => _handler.HandleAsync(command, CancellationToken.None);
-        await act.Should().ThrowAsync<DomainException>().WithMessage("Obras depuradas não podem ser editadas");
+        await act.Should().ThrowAsync<StatusConflictException>().WithMessage("Obras depuradas não podem ser editadas");
     }
 }

@@ -1,0 +1,188 @@
+{
+  "config": {
+    "configFile": "/home/tsgomes/mcad/tasks/cadastro/prd-gestao-obras/qa-evidence/qa_task_02_listar-e-buscar/playwright.config.ts",
+    "rootDir": "/home/tsgomes/mcad/tasks/cadastro/prd-gestao-obras/qa-evidence/qa_task_02_listar-e-buscar",
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/home/tsgomes/mcad/tasks/cadastro/prd-gestao-obras/qa-evidence/qa_task_02_listar-e-buscar/videos",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "",
+        "name": "",
+        "testDir": "/home/tsgomes/mcad/tasks/cadastro/prd-gestao-obras/qa-evidence/qa_task_02_listar-e-buscar",
+        "testIgnore": [],
+        "testMatch": [
+          "ui.spec.ts"
+        ],
+        "timeout": 30000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "list",
+        null
+      ],
+      [
+        "json",
+        {
+          "outputFile": "./playwright-results.json"
+        }
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.59.1",
+    "workers": 4,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "ui.spec.ts",
+      "file": "ui.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "CT-09 e CT-10: HU-03 — Listagem de obras (UI)",
+          "file": "ui.spec.ts",
+          "line": 43,
+          "column": 6,
+          "specs": [
+            {
+              "title": "CT-09: Listagem em /cadastro/obras exibe filtros visuais (analista)",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "",
+                  "projectName": "",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 5308,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-09T00:52:49.175Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/home/tsgomes/mcad/tasks/cadastro/prd-gestao-obras/qa-evidence/qa_task_02_listar-e-buscar/videos/ui-CT-09-e-CT-10-HU-03-—-L-29865-e-filtros-visuais-analista-/test-finished-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/home/tsgomes/mcad/tasks/cadastro/prd-gestao-obras/qa-evidence/qa_task_02_listar-e-buscar/videos/ui-CT-09-e-CT-10-HU-03-—-L-29865-e-filtros-visuais-analista-/video.webm"
+                        },
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "/home/tsgomes/mcad/tasks/cadastro/prd-gestao-obras/qa-evidence/qa_task_02_listar-e-buscar/videos/ui-CT-09-e-CT-10-HU-03-—-L-29865-e-filtros-visuais-analista-/trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "d425444c687fa36b5882-4ef79e7e502eb7e35d6e",
+              "file": "ui.spec.ts",
+              "line": 45,
+              "column": 7
+            },
+            {
+              "title": "CT-10: Consultor nao ve botoes de acao (criar, editar, excluir)",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "",
+                  "projectName": "",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 8105,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-09T00:52:52.322Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/home/tsgomes/mcad/tasks/cadastro/prd-gestao-obras/qa-evidence/qa_task_02_listar-e-buscar/videos/ui-CT-09-e-CT-10-HU-03-—-L-12cae--acao-criar-editar-excluir-/test-finished-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/home/tsgomes/mcad/tasks/cadastro/prd-gestao-obras/qa-evidence/qa_task_02_listar-e-buscar/videos/ui-CT-09-e-CT-10-HU-03-—-L-12cae--acao-criar-editar-excluir-/video.webm"
+                        },
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "/home/tsgomes/mcad/tasks/cadastro/prd-gestao-obras/qa-evidence/qa_task_02_listar-e-buscar/videos/ui-CT-09-e-CT-10-HU-03-—-L-12cae--acao-criar-editar-excluir-/trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "d425444c687fa36b5882-8aa47b4724161d7f1d4b",
+              "file": "ui.spec.ts",
+              "line": 159,
+              "column": 7
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-04-09T00:52:48.117Z",
+    "duration": 15281.046000000002,
+    "expected": 2,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}

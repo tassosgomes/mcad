@@ -45,11 +45,11 @@ public class ObraMusical
     public void Atualizar(string titulo, string? subtitulo, TipoObra tipo, string? genero)
     {
         if (Status == StatusObra.Depurada)
-            throw new DomainException("Obras depuradas não podem ser editadas");
+            throw new StatusConflictException("Obras depuradas não podem ser editadas");
         if (Status == StatusObra.DominioPublico)
-            throw new DomainException("Obras em Domínio Público não podem ser editadas");
+            throw new StatusConflictException("Obras em Domínio Público não podem ser editadas");
         if (Status == StatusObra.Bloqueado)
-            throw new DomainException("Obras bloqueadas não podem ser editadas");
+            throw new StatusConflictException("Obras bloqueadas não podem ser editadas");
 
         Titulo = titulo ?? throw new ArgumentNullException(nameof(titulo));
         Subtitulo = subtitulo;
@@ -118,7 +118,7 @@ public class ObraMusical
     public void MarcarDominioPublico(bool valor)
     {
         if (Status == StatusObra.Depurada)
-            throw new DomainException("Obras depuradas não podem ser alteradas");
+            throw new StatusConflictException("Obras depuradas não podem ser alteradas");
 
         if (valor)
             Status = StatusObra.DominioPublico;

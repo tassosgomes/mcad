@@ -10,7 +10,8 @@ namespace Cadastro.API.Infrastructure;
 /// Registrado em Program.cs via AddExceptionHandler.
 /// Mapeamentos:
 /// - NotFoundException → 404
-/// - ConflictException → 409
+/// - ConflictException (Application) → 409
+/// - StatusConflictException (Domain) → 409
 /// - ValidationException → 400
 /// - DomainException → 422
 /// - Exception → 500
@@ -39,6 +40,7 @@ public class GlobalExceptionHandler : IExceptionHandler
         {
             NotFoundException => (StatusCodes.Status404NotFound, "Resource Not Found"),
             ConflictException => (StatusCodes.Status409Conflict, "Conflict"),
+            StatusConflictException => (StatusCodes.Status409Conflict, "Conflict"),
             Cadastro.Application.Common.Exceptions.ValidationException => (StatusCodes.Status400BadRequest, "Validation Error"),
             DomainException => (StatusCodes.Status422UnprocessableEntity, "Unprocessable Entity"),
             ExternalServiceException => (StatusCodes.Status502BadGateway, "Bad Gateway"),
@@ -53,6 +55,20 @@ public class GlobalExceptionHandler : IExceptionHandler
             Detail = exception.Message,
             Instance = httpContext.Request.Path
         };
+
+        if (exception is Cadastro.Application.Common.Exceptions.ValidationException validationException)
+        {
+            var firstErrorMessage = validationException.Errors
+                .SelectMany(entry => entry.Value)
+                .FirstOrDefault();
+
+            if (!string.IsNullOrWhiteSpace(firstErrorMessage))
+            {
+                problemDetails.Detail = firstErrorMessage;
+            }
+
+            problemDetails.Extensions["errors"] = validationException.Errors;
+        }
 
         if (exception is DepuracaoNecessariaException depException)
         {
