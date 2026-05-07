@@ -1,3 +1,4 @@
+using Cadastro.Application.Audit;
 using Cadastro.Application.Common.CQRS;
 using Cadastro.Application.Obras.Queries;
 using Cadastro.Application.Obras.Responses;
@@ -32,10 +33,12 @@ public class CriarObraCommandValidator : AbstractValidator<CriarObraCommand>
 public class CriarObraCommandHandler : ICommandHandler<CriarObraCommand, ObraResponse>
 {
     private readonly IObraRepository _repository;
+    private readonly IObraAuditPublisher _auditPublisher;
 
-    public CriarObraCommandHandler(IObraRepository repository)
+    public CriarObraCommandHandler(IObraRepository repository, IObraAuditPublisher auditPublisher)
     {
         _repository = repository;
+        _auditPublisher = auditPublisher;
     }
 
     public async Task<ObraResponse> HandleAsync(CriarObraCommand request, CancellationToken cancellationToken)
@@ -44,6 +47,7 @@ public class CriarObraCommandHandler : ICommandHandler<CriarObraCommand, ObraRes
         var obra = ObraMusical.Criar(request.Titulo, tipo, request.Subtitulo, request.Genero);
 
         await _repository.AddAsync(obra, cancellationToken);
+        await _auditPublisher.PublishAsync(obra, ObraAuditOperation.Create, before: null, cancellationToken);
         await _repository.SaveChangesAsync(cancellationToken);
 
         return ListarObrasQueryHandler.MapToResponse(obra);

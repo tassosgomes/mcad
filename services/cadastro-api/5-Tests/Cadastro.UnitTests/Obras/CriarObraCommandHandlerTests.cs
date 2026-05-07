@@ -1,3 +1,4 @@
+using Cadastro.Application.Audit;
 using Cadastro.Application.Obras.Commands;
 using Cadastro.Domain.Entities;
 using Cadastro.Domain.Enums;
@@ -11,12 +12,14 @@ namespace Cadastro.UnitTests.Obras;
 public class CriarObraCommandHandlerTests
 {
     private readonly Mock<IObraRepository> _repoMock;
+    private readonly Mock<IObraAuditPublisher> _auditMock;
     private readonly CriarObraCommandHandler _handler;
 
     public CriarObraCommandHandlerTests()
     {
         _repoMock = new Mock<IObraRepository>();
-        _handler = new CriarObraCommandHandler(_repoMock.Object);
+        _auditMock = new Mock<IObraAuditPublisher>();
+        _handler = new CriarObraCommandHandler(_repoMock.Object, _auditMock.Object);
     }
 
     [Fact]
@@ -31,6 +34,11 @@ public class CriarObraCommandHandlerTests
             It.IsAny<CancellationToken>()), Times.Once);
             
         _repoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+        _auditMock.Verify(a => a.PublishAsync(
+            It.IsAny<ObraMusical>(),
+            ObraAuditOperation.Create,
+            null,
+            It.IsAny<CancellationToken>()), Times.Once);
 
         response.Should().NotBeNull();
         response.Titulo.Should().Be("My Song");

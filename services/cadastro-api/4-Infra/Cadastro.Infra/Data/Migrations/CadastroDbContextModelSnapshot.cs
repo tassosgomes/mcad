@@ -361,6 +361,96 @@ namespace Cadastro.Infra.Data.Migrations
                     b.ToTable("outbox_events", "cadastro");
                 });
 
+            modelBuilder.Entity("Cadastro.Infra.Audit.AuditOutboxEvent", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasMaxLength(36)
+                        .HasColumnType("character varying(36)")
+                        .HasColumnName("id");
+
+                    b.Property<string>("AggregateId")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)")
+                        .HasColumnName("aggregate_id");
+
+                    b.Property<string>("AggregateType")
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)")
+                        .HasColumnName("aggregate_type");
+
+                    b.Property<DateTime>("AvailableAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("available_at_utc");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at_utc");
+
+                    b.Property<string>("EventId")
+                        .IsRequired()
+                        .HasMaxLength(36)
+                        .HasColumnType("character varying(36)")
+                        .HasColumnName("event_id");
+
+                    b.Property<string>("EventType")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("event_type");
+
+                    b.Property<string>("LastError")
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)")
+                        .HasColumnName("last_error");
+
+                    b.Property<string>("LockOwner")
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)")
+                        .HasColumnName("lock_owner");
+
+                    b.Property<DateTime?>("LockedUntilUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("locked_until_utc");
+
+                    b.Property<string>("PayloadJson")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("payload_json");
+
+                    b.Property<int>("RetryCount")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("retry_count")
+                        .HasDefaultValue(0);
+
+                    b.Property<DateTime?>("SentAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("sent_at_utc");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)")
+                        .HasColumnName("status")
+                        .HasDefaultValue("PENDING");
+
+                    b.HasKey("Id")
+                        .HasName("pk_audit_outbox");
+
+                    b.HasIndex("EventId")
+                        .IsUnique()
+                        .HasDatabaseName("uk_audit_outbox_event");
+
+                    b.HasIndex("EventType", "CreatedAtUtc")
+                        .HasDatabaseName("ix_audit_outbox_event_type");
+
+                    b.HasIndex("Status", "AvailableAtUtc", "CreatedAtUtc")
+                        .HasDatabaseName("ix_audit_outbox_pending");
+
+                    b.ToTable("audit_outbox", "cadastro");
+                });
+
             modelBuilder.Entity("Cadastro.Domain.Entities.ParticipacaoConexa", b =>
                 {
                     b.Property<Guid>("Id")

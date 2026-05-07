@@ -1,3 +1,4 @@
+using Cadastro.Application.Audit;
 using Cadastro.Application.Common.Exceptions;
 using Cadastro.Application.Obras.Commands;
 using Cadastro.Domain.Entities;
@@ -15,6 +16,7 @@ public class DepurarObraCommandHandlerTests
     private readonly Mock<IObraRepository> _repoMock;
     private readonly Mock<ITitularidadeRepository> _titularidadeRepoMock;
     private readonly Mock<IOutboxEventWriter> _outboxMock;
+    private readonly Mock<IObraAuditPublisher> _auditMock;
     private readonly DepurarObraCommandHandler _handler;
 
     public DepurarObraCommandHandlerTests()
@@ -22,7 +24,12 @@ public class DepurarObraCommandHandlerTests
         _repoMock = new Mock<IObraRepository>();
         _titularidadeRepoMock = new Mock<ITitularidadeRepository>();
         _outboxMock = new Mock<IOutboxEventWriter>();
-        _handler = new DepurarObraCommandHandler(_repoMock.Object, _titularidadeRepoMock.Object, _outboxMock.Object);
+        _auditMock = new Mock<IObraAuditPublisher>();
+        _handler = new DepurarObraCommandHandler(
+            _repoMock.Object,
+            _titularidadeRepoMock.Object,
+            _outboxMock.Object,
+            _auditMock.Object);
     }
 
     [Fact]
@@ -51,6 +58,16 @@ public class DepurarObraCommandHandlerTests
                 t.Percentual == titularidadeOriginal.Percentual),
             It.IsAny<CancellationToken>()), Times.Once);
         _repoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+        _auditMock.Verify(a => a.PublishAsync(
+            obra,
+            ObraAuditOperation.Depurate,
+            It.IsAny<IReadOnlyDictionary<string, object?>?>(),
+            It.IsAny<CancellationToken>()), Times.Once);
+        _auditMock.Verify(a => a.PublishAsync(
+            It.Is<ObraMusical>(o => o.Id == result.NovaObra.Id),
+            ObraAuditOperation.Create,
+            null,
+            It.IsAny<CancellationToken>()), Times.Once);
 
         result.ObraDepurada.Status.Should().Be("DEPURADA");
         result.NovaObra.Status.Should().Be("PENDENTE");
@@ -69,5 +86,10 @@ public class DepurarObraCommandHandlerTests
 
         var act = () => _handler.HandleAsync(command, CancellationToken.None);
         await act.Should().ThrowAsync<ConflictException>().WithMessage("Apenas obras LIBERADAS podem ser depuradas.");
+        _auditMock.Verify(a => a.PublishAsync(
+            It.IsAny<ObraMusical>(),
+            It.IsAny<ObraAuditOperation>(),
+            It.IsAny<IReadOnlyDictionary<string, object?>?>(),
+            It.IsAny<CancellationToken>()), Times.Never);
     }
 }

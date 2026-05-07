@@ -1,3 +1,4 @@
+using Cadastro.Application.Audit;
 using Cadastro.Application.Common.CQRS;
 using Cadastro.Application.Common.Exceptions;
 using Cadastro.Application.Obras.Responses;
@@ -26,15 +27,18 @@ public class BloquearObraCommandHandler : ICommandHandler<BloquearObraCommand, O
     private readonly IObraRepository _obraRepository;
     private readonly IHistoricoBloqueioRepository _historicoRepository;
     private readonly IOutboxEventWriter _outbox;
+    private readonly IObraAuditPublisher _auditPublisher;
 
     public BloquearObraCommandHandler(
         IObraRepository obraRepository,
         IHistoricoBloqueioRepository historicoRepository,
-        IOutboxEventWriter outbox)
+        IOutboxEventWriter outbox,
+        IObraAuditPublisher auditPublisher)
     {
         _obraRepository = obraRepository;
         _historicoRepository = historicoRepository;
         _outbox = outbox;
+        _auditPublisher = auditPublisher;
     }
 
     public async Task<ObraResponse> HandleAsync(BloquearObraCommand command, CancellationToken cancellationToken)
@@ -42,6 +46,7 @@ public class BloquearObraCommandHandler : ICommandHandler<BloquearObraCommand, O
         var obra = await _obraRepository.GetByIdAsync(command.Id, cancellationToken)
             ?? throw new NotFoundException(nameof(ObraMusical), command.Id);
 
+        var before = _auditPublisher.Snapshot(obra);
         obra.Bloquear(command.Justificativa);
 
         var historico = HistoricoBloqueio.CriarBloqueio("OBRA", obra.Id, command.Justificativa);
@@ -57,6 +62,7 @@ public class BloquearObraCommandHandler : ICommandHandler<BloquearObraCommand, O
             justificativa = command.Justificativa,
         });
 
+        await _auditPublisher.PublishAsync(obra, ObraAuditOperation.Block, before, cancellationToken);
         await _obraRepository.SaveChangesAsync(cancellationToken);
 
         return new ObraResponse(

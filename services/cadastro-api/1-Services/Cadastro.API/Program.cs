@@ -1,14 +1,19 @@
+using Cadastro.API.Audit;
 using Cadastro.API.AsyncApi;
 using Cadastro.API.Endpoints;
 using Cadastro.API.Infrastructure;
 using Cadastro.API.Swagger;
+using Cadastro.Application.Audit;
 using Cadastro.Application.Associacoes.Queries;
 using Cadastro.Application.Common.CQRS;
 using Cadastro.Application.Titulares.Commands;
 using Cadastro.Domain.Interfaces;
+using Cadastro.Infra.Audit;
 using Cadastro.Infra.Data;
 using Cadastro.Infra.Events;
 using Cadastro.Infra.Repositories;
+using Ecad.Audit.AspNetCore;
+using Ecad.Audit.Sdk;
 using FluentValidation;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Authentication;
@@ -44,6 +49,23 @@ var corsAllowedOrigins = (Environment.GetEnvironmentVariable("CORS_ALLOWED_ORIGI
 builder.Services.AddDbContext<CadastroDbContext>(options =>
     options.UseNpgsql(connectionString, npgsql =>
         npgsql.MigrationsHistoryTable("__EFMigrationsHistory", "cadastro")));
+
+// ─── Auditoria transversal ───────────────────────────────────────────
+builder.Services.AddEcadAudit(builder.Configuration, options =>
+{
+    options.ServiceName = string.IsNullOrWhiteSpace(options.ServiceName) ? "cadastro-api" : options.ServiceName;
+    options.System = string.IsNullOrWhiteSpace(options.System) ? "mcad" : options.System;
+    options.Environment = string.IsNullOrWhiteSpace(options.Environment)
+        ? builder.Environment.EnvironmentName
+        : options.Environment;
+    options.RabbitMqUri = AuditConfigurationHelpers.ResolveRabbitMqUri(builder.Configuration);
+});
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<IAuditContextProvider, HttpAuditContextProvider>();
+builder.Services.AddScoped<ObraAuditEventFactory>();
+builder.Services.AddScoped<IObraAuditPublisher, ObraAuditPublisher>();
+builder.Services.AddScoped<IAuditOutboxRepository, PostgresAuditOutboxRepository>();
+builder.Services.AddScoped<IAuditClient, EfAuditOutboxClient>();
 
 // ─── Repository ────────────────────────────────────────────────────────
 builder.Services.AddScoped<IAssociacaoRepository, AssociacaoRepository>();
@@ -264,5 +286,63 @@ internal static class DotEnvLoader
                 directory = directory.Parent;
             }
         }
+    }
+}
+
+internal static class AuditConfigurationHelpers
+{
+    public static string ResolveRabbitMqUri(IConfiguration configuration)
+    {
+        var auditRabbitMqUri = configuration["AUDIT_RABBITMQ_URI"];
+        if (!string.IsNullOrWhiteSpace(auditRabbitMqUri))
+        {
+            return auditRabbitMqUri;
+        }
+
+        var rabbitUrl = configuration["RABBITMQ_URL"];
+        if (!string.IsNullOrWhiteSpace(rabbitUrl))
+        {
+            return rabbitUrl;
+        }
+
+        var host = configuration["RABBITMQ_HOST"];
+        if (string.IsNullOrWhiteSpace(host))
+        {
+            return "amqp://guest:guest@localhost:5672";
+        }
+
+        var port = configuration["RABBITMQ_PORT"];
+        var user = configuration["RABBITMQ_USER"];
+        var password = configuration["RABBITMQ_PASSWORD"];
+        var vhost = configuration["RABBITMQ_VHOST"];
+        var scheme = string.Equals(port, "5671", StringComparison.Ordinal) ? "amqps" : "amqp";
+
+        var builder = new System.Text.StringBuilder();
+        builder.Append(scheme).Append("://");
+
+        if (!string.IsNullOrWhiteSpace(user))
+        {
+            builder.Append(Uri.EscapeDataString(user));
+            if (!string.IsNullOrWhiteSpace(password))
+            {
+                builder.Append(':').Append(Uri.EscapeDataString(password));
+            }
+
+            builder.Append('@');
+        }
+
+        builder.Append(host);
+
+        if (!string.IsNullOrWhiteSpace(port))
+        {
+            builder.Append(':').Append(port);
+        }
+
+        if (!string.IsNullOrWhiteSpace(vhost))
+        {
+            builder.Append('/').Append(Uri.EscapeDataString(vhost));
+        }
+
+        return builder.ToString();
     }
 }

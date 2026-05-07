@@ -1,3 +1,4 @@
+using Cadastro.Application.Audit;
 using Cadastro.Application.Common.CQRS;
 using Cadastro.Application.Common.Exceptions;
 using Cadastro.Application.Obras.Queries;
@@ -33,10 +34,12 @@ public class AtualizarObraCommandValidator : AbstractValidator<AtualizarObraComm
 public class AtualizarObraCommandHandler : ICommandHandler<AtualizarObraCommand, ObraResponse>
 {
     private readonly IObraRepository _repository;
+    private readonly IObraAuditPublisher _auditPublisher;
 
-    public AtualizarObraCommandHandler(IObraRepository repository)
+    public AtualizarObraCommandHandler(IObraRepository repository, IObraAuditPublisher auditPublisher)
     {
         _repository = repository;
+        _auditPublisher = auditPublisher;
     }
 
     public async Task<ObraResponse> HandleAsync(AtualizarObraCommand request, CancellationToken cancellationToken)
@@ -48,10 +51,12 @@ public class AtualizarObraCommandHandler : ICommandHandler<AtualizarObraCommand,
             throw new DepuracaoNecessariaException("Alterar o título requer depuração");
 
         var tipo = Enum.Parse<TipoObra>(request.Tipo.Replace("_", ""), true);
+        var before = _auditPublisher.Snapshot(obra);
         
         obra.Atualizar(request.Titulo, request.Subtitulo, tipo, request.Genero);
         
         _repository.Update(obra);
+        await _auditPublisher.PublishAsync(obra, ObraAuditOperation.Update, before, cancellationToken);
         await _repository.SaveChangesAsync(cancellationToken);
 
         return ListarObrasQueryHandler.MapToResponse(obra);

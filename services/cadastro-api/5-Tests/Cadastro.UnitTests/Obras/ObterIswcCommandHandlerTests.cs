@@ -1,3 +1,4 @@
+using Cadastro.Application.Audit;
 using Cadastro.Application.Common.Exceptions;
 using Cadastro.Application.Obras.Commands;
 using Cadastro.Domain.Entities;
@@ -17,6 +18,7 @@ public class ObterIswcCommandHandlerTests
     private readonly Mock<IIswcService> _iswcMock;
     private readonly Mock<ITitularidadeRepository> _titularidadeRepoMock;
     private readonly Mock<IOutboxEventWriter> _outboxMock;
+    private readonly Mock<IObraAuditPublisher> _auditMock;
     private readonly ObterIswcCommandHandler _handler;
 
     public ObterIswcCommandHandlerTests()
@@ -25,7 +27,13 @@ public class ObterIswcCommandHandlerTests
         _iswcMock = new Mock<IIswcService>();
         _titularidadeRepoMock = new Mock<ITitularidadeRepository>();
         _outboxMock = new Mock<IOutboxEventWriter>();
-        _handler = new ObterIswcCommandHandler(_repoMock.Object, _iswcMock.Object, _titularidadeRepoMock.Object, _outboxMock.Object);
+        _auditMock = new Mock<IObraAuditPublisher>();
+        _handler = new ObterIswcCommandHandler(
+            _repoMock.Object,
+            _iswcMock.Object,
+            _titularidadeRepoMock.Object,
+            _outboxMock.Object,
+            _auditMock.Object);
     }
 
     [Fact]
@@ -40,6 +48,11 @@ public class ObterIswcCommandHandlerTests
         var act = () => _handler.HandleAsync(command, CancellationToken.None);
         
         await act.Should().ThrowAsync<DomainException>();
+        _auditMock.Verify(a => a.PublishAsync(
+            It.IsAny<ObraMusical>(),
+            It.IsAny<ObraAuditOperation>(),
+            It.IsAny<IReadOnlyDictionary<string, object?>?>(),
+            It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
@@ -53,5 +66,10 @@ public class ObterIswcCommandHandlerTests
         var act = () => _handler.HandleAsync(command, CancellationToken.None);
         
         await act.Should().ThrowAsync<DomainException>().WithMessage("ISWC só pode ser solicitado para obras PENDENTES.");
+        _auditMock.Verify(a => a.PublishAsync(
+            It.IsAny<ObraMusical>(),
+            It.IsAny<ObraAuditOperation>(),
+            It.IsAny<IReadOnlyDictionary<string, object?>?>(),
+            It.IsAny<CancellationToken>()), Times.Never);
     }
 }

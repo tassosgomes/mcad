@@ -1,3 +1,4 @@
+using Cadastro.Application.Audit;
 using Cadastro.Application.Common.CQRS;
 using Cadastro.Application.Common.Exceptions;
 using Cadastro.Application.Obras.Queries;
@@ -16,17 +17,20 @@ public class ObterIswcCommandHandler : ICommandHandler<ObterIswcCommand, ObraRes
     private readonly IIswcService _iswcService;
     private readonly ITitularidadeRepository _titularidadeRepository;
     private readonly IOutboxEventWriter _outbox;
+    private readonly IObraAuditPublisher _auditPublisher;
 
     public ObterIswcCommandHandler(
         IObraRepository repository,
         IIswcService iswcService,
         ITitularidadeRepository titularidadeRepository,
-        IOutboxEventWriter outbox)
+        IOutboxEventWriter outbox,
+        IObraAuditPublisher auditPublisher)
     {
         _repository = repository;
         _iswcService = iswcService;
         _titularidadeRepository = titularidadeRepository;
         _outbox = outbox;
+        _auditPublisher = auditPublisher;
     }
 
     public async Task<ObraResponse> HandleAsync(ObterIswcCommand request, CancellationToken cancellationToken)
@@ -60,6 +64,7 @@ public class ObterIswcCommandHandler : ICommandHandler<ObterIswcCommand, ObraRes
         if (await _repository.ExisteIswcAsync(iswc, cancellationToken))
             throw new ConflictException("O ISWC retornado já está vinculado a outra obra.");
 
+        var before = _auditPublisher.Snapshot(obra);
         obra.AtribuirIswc(iswc);
         _repository.Update(obra);
 
@@ -72,6 +77,7 @@ public class ObterIswcCommandHandler : ICommandHandler<ObterIswcCommand, ObraRes
             iswc = obra.Iswc,
         });
 
+        await _auditPublisher.PublishAsync(obra, ObraAuditOperation.ObtainIswc, before, cancellationToken);
         await _repository.SaveChangesAsync(cancellationToken);
 
         return ListarObrasQueryHandler.MapToResponse(obra);

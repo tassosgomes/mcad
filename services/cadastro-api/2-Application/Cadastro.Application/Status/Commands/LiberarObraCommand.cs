@@ -1,3 +1,4 @@
+using Cadastro.Application.Audit;
 using Cadastro.Application.Common.CQRS;
 using Cadastro.Application.Common.Exceptions;
 using Cadastro.Application.Obras.Responses;
@@ -15,15 +16,18 @@ public class LiberarObraCommandHandler : ICommandHandler<LiberarObraCommand, Obr
     private readonly IObraRepository _obraRepository;
     private readonly ITitularidadeRepository _titularidadeRepository;
     private readonly IOutboxEventWriter _outbox;
+    private readonly IObraAuditPublisher _auditPublisher;
 
     public LiberarObraCommandHandler(
         IObraRepository obraRepository,
         ITitularidadeRepository titularidadeRepository,
-        IOutboxEventWriter outbox)
+        IOutboxEventWriter outbox,
+        IObraAuditPublisher auditPublisher)
     {
         _obraRepository = obraRepository;
         _titularidadeRepository = titularidadeRepository;
         _outbox = outbox;
+        _auditPublisher = auditPublisher;
     }
 
     public async Task<ObraResponse> HandleAsync(LiberarObraCommand command, CancellationToken cancellationToken)
@@ -47,6 +51,7 @@ public class LiberarObraCommandHandler : ICommandHandler<LiberarObraCommand, Obr
             throw new PreRequisitosException("Não é possível liberar. Existem pendências.", pendencias);
         }
 
+        var before = _auditPublisher.Snapshot(obra);
         obra.Liberar();
         _obraRepository.Update(obra);
 
@@ -58,6 +63,7 @@ public class LiberarObraCommandHandler : ICommandHandler<LiberarObraCommand, Obr
             iswc = obra.Iswc,
         });
 
+        await _auditPublisher.PublishAsync(obra, ObraAuditOperation.Release, before, cancellationToken);
         await _obraRepository.SaveChangesAsync(cancellationToken);
 
         return new ObraResponse(

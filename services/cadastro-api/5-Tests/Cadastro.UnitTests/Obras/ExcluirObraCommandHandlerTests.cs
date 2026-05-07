@@ -1,3 +1,4 @@
+using Cadastro.Application.Audit;
 using Cadastro.Application.Common.Exceptions;
 using Cadastro.Application.Obras.Commands;
 using Cadastro.Domain.Entities;
@@ -13,12 +14,14 @@ namespace Cadastro.UnitTests.Obras;
 public class ExcluirObraCommandHandlerTests
 {
     private readonly Mock<IObraRepository> _repoMock;
+    private readonly Mock<IObraAuditPublisher> _auditMock;
     private readonly ExcluirObraCommandHandler _handler;
 
     public ExcluirObraCommandHandlerTests()
     {
         _repoMock = new Mock<IObraRepository>();
-        _handler = new ExcluirObraCommandHandler(_repoMock.Object);
+        _auditMock = new Mock<IObraAuditPublisher>();
+        _handler = new ExcluirObraCommandHandler(_repoMock.Object, _auditMock.Object);
     }
 
     [Fact]
@@ -33,6 +36,11 @@ public class ExcluirObraCommandHandlerTests
 
         _repoMock.Verify(r => r.Delete(obra), Times.Once);
         _repoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+        _auditMock.Verify(a => a.PublishAsync(
+            obra,
+            ObraAuditOperation.Delete,
+            It.IsAny<IReadOnlyDictionary<string, object?>?>(),
+            It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -47,6 +55,11 @@ public class ExcluirObraCommandHandlerTests
 
         var act = () => _handler.HandleAsync(command, CancellationToken.None);
         await act.Should().ThrowAsync<ConflictException>();
+        _auditMock.Verify(a => a.PublishAsync(
+            It.IsAny<ObraMusical>(),
+            It.IsAny<ObraAuditOperation>(),
+            It.IsAny<IReadOnlyDictionary<string, object?>?>(),
+            It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
@@ -62,5 +75,10 @@ public class ExcluirObraCommandHandlerTests
         await act.Should()
             .ThrowAsync<ConflictException>()
             .WithMessage("Obra não pode ser excluída pois possui titularidades autorais vinculadas.");
+        _auditMock.Verify(a => a.PublishAsync(
+            It.IsAny<ObraMusical>(),
+            It.IsAny<ObraAuditOperation>(),
+            It.IsAny<IReadOnlyDictionary<string, object?>?>(),
+            It.IsAny<CancellationToken>()), Times.Never);
     }
 }

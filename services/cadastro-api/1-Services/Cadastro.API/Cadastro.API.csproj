@@ -6,6 +6,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="Ecad.Audit.AspNetCore" Version="0.1.0" />
     <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="12.1.1" />
     <PackageReference Include="Saunter" Version="0.13.0" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.9.0" />

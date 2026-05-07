@@ -1,3 +1,4 @@
+using Cadastro.Application.Audit;
 using Cadastro.Application.Common.CQRS;
 using Cadastro.Application.Common.Exceptions;
 using Cadastro.Application.Obras.Queries;
@@ -12,11 +13,16 @@ public class AlterarDominioPublicoCommandHandler : ICommandHandler<AlterarDomini
 {
     private readonly IObraRepository _repository;
     private readonly IOutboxEventWriter _outbox;
+    private readonly IObraAuditPublisher _auditPublisher;
 
-    public AlterarDominioPublicoCommandHandler(IObraRepository repository, IOutboxEventWriter outbox)
+    public AlterarDominioPublicoCommandHandler(
+        IObraRepository repository,
+        IOutboxEventWriter outbox,
+        IObraAuditPublisher auditPublisher)
     {
         _repository = repository;
         _outbox = outbox;
+        _auditPublisher = auditPublisher;
     }
 
     public async Task<ObraResponse> HandleAsync(AlterarDominioPublicoCommand request, CancellationToken cancellationToken)
@@ -24,6 +30,7 @@ public class AlterarDominioPublicoCommandHandler : ICommandHandler<AlterarDomini
         var obra = await _repository.GetByIdAsync(request.Id, cancellationToken)
             ?? throw new NotFoundException("Obra não encontrada.", request.Id);
 
+        var before = _auditPublisher.Snapshot(obra);
         obra.MarcarDominioPublico(request.DominioPublico);
 
         _repository.Update(obra);
@@ -36,6 +43,7 @@ public class AlterarDominioPublicoCommandHandler : ICommandHandler<AlterarDomini
             dominioPublico = request.DominioPublico,
         });
 
+        await _auditPublisher.PublishAsync(obra, ObraAuditOperation.SetPublicDomain, before, cancellationToken);
         await _repository.SaveChangesAsync(cancellationToken);
 
         return ListarObrasQueryHandler.MapToResponse(obra);

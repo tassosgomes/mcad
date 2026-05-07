@@ -1,3 +1,4 @@
+using Cadastro.Application.Audit;
 using Cadastro.Application.Obras.Commands;
 using Cadastro.Domain.Entities;
 using Cadastro.Domain.Enums;
@@ -12,13 +13,15 @@ public class AlterarDominioPublicoCommandHandlerTests
 {
     private readonly Mock<IObraRepository> _repoMock;
     private readonly Mock<IOutboxEventWriter> _outboxMock;
+    private readonly Mock<IObraAuditPublisher> _auditMock;
     private readonly AlterarDominioPublicoCommandHandler _handler;
 
     public AlterarDominioPublicoCommandHandlerTests()
     {
         _repoMock = new Mock<IObraRepository>();
         _outboxMock = new Mock<IOutboxEventWriter>();
-        _handler = new AlterarDominioPublicoCommandHandler(_repoMock.Object, _outboxMock.Object);
+        _auditMock = new Mock<IObraAuditPublisher>();
+        _handler = new AlterarDominioPublicoCommandHandler(_repoMock.Object, _outboxMock.Object, _auditMock.Object);
     }
 
     [Fact]
@@ -33,6 +36,11 @@ public class AlterarDominioPublicoCommandHandlerTests
         res.Status.Should().Be("DOMINIO_PUBLICO");
         res.DominioPublico.Should().BeTrue();
         _repoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+        _auditMock.Verify(a => a.PublishAsync(
+            obra,
+            ObraAuditOperation.SetPublicDomain,
+            It.IsAny<IReadOnlyDictionary<string, object?>?>(),
+            It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -47,5 +55,10 @@ public class AlterarDominioPublicoCommandHandlerTests
 
         res.Status.Should().Be("PENDENTE");
         res.DominioPublico.Should().BeFalse();
+        _auditMock.Verify(a => a.PublishAsync(
+            obra,
+            ObraAuditOperation.SetPublicDomain,
+            It.IsAny<IReadOnlyDictionary<string, object?>?>(),
+            It.IsAny<CancellationToken>()), Times.Once);
     }
 }

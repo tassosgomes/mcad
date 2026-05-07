@@ -1,3 +1,4 @@
+using Cadastro.Application.Audit;
 using Cadastro.Application.Common.Exceptions;
 using Cadastro.Application.Obras.Commands;
 using Cadastro.Domain.Entities;
@@ -13,12 +14,14 @@ namespace Cadastro.UnitTests.Obras;
 public class AtualizarObraCommandHandlerTests
 {
     private readonly Mock<IObraRepository> _repoMock;
+    private readonly Mock<IObraAuditPublisher> _auditMock;
     private readonly AtualizarObraCommandHandler _handler;
 
     public AtualizarObraCommandHandlerTests()
     {
         _repoMock = new Mock<IObraRepository>();
-        _handler = new AtualizarObraCommandHandler(_repoMock.Object);
+        _auditMock = new Mock<IObraAuditPublisher>();
+        _handler = new AtualizarObraCommandHandler(_repoMock.Object, _auditMock.Object);
     }
 
     [Fact]
@@ -33,6 +36,11 @@ public class AtualizarObraCommandHandlerTests
         result.Titulo.Should().Be("Novo");
         _repoMock.Verify(r => r.Update(obra), Times.Once);
         _repoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+        _auditMock.Verify(a => a.PublishAsync(
+            obra,
+            ObraAuditOperation.Update,
+            It.IsAny<IReadOnlyDictionary<string, object?>?>(),
+            It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -46,6 +54,11 @@ public class AtualizarObraCommandHandlerTests
 
         var act = () => _handler.HandleAsync(command, CancellationToken.None);
         await act.Should().ThrowAsync<DepuracaoNecessariaException>();
+        _auditMock.Verify(a => a.PublishAsync(
+            It.IsAny<ObraMusical>(),
+            It.IsAny<ObraAuditOperation>(),
+            It.IsAny<IReadOnlyDictionary<string, object?>?>(),
+            It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
@@ -60,6 +73,11 @@ public class AtualizarObraCommandHandlerTests
 
         result.Genero.Should().Be("Jazz");
         _repoMock.Verify(r => r.Update(obra), Times.Once);
+        _auditMock.Verify(a => a.PublishAsync(
+            obra,
+            ObraAuditOperation.Update,
+            It.IsAny<IReadOnlyDictionary<string, object?>?>(),
+            It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]

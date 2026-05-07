@@ -1,3 +1,4 @@
+using Cadastro.Application.Audit;
 using Cadastro.Application.Common.CQRS;
 using Cadastro.Application.Common.Exceptions;
 using Cadastro.Application.Obras.Queries;
@@ -15,15 +16,18 @@ public class DepurarObraCommandHandler : ICommandHandler<DepurarObraCommand, Dep
     private readonly IObraRepository _repository;
     private readonly ITitularidadeRepository _titularidadeRepository;
     private readonly IOutboxEventWriter _outbox;
+    private readonly IObraAuditPublisher _auditPublisher;
 
     public DepurarObraCommandHandler(
         IObraRepository repository,
         ITitularidadeRepository titularidadeRepository,
-        IOutboxEventWriter outbox)
+        IOutboxEventWriter outbox,
+        IObraAuditPublisher auditPublisher)
     {
         _repository = repository;
         _titularidadeRepository = titularidadeRepository;
         _outbox = outbox;
+        _auditPublisher = auditPublisher;
     }
 
     public async Task<DepuracaoResponse> HandleAsync(DepurarObraCommand request, CancellationToken cancellationToken)
@@ -42,6 +46,7 @@ public class DepurarObraCommandHandler : ICommandHandler<DepurarObraCommand, Dep
 
         // Captura o ISWC original antes da depuração
         var iswcOriginal = obraOriginal.Iswc;
+        var before = _auditPublisher.Snapshot(obraOriginal);
 
         obraOriginal.Depurar(novaObra.Id);
 
@@ -68,6 +73,8 @@ public class DepurarObraCommandHandler : ICommandHandler<DepurarObraCommand, Dep
             novaObraId = novaObra.Id,
         });
 
+        await _auditPublisher.PublishAsync(obraOriginal, ObraAuditOperation.Depurate, before, cancellationToken);
+        await _auditPublisher.PublishAsync(novaObra, ObraAuditOperation.Create, before: null, cancellationToken);
         await _repository.SaveChangesAsync(cancellationToken);
 
         return new DepuracaoResponse(

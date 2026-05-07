@@ -1,4 +1,5 @@
 using Cadastro.Domain.Entities;
+using Cadastro.Infra.Audit;
 using Cadastro.Infra.Data.Configurations;
 using Microsoft.EntityFrameworkCore;
 
@@ -18,6 +19,7 @@ public class CadastroDbContext : DbContext
     public DbSet<ParticipacaoConexa> ParticipacoesConexas => Set<ParticipacaoConexa>();
     public DbSet<HistoricoBloqueio> HistoricoBloqueios => Set<HistoricoBloqueio>();
     public DbSet<OutboxEvent> OutboxEvents => Set<OutboxEvent>();
+    public DbSet<AuditOutboxEvent> AuditOutboxEvents => Set<AuditOutboxEvent>();
 
     public CadastroDbContext(DbContextOptions<CadastroDbContext> options) : base(options)
     {
@@ -37,6 +39,7 @@ public class CadastroDbContext : DbContext
         modelBuilder.ApplyConfiguration(new ParticipacaoConexaConfiguration());
         modelBuilder.ApplyConfiguration(new HistoricoBloqueioConfiguration());
         modelBuilder.ApplyConfiguration(new OutboxEventConfiguration());
+        modelBuilder.ApplyConfiguration(new AuditOutboxEventConfiguration());
 
         base.OnModelCreating(modelBuilder);
     }

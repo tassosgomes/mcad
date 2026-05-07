@@ -1,3 +1,4 @@
+using Cadastro.Application.Audit;
 using Cadastro.Application.Common.CQRS;
 using Cadastro.Application.Common.Exceptions;
 using Cadastro.Domain.Enums;
@@ -10,10 +11,12 @@ public record ExcluirObraCommand(Guid Id) : ICommand<bool>;
 public class ExcluirObraCommandHandler : ICommandHandler<ExcluirObraCommand, bool>
 {
     private readonly IObraRepository _repository;
+    private readonly IObraAuditPublisher _auditPublisher;
 
-    public ExcluirObraCommandHandler(IObraRepository repository)
+    public ExcluirObraCommandHandler(IObraRepository repository, IObraAuditPublisher auditPublisher)
     {
         _repository = repository;
+        _auditPublisher = auditPublisher;
     }
 
     public async Task<bool> HandleAsync(ExcluirObraCommand request, CancellationToken cancellationToken)
@@ -27,7 +30,9 @@ public class ExcluirObraCommandHandler : ICommandHandler<ExcluirObraCommand, boo
         if (await _repository.PossuiVinculosAsync(obra.Id, cancellationToken))
             throw new ConflictException("Obra não pode ser excluída pois possui titularidades autorais vinculadas.");
 
+        var before = _auditPublisher.Snapshot(obra);
         _repository.Delete(obra);
+        await _auditPublisher.PublishAsync(obra, ObraAuditOperation.Delete, before, cancellationToken);
         await _repository.SaveChangesAsync(cancellationToken);
         
         return true;
