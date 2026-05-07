@@ -154,7 +154,10 @@ jobs:
           cache: maven
 
       - name: Run unit tests (skip integration module)
-        run: mvn -B -ntp test -pl '!arrecadacao-tests'
+        env:
+          GITHUB_ACTOR: ${{ github.actor }}
+          GITHUB_TOKEN: ${{ secrets.GH_PACKAGES_READ_TOKEN }}
+        run: mvn -B -ntp -s .mvn/settings.xml test -pl '!arrecadacao-tests'
 
       - name: Upload Surefire reports
         if: always()
@@ -175,6 +178,23 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
+      - name: Generate Maven settings for Docker build
+        if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+        run: |
+          mkdir -p .ci
+          cat > .ci/settings.xml <<'EOF'
+          <?xml version="1.0" encoding="UTF-8"?>
+          <settings xmlns="http://maven.apache.org/SETTINGS/1.0.0">
+            <servers>
+              <server>
+                <id>github</id>
+                <username>${{ github.actor }}</username>
+                <password>${{ secrets.GH_PACKAGES_READ_TOKEN }}</password>
+              </server>
+            </servers>
+          </settings>
+          EOF
+
       - name: Build and push image
         uses: docker/build-push-action@v6
         with:
@@ -186,6 +206,8 @@ jobs:
             ${{ env.DOCKERHUB_NAMESPACE }}/mcad-arrecadacao-api:latest
           cache-from: type=gha,scope=arrecadacao-api
           cache-to: type=gha,mode=max,scope=arrecadacao-api
+          secret-files: |
+            maven_settings=services/arrecadacao-api/.ci/settings.xml
 
   # ---------------------------------------------------------------------------
   # Distribuicao API (Java 21 / Maven)
@@ -212,7 +234,7 @@ jobs:
           cache: maven
 
       - name: Run unit tests (skip *IntegrationTest classes)
-        run: mvn -B -ntp test -Dtest='!*IntegrationTest' -DfailIfNoTests=false
+        run: mvn -B -ntp test -Dtest='!*IntegrationTest' -Dsurefire.failIfNoSpecifiedTests=false
 
       - name: Upload Surefire reports
         if: always()

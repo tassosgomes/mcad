@@ -20,6 +20,7 @@ build.log
 # Java / Maven
 **/target/
 *.class
+**/.ci/
 
 # .NET / Visual Studio
 [Bb]in/
