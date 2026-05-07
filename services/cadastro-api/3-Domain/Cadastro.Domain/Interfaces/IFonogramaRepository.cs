@@ -14,6 +14,7 @@ public interface IFonogramaRepository
     Task<(IEnumerable<Fonograma> Items, int Total)> ListarAsync(FonogramaFiltro filtro, CancellationToken ct);
     Task<IEnumerable<Fonograma>> GetByObraIdAsync(Guid obraId, CancellationToken ct);
     Task<Fonograma?> GetByIdAsync(Guid id, CancellationToken ct);
+    Task<IEnumerable<Fonograma>> GetByIdsAsync(IEnumerable<Guid> ids, CancellationToken ct);
     Task<bool> ExisteIsrcAsync(string isrc, CancellationToken ct);
     Task<bool> ExisteIsrcAsync(string isrc, Guid excludeId, CancellationToken ct);
     Task<Fonograma> AddAsync(Fonograma fonograma, CancellationToken ct);

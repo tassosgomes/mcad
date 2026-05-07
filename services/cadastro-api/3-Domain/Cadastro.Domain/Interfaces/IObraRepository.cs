@@ -7,6 +7,7 @@ public interface IObraRepository
 {
     Task<(IEnumerable<ObraMusical> Items, int Total)> ListarAsync(ObraFiltro filtro, CancellationToken ct);
     Task<ObraMusical?> GetByIdAsync(Guid id, CancellationToken ct);
+    Task<IEnumerable<ObraMusical>> GetByIdsAsync(IEnumerable<Guid> ids, CancellationToken ct);
     Task<bool> ExisteIswcAsync(string iswc, CancellationToken ct);
     Task<bool> ExisteIswcAsync(string iswc, Guid excludeId, CancellationToken ct);
     Task<ObraMusical> AddAsync(ObraMusical obra, CancellationToken ct);

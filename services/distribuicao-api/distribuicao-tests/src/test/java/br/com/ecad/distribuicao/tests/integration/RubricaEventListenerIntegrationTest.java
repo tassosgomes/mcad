@@ -6,12 +6,15 @@ import static org.awaitility.Awaitility.await;
 import br.com.ecad.distribuicao.api.DistribuicaoApiApplication;
 import br.com.ecad.distribuicao.infra.persistence.SpringDataRubricaRepository;
 import java.time.Duration;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.amqp.core.Message;
 import org.springframework.amqp.core.MessageProperties;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.PostgreSQLContainer;
@@ -39,13 +42,22 @@ class RubricaEventListenerIntegrationTest {
     @Container
     static RabbitMQContainer rabbitmq = new RabbitMQContainer("rabbitmq:3.13-management-alpine")
             .withVhost("mcad")
-            .withUser("mcad", "mcad");
+            .withUser("mcad", "mcad")
+            .withPermission("mcad", "mcad", ".*", ".*", ".*");
 
     @Autowired
     private RabbitTemplate rabbitTemplate;
 
     @Autowired
     private SpringDataRubricaRepository springDataRubricaRepository;
+
+    @MockBean
+    private JwtDecoder jwtDecoder;
+
+    @BeforeEach
+    void setUp() {
+        springDataRubricaRepository.deleteAll();
+    }
 
     @DynamicPropertySource
     static void configure(DynamicPropertyRegistry registry) {

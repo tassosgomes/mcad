@@ -38,6 +38,18 @@ public class ProcessoDistribuicao {
     @Column(name = "total_execucoes")
     private Integer totalExecucoes;
 
+    @Column(name = "total_obras")
+    private Integer totalObras;
+
+    @Column(name = "total_pontos", precision = 18, scale = 6)
+    private BigDecimal totalPontos;
+
+    @Column(name = "total_creditos")
+    private Integer totalCreditos;
+
+    @Column(name = "valor_total_calculado", precision = 15, scale = 2)
+    private BigDecimal valorTotalCalculado;
+
     @Column(name = "analista_responsavel", nullable = false, length = 200)
     private String analistaResponsavel;
 
@@ -90,6 +102,19 @@ public class ProcessoDistribuicao {
         this.calculadoEm = Instant.now();
     }
 
+    public void marcarCalculado(
+            int totalExecucoes,
+            int totalObras,
+            BigDecimal totalPontos,
+            int totalCreditos,
+            BigDecimal valorTotalCalculado) {
+        marcarCalculado(totalExecucoes);
+        this.totalObras = totalObras;
+        this.totalPontos = totalPontos;
+        this.totalCreditos = totalCreditos;
+        this.valorTotalCalculado = valorTotalCalculado;
+    }
+
     public void aprovar() {
         validarTransicao(StatusProcesso.CALCULADO, StatusProcesso.APROVADO);
         this.status = StatusProcesso.APROVADO;
@@ -127,6 +152,10 @@ public class ProcessoDistribuicao {
     public StatusProcesso getStatus() { return status; }
     public BigDecimal getVerbaLiquida() { return verbaLiquida; }
     public Integer getTotalExecucoes() { return totalExecucoes; }
+    public Integer getTotalObras() { return totalObras; }
+    public BigDecimal getTotalPontos() { return totalPontos; }
+    public Integer getTotalCreditos() { return totalCreditos; }
+    public BigDecimal getValorTotalCalculado() { return valorTotalCalculado; }
     public String getAnalistaResponsavel() { return analistaResponsavel; }
     public Instant getCriadoEm() { return criadoEm; }
     public Instant getCalculadoEm() { return calculadoEm; }

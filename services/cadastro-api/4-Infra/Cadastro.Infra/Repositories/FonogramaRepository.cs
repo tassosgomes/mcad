@@ -110,6 +110,16 @@ public class FonogramaRepository : IFonogramaRepository
             .FirstOrDefaultAsync(f => f.Id == id, ct);
     }
 
+    public async Task<IEnumerable<Fonograma>> GetByIdsAsync(IEnumerable<Guid> ids, CancellationToken ct)
+    {
+        var idList = ids.ToList();
+        return await _context.Set<Fonograma>()
+            .AsNoTracking()
+            .Where(f => idList.Contains(f.Id))
+            .OrderBy(f => f.Isrc)
+            .ToListAsync(ct);
+    }
+
     public async Task<bool> ExisteIsrcAsync(string isrc, CancellationToken ct)
     {
         var isrcVo = Cadastro.Domain.ValueObjects.Isrc.Create(isrc);

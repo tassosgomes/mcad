@@ -1,5 +1,8 @@
 package br.com.ecad.arrecadacao.application.commands.handlers;
 
+import br.com.ecad.arrecadacao.application.audit.AuditContext;
+import br.com.ecad.arrecadacao.application.audit.AuditContextProvider;
+import br.com.ecad.arrecadacao.application.audit.PagamentoAuditEventFactory;
 import br.com.ecad.arrecadacao.application.commands.RegistrarPagamentoCommand;
 import br.com.ecad.arrecadacao.application.dto.PagamentoResponse;
 import br.com.ecad.arrecadacao.domain.entities.Licenca;
@@ -13,6 +16,7 @@ import br.com.ecad.arrecadacao.domain.interfaces.LicencaRepository;
 import br.com.ecad.arrecadacao.domain.interfaces.OutboxEventWriter;
 import br.com.ecad.arrecadacao.domain.interfaces.PagamentoRepository;
 import br.com.ecad.arrecadacao.domain.interfaces.UdaValorRepository;
+import br.org.ecad.audit.sdk.AuditClient;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -36,6 +40,9 @@ class RegistrarPagamentoCommandHandlerTest {
     @Mock private UdaValorRepository udaValorRepository;
     @Mock private PagamentoRepository pagamentoRepository;
     @Mock private OutboxEventWriter outboxEventWriter;
+    @Mock private AuditClient auditClient;
+    @Mock private PagamentoAuditEventFactory auditEventFactory;
+    @Mock private AuditContextProvider auditContextProvider;
 
     @InjectMocks
     private RegistrarPagamentoCommandHandler handler;
@@ -60,6 +67,7 @@ class RegistrarPagamentoCommandHandlerTest {
         when(pagamentoRepository.existsConfirmadoByLicencaIdAndPeriodo(eq(LICENCA_ID), anyString()))
                 .thenReturn(false);
         when(pagamentoRepository.save(any(Pagamento.class))).thenReturn(pagamentoSalvo);
+        when(auditContextProvider.current("analista")).thenReturn(AuditContext.system("analista"));
 
         RegistrarPagamentoCommand cmd = new RegistrarPagamentoCommand(LICENCA_ID, QUANTIDADE_UDAS, "analista");
 
@@ -77,6 +85,7 @@ class RegistrarPagamentoCommandHandlerTest {
             anyString(),
             any()
         );
+        verify(auditClient, times(2)).publish(any());
     }
 
     @Test
@@ -93,6 +102,7 @@ class RegistrarPagamentoCommandHandlerTest {
         when(udaValorRepository.findVigente(any(LocalDate.class))).thenReturn(Optional.of(udaMock));
         when(pagamentoRepository.existsConfirmadoByLicencaIdAndPeriodo(any(), any())).thenReturn(false);
         when(pagamentoRepository.save(any())).thenReturn(pagamentoSalvo);
+        when(auditContextProvider.current("analista")).thenReturn(AuditContext.system("analista"));
 
         // Act
         PagamentoResponse response = handler.handle(
@@ -101,6 +111,7 @@ class RegistrarPagamentoCommandHandlerTest {
         // Assert
         assertThat(response).isNotNull();
         assertThat(response.status()).isEqualTo("CONFIRMADO");
+        verify(auditClient, times(2)).publish(any());
     }
 
     @Test
@@ -116,6 +127,7 @@ class RegistrarPagamentoCommandHandlerTest {
 
         verify(pagamentoRepository, never()).save(any());
         verify(outboxEventWriter, never()).addEvent(any(), any(), any());
+        verify(auditClient, never()).publish(any());
     }
 
     @Test
@@ -132,6 +144,7 @@ class RegistrarPagamentoCommandHandlerTest {
                 .hasMessageContaining("ENCERRADA");
 
         verify(pagamentoRepository, never()).save(any());
+        verify(auditClient, never()).publish(any());
     }
 
     @Test
@@ -149,6 +162,7 @@ class RegistrarPagamentoCommandHandlerTest {
                 .hasMessageContaining("UDA vigente");
 
         verify(pagamentoRepository, never()).save(any());
+        verify(auditClient, never()).publish(any());
     }
 
     @Test
@@ -171,5 +185,6 @@ class RegistrarPagamentoCommandHandlerTest {
 
         verify(pagamentoRepository, never()).save(any());
         verify(outboxEventWriter, never()).addEvent(any(), any(), any());
+        verify(auditClient, never()).publish(any());
     }
 }

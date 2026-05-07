@@ -1,6 +1,8 @@
 package br.com.ecad.distribuicao.api.config;
 
+import br.com.ecad.distribuicao.domain.exceptions.CadastroIntegrationException;
 import br.com.ecad.distribuicao.domain.exceptions.NotFoundException;
+import br.com.ecad.distribuicao.domain.exceptions.PreRequisitosException;
 import java.net.URI;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
@@ -19,6 +21,26 @@ public class GlobalExceptionHandler {
                 exception.getMessage());
         problemDetail.setTitle("Resource Not Found");
         problemDetail.setType(URI.create("https://tools.ietf.org/html/rfc7231#section-6.5.4"));
+        return problemDetail;
+    }
+
+    @ExceptionHandler(PreRequisitosException.class)
+    ProblemDetail handlePreRequisitos(PreRequisitosException exception) {
+        ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(
+                HttpStatus.UNPROCESSABLE_ENTITY,
+                exception.getMessage());
+        problemDetail.setTitle("Calculation Preconditions Failed");
+        problemDetail.setType(URI.create("https://www.rfc-editor.org/rfc/rfc9457"));
+        return problemDetail;
+    }
+
+    @ExceptionHandler(CadastroIntegrationException.class)
+    ProblemDetail handleCadastroIntegration(CadastroIntegrationException exception) {
+        ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(
+                HttpStatus.SERVICE_UNAVAILABLE,
+                exception.getMessage());
+        problemDetail.setTitle("Cadastro Integration Failure");
+        problemDetail.setType(URI.create("https://www.rfc-editor.org/rfc/rfc9457"));
         return problemDetail;
     }
 

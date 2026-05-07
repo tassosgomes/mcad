@@ -26,6 +26,19 @@ public class ParticipacaoRepository : IParticipacaoRepository
             .ToListAsync(ct);
     }
 
+    public async Task<IEnumerable<ParticipacaoConexa>> GetByFonogramaIdsAsync(IEnumerable<Guid> fonogramaIds, CancellationToken ct)
+    {
+        var fonogramaIdList = fonogramaIds.ToList();
+        return await _context.ParticipacoesConexas
+            .AsNoTracking()
+            .Include(p => p.Titular)
+            .ThenInclude(t => t.Associacao)
+            .Where(p => fonogramaIdList.Contains(p.FonogramaId))
+            .OrderBy(p => p.FonogramaId)
+            .ThenBy(p => p.Titular.Nome)
+            .ToListAsync(ct);
+    }
+
     public async Task<ParticipacaoConexa?> GetByIdAsync(Guid id, CancellationToken ct)
     {
         return await _context.ParticipacoesConexas

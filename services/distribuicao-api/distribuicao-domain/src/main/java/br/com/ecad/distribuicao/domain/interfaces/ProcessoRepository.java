@@ -2,9 +2,7 @@ package br.com.ecad.distribuicao.domain.interfaces;
 
 import br.com.ecad.distribuicao.domain.entities.ProcessoDistribuicao;
 import br.com.ecad.distribuicao.domain.enums.StatusProcesso;
-import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 import java.util.UUID;
 
 public interface ProcessoRepository {

@@ -169,10 +169,15 @@ internal sealed class TestAuthHandler : AuthenticationHandler<AuthenticationSche
         var claims = new List<Claim>
         {
             new(ClaimTypes.Name, username),
-            new("preferred_username", username)
+            new("preferred_username", username),
+            new("scope", "access")
         };
 
         claims.AddRange(roles.Select(role => new Claim(ClaimTypes.Role, role)));
+        if (roles.Contains("analista-cadastro", StringComparer.OrdinalIgnoreCase))
+        {
+            claims.Add(new Claim("scope", "write"));
+        }
 
         var identity = new ClaimsIdentity(claims, SchemeName, ClaimTypes.Name, ClaimTypes.Role);
         var principal = new ClaimsPrincipal(identity);

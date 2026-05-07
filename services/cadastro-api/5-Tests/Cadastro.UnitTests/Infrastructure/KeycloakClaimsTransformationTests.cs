@@ -9,8 +9,8 @@ public class KeycloakClaimsTransformationTests
     [Fact]
     public async Task TransformAsync_WithRealmAccessRoles_AddsRoleClaims()
     {
-        var principal = CreatePrincipal("{\"roles\":[\"consultor\",\"analista-cadastro\"]}");
-        var sut = new KeycloakClaimsTransformation();
+        var principal = CreatePrincipal(["consultor", "analista-cadastro"]);
+        var sut = new LogtoClaimsTransformation();
 
         var result = await sut.TransformAsync(principal);
 
@@ -25,7 +25,7 @@ public class KeycloakClaimsTransformationTests
     {
         var identity = new ClaimsIdentity(authenticationType: "test");
         var principal = new ClaimsPrincipal(identity);
-        var sut = new KeycloakClaimsTransformation();
+        var sut = new LogtoClaimsTransformation();
 
         var result = await sut.TransformAsync(principal);
 
@@ -35,23 +35,21 @@ public class KeycloakClaimsTransformationTests
     [Fact]
     public async Task TransformAsync_WithEmptyRoles_DoesNotAddRoleClaims()
     {
-        var principal = CreatePrincipal("{\"roles\":[]}");
-        var sut = new KeycloakClaimsTransformation();
+        var principal = CreatePrincipal([]);
+        var sut = new LogtoClaimsTransformation();
 
         var result = await sut.TransformAsync(principal);
 
         result.FindAll(ClaimTypes.Role).Should().BeEmpty();
     }
 
-    private static ClaimsPrincipal CreatePrincipal(string realmAccess)
+    private static ClaimsPrincipal CreatePrincipal(IEnumerable<string> roles)
     {
         var identity = new ClaimsIdentity(
-        [
-            new Claim("realm_access", realmAccess)
-        ],
-        authenticationType: "test",
-        nameType: ClaimTypes.Name,
-        roleType: ClaimTypes.Role);
+            roles.Select(role => new Claim("roles", role)),
+            authenticationType: "test",
+            nameType: ClaimTypes.Name,
+            roleType: ClaimTypes.Role);
 
         return new ClaimsPrincipal(identity);
     }

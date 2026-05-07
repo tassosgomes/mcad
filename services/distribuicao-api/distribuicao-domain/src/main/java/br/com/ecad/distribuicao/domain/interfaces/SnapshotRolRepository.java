@@ -5,6 +5,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 public interface SnapshotRolRepository {
+    Optional<SnapshotRol> findById(UUID id);
     Optional<SnapshotRol> findByRubricaSiglaAndPeriodo(String rubricaSigla, String periodo);
     SnapshotRol save(SnapshotRol snapshotRol);
 }

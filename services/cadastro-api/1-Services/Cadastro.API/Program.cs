@@ -194,6 +194,7 @@ app.MapTitularidadeEndpoints();
 app.MapFonogramaEndpoints();
 app.MapParticipacaoEndpoints();
 app.MapBuscaEndpoints();
+app.MapDistribuicaoEndpoints();
 
 // ─── AsyncAPI (documentação de eventos — pública) ─────────────────────
 app.MapAsyncApiDocs();

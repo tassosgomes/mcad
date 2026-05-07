@@ -1,5 +1,9 @@
 package br.com.ecad.arrecadacao.application.commands.handlers;
 
+import br.com.ecad.arrecadacao.application.audit.AuditContextProvider;
+import br.com.ecad.arrecadacao.application.audit.UsuarioMusicaAuditEventFactory.UsuarioMusicaAuditChange;
+import br.com.ecad.arrecadacao.application.audit.UsuarioMusicaAuditEventFactory;
+import br.com.ecad.arrecadacao.application.audit.UsuarioMusicaAuditEventFactory.UsuarioMusicaAuditOperation;
 import br.com.ecad.arrecadacao.application.commands.CriarUsuarioMusicaCommand;
 import br.com.ecad.arrecadacao.application.cqrs.CommandHandler;
 import br.com.ecad.arrecadacao.application.dto.ContatoResponse;
@@ -14,6 +18,7 @@ import br.com.ecad.arrecadacao.domain.interfaces.UsuarioMusicaRepository;
 import br.com.ecad.arrecadacao.domain.valueobjects.Cnpj;
 import br.com.ecad.arrecadacao.domain.valueobjects.Contato;
 import br.com.ecad.arrecadacao.domain.valueobjects.Endereco;
+import br.org.ecad.audit.sdk.AuditClient;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,10 +27,20 @@ public class CriarUsuarioMusicaCommandHandler implements CommandHandler<CriarUsu
 
     private final UsuarioMusicaRepository repository;
     private final HistoricoStatusUsuarioRepository historicoRepository;
+    private final AuditClient auditClient;
+    private final UsuarioMusicaAuditEventFactory auditEventFactory;
+    private final AuditContextProvider auditContextProvider;
 
-    public CriarUsuarioMusicaCommandHandler(UsuarioMusicaRepository repository, HistoricoStatusUsuarioRepository historicoRepository) {
+    public CriarUsuarioMusicaCommandHandler(UsuarioMusicaRepository repository,
+                                            HistoricoStatusUsuarioRepository historicoRepository,
+                                            AuditClient auditClient,
+                                            UsuarioMusicaAuditEventFactory auditEventFactory,
+                                            AuditContextProvider auditContextProvider) {
         this.repository = repository;
         this.historicoRepository = historicoRepository;
+        this.auditClient = auditClient;
+        this.auditEventFactory = auditEventFactory;
+        this.auditContextProvider = auditContextProvider;
     }
 
     @Override
@@ -53,6 +68,11 @@ public class CriarUsuarioMusicaCommandHandler implements CommandHandler<CriarUsu
         HistoricoStatusUsuario historico = HistoricoStatusUsuario.criar(
                 saved.getId(), null, StatusUsuarioMusica.ATIVO, "Cadastro inicial", cmd.autor());
         historicoRepository.save(historico);
+
+        var auditContext = auditContextProvider.current(cmd.autor());
+        auditClient.publish(auditEventFactory.userAction(saved, auditContext, UsuarioMusicaAuditOperation.CREATE));
+        auditClient.publish(auditEventFactory.dataChange(
+                new UsuarioMusicaAuditChange(saved, UsuarioMusicaAuditOperation.CREATE, null), auditContext));
 
         return mapToResponse(saved);
     }

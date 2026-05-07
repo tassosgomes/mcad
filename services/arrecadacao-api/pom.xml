@@ -22,6 +22,7 @@
         <java.version>21</java.version>
         <spring-boot.version>3.3.5</spring-boot.version>
         <cloudevents.version>3.0.0</cloudevents.version>
+        <audit-sdk.version>0.1.0</audit-sdk.version>
         <testcontainers.version>1.20.6</testcontainers.version>
         <maven.compiler.release>${java.version}</maven.compiler.release>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -45,6 +46,19 @@
             </dependency>
         </dependencies>
     </dependencyManagement>
+
+    <repositories>
+        <repository>
+            <id>github</id>
+            <url>https://maven.pkg.github.com/tassosgomes/ecad-auditoria</url>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+        </repository>
+    </repositories>
 
     <build>
         <pluginManagement>

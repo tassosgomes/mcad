@@ -87,6 +87,16 @@ public class ObraRepository : IObraRepository
             .FirstOrDefaultAsync(o => o.Id == id, ct);
     }
 
+    public async Task<IEnumerable<ObraMusical>> GetByIdsAsync(IEnumerable<Guid> ids, CancellationToken ct)
+    {
+        var idList = ids.ToList();
+        return await _context.ObrasMusicais
+            .AsNoTracking()
+            .Where(o => idList.Contains(o.Id))
+            .OrderBy(o => o.Titulo)
+            .ToListAsync(ct);
+    }
+
     public async Task<bool> ExisteIswcAsync(string iswc, CancellationToken ct)
     {
         return await _context.ObrasMusicais

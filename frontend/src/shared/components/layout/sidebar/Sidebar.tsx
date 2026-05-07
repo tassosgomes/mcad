@@ -36,6 +36,7 @@ const navigation = [
     disabled: false, 
     requiredRoles: ['analista-arrecadacao', 'consultor-arrecadacao'],
     children: [
+      { label: 'Usuários de Música', path: '/arrecadacao/usuarios-musica' },
       { label: 'Licenças', path: '/arrecadacao/licencas' },
       { label: 'Pagamentos', path: '/arrecadacao/pagamentos' },
       { label: 'UDA', path: '/arrecadacao/uda' },

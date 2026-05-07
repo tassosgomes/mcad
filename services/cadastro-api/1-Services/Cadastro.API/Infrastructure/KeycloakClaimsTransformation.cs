@@ -23,7 +23,7 @@ public sealed class LogtoClaimsTransformation : IClaimsTransformation
             principal.FindAll(identity.RoleClaimType).Select(c => c.Value),
             StringComparer.OrdinalIgnoreCase);
 
-        foreach (var roleClaim in principal.FindAll("roles"))
+        foreach (var roleClaim in principal.FindAll("roles").ToList())
         {
             var role = roleClaim.Value;
             if (!string.IsNullOrWhiteSpace(role) && existingRoles.Add(role))

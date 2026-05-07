@@ -37,3 +37,20 @@ export async function apiGetDist<T>(path: string): Promise<T> {
   if (!response.ok) return handleError(response, path);
   return response.json() as Promise<T>;
 }
+
+export async function apiPostDist<T>(path: string, body?: unknown): Promise<T> {
+  const headers = new Headers();
+  const init: RequestInit = {
+    method: 'POST',
+    headers,
+  };
+
+  if (body !== undefined) {
+    headers.set('Content-Type', 'application/json');
+    init.body = JSON.stringify(body);
+  }
+
+  const response = await fetchWithAuth(`${BASE_URL}${path}`, init);
+  if (!response.ok) return handleError(response, path);
+  return response.json() as Promise<T>;
+}

@@ -43,7 +43,7 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info
+        include: health,info,metrics
   endpoint:
     health:
       show-details: when-authorized
@@ -60,3 +60,10 @@ app:
       rubrica-atualizada: arrecadacao.rubrica.atualizada
   security:
     auth-enabled: ${AUTH_ENABLED:false}
+  integrations:
+    cadastro:
+      base-url: ${CADASTRO_BASE_URL:http://localhost:5001}
+      token-strategy: ${CADASTRO_TOKEN_STRATEGY:ANALYST_OR_SERVICE}
+      service-token: ${CADASTRO_SERVICE_TOKEN:}
+      connect-timeout: ${CADASTRO_CONNECT_TIMEOUT:2s}
+      read-timeout: ${CADASTRO_READ_TIMEOUT:10s}

@@ -25,6 +25,18 @@ public class TitularidadeRepository : ITitularidadeRepository
             .ToListAsync(ct);
     }
 
+    public async Task<IEnumerable<TitularidadeAutoral>> GetByObraIdsAsync(IEnumerable<Guid> obraIds, CancellationToken ct)
+    {
+        var obraIdList = obraIds.ToList();
+        return await _context.TitularidadesAutorais
+            .AsNoTracking()
+            .Include(t => t.Titular)
+            .ThenInclude(t => t.Associacao)
+            .Where(t => obraIdList.Contains(t.ObraId))
+            .OrderBy(t => t.Titular.Nome)
+            .ToListAsync(ct);
+    }
+
     public async Task<TitularidadeAutoral?> GetByIdAsync(Guid id, CancellationToken ct)
     {
         return await _context.TitularidadesAutorais

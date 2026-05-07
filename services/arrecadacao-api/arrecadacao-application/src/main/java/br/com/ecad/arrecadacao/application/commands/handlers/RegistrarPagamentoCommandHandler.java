@@ -1,5 +1,7 @@
 package br.com.ecad.arrecadacao.application.commands.handlers;
 
+import br.com.ecad.arrecadacao.application.audit.AuditContextProvider;
+import br.com.ecad.arrecadacao.application.audit.PagamentoAuditEventFactory;
 import br.com.ecad.arrecadacao.application.commands.RegistrarPagamentoCommand;
 import br.com.ecad.arrecadacao.application.cqrs.CommandHandler;
 import br.com.ecad.arrecadacao.application.dto.LicencaResumoResponse;
@@ -17,6 +19,7 @@ import br.com.ecad.arrecadacao.domain.interfaces.LicencaRepository;
 import br.com.ecad.arrecadacao.domain.interfaces.OutboxEventWriter;
 import br.com.ecad.arrecadacao.domain.interfaces.PagamentoRepository;
 import br.com.ecad.arrecadacao.domain.interfaces.UdaValorRepository;
+import br.org.ecad.audit.sdk.AuditClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -37,15 +40,24 @@ public class RegistrarPagamentoCommandHandler
     private final UdaValorRepository udaValorRepository;
     private final PagamentoRepository pagamentoRepository;
     private final OutboxEventWriter outboxEventWriter;
+    private final AuditClient auditClient;
+    private final PagamentoAuditEventFactory auditEventFactory;
+    private final AuditContextProvider auditContextProvider;
 
     public RegistrarPagamentoCommandHandler(LicencaRepository licencaRepository,
                                             UdaValorRepository udaValorRepository,
                                             PagamentoRepository pagamentoRepository,
-                                            OutboxEventWriter outboxEventWriter) {
+                                            OutboxEventWriter outboxEventWriter,
+                                            AuditClient auditClient,
+                                            PagamentoAuditEventFactory auditEventFactory,
+                                            AuditContextProvider auditContextProvider) {
         this.licencaRepository = licencaRepository;
         this.udaValorRepository = udaValorRepository;
         this.pagamentoRepository = pagamentoRepository;
         this.outboxEventWriter = outboxEventWriter;
+        this.auditClient = auditClient;
+        this.auditEventFactory = auditEventFactory;
+        this.auditContextProvider = auditContextProvider;
     }
 
     @Override
@@ -90,6 +102,10 @@ public class RegistrarPagamentoCommandHandler
             "arrecadacao.pagamento.registrado",
             pagamento.getId().toString(),
             buildEventPayload(pagamento));
+
+        var auditContext = auditContextProvider.current(cmd.autor());
+        auditClient.publish(auditEventFactory.userAction(pagamento, auditContext));
+        auditClient.publish(auditEventFactory.dataChange(pagamento, auditContext));
 
         // 8. Mapear para response com licenca expandida
         return toResponse(pagamento, licenca);

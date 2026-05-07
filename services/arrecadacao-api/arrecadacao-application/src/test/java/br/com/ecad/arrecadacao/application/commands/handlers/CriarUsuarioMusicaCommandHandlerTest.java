@@ -1,5 +1,8 @@
 package br.com.ecad.arrecadacao.application.commands.handlers;
 
+import br.com.ecad.arrecadacao.application.audit.AuditContext;
+import br.com.ecad.arrecadacao.application.audit.AuditContextProvider;
+import br.com.ecad.arrecadacao.application.audit.UsuarioMusicaAuditEventFactory;
 import br.com.ecad.arrecadacao.application.commands.CriarUsuarioMusicaCommand;
 import br.com.ecad.arrecadacao.application.dto.ContatoRequest;
 import br.com.ecad.arrecadacao.application.dto.EnderecoRequest;
@@ -7,6 +10,7 @@ import br.com.ecad.arrecadacao.application.dto.UsuarioMusicaResponse;
 import br.com.ecad.arrecadacao.domain.exceptions.CnpjDuplicadoException;
 import br.com.ecad.arrecadacao.domain.interfaces.HistoricoStatusUsuarioRepository;
 import br.com.ecad.arrecadacao.domain.interfaces.UsuarioMusicaRepository;
+import br.org.ecad.audit.sdk.AuditClient;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -27,6 +31,15 @@ class CriarUsuarioMusicaCommandHandlerTest {
     @Mock
     private HistoricoStatusUsuarioRepository historicoRepository;
 
+    @Mock
+    private AuditClient auditClient;
+
+    @Mock
+    private UsuarioMusicaAuditEventFactory auditEventFactory;
+
+    @Mock
+    private AuditContextProvider auditContextProvider;
+
     @InjectMocks
     private CriarUsuarioMusicaCommandHandler handler;
 
@@ -39,11 +52,13 @@ class CriarUsuarioMusicaCommandHandlerTest {
         );
         when(repository.existsByCnpj(any())).thenReturn(false);
         when(repository.save(any())).thenAnswer(i -> i.getArguments()[0]);
+        when(auditContextProvider.current("autor")).thenReturn(AuditContext.system("autor"));
 
         UsuarioMusicaResponse resp = handler.handle(command);
         assertThat(resp.status()).isEqualTo("ATIVO");
         verify(repository).save(any());
         verify(historicoRepository).save(any());
+        verify(auditClient, times(2)).publish(any());
     }
 
     @Test
@@ -55,5 +70,6 @@ class CriarUsuarioMusicaCommandHandlerTest {
 
         assertThatThrownBy(() -> handler.handle(command))
                 .isInstanceOf(CnpjDuplicadoException.class);
+        verify(auditClient, never()).publish(any());
     }
 }
