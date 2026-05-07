@@ -1,0 +1,97 @@
+{
+  "session": {
+    "created_at": "2026-04-10T00:00:00Z",
+    "prd_path": "tasks/cadastro/prd-titularidades-autorais/prd.md",
+    "techspec_path": "tasks/cadastro/prd-titularidades-autorais/techspec.md"
+  },
+  "scope": {
+    "user_stories_in_scope": [
+      { "task_id": "qa_task_01", "slug": "adicionar-titular", "description": "HU-01 Adicionar titular autoral a uma obra" },
+      { "task_id": "qa_task_02", "slug": "soma-percentuais", "description": "HU-02 Visualizar soma dos percentuais" },
+      { "task_id": "qa_task_03", "slug": "editar-percentual", "description": "HU-03 Editar percentual de uma titularidade" },
+      { "task_id": "qa_task_04", "slug": "remover-titularidade", "description": "HU-04 Remover titular autoral de uma obra" },
+      { "task_id": "qa_task_05", "slug": "depuracao-liberada", "description": "HU-05 Depuração ao alterar titulares de obra LIBERADA" }
+    ],
+    "excluded": []
+  },
+  "environment": {
+    "base_url": "http://localhost:5001/api/v1",
+    "auth": {
+      "enabled": true,
+      "type": "bearer",
+      "token_endpoint": "https://keycloak.tasso.dev.br/realms/mcad/protocol/openid-connect/token",
+      "client_id": "mcad-cli",
+      "grant_type": "password",
+      "credentials_env": {
+        "analista_username_var": "QA_ANALISTA_USERNAME",
+        "analista_password_var": "QA_ANALISTA_PASSWORD",
+        "consultor_username_var": "QA_CONSULTOR_USERNAME",
+        "consultor_password_var": "QA_CONSULTOR_PASSWORD"
+      }
+    }
+  },
+  "database": {
+    "enabled": true,
+    "type": "postgresql",
+    "host": "db.tasso.dev.br",
+    "port": 5432,
+    "database": "mcad",
+    "user": "gestauto",
+    "schema": "cadastro",
+    "tables": ["titularidades_autorais", "obras_musicais", "titulares"],
+    "connection_string_env": "QA_DB_CONNECTION_STRING"
+  },
+  "report": {
+    "formats": ["markdown"],
+    "output_dir": "tasks/cadastro/prd-titularidades-autorais/qa-evidence"
+  },
+  "execution": {
+    "tasks": [
+      {
+        "id": "qa_task_01",
+        "slug": "adicionar-titular",
+        "description": "HU-01 Adicionar titular autoral a uma obra",
+        "type": ["api", "db"],
+        "depends_on": [],
+        "can_run_parallel_with": ["qa_task_02"]
+      },
+      {
+        "id": "qa_task_02",
+        "slug": "soma-percentuais",
+        "description": "HU-02 Visualizar soma dos percentuais",
+        "type": ["api", "db"],
+        "depends_on": [],
+        "can_run_parallel_with": ["qa_task_01"]
+      },
+      {
+        "id": "qa_task_03",
+        "slug": "editar-percentual",
+        "description": "HU-03 Editar percentual de uma titularidade",
+        "type": ["api", "db"],
+        "depends_on": ["qa_task_01"],
+        "can_run_parallel_with": ["qa_task_04"]
+      },
+      {
+        "id": "qa_task_04",
+        "slug": "remover-titularidade",
+        "description": "HU-04 Remover titular autoral de uma obra",
+        "type": ["api", "db"],
+        "depends_on": ["qa_task_01"],
+        "can_run_parallel_with": ["qa_task_03"]
+      },
+      {
+        "id": "qa_task_05",
+        "slug": "depuracao-liberada",
+        "description": "HU-05 Depuração ao alterar titulares de obra LIBERADA",
+        "type": ["api", "db"],
+        "depends_on": ["qa_task_01", "qa_task_02", "qa_task_03", "qa_task_04"],
+        "can_run_parallel_with": []
+      }
+    ],
+    "phases": [
+      { "phase": 1, "mode": "parallel", "tasks": ["qa_task_01", "qa_task_02"] },
+      { "phase": 2, "mode": "parallel", "tasks": ["qa_task_03", "qa_task_04"] },
+      { "phase": 3, "mode": "sequential", "tasks": ["qa_task_05"] }
+    ]
+  }
+}

@@ -28,7 +28,7 @@ public class AtualizarFonogramaCommandHandlerTests
         var propObra = typeof(Fonograma).GetProperty("Obra");
         propObra?.SetValue(fonograma, obra);
 
-        var command = new AtualizarFonogramaCommand(fonograma.Id, "USXYZ2300002", "USA", null, null);
+        var command = new AtualizarFonogramaCommand(fonograma.Id, "USXYZ2300002", "USA", null, null, "https://cdn.example.com/audio.mp3");
         
         _repoMock.Setup(repo => repo.GetByIdAsync(fonograma.Id, default)).ReturnsAsync(fonograma);
         _repoMock.Setup(repo => repo.ExisteIsrcAsync("USXYZ2300002", fonograma.Id, default)).ReturnsAsync(false);
@@ -37,6 +37,7 @@ public class AtualizarFonogramaCommandHandlerTests
 
         result.Should().NotBeNull();
         result.Isrc.Should().Be("USXYZ2300002");
+        result.UrlAudio.Should().Be("https://cdn.example.com/audio.mp3");
         _repoMock.Verify(repo => repo.Update(It.IsAny<Fonograma>()), Times.Once);
         _repoMock.Verify(repo => repo.SaveChangesAsync(default), Times.Once);
     }

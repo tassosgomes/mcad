@@ -1,0 +1,98 @@
+{
+  "session": {
+    "created_at": "2026-04-10T00:00:00Z",
+    "prd_path": "tasks/cadastro/prd-gestao-fonogramas/prd.md",
+    "techspec_path": "tasks/cadastro/prd-gestao-fonogramas/techspec.md"
+  },
+  "scope": {
+    "user_stories_in_scope": [
+      { "task_id": "qa_task_01", "slug": "criar-fonograma", "description": "HU-01 — Criar fonograma vinculado a uma obra" },
+      { "task_id": "qa_task_02", "slug": "listar-fonogramas", "description": "HU-02 — Listar fonogramas do sistema com paginacao e filtros" },
+      { "task_id": "qa_task_03", "slug": "fonogramas-na-obra", "description": "HU-03 — Ver fonogramas de uma obra" },
+      { "task_id": "qa_task_04", "slug": "editar-fonograma", "description": "HU-04 — Editar dados do fonograma e exclusao" },
+      { "task_id": "qa_task_05", "slug": "depuracao-isrc", "description": "HU-05 — Depuracao ao alterar ISRC em fonograma LIBERADO" }
+    ],
+    "excluded": []
+  },
+  "environment": {
+    "base_url": "http://localhost:5001/api/v1",
+    "auth": {
+      "enabled": true,
+      "type": "bearer",
+      "token_endpoint": "https://keycloak.tasso.dev.br/realms/mcad/protocol/openid-connect/token",
+      "credentials_env": {
+        "analista_username_var": "QA_ANALISTA_USERNAME",
+        "analista_password_var": "QA_ANALISTA_PASSWORD",
+        "consultor_username_var": "QA_CONSULTOR_USERNAME",
+        "consultor_password_var": "QA_CONSULTOR_PASSWORD"
+      }
+    }
+  },
+  "database": {
+    "enabled": true,
+    "type": "postgresql",
+    "connection_string_env": "QA_DB_CONNECTION_STRING",
+    "host": "db.tasso.dev.br",
+    "port": 5432,
+    "database": "mcad",
+    "schema": "cadastro",
+    "tables": {
+      "fonogramas": "cadastro.fonogramas",
+      "obras": "cadastro.obras_musicais"
+    }
+  },
+  "report": {
+    "formats": ["markdown", "pdf"],
+    "output_dir": "tasks/cadastro/prd-gestao-fonogramas/qa-evidence"
+  },
+  "execution": {
+    "tasks": [
+      {
+        "id": "qa_task_01",
+        "slug": "criar-fonograma",
+        "description": "HU-01 — Criar fonograma vinculado a uma obra",
+        "type": ["api", "db"],
+        "depends_on": [],
+        "can_run_parallel_with": []
+      },
+      {
+        "id": "qa_task_02",
+        "slug": "listar-fonogramas",
+        "description": "HU-02 — Listar fonogramas do sistema",
+        "type": ["api"],
+        "depends_on": ["qa_task_01"],
+        "can_run_parallel_with": ["qa_task_03"]
+      },
+      {
+        "id": "qa_task_03",
+        "slug": "fonogramas-na-obra",
+        "description": "HU-03 — Ver fonogramas de uma obra",
+        "type": ["api"],
+        "depends_on": ["qa_task_01"],
+        "can_run_parallel_with": ["qa_task_02"]
+      },
+      {
+        "id": "qa_task_04",
+        "slug": "editar-fonograma",
+        "description": "HU-04 — Editar dados do fonograma e exclusao",
+        "type": ["api", "db"],
+        "depends_on": ["qa_task_02", "qa_task_03"],
+        "can_run_parallel_with": []
+      },
+      {
+        "id": "qa_task_05",
+        "slug": "depuracao-isrc",
+        "description": "HU-05 — Depuracao ao alterar ISRC em fonograma LIBERADO",
+        "type": ["api", "db"],
+        "depends_on": ["qa_task_04"],
+        "can_run_parallel_with": []
+      }
+    ],
+    "phases": [
+      { "phase": 1, "mode": "sequential", "tasks": ["qa_task_01"] },
+      { "phase": 2, "mode": "parallel",   "tasks": ["qa_task_02", "qa_task_03"] },
+      { "phase": 3, "mode": "sequential", "tasks": ["qa_task_04"] },
+      { "phase": 4, "mode": "sequential", "tasks": ["qa_task_05"] }
+    ]
+  }
+}

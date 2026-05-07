@@ -14,7 +14,7 @@ public record ListarFonogramasQuery(
     string? Isrc = null,
     Guid? ObraId = null,
     string? ObraTitulo = null,
-    StatusFonograma? Status = null,
+    string? Status = null,
     string? Pais = null
 ) : IQuery<FonogramaListResponse>;
 
@@ -29,6 +29,16 @@ public class ListarFonogramasHandler : IQueryHandler<ListarFonogramasQuery, Fono
 
     public async Task<FonogramaListResponse> HandleAsync(ListarFonogramasQuery query, CancellationToken cancellationToken)
     {
+        var statusParsed = query.Status?.ToUpperInvariant() switch
+        {
+            "PENDENTE_VALIDACAO"    => (StatusFonograma?)StatusFonograma.PendenteValidacao,
+            "PENDENTE_DOCUMENTACAO" => StatusFonograma.PendenteDocumentacao,
+            "LIBERADO"              => StatusFonograma.Liberado,
+            "BLOQUEADO"             => StatusFonograma.Bloqueado,
+            "DEPURADO"              => StatusFonograma.Depurado,
+            _                       => (StatusFonograma?)null
+        };
+
         var filtro = new FonogramaFiltro(
             query.Page,
             query.Size,
@@ -37,7 +47,7 @@ public class ListarFonogramasHandler : IQueryHandler<ListarFonogramasQuery, Fono
             query.Isrc,
             query.ObraId,
             query.ObraTitulo,
-            query.Status,
+            statusParsed,
             query.Pais
         );
 
@@ -62,7 +72,9 @@ public class ListarFonogramasHandler : IQueryHandler<ListarFonogramasQuery, Fono
                 fStatus,
                 f.FonogramaDepuradoParaId,
                 f.CriadoEm,
-                f.AtualizadoEm
+                f.AtualizadoEm,
+                f.UrlAudio,
+                f.BloqueioJustificativa
             );
         });
 

@@ -1,0 +1,2108 @@
+-- POCGG.FONOGRAMA definição
+
+CREATE TABLE "POCGG"."FONOGRAMA" 
+   (	"COD_FONOGRAMA" NUMBER(9,0) NOT NULL DISABLE, 
+	"COD_OBRAMUSECAD" NUMBER(13,0), 
+	"TIP_SITUACAOFONO" CHAR(1) DEFAULT 'P' NOT NULL DISABLE, 
+	"IND_BLOQUEADA" CHAR(1) DEFAULT 'N' NOT NULL DISABLE, 
+	"IND_SUBSTITUIDOTAPE" CHAR(1) DEFAULT 'N' NOT NULL DISABLE, 
+	"COD_GRA" CHAR(8), 
+	"COD_ISRC" VARCHAR2(12), 
+	"DAT_CADASTROFONO" DATE, 
+	"DAT_GRAVORIG" DATE, 
+	"DAT_LANCAMENTO" DATE, 
+	"DAT_EMISSAOGRA" DATE, 
+	"IND_INSTRUMENTAL" CHAR(1), 
+	"TMP_DURACAO" DATE, 
+	"COD_CROWLEY" VARCHAR2(12), 
+	"IND_NACIONAL" CHAR(1) DEFAULT 'S', 
+	"SGL_PAIS" CHAR(2), 
+	"DAT_IDFONOGRAMA" DATE, 
+	"COD_GENEROMUSICAL" CHAR(10), 
+	"COD_TIPOFONOGRAMA" NUMBER(3,0), 
+	"COD_COLETIVO" NUMBER(10,0), 
+	"COD_SELO" NUMBER(6,0), 
+	"COD_FONOGRAMAIDENT" NUMBER(9,0), 
+	"DAT_ATUALIZACAO" DATE NOT NULL DISABLE, 
+	"COD_POUT_POURRIT" NUMBER(9,0), 
+	"COD_LETRA" NUMBER(10,0), 
+	"PCT_PARTICIPACAOPF" NUMBER(10,8), 
+	"PCT_PARTICIPACAOI" NUMBER(10,8), 
+	"PCT_PARTICIPACAOMA" NUMBER(10,8), 
+	"DSC_OBSERVACAO" VARCHAR2(3000), 
+	"NOMLOGIN" VARCHAR2(30), 
+	"RESP_FONO_PEND" VARCHAR2(10), 
+	"COD_TIPOBLOQUEIO" NUMBER(4,0), 
+	"COD_SOCIEDADE" NUMBER(7,0), 
+	"SGL_PAISPUBLICACAO" CHAR(2), 
+	"IND_ROTULO" CHAR(1), 
+	"COD_TIPMIDIA" NUMBER, 
+	"DSC_CORRESPONDENCIA" VARCHAR2(50), 
+	"IND_PUBLSIMULT" CHAR(1) DEFAULT 'N' NOT NULL DISABLE, 
+	"IND_ANALISE" CHAR(1) DEFAULT 'N', 
+	"DAT_ANALISE" DATE, 
+	"DAT_DOCUMENTACAO" DATE, 
+	"IND_DOMINIOPUBLICO" CHAR(1) DEFAULT 'N', 
+	"IND_ROTULOCOMMUSICO" CHAR(1), 
+	"COD_MOTIVOPENDENCIA" NUMBER, 
+	"COD_ARRANJO" NUMBER, 
+	"COD_PACOTE" NUMBER, 
+	"DSC_COMPLEMENTO_ARRANJO" VARCHAR2(50), 
+	"IND_TEMAUDIO" CHAR(1) DEFAULT 'N' NOT NULL DISABLE, 
+	"DAT_AUDIO" DATE, 
+	"COD_SUPORTE_MIDIA" NUMBER, 
+	"COD_AGREGADORA" NUMBER, 
+	"IND_IAG" CHAR(1) DEFAULT 'N', 
+	"DELTA" DATE DEFAULT SYSDATE, 
+	 CONSTRAINT "CKC_TP_SITFONO_FONO" CHECK (TIP_SITUACAOFONO IN ('L','P','V','D','R','I')) DISABLE, 
+	 CHECK (IND_DOMINIOPUBLICO IN('N','S')) DISABLE, 
+	 CONSTRAINT "CKC_IND_ROTULO" CHECK (IND_ROTULO IN ('S','N')) DISABLE, 
+	 CONSTRAINT "CKC_IND_BLOQUEADA_FONOGRAM" CHECK (             IND_BLOQUEADA in ('S','N')) DISABLE, 
+	 CONSTRAINT "CKC_IND_SUBSTITUIDOTA_FONOGRAM" CHECK (             IND_SUBSTITUIDOTAPE in ('S','N')) DISABLE, 
+	 CONSTRAINT "CKC_IND_INSTRUMENTAL_FONOGRAM" CHECK (             IND_INSTRUMENTAL is null or (IND_INSTRUMENTAL in ('S','N'))) DISABLE, 
+	 CONSTRAINT "PK_FONOGRAMA" PRIMARY KEY ("COD_FONOGRAMA")
+  USING INDEX PCTFREE 20 INITRANS 2 MAXTRANS 255 COMPUTE STATISTICS 
+  STORAGE(INITIAL 74448896 NEXT 134217728 MINEXTENTS 1 MAXEXTENTS 2147483645
+  PCTINCREASE 0 FREELISTS 1 FREELIST GROUPS 1
+  BUFFER_POOL DEFAULT FLASH_CACHE DEFAULT CELL_FLASH_CACHE DEFAULT)
+  TABLESPACE "TBS_POCGG"  ENABLE, 
+	 CONSTRAINT "CHK_FONOGRAMA_IND_PUBLSIMULT" CHECK (IND_PUBLSIMULT IN ('S','N')) DISABLE, 
+	 CONSTRAINT "CKC_IND_NACIONAL_FONOGRAM" CHECK (             IND_NACIONAL is null or (IND_NACIONAL in ('S','N'))) DISABLE, 
+	 CHECK (IND_ANALISE IN('N','S')) DISABLE, 
+	 SUPPLEMENTAL LOG DATA (FOREIGN KEY) COLUMNS, 
+	 SUPPLEMENTAL LOG DATA (UNIQUE INDEX) COLUMNS, 
+	 SUPPLEMENTAL LOG DATA (PRIMARY KEY) COLUMNS, 
+	 SUPPLEMENTAL LOG GROUP "GGS_108072" ("COD_FONOGRAMA") ALWAYS
+   ) SEGMENT CREATION IMMEDIATE 
+  PCTFREE 20 PCTUSED 70 INITRANS 1 MAXTRANS 255 
+ NOCOMPRESS LOGGING
+  STORAGE(INITIAL 108003328 NEXT 268435456 MINEXTENTS 1 MAXEXTENTS 2147483645
+  PCTINCREASE 0 FREELISTS 1 FREELIST GROUPS 1
+  BUFFER_POOL DEFAULT FLASH_CACHE DEFAULT CELL_FLASH_CACHE DEFAULT)
+  TABLESPACE "TBS_POCGG"  ENABLE ROW MOVEMENT ;
+
+CREATE OR REPLACE EDITIONABLE TRIGGER "POCGG"."TRG_AUD_FONOGRAMA" 
+AFTER INSERT OR UPDATE OR DELETE
+ON POCGG.FONOGRAMA
+FOR EACH ROW
+BEGIN
+DECLARE
+    v_tipo_operacao VARCHAR2(10);
+    v_chave_primaria VARCHAR2(4000);
+    v_dados_antigos CLOB;
+    v_dados_novos CLOB;
+BEGIN
+    -- Determina tipo de operação
+    IF INSERTING THEN
+        v_tipo_operacao := 'INSERT';
+        v_chave_primaria := 'COD_FONOGRAMA=' || :NEW.COD_FONOGRAMA;
+        v_dados_antigos := NULL;
+        v_dados_novos := '{' ||
+    '"COD_FONOGRAMA"' || ':' || NVL(TO_CHAR(:NEW.COD_FONOGRAMA), 'null') || ',' ||
+    '"COD_OBRAMUSECAD"' || ':' || NVL(TO_CHAR(:NEW.COD_OBRAMUSECAD), 'null') || ',' ||
+    '"TIP_SITUACAOFONO"' || ':' || '"'  || REPLACE(:NEW.TIP_SITUACAOFONO, '"', '\"') || '"' || ',' ||
+    '"IND_BLOQUEADA"' || ':' || '"'  || REPLACE(:NEW.IND_BLOQUEADA, '"', '\"') || '"' || ',' ||
+    '"IND_SUBSTITUIDOTAPE"' || ':' || '"'  || REPLACE(:NEW.IND_SUBSTITUIDOTAPE, '"', '\"') || '"' || ',' ||
+    '"COD_GRA"' || ':' || '"'  || REPLACE(:NEW.COD_GRA, '"', '\"') || '"' || ',' ||
+    '"COD_ISRC"' || ':' || '"'  || REPLACE(:NEW.COD_ISRC, '"', '\"') || '"' || ',' ||
+    '"DAT_CADASTROFONO"' || ':' || '"'  || TO_CHAR(:NEW.DAT_CADASTROFONO, 'YYYY-MM-DD HH24:MI:SS') || '"' || ',' ||
+    '"DAT_GRAVORIG"' || ':' || '"'  || TO_CHAR(:NEW.DAT_GRAVORIG, 'YYYY-MM-DD HH24:MI:SS') || '"' || ',' ||
+    '"DAT_LANCAMENTO"' || ':' || '"'  || TO_CHAR(:NEW.DAT_LANCAMENTO, 'YYYY-MM-DD HH24:MI:SS') || '"' || ',' ||
+    '"DAT_EMISSAOGRA"' || ':' || '"'  || TO_CHAR(:NEW.DAT_EMISSAOGRA, 'YYYY-MM-DD HH24:MI:SS') || '"' || ',' ||
+    '"IND_INSTRUMENTAL"' || ':' || '"'  || REPLACE(:NEW.IND_INSTRUMENTAL, '"', '\"') || '"' || ',' ||
+    '"TMP_DURACAO"' || ':' || '"'  || TO_CHAR(:NEW.TMP_DURACAO, 'YYYY-MM-DD HH24:MI:SS') || '"' || ',' ||
+    '"COD_CROWLEY"' || ':' || '"'  || REPLACE(:NEW.COD_CROWLEY, '"', '\"') || '"' || ',' ||
+    '"IND_NACIONAL"' || ':' || '"'  || REPLACE(:NEW.IND_NACIONAL, '"', '\"') || '"' || ',' ||
+    '"SGL_PAIS"' || ':' || '"'  || REPLACE(:NEW.SGL_PAIS, '"', '\"') || '"' || ',' ||
+    '"DAT_IDFONOGRAMA"' || ':' || '"'  || TO_CHAR(:NEW.DAT_IDFONOGRAMA, 'YYYY-MM-DD HH24:MI:SS') || '"' || ',' ||
+    '"COD_GENEROMUSICAL"' || ':' || '"'  || REPLACE(:NEW.COD_GENEROMUSICAL, '"', '\"') || '"' || ',' ||
+    '"COD_TIPOFONOGRAMA"' || ':' || NVL(TO_CHAR(:NEW.COD_TIPOFONOGRAMA), 'null') || ',' ||
+    '"COD_COLETIVO"' || ':' || NVL(TO_CHAR(:NEW.COD_COLETIVO), 'null') || ',' ||
+    '"COD_SELO"' || ':' || NVL(TO_CHAR(:NEW.COD_SELO), 'null') || ',' ||
+    '"COD_FONOGRAMAIDENT"' || ':' || NVL(TO_CHAR(:NEW.COD_FONOGRAMAIDENT), 'null') || ',' ||
+    '"DAT_ATUALIZACAO"' || ':' || '"'  || TO_CHAR(:NEW.DAT_ATUALIZACAO, 'YYYY-MM-DD HH24:MI:SS') || '"' || ',' ||
+    '"COD_POUT_POURRIT"' || ':' || NVL(TO_CHAR(:NEW.COD_POUT_POURRIT), 'null') || ',' ||
+    '"COD_LETRA"' || ':' || NVL(TO_CHAR(:NEW.COD_LETRA), 'null') || ',' ||
+    '"PCT_PARTICIPACAOPF"' || ':' || NVL(TO_CHAR(:NEW.PCT_PARTICIPACAOPF), 'null') || ',' ||
+    '"PCT_PARTICIPACAOI"' || ':' || NVL(TO_CHAR(:NEW.PCT_PARTICIPACAOI), 'null') || ',' ||
+    '"PCT_PARTICIPACAOMA"' || ':' || NVL(TO_CHAR(:NEW.PCT_PARTICIPACAOMA), 'null') || ',' ||
+    '"DSC_OBSERVACAO"' || ':' || '"'  || REPLACE(:NEW.DSC_OBSERVACAO, '"', '\"') || '"' || ',' ||
+    '"NOMLOGIN"' || ':' || '"'  || REPLACE(:NEW.NOMLOGIN, '"', '\"') || '"' || ',' ||
+    '"RESP_FONO_PEND"' || ':' || '"'  || REPLACE(:NEW.RESP_FONO_PEND, '"', '\"') || '"' || ',' ||
+    '"COD_TIPOBLOQUEIO"' || ':' || NVL(TO_CHAR(:NEW.COD_TIPOBLOQUEIO), 'null') || ',' ||
+    '"COD_SOCIEDADE"' || ':' || NVL(TO_CHAR(:NEW.COD_SOCIEDADE), 'null') || ',' ||
+    '"SGL_PAISPUBLICACAO"' || ':' || '"'  || REPLACE(:NEW.SGL_PAISPUBLICACAO, '"', '\"') || '"' || ',' ||
+    '"IND_ROTULO"' || ':' || '"'  || REPLACE(:NEW.IND_ROTULO, '"', '\"') || '"' || ',' ||
+    '"COD_TIPMIDIA"' || ':' || NVL(TO_CHAR(:NEW.COD_TIPMIDIA), 'null') || ',' ||
+    '"DSC_CORRESPONDENCIA"' || ':' || '"'  || REPLACE(:NEW.DSC_CORRESPONDENCIA, '"', '\"') || '"' || ',' ||
+    '"IND_PUBLSIMULT"' || ':' || '"'  || REPLACE(:NEW.IND_PUBLSIMULT, '"', '\"') || '"' || ',' ||
+    '"IND_ANALISE"' || ':' || '"'  || REPLACE(:NEW.IND_ANALISE, '"', '\"') || '"' || ',' ||
+    '"DAT_ANALISE"' || ':' || '"'  || TO_CHAR(:NEW.DAT_ANALISE, 'YYYY-MM-DD HH24:MI:SS') || '"' || ',' ||
+    '"DAT_DOCUMENTACAO"' || ':' || '"'  || TO_CHAR(:NEW.DAT_DOCUMENTACAO, 'YYYY-MM-DD HH24:MI:SS') || '"' || ',' ||
+    '"IND_DOMINIOPUBLICO"' || ':' || '"'  || REPLACE(:NEW.IND_DOMINIOPUBLICO, '"', '\"') || '"' || ',' ||
+    '"IND_ROTULOCOMMUSICO"' || ':' || '"'  || REPLACE(:NEW.IND_ROTULOCOMMUSICO, '"', '\"') || '"' || ',' ||
+    '"COD_MOTIVOPENDENCIA"' || ':' || NVL(TO_CHAR(:NEW.COD_MOTIVOPENDENCIA), 'null') || ',' ||
+    '"COD_ARRANJO"' || ':' || NVL(TO_CHAR(:NEW.COD_ARRANJO), 'null') || ',' ||
+    '"COD_PACOTE"' || ':' || NVL(TO_CHAR(:NEW.COD_PACOTE), 'null') || ',' ||
+    '"DSC_COMPLEMENTO_ARRANJO"' || ':' || '"'  || REPLACE(:NEW.DSC_COMPLEMENTO_ARRANJO, '"', '\"') || '"' || ',' ||
+    '"IND_TEMAUDIO"' || ':' || '"'  || REPLACE(:NEW.IND_TEMAUDIO, '"', '\"') || '"' || ',' ||
+    '"DAT_AUDIO"' || ':' || '"'  || TO_CHAR(:NEW.DAT_AUDIO, 'YYYY-MM-DD HH24:MI:SS') || '"' || ',' ||
+    '"COD_SUPORTE_MIDIA"' || ':' || NVL(TO_CHAR(:NEW.COD_SUPORTE_MIDIA), 'null') || ',' ||
+    '"COD_AGREGADORA"' || ':' || NVL(TO_CHAR(:NEW.COD_AGREGADORA), 'null') || ',' ||
+    '"IND_IAG"' || ':' || '"'  || REPLACE(:NEW.IND_IAG, '"', '\"') || '"' || ',' ||
+    '"DELTA"' || ':' || '"'  || TO_CHAR(:NEW.DELTA, 'YYYY-MM-DD HH24:MI:SS') || '"' ||
+'}';
+
+    -- Insere registro de auditoria para INSERT
+        INSERT INTO POCGG.AUDITORIA_OGG_LOG (
+            TABELA_NOME,
+            TIPO_OPERACAO,
+            CHAVE_PRIMARIA,
+            DADOS_ANTIGOS,
+            DADOS_NOVOS,
+            USUARIO_BD,
+            DATA_AUDITORIA,
+            DAT_ATU_OGG
+        ) VALUES (
+            'FONOGRAMA',
+            v_tipo_operacao,
+            v_chave_primaria,
+            v_dados_antigos,
+            v_dados_novos,
+            USER,
+            SYSDATE,
+            :NEW.DELTA
+        );
+
+    ELSIF UPDATING THEN
+        v_tipo_operacao := 'UPDATE';
+        v_chave_primaria := 'COD_FONOGRAMA=' || :NEW.COD_FONOGRAMA;
+        v_dados_antigos := '{' ||
+    '"COD_FONOGRAMA"' || ':' || NVL(TO_CHAR(:OLD.COD_FONOGRAMA), 'null') || ',' ||
+    '"COD_OBRAMUSECAD"' || ':' || NVL(TO_CHAR(:OLD.COD_OBRAMUSECAD), 'null') || ',' ||
+    '"TIP_SITUACAOFONO"' || ':' || '"'  || REPLACE(:OLD.TIP_SITUACAOFONO, '"', '\"') || '"' || ',' ||
+    '"IND_BLOQUEADA"' || ':' || '"'  || REPLACE(:OLD.IND_BLOQUEADA, '"', '\"') || '"' || ',' ||
+    '"IND_SUBSTITUIDOTAPE"' || ':' || '"'  || REPLACE(:OLD.IND_SUBSTITUIDOTAPE, '"', '\"') || '"' || ',' ||
+    '"COD_GRA"' || ':' || '"'  || REPLACE(:OLD.COD_GRA, '"', '\"') || '"' || ',' ||
+    '"COD_ISRC"' || ':' || '"'  || REPLACE(:OLD.COD_ISRC, '"', '\"') || '"' || ',' ||
+    '"DAT_CADASTROFONO"' || ':' || '"'  || TO_CHAR(:OLD.DAT_CADASTROFONO, 'YYYY-MM-DD HH24:MI:SS') || '"' || ',' ||
+    '"DAT_GRAVORIG"' || ':' || '"'  || TO_CHAR(:OLD.DAT_GRAVORIG, 'YYYY-MM-DD HH24:MI:SS') || '"' || ',' ||
+    '"DAT_LANCAMENTO"' || ':' || '"'  || TO_CHAR(:OLD.DAT_LANCAMENTO, 'YYYY-MM-DD HH24:MI:SS') || '"' || ',' ||
+    '"DAT_EMISSAOGRA"' || ':' || '"'  || TO_CHAR(:OLD.DAT_EMISSAOGRA, 'YYYY-MM-DD HH24:MI:SS') || '"' || ',' ||
+    '"IND_INSTRUMENTAL"' || ':' || '"'  || REPLACE(:OLD.IND_INSTRUMENTAL, '"', '\"') || '"' || ',' ||
+    '"TMP_DURACAO"' || ':' || '"'  || TO_CHAR(:OLD.TMP_DURACAO, 'YYYY-MM-DD HH24:MI:SS') || '"' || ',' ||
+    '"COD_CROWLEY"' || ':' || '"'  || REPLACE(:OLD.COD_CROWLEY, '"', '\"') || '"' || ',' ||
+    '"IND_NACIONAL"' || ':' || '"'  || REPLACE(:OLD.IND_NACIONAL, '"', '\"') || '"' || ',' ||
+    '"SGL_PAIS"' || ':' || '"'  || REPLACE(:OLD.SGL_PAIS, '"', '\"') || '"' || ',' ||
+    '"DAT_IDFONOGRAMA"' || ':' || '"'  || TO_CHAR(:OLD.DAT_IDFONOGRAMA, 'YYYY-MM-DD HH24:MI:SS') || '"' || ',' ||
+    '"COD_GENEROMUSICAL"' || ':' || '"'  || REPLACE(:OLD.COD_GENEROMUSICAL, '"', '\"') || '"' || ',' ||
+    '"COD_TIPOFONOGRAMA"' || ':' || NVL(TO_CHAR(:OLD.COD_TIPOFONOGRAMA), 'null') || ',' ||
+    '"COD_COLETIVO"' || ':' || NVL(TO_CHAR(:OLD.COD_COLETIVO), 'null') || ',' ||
+    '"COD_SELO"' || ':' || NVL(TO_CHAR(:OLD.COD_SELO), 'null') || ',' ||
+    '"COD_FONOGRAMAIDENT"' || ':' || NVL(TO_CHAR(:OLD.COD_FONOGRAMAIDENT), 'null') || ',' ||
+    '"DAT_ATUALIZACAO"' || ':' || '"'  || TO_CHAR(:OLD.DAT_ATUALIZACAO, 'YYYY-MM-DD HH24:MI:SS') || '"' || ',' ||
+    '"COD_POUT_POURRIT"' || ':' || NVL(TO_CHAR(:OLD.COD_POUT_POURRIT), 'null') || ',' ||
+    '"COD_LETRA"' || ':' || NVL(TO_CHAR(:OLD.COD_LETRA), 'null') || ',' ||
+    '"PCT_PARTICIPACAOPF"' || ':' || NVL(TO_CHAR(:OLD.PCT_PARTICIPACAOPF), 'null') || ',' ||
+    '"PCT_PARTICIPACAOI"' || ':' || NVL(TO_CHAR(:OLD.PCT_PARTICIPACAOI), 'null') || ',' ||
+    '"PCT_PARTICIPACAOMA"' || ':' || NVL(TO_CHAR(:OLD.PCT_PARTICIPACAOMA), 'null') || ',' ||
+    '"DSC_OBSERVACAO"' || ':' || '"'  || REPLACE(:OLD.DSC_OBSERVACAO, '"', '\"') || '"' || ',' ||
+    '"NOMLOGIN"' || ':' || '"'  || REPLACE(:OLD.NOMLOGIN, '"', '\"') || '"' || ',' ||
+    '"RESP_FONO_PEND"' || ':' || '"'  || REPLACE(:OLD.RESP_FONO_PEND, '"', '\"') || '"' || ',' ||
+    '"COD_TIPOBLOQUEIO"' || ':' || NVL(TO_CHAR(:OLD.COD_TIPOBLOQUEIO), 'null') || ',' ||
+    '"COD_SOCIEDADE"' || ':' || NVL(TO_CHAR(:OLD.COD_SOCIEDADE), 'null') || ',' ||
+    '"SGL_PAISPUBLICACAO"' || ':' || '"'  || REPLACE(:OLD.SGL_PAISPUBLICACAO, '"', '\"') || '"' || ',' ||
+    '"IND_ROTULO"' || ':' || '"'  || REPLACE(:OLD.IND_ROTULO, '"', '\"') || '"' || ',' ||
+    '"COD_TIPMIDIA"' || ':' || NVL(TO_CHAR(:OLD.COD_TIPMIDIA), 'null') || ',' ||
+    '"DSC_CORRESPONDENCIA"' || ':' || '"'  || REPLACE(:OLD.DSC_CORRESPONDENCIA, '"', '\"') || '"' || ',' ||
+    '"IND_PUBLSIMULT"' || ':' || '"'  || REPLACE(:OLD.IND_PUBLSIMULT, '"', '\"') || '"' || ',' ||
+    '"IND_ANALISE"' || ':' || '"'  || REPLACE(:OLD.IND_ANALISE, '"', '\"') || '"' || ',' ||
+    '"DAT_ANALISE"' || ':' || '"'  || TO_CHAR(:OLD.DAT_ANALISE, 'YYYY-MM-DD HH24:MI:SS') || '"' || ',' ||
+    '"DAT_DOCUMENTACAO"' || ':' || '"'  || TO_CHAR(:OLD.DAT_DOCUMENTACAO, 'YYYY-MM-DD HH24:MI:SS') || '"' || ',' ||
+    '"IND_DOMINIOPUBLICO"' || ':' || '"'  || REPLACE(:OLD.IND_DOMINIOPUBLICO, '"', '\"') || '"' || ',' ||
+    '"IND_ROTULOCOMMUSICO"' || ':' || '"'  || REPLACE(:OLD.IND_ROTULOCOMMUSICO, '"', '\"') || '"' || ',' ||
+    '"COD_MOTIVOPENDENCIA"' || ':' || NVL(TO_CHAR(:OLD.COD_MOTIVOPENDENCIA), 'null') || ',' ||
+    '"COD_ARRANJO"' || ':' || NVL(TO_CHAR(:OLD.COD_ARRANJO), 'null') || ',' ||
+    '"COD_PACOTE"' || ':' || NVL(TO_CHAR(:OLD.COD_PACOTE), 'null') || ',' ||
+    '"DSC_COMPLEMENTO_ARRANJO"' || ':' || '"'  || REPLACE(:OLD.DSC_COMPLEMENTO_ARRANJO, '"', '\"') || '"' || ',' ||
+    '"IND_TEMAUDIO"' || ':' || '"'  || REPLACE(:OLD.IND_TEMAUDIO, '"', '\"') || '"' || ',' ||
+    '"DAT_AUDIO"' || ':' || '"'  || TO_CHAR(:OLD.DAT_AUDIO, 'YYYY-MM-DD HH24:MI:SS') || '"' || ',' ||
+    '"COD_SUPORTE_MIDIA"' || ':' || NVL(TO_CHAR(:OLD.COD_SUPORTE_MIDIA), 'null') || ',' ||
+    '"COD_AGREGADORA"' || ':' || NVL(TO_CHAR(:OLD.COD_AGREGADORA), 'null') || ',' ||
+    '"IND_IAG"' || ':' || '"'  || REPLACE(:OLD.IND_IAG, '"', '\"') || '"' || ',' ||
+    '"DELTA"' || ':' || '"'  || TO_CHAR(:OLD.DELTA, 'YYYY-MM-DD HH24:MI:SS') || '"' ||
+'}';
+        v_dados_novos := '{' ||
+    '"COD_FONOGRAMA"' || ':' || NVL(TO_CHAR(:NEW.COD_FONOGRAMA), 'null') || ',' ||
+    '"COD_OBRAMUSECAD"' || ':' || NVL(TO_CHAR(:NEW.COD_OBRAMUSECAD), 'null') || ',' ||
+    '"TIP_SITUACAOFONO"' || ':' || '"'  || REPLACE(:NEW.TIP_SITUACAOFONO, '"', '\"') || '"' || ',' ||
+    '"IND_BLOQUEADA"' || ':' || '"'  || REPLACE(:NEW.IND_BLOQUEADA, '"', '\"') || '"' || ',' ||
+    '"IND_SUBSTITUIDOTAPE"' || ':' || '"'  || REPLACE(:NEW.IND_SUBSTITUIDOTAPE, '"', '\"') || '"' || ',' ||
+    '"COD_GRA"' || ':' || '"'  || REPLACE(:NEW.COD_GRA, '"', '\"') || '"' || ',' ||
+    '"COD_ISRC"' || ':' || '"'  || REPLACE(:NEW.COD_ISRC, '"', '\"') || '"' || ',' ||
+    '"DAT_CADASTROFONO"' || ':' || '"'  || TO_CHAR(:NEW.DAT_CADASTROFONO, 'YYYY-MM-DD HH24:MI:SS') || '"' || ',' ||
+    '"DAT_GRAVORIG"' || ':' || '"'  || TO_CHAR(:NEW.DAT_GRAVORIG, 'YYYY-MM-DD HH24:MI:SS') || '"' || ',' ||
+    '"DAT_LANCAMENTO"' || ':' || '"'  || TO_CHAR(:NEW.DAT_LANCAMENTO, 'YYYY-MM-DD HH24:MI:SS') || '"' || ',' ||
+    '"DAT_EMISSAOGRA"' || ':' || '"'  || TO_CHAR(:NEW.DAT_EMISSAOGRA, 'YYYY-MM-DD HH24:MI:SS') || '"' || ',' ||
+    '"IND_INSTRUMENTAL"' || ':' || '"'  || REPLACE(:NEW.IND_INSTRUMENTAL, '"', '\"') || '"' || ',' ||
+    '"TMP_DURACAO"' || ':' || '"'  || TO_CHAR(:NEW.TMP_DURACAO, 'YYYY-MM-DD HH24:MI:SS') || '"' || ',' ||
+    '"COD_CROWLEY"' || ':' || '"'  || REPLACE(:NEW.COD_CROWLEY, '"', '\"') || '"' || ',' ||
+    '"IND_NACIONAL"' || ':' || '"'  || REPLACE(:NEW.IND_NACIONAL, '"', '\"') || '"' || ',' ||
+    '"SGL_PAIS"' || ':' || '"'  || REPLACE(:NEW.SGL_PAIS, '"', '\"') || '"' || ',' ||
+    '"DAT_IDFONOGRAMA"' || ':' || '"'  || TO_CHAR(:NEW.DAT_IDFONOGRAMA, 'YYYY-MM-DD HH24:MI:SS') || '"' || ',' ||
+    '"COD_GENEROMUSICAL"' || ':' || '"'  || REPLACE(:NEW.COD_GENEROMUSICAL, '"', '\"') || '"' || ',' ||
+    '"COD_TIPOFONOGRAMA"' || ':' || NVL(TO_CHAR(:NEW.COD_TIPOFONOGRAMA), 'null') || ',' ||
+    '"COD_COLETIVO"' || ':' || NVL(TO_CHAR(:NEW.COD_COLETIVO), 'null') || ',' ||
+    '"COD_SELO"' || ':' || NVL(TO_CHAR(:NEW.COD_SELO), 'null') || ',' ||
+    '"COD_FONOGRAMAIDENT"' || ':' || NVL(TO_CHAR(:NEW.COD_FONOGRAMAIDENT), 'null') || ',' ||
+    '"DAT_ATUALIZACAO"' || ':' || '"'  || TO_CHAR(:NEW.DAT_ATUALIZACAO, 'YYYY-MM-DD HH24:MI:SS') || '"' || ',' ||
+    '"COD_POUT_POURRIT"' || ':' || NVL(TO_CHAR(:NEW.COD_POUT_POURRIT), 'null') || ',' ||
+    '"COD_LETRA"' || ':' || NVL(TO_CHAR(:NEW.COD_LETRA), 'null') || ',' ||
+    '"PCT_PARTICIPACAOPF"' || ':' || NVL(TO_CHAR(:NEW.PCT_PARTICIPACAOPF), 'null') || ',' ||
+    '"PCT_PARTICIPACAOI"' || ':' || NVL(TO_CHAR(:NEW.PCT_PARTICIPACAOI), 'null') || ',' ||
+    '"PCT_PARTICIPACAOMA"' || ':' || NVL(TO_CHAR(:NEW.PCT_PARTICIPACAOMA), 'null') || ',' ||
+    '"DSC_OBSERVACAO"' || ':' || '"'  || REPLACE(:NEW.DSC_OBSERVACAO, '"', '\"') || '"' || ',' ||
+    '"NOMLOGIN"' || ':' || '"'  || REPLACE(:NEW.NOMLOGIN, '"', '\"') || '"' || ',' ||
+    '"RESP_FONO_PEND"' || ':' || '"'  || REPLACE(:NEW.RESP_FONO_PEND, '"', '\"') || '"' || ',' ||
+    '"COD_TIPOBLOQUEIO"' || ':' || NVL(TO_CHAR(:NEW.COD_TIPOBLOQUEIO), 'null') || ',' ||
+    '"COD_SOCIEDADE"' || ':' || NVL(TO_CHAR(:NEW.COD_SOCIEDADE), 'null') || ',' ||
+    '"SGL_PAISPUBLICACAO"' || ':' || '"'  || REPLACE(:NEW.SGL_PAISPUBLICACAO, '"', '\"') || '"' || ',' ||
+    '"IND_ROTULO"' || ':' || '"'  || REPLACE(:NEW.IND_ROTULO, '"', '\"') || '"' || ',' ||
+    '"COD_TIPMIDIA"' || ':' || NVL(TO_CHAR(:NEW.COD_TIPMIDIA), 'null') || ',' ||
+    '"DSC_CORRESPONDENCIA"' || ':' || '"'  || REPLACE(:NEW.DSC_CORRESPONDENCIA, '"', '\"') || '"' || ',' ||
+    '"IND_PUBLSIMULT"' || ':' || '"'  || REPLACE(:NEW.IND_PUBLSIMULT, '"', '\"') || '"' || ',' ||
+    '"IND_ANALISE"' || ':' || '"'  || REPLACE(:NEW.IND_ANALISE, '"', '\"') || '"' || ',' ||
+    '"DAT_ANALISE"' || ':' || '"'  || TO_CHAR(:NEW.DAT_ANALISE, 'YYYY-MM-DD HH24:MI:SS') || '"' || ',' ||
+    '"DAT_DOCUMENTACAO"' || ':' || '"'  || TO_CHAR(:NEW.DAT_DOCUMENTACAO, 'YYYY-MM-DD HH24:MI:SS') || '"' || ',' ||
+    '"IND_DOMINIOPUBLICO"' || ':' || '"'  || REPLACE(:NEW.IND_DOMINIOPUBLICO, '"', '\"') || '"' || ',' ||
+    '"IND_ROTULOCOMMUSICO"' || ':' || '"'  || REPLACE(:NEW.IND_ROTULOCOMMUSICO, '"', '\"') || '"' || ',' ||
+    '"COD_MOTIVOPENDENCIA"' || ':' || NVL(TO_CHAR(:NEW.COD_MOTIVOPENDENCIA), 'null') || ',' ||
+    '"COD_ARRANJO"' || ':' || NVL(TO_CHAR(:NEW.COD_ARRANJO), 'null') || ',' ||
+    '"COD_PACOTE"' || ':' || NVL(TO_CHAR(:NEW.COD_PACOTE), 'null') || ',' ||
+    '"DSC_COMPLEMENTO_ARRANJO"' || ':' || '"'  || REPLACE(:NEW.DSC_COMPLEMENTO_ARRANJO, '"', '\"') || '"' || ',' ||
+    '"IND_TEMAUDIO"' || ':' || '"'  || REPLACE(:NEW.IND_TEMAUDIO, '"', '\"') || '"' || ',' ||
+    '"DAT_AUDIO"' || ':' || '"'  || TO_CHAR(:NEW.DAT_AUDIO, 'YYYY-MM-DD HH24:MI:SS') || '"' || ',' ||
+    '"COD_SUPORTE_MIDIA"' || ':' || NVL(TO_CHAR(:NEW.COD_SUPORTE_MIDIA), 'null') || ',' ||
+    '"COD_AGREGADORA"' || ':' || NVL(TO_CHAR(:NEW.COD_AGREGADORA), 'null') || ',' ||
+    '"IND_IAG"' || ':' || '"'  || REPLACE(:NEW.IND_IAG, '"', '\"') || '"' || ',' ||
+    '"DELTA"' || ':' || '"'  || TO_CHAR(:NEW.DELTA, 'YYYY-MM-DD HH24:MI:SS') || '"' ||
+'}';
+
+    -- Insere registro de auditoria para UPDATE
+        INSERT INTO POCGG.AUDITORIA_OGG_LOG (
+            TABELA_NOME,
+            TIPO_OPERACAO,
+            CHAVE_PRIMARIA,
+            DADOS_ANTIGOS,
+            DADOS_NOVOS,
+            USUARIO_BD,
+            DATA_AUDITORIA,
+            DAT_ATU_OGG
+        ) VALUES (
+            'FONOGRAMA',
+            v_tipo_operacao,
+            v_chave_primaria,
+            v_dados_antigos,
+            v_dados_novos,
+            USER,
+            SYSDATE,
+            :NEW.DELTA
+        );
+
+    ELSIF DELETING THEN
+        v_tipo_operacao := 'DELETE';
+        v_chave_primaria := 'COD_FONOGRAMA=' || :OLD.COD_FONOGRAMA;
+        v_dados_antigos := '{' ||
+    '"COD_FONOGRAMA"' || ':' || NVL(TO_CHAR(:OLD.COD_FONOGRAMA), 'null') || ',' ||
+    '"COD_OBRAMUSECAD"' || ':' || NVL(TO_CHAR(:OLD.COD_OBRAMUSECAD), 'null') || ',' ||
+    '"TIP_SITUACAOFONO"' || ':' || '"'  || REPLACE(:OLD.TIP_SITUACAOFONO, '"', '\"') || '"' || ',' ||
+    '"IND_BLOQUEADA"' || ':' || '"'  || REPLACE(:OLD.IND_BLOQUEADA, '"', '\"') || '"' || ',' ||
+    '"IND_SUBSTITUIDOTAPE"' || ':' || '"'  || REPLACE(:OLD.IND_SUBSTITUIDOTAPE, '"', '\"') || '"' || ',' ||
+    '"COD_GRA"' || ':' || '"'  || REPLACE(:OLD.COD_GRA, '"', '\"') || '"' || ',' ||
+    '"COD_ISRC"' || ':' || '"'  || REPLACE(:OLD.COD_ISRC, '"', '\"') || '"' || ',' ||
+    '"DAT_CADASTROFONO"' || ':' || '"'  || TO_CHAR(:OLD.DAT_CADASTROFONO, 'YYYY-MM-DD HH24:MI:SS') || '"' || ',' ||
+    '"DAT_GRAVORIG"' || ':' || '"'  || TO_CHAR(:OLD.DAT_GRAVORIG, 'YYYY-MM-DD HH24:MI:SS') || '"' || ',' ||
+    '"DAT_LANCAMENTO"' || ':' || '"'  || TO_CHAR(:OLD.DAT_LANCAMENTO, 'YYYY-MM-DD HH24:MI:SS') || '"' || ',' ||
+    '"DAT_EMISSAOGRA"' || ':' || '"'  || TO_CHAR(:OLD.DAT_EMISSAOGRA, 'YYYY-MM-DD HH24:MI:SS') || '"' || ',' ||
+    '"IND_INSTRUMENTAL"' || ':' || '"'  || REPLACE(:OLD.IND_INSTRUMENTAL, '"', '\"') || '"' || ',' ||
+    '"TMP_DURACAO"' || ':' || '"'  || TO_CHAR(:OLD.TMP_DURACAO, 'YYYY-MM-DD HH24:MI:SS') || '"' || ',' ||
+    '"COD_CROWLEY"' || ':' || '"'  || REPLACE(:OLD.COD_CROWLEY, '"', '\"') || '"' || ',' ||
+    '"IND_NACIONAL"' || ':' || '"'  || REPLACE(:OLD.IND_NACIONAL, '"', '\"') || '"' || ',' ||
+    '"SGL_PAIS"' || ':' || '"'  || REPLACE(:OLD.SGL_PAIS, '"', '\"') || '"' || ',' ||
+    '"DAT_IDFONOGRAMA"' || ':' || '"'  || TO_CHAR(:OLD.DAT_IDFONOGRAMA, 'YYYY-MM-DD HH24:MI:SS') || '"' || ',' ||
+    '"COD_GENEROMUSICAL"' || ':' || '"'  || REPLACE(:OLD.COD_GENEROMUSICAL, '"', '\"') || '"' || ',' ||
+    '"COD_TIPOFONOGRAMA"' || ':' || NVL(TO_CHAR(:OLD.COD_TIPOFONOGRAMA), 'null') || ',' ||
+    '"COD_COLETIVO"' || ':' || NVL(TO_CHAR(:OLD.COD_COLETIVO), 'null') || ',' ||
+    '"COD_SELO"' || ':' || NVL(TO_CHAR(:OLD.COD_SELO), 'null') || ',' ||
+    '"COD_FONOGRAMAIDENT"' || ':' || NVL(TO_CHAR(:OLD.COD_FONOGRAMAIDENT), 'null') || ',' ||
+    '"DAT_ATUALIZACAO"' || ':' || '"'  || TO_CHAR(:OLD.DAT_ATUALIZACAO, 'YYYY-MM-DD HH24:MI:SS') || '"' || ',' ||
+    '"COD_POUT_POURRIT"' || ':' || NVL(TO_CHAR(:OLD.COD_POUT_POURRIT), 'null') || ',' ||
+    '"COD_LETRA"' || ':' || NVL(TO_CHAR(:OLD.COD_LETRA), 'null') || ',' ||
+    '"PCT_PARTICIPACAOPF"' || ':' || NVL(TO_CHAR(:OLD.PCT_PARTICIPACAOPF), 'null') || ',' ||
+    '"PCT_PARTICIPACAOI"' || ':' || NVL(TO_CHAR(:OLD.PCT_PARTICIPACAOI), 'null') || ',' ||
+    '"PCT_PARTICIPACAOMA"' || ':' || NVL(TO_CHAR(:OLD.PCT_PARTICIPACAOMA), 'null') || ',' ||
+    '"DSC_OBSERVACAO"' || ':' || '"'  || REPLACE(:OLD.DSC_OBSERVACAO, '"', '\"') || '"' || ',' ||
+    '"NOMLOGIN"' || ':' || '"'  || REPLACE(:OLD.NOMLOGIN, '"', '\"') || '"' || ',' ||
+    '"RESP_FONO_PEND"' || ':' || '"'  || REPLACE(:OLD.RESP_FONO_PEND, '"', '\"') || '"' || ',' ||
+    '"COD_TIPOBLOQUEIO"' || ':' || NVL(TO_CHAR(:OLD.COD_TIPOBLOQUEIO), 'null') || ',' ||
+    '"COD_SOCIEDADE"' || ':' || NVL(TO_CHAR(:OLD.COD_SOCIEDADE), 'null') || ',' ||
+    '"SGL_PAISPUBLICACAO"' || ':' || '"'  || REPLACE(:OLD.SGL_PAISPUBLICACAO, '"', '\"') || '"' || ',' ||
+    '"IND_ROTULO"' || ':' || '"'  || REPLACE(:OLD.IND_ROTULO, '"', '\"') || '"' || ',' ||
+    '"COD_TIPMIDIA"' || ':' || NVL(TO_CHAR(:OLD.COD_TIPMIDIA), 'null') || ',' ||
+    '"DSC_CORRESPONDENCIA"' || ':' || '"'  || REPLACE(:OLD.DSC_CORRESPONDENCIA, '"', '\"') || '"' || ',' ||
+    '"IND_PUBLSIMULT"' || ':' || '"'  || REPLACE(:OLD.IND_PUBLSIMULT, '"', '\"') || '"' || ',' ||
+    '"IND_ANALISE"' || ':' || '"'  || REPLACE(:OLD.IND_ANALISE, '"', '\"') || '"' || ',' ||
+    '"DAT_ANALISE"' || ':' || '"'  || TO_CHAR(:OLD.DAT_ANALISE, 'YYYY-MM-DD HH24:MI:SS') || '"' || ',' ||
+    '"DAT_DOCUMENTACAO"' || ':' || '"'  || TO_CHAR(:OLD.DAT_DOCUMENTACAO, 'YYYY-MM-DD HH24:MI:SS') || '"' || ',' ||
+    '"IND_DOMINIOPUBLICO"' || ':' || '"'  || REPLACE(:OLD.IND_DOMINIOPUBLICO, '"', '\"') || '"' || ',' ||
+    '"IND_ROTULOCOMMUSICO"' || ':' || '"'  || REPLACE(:OLD.IND_ROTULOCOMMUSICO, '"', '\"') || '"' || ',' ||
+    '"COD_MOTIVOPENDENCIA"' || ':' || NVL(TO_CHAR(:OLD.COD_MOTIVOPENDENCIA), 'null') || ',' ||
+    '"COD_ARRANJO"' || ':' || NVL(TO_CHAR(:OLD.COD_ARRANJO), 'null') || ',' ||
+    '"COD_PACOTE"' || ':' || NVL(TO_CHAR(:OLD.COD_PACOTE), 'null') || ',' ||
+    '"DSC_COMPLEMENTO_ARRANJO"' || ':' || '"'  || REPLACE(:OLD.DSC_COMPLEMENTO_ARRANJO, '"', '\"') || '"' || ',' ||
+    '"IND_TEMAUDIO"' || ':' || '"'  || REPLACE(:OLD.IND_TEMAUDIO, '"', '\"') || '"' || ',' ||
+    '"DAT_AUDIO"' || ':' || '"'  || TO_CHAR(:OLD.DAT_AUDIO, 'YYYY-MM-DD HH24:MI:SS') || '"' || ',' ||
+    '"COD_SUPORTE_MIDIA"' || ':' || NVL(TO_CHAR(:OLD.COD_SUPORTE_MIDIA), 'null') || ',' ||
+    '"COD_AGREGADORA"' || ':' || NVL(TO_CHAR(:OLD.COD_AGREGADORA), 'null') || ',' ||
+    '"IND_IAG"' || ':' || '"'  || REPLACE(:OLD.IND_IAG, '"', '\"') || '"' || ',' ||
+    '"DELTA"' || ':' || '"'  || TO_CHAR(:OLD.DELTA, 'YYYY-MM-DD HH24:MI:SS') || '"' ||
+'}';
+        v_dados_novos := NULL;
+    -- Insere registro de auditoria para DELETE
+        INSERT INTO POCGG.AUDITORIA_OGG_LOG (
+            TABELA_NOME,
+            TIPO_OPERACAO,
+            CHAVE_PRIMARIA,
+            DADOS_ANTIGOS,
+            DADOS_NOVOS,
+            USUARIO_BD,
+            DATA_AUDITORIA,
+            DAT_ATU_OGG
+        ) VALUES (
+            'FONOGRAMA',
+            v_tipo_operacao,
+            v_chave_primaria,
+            v_dados_antigos,
+            v_dados_novos,
+            USER,
+            SYSDATE,
+            SYSDATE
+        );
+
+    END IF;
+
+
+
+
+EXCEPTION
+    WHEN OTHERS THEN
+        -- Em caso de erro, registra na tabela de erros
+        RAISE_APPLICATION_ERROR(-20001,
+            'Erro na trigger de auditoria TRG_AUD_FONOGRAMA: ' || SQLERRM);
+END TRG_AUD_FONOGRAMA;
+
+END;
+
+/
+ALTER TRIGGER "POCGG"."TRG_AUD_FONOGRAMA" ENABLE;
+  CREATE OR REPLACE EDITIONABLE TRIGGER "POCGG"."TRG_FONOGRAMA_DAT_ATU_OGG" 
+BEFORE INSERT OR UPDATE ON POCGG.FONOGRAMA
+FOR EACH ROW
+BEGIN
+    :NEW.DELTA := SYSDATE;
+END;
+
+/
+ALTER TRIGGER "POCGG"."TRG_FONOGRAMA_DAT_ATU_OGG" ENABLE;
+
+GRANT SELECT ON "POCGG"."FONOGRAMA" TO "APL_ARQUITETURA_OGG";
+
+COMMENT ON COLUMN POCGG.FONOGRAMA.IND_IAG IS 'Define se o fonograma foi criado usando IAG';
+
+
+-- POCGG.FONOGRAMA_TITULAR definição
+
+CREATE TABLE "POCGG"."FONOGRAMA_TITULAR" 
+   (	"COD_FONOGRAMA" NUMBER(9,0) NOT NULL DISABLE, 
+	"COD_TITULARECAD" NUMBER(13,0) NOT NULL DISABLE, 
+	"COD_DIREITO" CHAR(6) NOT NULL DISABLE, 
+	"COD_CATEGORIA" CHAR(2) NOT NULL DISABLE, 
+	"COD_SUBCATEGORIA" CHAR(2) NOT NULL DISABLE, 
+	"IND_VALIDACAO" CHAR(1) NOT NULL DISABLE, 
+	"IND_INTPRINCIPAL" CHAR(1) DEFAULT 'N' NOT NULL DISABLE, 
+	"IND_SITTITULAR" CHAR(1) DEFAULT 'A' NOT NULL DISABLE, 
+	"PCT_PARTICIPACAO" NUMBER(10,8) NOT NULL DISABLE, 
+	"COD_PSEUDO" NUMBER, 
+	"COD_FONOGRAMA_TITULAR" NUMBER NOT NULL DISABLE, 
+	"COD_COLETIVO" NUMBER, 
+	"DAT_INICONTRATO" DATE, 
+	"DAT_TERCONTRATO" DATE, 
+	"IND_CALCAUTOMATICO" CHAR(1) DEFAULT 'S' NOT NULL DISABLE, 
+	"DELTA" DATE DEFAULT SYSDATE, 
+	 CONSTRAINT "CKC_IND_INTPRINCIPAL_FONOGRAM" CHECK (             IND_INTPRINCIPAL in ('S','N')) DISABLE, 
+	 CONSTRAINT "UK_FONOGRAMA_TIT" UNIQUE ("COD_FONOGRAMA_TITULAR")
+  USING INDEX PCTFREE 10 INITRANS 2 MAXTRANS 255 COMPUTE STATISTICS 
+  STORAGE(INITIAL 203423744 NEXT 134217728 MINEXTENTS 1 MAXEXTENTS 2147483645
+  PCTINCREASE 0 FREELISTS 1 FREELIST GROUPS 1
+  BUFFER_POOL DEFAULT FLASH_CACHE DEFAULT CELL_FLASH_CACHE DEFAULT)
+  TABLESPACE "TBS_POCGG"  ENABLE, 
+	 CONSTRAINT "CKC_IND_VALIDACAO_FONOGRAM" CHECK (             IND_VALIDACAO in ('P','V')) DISABLE, 
+	 CONSTRAINT "PK_FONOGRAMA_TITULAR" PRIMARY KEY ("COD_FONOGRAMA", "COD_TITULARECAD", "COD_DIREITO", "COD_CATEGORIA", "COD_SUBCATEGORIA")
+  USING INDEX PCTFREE 20 INITRANS 2 MAXTRANS 255 COMPUTE STATISTICS 
+  STORAGE(INITIAL 287309824 NEXT 268435456 MINEXTENTS 1 MAXEXTENTS 2147483645
+  PCTINCREASE 0 FREELISTS 1 FREELIST GROUPS 1
+  BUFFER_POOL DEFAULT FLASH_CACHE DEFAULT CELL_FLASH_CACHE DEFAULT)
+  TABLESPACE "TBS_POCGG"  ENABLE, 
+	 CONSTRAINT "CKC_IND_SITTITULAR_FONOGRAM" CHECK (             IND_SITTITULAR in ('A','I')) DISABLE, 
+	 SUPPLEMENTAL LOG DATA (UNIQUE INDEX) COLUMNS, 
+	 SUPPLEMENTAL LOG DATA (PRIMARY KEY) COLUMNS, 
+	 SUPPLEMENTAL LOG GROUP "GGS_108076" ("COD_FONOGRAMA", "COD_TITULARECAD", "COD_DIREITO", "COD_CATEGORIA", "COD_SUBCATEGORIA") ALWAYS, 
+	 SUPPLEMENTAL LOG DATA (FOREIGN KEY) COLUMNS
+   ) SEGMENT CREATION IMMEDIATE 
+  PCTFREE 20 PCTUSED 70 INITRANS 1 MAXTRANS 255 
+ NOCOMPRESS LOGGING
+  STORAGE(INITIAL 158334976 NEXT 268435456 MINEXTENTS 1 MAXEXTENTS 2147483645
+  PCTINCREASE 0 FREELISTS 1 FREELIST GROUPS 1
+  BUFFER_POOL DEFAULT FLASH_CACHE DEFAULT CELL_FLASH_CACHE DEFAULT)
+  TABLESPACE "TBS_POCGG"  ENABLE ROW MOVEMENT ;
+
+CREATE OR REPLACE EDITIONABLE TRIGGER "POCGG"."TRG_AUD_FONOGRAMA_TITULAR" 
+AFTER INSERT OR UPDATE OR DELETE
+ON POCGG.FONOGRAMA_TITULAR
+FOR EACH ROW
+BEGIN
+DECLARE
+    v_tipo_operacao VARCHAR2(10);
+    v_chave_primaria VARCHAR2(4000);
+    v_dados_antigos CLOB;
+    v_dados_novos CLOB;
+BEGIN
+    -- Determina tipo de operação
+    IF INSERTING THEN
+        v_tipo_operacao := 'INSERT';
+        v_chave_primaria := 'COD_FONOGRAMA=' || :NEW.COD_FONOGRAMA || '|' || 'COD_TITULARECAD=' || :NEW.COD_TITULARECAD || '|' || 'COD_DIREITO=' || :NEW.COD_DIREITO || '|' || 'COD_CATEGORIA=' || :NEW.COD_CATEGORIA || '|' || 'COD_SUBCATEGORIA=' || :NEW.COD_SUBCATEGORIA;
+        v_dados_antigos := NULL;
+        v_dados_novos := '{' ||
+    '"COD_FONOGRAMA"' || ':' || NVL(TO_CHAR(:NEW.COD_FONOGRAMA), 'null') || ',' ||
+    '"COD_TITULARECAD"' || ':' || NVL(TO_CHAR(:NEW.COD_TITULARECAD), 'null') || ',' ||
+    '"COD_DIREITO"' || ':' || '"'  || REPLACE(:NEW.COD_DIREITO, '"', '\"') || '"' || ',' ||
+    '"COD_CATEGORIA"' || ':' || '"'  || REPLACE(:NEW.COD_CATEGORIA, '"', '\"') || '"' || ',' ||
+    '"COD_SUBCATEGORIA"' || ':' || '"'  || REPLACE(:NEW.COD_SUBCATEGORIA, '"', '\"') || '"' || ',' ||
+    '"IND_VALIDACAO"' || ':' || '"'  || REPLACE(:NEW.IND_VALIDACAO, '"', '\"') || '"' || ',' ||
+    '"IND_INTPRINCIPAL"' || ':' || '"'  || REPLACE(:NEW.IND_INTPRINCIPAL, '"', '\"') || '"' || ',' ||
+    '"IND_SITTITULAR"' || ':' || '"'  || REPLACE(:NEW.IND_SITTITULAR, '"', '\"') || '"' || ',' ||
+    '"PCT_PARTICIPACAO"' || ':' || NVL(TO_CHAR(:NEW.PCT_PARTICIPACAO), 'null') || ',' ||
+    '"COD_PSEUDO"' || ':' || NVL(TO_CHAR(:NEW.COD_PSEUDO), 'null') || ',' ||
+    '"COD_FONOGRAMA_TITULAR"' || ':' || NVL(TO_CHAR(:NEW.COD_FONOGRAMA_TITULAR), 'null') || ',' ||
+    '"COD_COLETIVO"' || ':' || NVL(TO_CHAR(:NEW.COD_COLETIVO), 'null') || ',' ||
+    '"DAT_INICONTRATO"' || ':' || '"'  || TO_CHAR(:NEW.DAT_INICONTRATO, 'YYYY-MM-DD HH24:MI:SS') || '"' || ',' ||
+    '"DAT_TERCONTRATO"' || ':' || '"'  || TO_CHAR(:NEW.DAT_TERCONTRATO, 'YYYY-MM-DD HH24:MI:SS') || '"' || ',' ||
+    '"IND_CALCAUTOMATICO"' || ':' || '"'  || REPLACE(:NEW.IND_CALCAUTOMATICO, '"', '\"') || '"' || ',' ||
+    '"DELTA"' || ':' || '"'  || TO_CHAR(:NEW.DELTA, 'YYYY-MM-DD HH24:MI:SS') || '"' ||
+'}';
+
+    -- Insere registro de auditoria para INSERT
+        INSERT INTO POCGG.AUDITORIA_OGG_LOG (
+            TABELA_NOME,
+            TIPO_OPERACAO,
+            CHAVE_PRIMARIA,
+            DADOS_ANTIGOS,
+            DADOS_NOVOS,
+            USUARIO_BD,
+            DATA_AUDITORIA,
+            DAT_ATU_OGG
+        ) VALUES (
+            'FONOGRAMA_TITULAR',
+            v_tipo_operacao,
+            v_chave_primaria,
+            v_dados_antigos,
+            v_dados_novos,
+            USER,
+            SYSDATE,
+            :NEW.DELTA
+        );
+
+    ELSIF UPDATING THEN
+        v_tipo_operacao := 'UPDATE';
+        v_chave_primaria := 'COD_FONOGRAMA=' || :NEW.COD_FONOGRAMA || '|' || 'COD_TITULARECAD=' || :NEW.COD_TITULARECAD || '|' || 'COD_DIREITO=' || :NEW.COD_DIREITO || '|' || 'COD_CATEGORIA=' || :NEW.COD_CATEGORIA || '|' || 'COD_SUBCATEGORIA=' || :NEW.COD_SUBCATEGORIA;
+        v_dados_antigos := '{' ||
+    '"COD_FONOGRAMA"' || ':' || NVL(TO_CHAR(:OLD.COD_FONOGRAMA), 'null') || ',' ||
+    '"COD_TITULARECAD"' || ':' || NVL(TO_CHAR(:OLD.COD_TITULARECAD), 'null') || ',' ||
+    '"COD_DIREITO"' || ':' || '"'  || REPLACE(:OLD.COD_DIREITO, '"', '\"') || '"' || ',' ||
+    '"COD_CATEGORIA"' || ':' || '"'  || REPLACE(:OLD.COD_CATEGORIA, '"', '\"') || '"' || ',' ||
+    '"COD_SUBCATEGORIA"' || ':' || '"'  || REPLACE(:OLD.COD_SUBCATEGORIA, '"', '\"') || '"' || ',' ||
+    '"IND_VALIDACAO"' || ':' || '"'  || REPLACE(:OLD.IND_VALIDACAO, '"', '\"') || '"' || ',' ||
+    '"IND_INTPRINCIPAL"' || ':' || '"'  || REPLACE(:OLD.IND_INTPRINCIPAL, '"', '\"') || '"' || ',' ||
+    '"IND_SITTITULAR"' || ':' || '"'  || REPLACE(:OLD.IND_SITTITULAR, '"', '\"') || '"' || ',' ||
+    '"PCT_PARTICIPACAO"' || ':' || NVL(TO_CHAR(:OLD.PCT_PARTICIPACAO), 'null') || ',' ||
+    '"COD_PSEUDO"' || ':' || NVL(TO_CHAR(:OLD.COD_PSEUDO), 'null') || ',' ||
+    '"COD_FONOGRAMA_TITULAR"' || ':' || NVL(TO_CHAR(:OLD.COD_FONOGRAMA_TITULAR), 'null') || ',' ||
+    '"COD_COLETIVO"' || ':' || NVL(TO_CHAR(:OLD.COD_COLETIVO), 'null') || ',' ||
+    '"DAT_INICONTRATO"' || ':' || '"'  || TO_CHAR(:OLD.DAT_INICONTRATO, 'YYYY-MM-DD HH24:MI:SS') || '"' || ',' ||
+    '"DAT_TERCONTRATO"' || ':' || '"'  || TO_CHAR(:OLD.DAT_TERCONTRATO, 'YYYY-MM-DD HH24:MI:SS') || '"' || ',' ||
+    '"IND_CALCAUTOMATICO"' || ':' || '"'  || REPLACE(:OLD.IND_CALCAUTOMATICO, '"', '\"') || '"' || ',' ||
+    '"DELTA"' || ':' || '"'  || TO_CHAR(:OLD.DELTA, 'YYYY-MM-DD HH24:MI:SS') || '"' ||
+'}';
+        v_dados_novos := '{' ||
+    '"COD_FONOGRAMA"' || ':' || NVL(TO_CHAR(:NEW.COD_FONOGRAMA), 'null') || ',' ||
+    '"COD_TITULARECAD"' || ':' || NVL(TO_CHAR(:NEW.COD_TITULARECAD), 'null') || ',' ||
+    '"COD_DIREITO"' || ':' || '"'  || REPLACE(:NEW.COD_DIREITO, '"', '\"') || '"' || ',' ||
+    '"COD_CATEGORIA"' || ':' || '"'  || REPLACE(:NEW.COD_CATEGORIA, '"', '\"') || '"' || ',' ||
+    '"COD_SUBCATEGORIA"' || ':' || '"'  || REPLACE(:NEW.COD_SUBCATEGORIA, '"', '\"') || '"' || ',' ||
+    '"IND_VALIDACAO"' || ':' || '"'  || REPLACE(:NEW.IND_VALIDACAO, '"', '\"') || '"' || ',' ||
+    '"IND_INTPRINCIPAL"' || ':' || '"'  || REPLACE(:NEW.IND_INTPRINCIPAL, '"', '\"') || '"' || ',' ||
+    '"IND_SITTITULAR"' || ':' || '"'  || REPLACE(:NEW.IND_SITTITULAR, '"', '\"') || '"' || ',' ||
+    '"PCT_PARTICIPACAO"' || ':' || NVL(TO_CHAR(:NEW.PCT_PARTICIPACAO), 'null') || ',' ||
+    '"COD_PSEUDO"' || ':' || NVL(TO_CHAR(:NEW.COD_PSEUDO), 'null') || ',' ||
+    '"COD_FONOGRAMA_TITULAR"' || ':' || NVL(TO_CHAR(:NEW.COD_FONOGRAMA_TITULAR), 'null') || ',' ||
+    '"COD_COLETIVO"' || ':' || NVL(TO_CHAR(:NEW.COD_COLETIVO), 'null') || ',' ||
+    '"DAT_INICONTRATO"' || ':' || '"'  || TO_CHAR(:NEW.DAT_INICONTRATO, 'YYYY-MM-DD HH24:MI:SS') || '"' || ',' ||
+    '"DAT_TERCONTRATO"' || ':' || '"'  || TO_CHAR(:NEW.DAT_TERCONTRATO, 'YYYY-MM-DD HH24:MI:SS') || '"' || ',' ||
+    '"IND_CALCAUTOMATICO"' || ':' || '"'  || REPLACE(:NEW.IND_CALCAUTOMATICO, '"', '\"') || '"' || ',' ||
+    '"DELTA"' || ':' || '"'  || TO_CHAR(:NEW.DELTA, 'YYYY-MM-DD HH24:MI:SS') || '"' ||
+'}';
+
+    -- Insere registro de auditoria para UPDATE
+        INSERT INTO POCGG.AUDITORIA_OGG_LOG (
+            TABELA_NOME,
+            TIPO_OPERACAO,
+            CHAVE_PRIMARIA,
+            DADOS_ANTIGOS,
+            DADOS_NOVOS,
+            USUARIO_BD,
+            DATA_AUDITORIA,
+            DAT_ATU_OGG
+        ) VALUES (
+            'FONOGRAMA_TITULAR',
+            v_tipo_operacao,
+            v_chave_primaria,
+            v_dados_antigos,
+            v_dados_novos,
+            USER,
+            SYSDATE,
+            :NEW.DELTA
+        );
+
+    ELSIF DELETING THEN
+        v_tipo_operacao := 'DELETE';
+        v_chave_primaria := 'COD_FONOGRAMA=' || :OLD.COD_FONOGRAMA || '|' || 'COD_TITULARECAD=' || :OLD.COD_TITULARECAD || '|' || 'COD_DIREITO=' || :OLD.COD_DIREITO || '|' || 'COD_CATEGORIA=' || :OLD.COD_CATEGORIA || '|' || 'COD_SUBCATEGORIA=' || :OLD.COD_SUBCATEGORIA;
+        v_dados_antigos := '{' ||
+    '"COD_FONOGRAMA"' || ':' || NVL(TO_CHAR(:OLD.COD_FONOGRAMA), 'null') || ',' ||
+    '"COD_TITULARECAD"' || ':' || NVL(TO_CHAR(:OLD.COD_TITULARECAD), 'null') || ',' ||
+    '"COD_DIREITO"' || ':' || '"'  || REPLACE(:OLD.COD_DIREITO, '"', '\"') || '"' || ',' ||
+    '"COD_CATEGORIA"' || ':' || '"'  || REPLACE(:OLD.COD_CATEGORIA, '"', '\"') || '"' || ',' ||
+    '"COD_SUBCATEGORIA"' || ':' || '"'  || REPLACE(:OLD.COD_SUBCATEGORIA, '"', '\"') || '"' || ',' ||
+    '"IND_VALIDACAO"' || ':' || '"'  || REPLACE(:OLD.IND_VALIDACAO, '"', '\"') || '"' || ',' ||
+    '"IND_INTPRINCIPAL"' || ':' || '"'  || REPLACE(:OLD.IND_INTPRINCIPAL, '"', '\"') || '"' || ',' ||
+    '"IND_SITTITULAR"' || ':' || '"'  || REPLACE(:OLD.IND_SITTITULAR, '"', '\"') || '"' || ',' ||
+    '"PCT_PARTICIPACAO"' || ':' || NVL(TO_CHAR(:OLD.PCT_PARTICIPACAO), 'null') || ',' ||
+    '"COD_PSEUDO"' || ':' || NVL(TO_CHAR(:OLD.COD_PSEUDO), 'null') || ',' ||
+    '"COD_FONOGRAMA_TITULAR"' || ':' || NVL(TO_CHAR(:OLD.COD_FONOGRAMA_TITULAR), 'null') || ',' ||
+    '"COD_COLETIVO"' || ':' || NVL(TO_CHAR(:OLD.COD_COLETIVO), 'null') || ',' ||
+    '"DAT_INICONTRATO"' || ':' || '"'  || TO_CHAR(:OLD.DAT_INICONTRATO, 'YYYY-MM-DD HH24:MI:SS') || '"' || ',' ||
+    '"DAT_TERCONTRATO"' || ':' || '"'  || TO_CHAR(:OLD.DAT_TERCONTRATO, 'YYYY-MM-DD HH24:MI:SS') || '"' || ',' ||
+    '"IND_CALCAUTOMATICO"' || ':' || '"'  || REPLACE(:OLD.IND_CALCAUTOMATICO, '"', '\"') || '"' || ',' ||
+    '"DELTA"' || ':' || '"'  || TO_CHAR(:OLD.DELTA, 'YYYY-MM-DD HH24:MI:SS') || '"' ||
+'}';
+        v_dados_novos := NULL;
+    -- Insere registro de auditoria para DELETE
+        INSERT INTO POCGG.AUDITORIA_OGG_LOG (
+            TABELA_NOME,
+            TIPO_OPERACAO,
+            CHAVE_PRIMARIA,
+            DADOS_ANTIGOS,
+            DADOS_NOVOS,
+            USUARIO_BD,
+            DATA_AUDITORIA,
+            DAT_ATU_OGG
+        ) VALUES (
+            'FONOGRAMA_TITULAR',
+            v_tipo_operacao,
+            v_chave_primaria,
+            v_dados_antigos,
+            v_dados_novos,
+            USER,
+            SYSDATE,
+            SYSDATE
+        );
+
+    END IF;
+
+
+
+
+EXCEPTION
+    WHEN OTHERS THEN
+        -- Em caso de erro, registra na tabela de erros
+        RAISE_APPLICATION_ERROR(-20001,
+            'Erro na trigger de auditoria TRG_AUD_FONOGRAMA_TITULAR: ' || SQLERRM);
+END TRG_AUD_FONOGRAMA_TITULAR;
+
+END;
+
+/
+ALTER TRIGGER "POCGG"."TRG_AUD_FONOGRAMA_TITULAR" ENABLE;
+  CREATE OR REPLACE EDITIONABLE TRIGGER "POCGG"."TRG_FONOGRAMA_TITULAR_DAT_ATU_OGG" 
+BEFORE INSERT OR UPDATE ON POCGG.FONOGRAMA_TITULAR
+FOR EACH ROW
+BEGIN
+    :NEW.DELTA := SYSDATE;
+END;
+
+/
+ALTER TRIGGER "POCGG"."TRG_FONOGRAMA_TITULAR_DAT_ATU_OGG" ENABLE;
+
+GRANT SELECT ON "POCGG"."FONOGRAMA_TITULAR" TO "APL_ARQUITETURA_OGG";
+
+
+-- POCGG.OBRA_MUSICAL definição
+
+CREATE TABLE "POCGG"."OBRA_MUSICAL" 
+   (	"COD_OBRAMUSECAD" NUMBER(13,0) NOT NULL DISABLE, 
+	"NOM_TITULO" VARCHAR2(95), 
+	"TIP_SITUACAOCADASTRAL" CHAR(2) DEFAULT 'PI' CONSTRAINT "CKC_SITUACAOCADASTRAL" NOT NULL DISABLE, 
+	"IND_SITUACAOFINANCEIRA" CHAR(1) DEFAULT 'L', 
+	"IND_NACIONAL" CHAR(1) DEFAULT 'S', 
+	"IND_INSTRUMENTAL" CHAR(1) DEFAULT 'N', 
+	"IND_DOMINIOPUBLICO" CHAR(1) DEFAULT 'N', 
+	"DAT_REGISTROOBRA" DATE, 
+	"DAT_IDENTIFICACAOOBRA" DATE, 
+	"DAT_EMISSAODOC" DATE, 
+	"DAT_CRIACAO" DATE, 
+	"COD_ISWC" CHAR(11), 
+	"TMP_DURACAO" DATE, 
+	"SGL_PAIS" CHAR(2), 
+	"COD_LETRA" NUMBER(10,0), 
+	"COD_GENEROMUSICAL" CHAR(10), 
+	"COD_OBRAORIGINAL" NUMBER(13,0), 
+	"COD_OBRADEPURADA" NUMBER(13,0), 
+	"IND_REGRAVARSOVIA" CHAR(1) DEFAULT 'N', 
+	"IND_HOMONIMA" CHAR(1) DEFAULT 'N', 
+	"IND_BLOQUEADA" CHAR(1) DEFAULT 'N', 
+	"DAT_ATUALIZACAO" DATE, 
+	"IND_OBRA_DERIVADA" CHAR(1) DEFAULT 'N', 
+	"SGL_IDIOMA" VARCHAR2(2), 
+	"TIP_RESPONSAVEL" CHAR(1) DEFAULT 'E', 
+	"COD_SOCIEDADE" NUMBER(7,0), 
+	"IDC_OBRACOMPOSTA" CHAR(1) DEFAULT 'N', 
+	"COD_TIPOOBRACOMPOSTA" CHAR(3), 
+	"DAT_CADASTRO" DATE, 
+	"IND_DUPLICIDADE" CHAR(1), 
+	"IND_VERIFICADUP" CHAR(1), 
+	"NOM_BUSCA" VARCHAR2(95), 
+	"DAT_ALTERACAO" DATE, 
+	"DSC_OBSERVACAO" VARCHAR2(3000), 
+	"SOC_RESP_INFO" NUMBER(7,0), 
+	"NOMLOGIN" VARCHAR2(30), 
+	"COD_TIPOBLOQUEIO" NUMBER(4,0), 
+	"DAT_GERACAOISWC" DATE, 
+	"DAT_ATUALIZACAOISWC" DATE, 
+	"COD_POUTDEPURADO" NUMBER, 
+	"DSC_CORRESPONDENCIA" VARCHAR2(50), 
+	"DAT_DOCUMENTACAO" DATE, 
+	"COD_MOTIVOPENDENCIA" NUMBER, 
+	"IND_IAG" CHAR(1) DEFAULT 'N', 
+	"DELTA" DATE DEFAULT SYSDATE, 
+	 CONSTRAINT "CHK_OBRA_MUSICAL_DERIVADA" CHECK (ind_obra_derivada in ('S','N')) DISABLE, 
+	 CONSTRAINT "CKC_IND_BLOQUEADA" CHECK (             IND_BLOQUEADA in ('S','N')) DISABLE, 
+	 CONSTRAINT "CKC_IND_SITUACAOFINAN_OBRA_MUS" CHECK (             IND_SITUACAOFINANCEIRA in ('L','B')) DISABLE, 
+	 CONSTRAINT "CKC_IND_REGRAVARSOVIA" CHECK (             IND_REGRAVARSOVIA in ('S','N')) DISABLE, 
+	 CONSTRAINT "PK_OBRA_MUSICAL" PRIMARY KEY ("COD_OBRAMUSECAD")
+  USING INDEX PCTFREE 20 INITRANS 2 MAXTRANS 255 COMPUTE STATISTICS 
+  STORAGE(INITIAL 92274688 NEXT 5242880 MINEXTENTS 1 MAXEXTENTS 2147483645
+  PCTINCREASE 0 FREELISTS 1 FREELIST GROUPS 1
+  BUFFER_POOL DEFAULT FLASH_CACHE DEFAULT CELL_FLASH_CACHE DEFAULT)
+  TABLESPACE "TBS_POCGG"  ENABLE, 
+	 CONSTRAINT "CHK_TIPO_OBRAMUSICAL_COMPOS" CHECK (idC_obracomposta in ('S','N')) DISABLE, 
+	 CONSTRAINT "CKC_IND_INSTRUMENTAL_OBRA_MUS" CHECK (             IND_INSTRUMENTAL in ('S','N')) DISABLE, 
+	 CONSTRAINT "CKC_IND_DOMINIOPUBLIC_OBRA_MUS" CHECK (             IND_DOMINIOPUBLICO in ('S','N')) DISABLE, 
+	 CONSTRAINT "CKC_IND_HOMONIMA" CHECK (             IND_HOMONIMA in ('S','N')) DISABLE, 
+	 CONSTRAINT "CKC_OBRA_MUSICAL_TIP" CHECK (tip_responsavel in ('E','S','O')) DISABLE, 
+	 CONSTRAINT "CKC_IND_NACIONAL_OBRA_MUS" CHECK (             IND_NACIONAL in ('S','N')) DISABLE, 
+	 CONSTRAINT "CKC_IND_VERDUP" CHECK (IND_VERIFICADUP in ('I','A','E','H') ) DISABLE, 
+	 CONSTRAINT "CKC_TIP_SITUACAOCADAS_OBRA_MUS" CHECK (TIP_SITUACAOCADASTRAL in ('ID','PI','DU','VA','PV','EC')) DISABLE, 
+	 SUPPLEMENTAL LOG GROUP "GGS_108163" ("COD_OBRAMUSECAD") ALWAYS, 
+	 SUPPLEMENTAL LOG DATA (FOREIGN KEY) COLUMNS, 
+	 SUPPLEMENTAL LOG DATA (PRIMARY KEY) COLUMNS, 
+	 SUPPLEMENTAL LOG DATA (UNIQUE INDEX) COLUMNS
+   ) SEGMENT CREATION IMMEDIATE 
+  PCTFREE 20 PCTUSED 70 INITRANS 1 MAXTRANS 255 
+ NOCOMPRESS LOGGING
+  STORAGE(INITIAL 335544320 NEXT 134217728 MINEXTENTS 1 MAXEXTENTS 2147483645
+  PCTINCREASE 0 FREELISTS 1 FREELIST GROUPS 1
+  BUFFER_POOL DEFAULT FLASH_CACHE DEFAULT CELL_FLASH_CACHE DEFAULT)
+  TABLESPACE "TBS_POCGG"  ENABLE ROW MOVEMENT ;
+
+CREATE OR REPLACE EDITIONABLE TRIGGER "POCGG"."TRG_AUD_OBRA_MUSICAL" 
+AFTER INSERT OR UPDATE OR DELETE
+ON POCGG.OBRA_MUSICAL
+FOR EACH ROW
+BEGIN
+DECLARE
+    v_tipo_operacao VARCHAR2(10);
+    v_chave_primaria VARCHAR2(4000);
+    v_dados_antigos CLOB;
+    v_dados_novos CLOB;
+BEGIN
+    -- Determina tipo de operação
+    IF INSERTING THEN
+        v_tipo_operacao := 'INSERT';
+        v_chave_primaria := 'COD_OBRAMUSECAD=' || :NEW.COD_OBRAMUSECAD;
+        v_dados_antigos := NULL;
+        v_dados_novos := '{' ||
+    '"COD_OBRAMUSECAD"' || ':' || NVL(TO_CHAR(:NEW.COD_OBRAMUSECAD), 'null') || ',' ||
+    '"NOM_TITULO"' || ':' || '"'  || REPLACE(:NEW.NOM_TITULO, '"', '\"') || '"' || ',' ||
+    '"TIP_SITUACAOCADASTRAL"' || ':' || '"'  || REPLACE(:NEW.TIP_SITUACAOCADASTRAL, '"', '\"') || '"' || ',' ||
+    '"IND_SITUACAOFINANCEIRA"' || ':' || '"'  || REPLACE(:NEW.IND_SITUACAOFINANCEIRA, '"', '\"') || '"' || ',' ||
+    '"IND_NACIONAL"' || ':' || '"'  || REPLACE(:NEW.IND_NACIONAL, '"', '\"') || '"' || ',' ||
+    '"IND_INSTRUMENTAL"' || ':' || '"'  || REPLACE(:NEW.IND_INSTRUMENTAL, '"', '\"') || '"' || ',' ||
+    '"IND_DOMINIOPUBLICO"' || ':' || '"'  || REPLACE(:NEW.IND_DOMINIOPUBLICO, '"', '\"') || '"' || ',' ||
+    '"DAT_REGISTROOBRA"' || ':' || '"'  || TO_CHAR(:NEW.DAT_REGISTROOBRA, 'YYYY-MM-DD HH24:MI:SS') || '"' || ',' ||
+    '"DAT_IDENTIFICACAOOBRA"' || ':' || '"'  || TO_CHAR(:NEW.DAT_IDENTIFICACAOOBRA, 'YYYY-MM-DD HH24:MI:SS') || '"' || ',' ||
+    '"DAT_EMISSAODOC"' || ':' || '"'  || TO_CHAR(:NEW.DAT_EMISSAODOC, 'YYYY-MM-DD HH24:MI:SS') || '"' || ',' ||
+    '"DAT_CRIACAO"' || ':' || '"'  || TO_CHAR(:NEW.DAT_CRIACAO, 'YYYY-MM-DD HH24:MI:SS') || '"' || ',' ||
+    '"COD_ISWC"' || ':' || '"'  || REPLACE(:NEW.COD_ISWC, '"', '\"') || '"' || ',' ||
+    '"TMP_DURACAO"' || ':' || '"'  || TO_CHAR(:NEW.TMP_DURACAO, 'YYYY-MM-DD HH24:MI:SS') || '"' || ',' ||
+    '"SGL_PAIS"' || ':' || '"'  || REPLACE(:NEW.SGL_PAIS, '"', '\"') || '"' || ',' ||
+    '"COD_LETRA"' || ':' || NVL(TO_CHAR(:NEW.COD_LETRA), 'null') || ',' ||
+    '"COD_GENEROMUSICAL"' || ':' || '"'  || REPLACE(:NEW.COD_GENEROMUSICAL, '"', '\"') || '"' || ',' ||
+    '"COD_OBRAORIGINAL"' || ':' || NVL(TO_CHAR(:NEW.COD_OBRAORIGINAL), 'null') || ',' ||
+    '"COD_OBRADEPURADA"' || ':' || NVL(TO_CHAR(:NEW.COD_OBRADEPURADA), 'null') || ',' ||
+    '"IND_REGRAVARSOVIA"' || ':' || '"'  || REPLACE(:NEW.IND_REGRAVARSOVIA, '"', '\"') || '"' || ',' ||
+    '"IND_HOMONIMA"' || ':' || '"'  || REPLACE(:NEW.IND_HOMONIMA, '"', '\"') || '"' || ',' ||
+    '"IND_BLOQUEADA"' || ':' || '"'  || REPLACE(:NEW.IND_BLOQUEADA, '"', '\"') || '"' || ',' ||
+    '"DAT_ATUALIZACAO"' || ':' || '"'  || TO_CHAR(:NEW.DAT_ATUALIZACAO, 'YYYY-MM-DD HH24:MI:SS') || '"' || ',' ||
+    '"IND_OBRA_DERIVADA"' || ':' || '"'  || REPLACE(:NEW.IND_OBRA_DERIVADA, '"', '\"') || '"' || ',' ||
+    '"SGL_IDIOMA"' || ':' || '"'  || REPLACE(:NEW.SGL_IDIOMA, '"', '\"') || '"' || ',' ||
+    '"TIP_RESPONSAVEL"' || ':' || '"'  || REPLACE(:NEW.TIP_RESPONSAVEL, '"', '\"') || '"' || ',' ||
+    '"COD_SOCIEDADE"' || ':' || NVL(TO_CHAR(:NEW.COD_SOCIEDADE), 'null') || ',' ||
+    '"IDC_OBRACOMPOSTA"' || ':' || '"'  || REPLACE(:NEW.IDC_OBRACOMPOSTA, '"', '\"') || '"' || ',' ||
+    '"COD_TIPOOBRACOMPOSTA"' || ':' || '"'  || REPLACE(:NEW.COD_TIPOOBRACOMPOSTA, '"', '\"') || '"' || ',' ||
+    '"DAT_CADASTRO"' || ':' || '"'  || TO_CHAR(:NEW.DAT_CADASTRO, 'YYYY-MM-DD HH24:MI:SS') || '"' || ',' ||
+    '"IND_DUPLICIDADE"' || ':' || '"'  || REPLACE(:NEW.IND_DUPLICIDADE, '"', '\"') || '"' || ',' ||
+    '"IND_VERIFICADUP"' || ':' || '"'  || REPLACE(:NEW.IND_VERIFICADUP, '"', '\"') || '"' || ',' ||
+    '"NOM_BUSCA"' || ':' || '"'  || REPLACE(:NEW.NOM_BUSCA, '"', '\"') || '"' || ',' ||
+    '"DAT_ALTERACAO"' || ':' || '"'  || TO_CHAR(:NEW.DAT_ALTERACAO, 'YYYY-MM-DD HH24:MI:SS') || '"' || ',' ||
+    '"DSC_OBSERVACAO"' || ':' || '"'  || REPLACE(:NEW.DSC_OBSERVACAO, '"', '\"') || '"' || ',' ||
+    '"SOC_RESP_INFO"' || ':' || NVL(TO_CHAR(:NEW.SOC_RESP_INFO), 'null') || ',' ||
+    '"NOMLOGIN"' || ':' || '"'  || REPLACE(:NEW.NOMLOGIN, '"', '\"') || '"' || ',' ||
+    '"COD_TIPOBLOQUEIO"' || ':' || NVL(TO_CHAR(:NEW.COD_TIPOBLOQUEIO), 'null') || ',' ||
+    '"DAT_GERACAOISWC"' || ':' || '"'  || TO_CHAR(:NEW.DAT_GERACAOISWC, 'YYYY-MM-DD HH24:MI:SS') || '"' || ',' ||
+    '"DAT_ATUALIZACAOISWC"' || ':' || '"'  || TO_CHAR(:NEW.DAT_ATUALIZACAOISWC, 'YYYY-MM-DD HH24:MI:SS') || '"' || ',' ||
+    '"COD_POUTDEPURADO"' || ':' || NVL(TO_CHAR(:NEW.COD_POUTDEPURADO), 'null') || ',' ||
+    '"DSC_CORRESPONDENCIA"' || ':' || '"'  || REPLACE(:NEW.DSC_CORRESPONDENCIA, '"', '\"') || '"' || ',' ||
+    '"DAT_DOCUMENTACAO"' || ':' || '"'  || TO_CHAR(:NEW.DAT_DOCUMENTACAO, 'YYYY-MM-DD HH24:MI:SS') || '"' || ',' ||
+    '"COD_MOTIVOPENDENCIA"' || ':' || NVL(TO_CHAR(:NEW.COD_MOTIVOPENDENCIA), 'null') || ',' ||
+    '"IND_IAG"' || ':' || '"'  || REPLACE(:NEW.IND_IAG, '"', '\"') || '"' || ',' ||
+    '"DELTA"' || ':' || '"'  || TO_CHAR(:NEW.DELTA, 'YYYY-MM-DD HH24:MI:SS') || '"' ||
+'}';
+
+    -- Insere registro de auditoria para INSERT
+        INSERT INTO POCGG.AUDITORIA_OGG_LOG (
+            TABELA_NOME,
+            TIPO_OPERACAO,
+            CHAVE_PRIMARIA,
+            DADOS_ANTIGOS,
+            DADOS_NOVOS,
+            USUARIO_BD,
+            DATA_AUDITORIA,
+            DAT_ATU_OGG
+        ) VALUES (
+            'OBRA_MUSICAL',
+            v_tipo_operacao,
+            v_chave_primaria,
+            v_dados_antigos,
+            v_dados_novos,
+            USER,
+            SYSDATE,
+            :NEW.DELTA
+        );
+
+    ELSIF UPDATING THEN
+        v_tipo_operacao := 'UPDATE';
+        v_chave_primaria := 'COD_OBRAMUSECAD=' || :NEW.COD_OBRAMUSECAD;
+        v_dados_antigos := '{' ||
+    '"COD_OBRAMUSECAD"' || ':' || NVL(TO_CHAR(:OLD.COD_OBRAMUSECAD), 'null') || ',' ||
+    '"NOM_TITULO"' || ':' || '"'  || REPLACE(:OLD.NOM_TITULO, '"', '\"') || '"' || ',' ||
+    '"TIP_SITUACAOCADASTRAL"' || ':' || '"'  || REPLACE(:OLD.TIP_SITUACAOCADASTRAL, '"', '\"') || '"' || ',' ||
+    '"IND_SITUACAOFINANCEIRA"' || ':' || '"'  || REPLACE(:OLD.IND_SITUACAOFINANCEIRA, '"', '\"') || '"' || ',' ||
+    '"IND_NACIONAL"' || ':' || '"'  || REPLACE(:OLD.IND_NACIONAL, '"', '\"') || '"' || ',' ||
+    '"IND_INSTRUMENTAL"' || ':' || '"'  || REPLACE(:OLD.IND_INSTRUMENTAL, '"', '\"') || '"' || ',' ||
+    '"IND_DOMINIOPUBLICO"' || ':' || '"'  || REPLACE(:OLD.IND_DOMINIOPUBLICO, '"', '\"') || '"' || ',' ||
+    '"DAT_REGISTROOBRA"' || ':' || '"'  || TO_CHAR(:OLD.DAT_REGISTROOBRA, 'YYYY-MM-DD HH24:MI:SS') || '"' || ',' ||
+    '"DAT_IDENTIFICACAOOBRA"' || ':' || '"'  || TO_CHAR(:OLD.DAT_IDENTIFICACAOOBRA, 'YYYY-MM-DD HH24:MI:SS') || '"' || ',' ||
+    '"DAT_EMISSAODOC"' || ':' || '"'  || TO_CHAR(:OLD.DAT_EMISSAODOC, 'YYYY-MM-DD HH24:MI:SS') || '"' || ',' ||
+    '"DAT_CRIACAO"' || ':' || '"'  || TO_CHAR(:OLD.DAT_CRIACAO, 'YYYY-MM-DD HH24:MI:SS') || '"' || ',' ||
+    '"COD_ISWC"' || ':' || '"'  || REPLACE(:OLD.COD_ISWC, '"', '\"') || '"' || ',' ||
+    '"TMP_DURACAO"' || ':' || '"'  || TO_CHAR(:OLD.TMP_DURACAO, 'YYYY-MM-DD HH24:MI:SS') || '"' || ',' ||
+    '"SGL_PAIS"' || ':' || '"'  || REPLACE(:OLD.SGL_PAIS, '"', '\"') || '"' || ',' ||
+    '"COD_LETRA"' || ':' || NVL(TO_CHAR(:OLD.COD_LETRA), 'null') || ',' ||
+    '"COD_GENEROMUSICAL"' || ':' || '"'  || REPLACE(:OLD.COD_GENEROMUSICAL, '"', '\"') || '"' || ',' ||
+    '"COD_OBRAORIGINAL"' || ':' || NVL(TO_CHAR(:OLD.COD_OBRAORIGINAL), 'null') || ',' ||
+    '"COD_OBRADEPURADA"' || ':' || NVL(TO_CHAR(:OLD.COD_OBRADEPURADA), 'null') || ',' ||
+    '"IND_REGRAVARSOVIA"' || ':' || '"'  || REPLACE(:OLD.IND_REGRAVARSOVIA, '"', '\"') || '"' || ',' ||
+    '"IND_HOMONIMA"' || ':' || '"'  || REPLACE(:OLD.IND_HOMONIMA, '"', '\"') || '"' || ',' ||
+    '"IND_BLOQUEADA"' || ':' || '"'  || REPLACE(:OLD.IND_BLOQUEADA, '"', '\"') || '"' || ',' ||
+    '"DAT_ATUALIZACAO"' || ':' || '"'  || TO_CHAR(:OLD.DAT_ATUALIZACAO, 'YYYY-MM-DD HH24:MI:SS') || '"' || ',' ||
+    '"IND_OBRA_DERIVADA"' || ':' || '"'  || REPLACE(:OLD.IND_OBRA_DERIVADA, '"', '\"') || '"' || ',' ||
+    '"SGL_IDIOMA"' || ':' || '"'  || REPLACE(:OLD.SGL_IDIOMA, '"', '\"') || '"' || ',' ||
+    '"TIP_RESPONSAVEL"' || ':' || '"'  || REPLACE(:OLD.TIP_RESPONSAVEL, '"', '\"') || '"' || ',' ||
+    '"COD_SOCIEDADE"' || ':' || NVL(TO_CHAR(:OLD.COD_SOCIEDADE), 'null') || ',' ||
+    '"IDC_OBRACOMPOSTA"' || ':' || '"'  || REPLACE(:OLD.IDC_OBRACOMPOSTA, '"', '\"') || '"' || ',' ||
+    '"COD_TIPOOBRACOMPOSTA"' || ':' || '"'  || REPLACE(:OLD.COD_TIPOOBRACOMPOSTA, '"', '\"') || '"' || ',' ||
+    '"DAT_CADASTRO"' || ':' || '"'  || TO_CHAR(:OLD.DAT_CADASTRO, 'YYYY-MM-DD HH24:MI:SS') || '"' || ',' ||
+    '"IND_DUPLICIDADE"' || ':' || '"'  || REPLACE(:OLD.IND_DUPLICIDADE, '"', '\"') || '"' || ',' ||
+    '"IND_VERIFICADUP"' || ':' || '"'  || REPLACE(:OLD.IND_VERIFICADUP, '"', '\"') || '"' || ',' ||
+    '"NOM_BUSCA"' || ':' || '"'  || REPLACE(:OLD.NOM_BUSCA, '"', '\"') || '"' || ',' ||
+    '"DAT_ALTERACAO"' || ':' || '"'  || TO_CHAR(:OLD.DAT_ALTERACAO, 'YYYY-MM-DD HH24:MI:SS') || '"' || ',' ||
+    '"DSC_OBSERVACAO"' || ':' || '"'  || REPLACE(:OLD.DSC_OBSERVACAO, '"', '\"') || '"' || ',' ||
+    '"SOC_RESP_INFO"' || ':' || NVL(TO_CHAR(:OLD.SOC_RESP_INFO), 'null') || ',' ||
+    '"NOMLOGIN"' || ':' || '"'  || REPLACE(:OLD.NOMLOGIN, '"', '\"') || '"' || ',' ||
+    '"COD_TIPOBLOQUEIO"' || ':' || NVL(TO_CHAR(:OLD.COD_TIPOBLOQUEIO), 'null') || ',' ||
+    '"DAT_GERACAOISWC"' || ':' || '"'  || TO_CHAR(:OLD.DAT_GERACAOISWC, 'YYYY-MM-DD HH24:MI:SS') || '"' || ',' ||
+    '"DAT_ATUALIZACAOISWC"' || ':' || '"'  || TO_CHAR(:OLD.DAT_ATUALIZACAOISWC, 'YYYY-MM-DD HH24:MI:SS') || '"' || ',' ||
+    '"COD_POUTDEPURADO"' || ':' || NVL(TO_CHAR(:OLD.COD_POUTDEPURADO), 'null') || ',' ||
+    '"DSC_CORRESPONDENCIA"' || ':' || '"'  || REPLACE(:OLD.DSC_CORRESPONDENCIA, '"', '\"') || '"' || ',' ||
+    '"DAT_DOCUMENTACAO"' || ':' || '"'  || TO_CHAR(:OLD.DAT_DOCUMENTACAO, 'YYYY-MM-DD HH24:MI:SS') || '"' || ',' ||
+    '"COD_MOTIVOPENDENCIA"' || ':' || NVL(TO_CHAR(:OLD.COD_MOTIVOPENDENCIA), 'null') || ',' ||
+    '"IND_IAG"' || ':' || '"'  || REPLACE(:OLD.IND_IAG, '"', '\"') || '"' || ',' ||
+    '"DELTA"' || ':' || '"'  || TO_CHAR(:OLD.DELTA, 'YYYY-MM-DD HH24:MI:SS') || '"' ||
+'}';
+        v_dados_novos := '{' ||
+    '"COD_OBRAMUSECAD"' || ':' || NVL(TO_CHAR(:NEW.COD_OBRAMUSECAD), 'null') || ',' ||
+    '"NOM_TITULO"' || ':' || '"'  || REPLACE(:NEW.NOM_TITULO, '"', '\"') || '"' || ',' ||
+    '"TIP_SITUACAOCADASTRAL"' || ':' || '"'  || REPLACE(:NEW.TIP_SITUACAOCADASTRAL, '"', '\"') || '"' || ',' ||
+    '"IND_SITUACAOFINANCEIRA"' || ':' || '"'  || REPLACE(:NEW.IND_SITUACAOFINANCEIRA, '"', '\"') || '"' || ',' ||
+    '"IND_NACIONAL"' || ':' || '"'  || REPLACE(:NEW.IND_NACIONAL, '"', '\"') || '"' || ',' ||
+    '"IND_INSTRUMENTAL"' || ':' || '"'  || REPLACE(:NEW.IND_INSTRUMENTAL, '"', '\"') || '"' || ',' ||
+    '"IND_DOMINIOPUBLICO"' || ':' || '"'  || REPLACE(:NEW.IND_DOMINIOPUBLICO, '"', '\"') || '"' || ',' ||
+    '"DAT_REGISTROOBRA"' || ':' || '"'  || TO_CHAR(:NEW.DAT_REGISTROOBRA, 'YYYY-MM-DD HH24:MI:SS') || '"' || ',' ||
+    '"DAT_IDENTIFICACAOOBRA"' || ':' || '"'  || TO_CHAR(:NEW.DAT_IDENTIFICACAOOBRA, 'YYYY-MM-DD HH24:MI:SS') || '"' || ',' ||
+    '"DAT_EMISSAODOC"' || ':' || '"'  || TO_CHAR(:NEW.DAT_EMISSAODOC, 'YYYY-MM-DD HH24:MI:SS') || '"' || ',' ||
+    '"DAT_CRIACAO"' || ':' || '"'  || TO_CHAR(:NEW.DAT_CRIACAO, 'YYYY-MM-DD HH24:MI:SS') || '"' || ',' ||
+    '"COD_ISWC"' || ':' || '"'  || REPLACE(:NEW.COD_ISWC, '"', '\"') || '"' || ',' ||
+    '"TMP_DURACAO"' || ':' || '"'  || TO_CHAR(:NEW.TMP_DURACAO, 'YYYY-MM-DD HH24:MI:SS') || '"' || ',' ||
+    '"SGL_PAIS"' || ':' || '"'  || REPLACE(:NEW.SGL_PAIS, '"', '\"') || '"' || ',' ||
+    '"COD_LETRA"' || ':' || NVL(TO_CHAR(:NEW.COD_LETRA), 'null') || ',' ||
+    '"COD_GENEROMUSICAL"' || ':' || '"'  || REPLACE(:NEW.COD_GENEROMUSICAL, '"', '\"') || '"' || ',' ||
+    '"COD_OBRAORIGINAL"' || ':' || NVL(TO_CHAR(:NEW.COD_OBRAORIGINAL), 'null') || ',' ||
+    '"COD_OBRADEPURADA"' || ':' || NVL(TO_CHAR(:NEW.COD_OBRADEPURADA), 'null') || ',' ||
+    '"IND_REGRAVARSOVIA"' || ':' || '"'  || REPLACE(:NEW.IND_REGRAVARSOVIA, '"', '\"') || '"' || ',' ||
+    '"IND_HOMONIMA"' || ':' || '"'  || REPLACE(:NEW.IND_HOMONIMA, '"', '\"') || '"' || ',' ||
+    '"IND_BLOQUEADA"' || ':' || '"'  || REPLACE(:NEW.IND_BLOQUEADA, '"', '\"') || '"' || ',' ||
+    '"DAT_ATUALIZACAO"' || ':' || '"'  || TO_CHAR(:NEW.DAT_ATUALIZACAO, 'YYYY-MM-DD HH24:MI:SS') || '"' || ',' ||
+    '"IND_OBRA_DERIVADA"' || ':' || '"'  || REPLACE(:NEW.IND_OBRA_DERIVADA, '"', '\"') || '"' || ',' ||
+    '"SGL_IDIOMA"' || ':' || '"'  || REPLACE(:NEW.SGL_IDIOMA, '"', '\"') || '"' || ',' ||
+    '"TIP_RESPONSAVEL"' || ':' || '"'  || REPLACE(:NEW.TIP_RESPONSAVEL, '"', '\"') || '"' || ',' ||
+    '"COD_SOCIEDADE"' || ':' || NVL(TO_CHAR(:NEW.COD_SOCIEDADE), 'null') || ',' ||
+    '"IDC_OBRACOMPOSTA"' || ':' || '"'  || REPLACE(:NEW.IDC_OBRACOMPOSTA, '"', '\"') || '"' || ',' ||
+    '"COD_TIPOOBRACOMPOSTA"' || ':' || '"'  || REPLACE(:NEW.COD_TIPOOBRACOMPOSTA, '"', '\"') || '"' || ',' ||
+    '"DAT_CADASTRO"' || ':' || '"'  || TO_CHAR(:NEW.DAT_CADASTRO, 'YYYY-MM-DD HH24:MI:SS') || '"' || ',' ||
+    '"IND_DUPLICIDADE"' || ':' || '"'  || REPLACE(:NEW.IND_DUPLICIDADE, '"', '\"') || '"' || ',' ||
+    '"IND_VERIFICADUP"' || ':' || '"'  || REPLACE(:NEW.IND_VERIFICADUP, '"', '\"') || '"' || ',' ||
+    '"NOM_BUSCA"' || ':' || '"'  || REPLACE(:NEW.NOM_BUSCA, '"', '\"') || '"' || ',' ||
+    '"DAT_ALTERACAO"' || ':' || '"'  || TO_CHAR(:NEW.DAT_ALTERACAO, 'YYYY-MM-DD HH24:MI:SS') || '"' || ',' ||
+    '"DSC_OBSERVACAO"' || ':' || '"'  || REPLACE(:NEW.DSC_OBSERVACAO, '"', '\"') || '"' || ',' ||
+    '"SOC_RESP_INFO"' || ':' || NVL(TO_CHAR(:NEW.SOC_RESP_INFO), 'null') || ',' ||
+    '"NOMLOGIN"' || ':' || '"'  || REPLACE(:NEW.NOMLOGIN, '"', '\"') || '"' || ',' ||
+    '"COD_TIPOBLOQUEIO"' || ':' || NVL(TO_CHAR(:NEW.COD_TIPOBLOQUEIO), 'null') || ',' ||
+    '"DAT_GERACAOISWC"' || ':' || '"'  || TO_CHAR(:NEW.DAT_GERACAOISWC, 'YYYY-MM-DD HH24:MI:SS') || '"' || ',' ||
+    '"DAT_ATUALIZACAOISWC"' || ':' || '"'  || TO_CHAR(:NEW.DAT_ATUALIZACAOISWC, 'YYYY-MM-DD HH24:MI:SS') || '"' || ',' ||
+    '"COD_POUTDEPURADO"' || ':' || NVL(TO_CHAR(:NEW.COD_POUTDEPURADO), 'null') || ',' ||
+    '"DSC_CORRESPONDENCIA"' || ':' || '"'  || REPLACE(:NEW.DSC_CORRESPONDENCIA, '"', '\"') || '"' || ',' ||
+    '"DAT_DOCUMENTACAO"' || ':' || '"'  || TO_CHAR(:NEW.DAT_DOCUMENTACAO, 'YYYY-MM-DD HH24:MI:SS') || '"' || ',' ||
+    '"COD_MOTIVOPENDENCIA"' || ':' || NVL(TO_CHAR(:NEW.COD_MOTIVOPENDENCIA), 'null') || ',' ||
+    '"IND_IAG"' || ':' || '"'  || REPLACE(:NEW.IND_IAG, '"', '\"') || '"' || ',' ||
+    '"DELTA"' || ':' || '"'  || TO_CHAR(:NEW.DELTA, 'YYYY-MM-DD HH24:MI:SS') || '"' ||
+'}';
+
+    -- Insere registro de auditoria para UPDATE
+        INSERT INTO POCGG.AUDITORIA_OGG_LOG (
+            TABELA_NOME,
+            TIPO_OPERACAO,
+            CHAVE_PRIMARIA,
+            DADOS_ANTIGOS,
+            DADOS_NOVOS,
+            USUARIO_BD,
+            DATA_AUDITORIA,
+            DAT_ATU_OGG
+        ) VALUES (
+            'OBRA_MUSICAL',
+            v_tipo_operacao,
+            v_chave_primaria,
+            v_dados_antigos,
+            v_dados_novos,
+            USER,
+            SYSDATE,
+            :NEW.DELTA
+        );
+
+    ELSIF DELETING THEN
+        v_tipo_operacao := 'DELETE';
+        v_chave_primaria := 'COD_OBRAMUSECAD=' || :OLD.COD_OBRAMUSECAD;
+        v_dados_antigos := '{' ||
+    '"COD_OBRAMUSECAD"' || ':' || NVL(TO_CHAR(:OLD.COD_OBRAMUSECAD), 'null') || ',' ||
+    '"NOM_TITULO"' || ':' || '"'  || REPLACE(:OLD.NOM_TITULO, '"', '\"') || '"' || ',' ||
+    '"TIP_SITUACAOCADASTRAL"' || ':' || '"'  || REPLACE(:OLD.TIP_SITUACAOCADASTRAL, '"', '\"') || '"' || ',' ||
+    '"IND_SITUACAOFINANCEIRA"' || ':' || '"'  || REPLACE(:OLD.IND_SITUACAOFINANCEIRA, '"', '\"') || '"' || ',' ||
+    '"IND_NACIONAL"' || ':' || '"'  || REPLACE(:OLD.IND_NACIONAL, '"', '\"') || '"' || ',' ||
+    '"IND_INSTRUMENTAL"' || ':' || '"'  || REPLACE(:OLD.IND_INSTRUMENTAL, '"', '\"') || '"' || ',' ||
+    '"IND_DOMINIOPUBLICO"' || ':' || '"'  || REPLACE(:OLD.IND_DOMINIOPUBLICO, '"', '\"') || '"' || ',' ||
+    '"DAT_REGISTROOBRA"' || ':' || '"'  || TO_CHAR(:OLD.DAT_REGISTROOBRA, 'YYYY-MM-DD HH24:MI:SS') || '"' || ',' ||
+    '"DAT_IDENTIFICACAOOBRA"' || ':' || '"'  || TO_CHAR(:OLD.DAT_IDENTIFICACAOOBRA, 'YYYY-MM-DD HH24:MI:SS') || '"' || ',' ||
+    '"DAT_EMISSAODOC"' || ':' || '"'  || TO_CHAR(:OLD.DAT_EMISSAODOC, 'YYYY-MM-DD HH24:MI:SS') || '"' || ',' ||
+    '"DAT_CRIACAO"' || ':' || '"'  || TO_CHAR(:OLD.DAT_CRIACAO, 'YYYY-MM-DD HH24:MI:SS') || '"' || ',' ||
+    '"COD_ISWC"' || ':' || '"'  || REPLACE(:OLD.COD_ISWC, '"', '\"') || '"' || ',' ||
+    '"TMP_DURACAO"' || ':' || '"'  || TO_CHAR(:OLD.TMP_DURACAO, 'YYYY-MM-DD HH24:MI:SS') || '"' || ',' ||
+    '"SGL_PAIS"' || ':' || '"'  || REPLACE(:OLD.SGL_PAIS, '"', '\"') || '"' || ',' ||
+    '"COD_LETRA"' || ':' || NVL(TO_CHAR(:OLD.COD_LETRA), 'null') || ',' ||
+    '"COD_GENEROMUSICAL"' || ':' || '"'  || REPLACE(:OLD.COD_GENEROMUSICAL, '"', '\"') || '"' || ',' ||
+    '"COD_OBRAORIGINAL"' || ':' || NVL(TO_CHAR(:OLD.COD_OBRAORIGINAL), 'null') || ',' ||
+    '"COD_OBRADEPURADA"' || ':' || NVL(TO_CHAR(:OLD.COD_OBRADEPURADA), 'null') || ',' ||
+    '"IND_REGRAVARSOVIA"' || ':' || '"'  || REPLACE(:OLD.IND_REGRAVARSOVIA, '"', '\"') || '"' || ',' ||
+    '"IND_HOMONIMA"' || ':' || '"'  || REPLACE(:OLD.IND_HOMONIMA, '"', '\"') || '"' || ',' ||
+    '"IND_BLOQUEADA"' || ':' || '"'  || REPLACE(:OLD.IND_BLOQUEADA, '"', '\"') || '"' || ',' ||
+    '"DAT_ATUALIZACAO"' || ':' || '"'  || TO_CHAR(:OLD.DAT_ATUALIZACAO, 'YYYY-MM-DD HH24:MI:SS') || '"' || ',' ||
+    '"IND_OBRA_DERIVADA"' || ':' || '"'  || REPLACE(:OLD.IND_OBRA_DERIVADA, '"', '\"') || '"' || ',' ||
+    '"SGL_IDIOMA"' || ':' || '"'  || REPLACE(:OLD.SGL_IDIOMA, '"', '\"') || '"' || ',' ||
+    '"TIP_RESPONSAVEL"' || ':' || '"'  || REPLACE(:OLD.TIP_RESPONSAVEL, '"', '\"') || '"' || ',' ||
+    '"COD_SOCIEDADE"' || ':' || NVL(TO_CHAR(:OLD.COD_SOCIEDADE), 'null') || ',' ||
+    '"IDC_OBRACOMPOSTA"' || ':' || '"'  || REPLACE(:OLD.IDC_OBRACOMPOSTA, '"', '\"') || '"' || ',' ||
+    '"COD_TIPOOBRACOMPOSTA"' || ':' || '"'  || REPLACE(:OLD.COD_TIPOOBRACOMPOSTA, '"', '\"') || '"' || ',' ||
+    '"DAT_CADASTRO"' || ':' || '"'  || TO_CHAR(:OLD.DAT_CADASTRO, 'YYYY-MM-DD HH24:MI:SS') || '"' || ',' ||
+    '"IND_DUPLICIDADE"' || ':' || '"'  || REPLACE(:OLD.IND_DUPLICIDADE, '"', '\"') || '"' || ',' ||
+    '"IND_VERIFICADUP"' || ':' || '"'  || REPLACE(:OLD.IND_VERIFICADUP, '"', '\"') || '"' || ',' ||
+    '"NOM_BUSCA"' || ':' || '"'  || REPLACE(:OLD.NOM_BUSCA, '"', '\"') || '"' || ',' ||
+    '"DAT_ALTERACAO"' || ':' || '"'  || TO_CHAR(:OLD.DAT_ALTERACAO, 'YYYY-MM-DD HH24:MI:SS') || '"' || ',' ||
+    '"DSC_OBSERVACAO"' || ':' || '"'  || REPLACE(:OLD.DSC_OBSERVACAO, '"', '\"') || '"' || ',' ||
+    '"SOC_RESP_INFO"' || ':' || NVL(TO_CHAR(:OLD.SOC_RESP_INFO), 'null') || ',' ||
+    '"NOMLOGIN"' || ':' || '"'  || REPLACE(:OLD.NOMLOGIN, '"', '\"') || '"' || ',' ||
+    '"COD_TIPOBLOQUEIO"' || ':' || NVL(TO_CHAR(:OLD.COD_TIPOBLOQUEIO), 'null') || ',' ||
+    '"DAT_GERACAOISWC"' || ':' || '"'  || TO_CHAR(:OLD.DAT_GERACAOISWC, 'YYYY-MM-DD HH24:MI:SS') || '"' || ',' ||
+    '"DAT_ATUALIZACAOISWC"' || ':' || '"'  || TO_CHAR(:OLD.DAT_ATUALIZACAOISWC, 'YYYY-MM-DD HH24:MI:SS') || '"' || ',' ||
+    '"COD_POUTDEPURADO"' || ':' || NVL(TO_CHAR(:OLD.COD_POUTDEPURADO), 'null') || ',' ||
+    '"DSC_CORRESPONDENCIA"' || ':' || '"'  || REPLACE(:OLD.DSC_CORRESPONDENCIA, '"', '\"') || '"' || ',' ||
+    '"DAT_DOCUMENTACAO"' || ':' || '"'  || TO_CHAR(:OLD.DAT_DOCUMENTACAO, 'YYYY-MM-DD HH24:MI:SS') || '"' || ',' ||
+    '"COD_MOTIVOPENDENCIA"' || ':' || NVL(TO_CHAR(:OLD.COD_MOTIVOPENDENCIA), 'null') || ',' ||
+    '"IND_IAG"' || ':' || '"'  || REPLACE(:OLD.IND_IAG, '"', '\"') || '"' || ',' ||
+    '"DELTA"' || ':' || '"'  || TO_CHAR(:OLD.DELTA, 'YYYY-MM-DD HH24:MI:SS') || '"' ||
+'}';
+        v_dados_novos := NULL;
+    -- Insere registro de auditoria para DELETE
+        INSERT INTO POCGG.AUDITORIA_OGG_LOG (
+            TABELA_NOME,
+            TIPO_OPERACAO,
+            CHAVE_PRIMARIA,
+            DADOS_ANTIGOS,
+            DADOS_NOVOS,
+            USUARIO_BD,
+            DATA_AUDITORIA,
+            DAT_ATU_OGG
+        ) VALUES (
+            'OBRA_MUSICAL',
+            v_tipo_operacao,
+            v_chave_primaria,
+            v_dados_antigos,
+            v_dados_novos,
+            USER,
+            SYSDATE,
+            SYSDATE
+        );
+
+    END IF;
+
+
+
+
+EXCEPTION
+    WHEN OTHERS THEN
+        -- Em caso de erro, registra na tabela de erros
+        RAISE_APPLICATION_ERROR(-20001,
+            'Erro na trigger de auditoria TRG_AUD_OBRA_MUSICAL: ' || SQLERRM);
+END TRG_AUD_OBRA_MUSICAL;
+
+END;
+
+/
+ALTER TRIGGER "POCGG"."TRG_AUD_OBRA_MUSICAL" ENABLE;
+  CREATE OR REPLACE EDITIONABLE TRIGGER "POCGG"."TRG_OBRA_MUSICAL_DAT_ATU_OGG" 
+BEFORE INSERT OR UPDATE ON POCGG.OBRA_MUSICAL
+FOR EACH ROW
+BEGIN
+    :NEW.DELTA := SYSDATE;
+END;
+
+/
+ALTER TRIGGER "POCGG"."TRG_OBRA_MUSICAL_DAT_ATU_OGG" ENABLE;
+
+GRANT SELECT ON "POCGG"."OBRA_MUSICAL" TO "APL_ARQUITETURA_OGG";
+
+COMMENT ON COLUMN POCGG.OBRA_MUSICAL.IND_IAG IS 'Define se a obra musical foi criada usando IAG';
+
+
+-- POCGG.OBRA_TITULAR definição
+
+CREATE TABLE "POCGG"."OBRA_TITULAR" 
+   (	"COD_TITULARECAD" NUMBER(13,0) NOT NULL DISABLE, 
+	"COD_OBRAMUSECAD" NUMBER(13,0) NOT NULL DISABLE, 
+	"COD_DIREITO" CHAR(6) NOT NULL DISABLE, 
+	"COD_CATEGORIA" CHAR(2) NOT NULL DISABLE, 
+	"COD_SUBCATEGORIA" CHAR(2) NOT NULL DISABLE, 
+	"PCT_PARTICIPACAO" NUMBER(5,2), 
+	"IND_VALIDACAO" CHAR(1), 
+	"DAT_INICONTRATO" DATE, 
+	"DAT_TERCONTRATO" DATE, 
+	"COD_PSEUDO" NUMBER, 
+	"COD_OBRA_TITULAR" NUMBER NOT NULL DISABLE, 
+	"IND_SITUACAO" CHAR(1), 
+	"IND_BLOQUEIOPARCIAL" CHAR(1), 
+	"COD_LINK" NUMBER NOT NULL DISABLE, 
+	"DELTA" DATE DEFAULT SYSDATE, 
+	 CONSTRAINT "CHK_PCT_POSITIVO" CHECK (PCT_PARTICIPACAO IS NULL OR PCT_PARTICIPACAO  >= 0) DISABLE, 
+	 CONSTRAINT "CKC_IND_VALIDACAO_OBRA_TIT" CHECK (             IND_VALIDACAO in ('P','V')) DISABLE, 
+	 CONSTRAINT "PK_OBRA_TITULAR" PRIMARY KEY ("COD_TITULARECAD", "COD_OBRAMUSECAD", "COD_DIREITO", "COD_CATEGORIA", "COD_SUBCATEGORIA", "COD_LINK")
+  USING INDEX PCTFREE 10 INITRANS 2 MAXTRANS 255 COMPUTE STATISTICS 
+  STORAGE(INITIAL 134217728 NEXT 134217728 MINEXTENTS 1 MAXEXTENTS 2147483645
+  PCTINCREASE 0 FREELISTS 1 FREELIST GROUPS 1
+  BUFFER_POOL DEFAULT FLASH_CACHE DEFAULT CELL_FLASH_CACHE DEFAULT)
+  TABLESPACE "TBS_POCGG"  ENABLE, 
+	 SUPPLEMENTAL LOG DATA (UNIQUE INDEX) COLUMNS, 
+	 SUPPLEMENTAL LOG GROUP "GGS_108168" ("COD_TITULARECAD", "COD_OBRAMUSECAD", "COD_DIREITO", "COD_CATEGORIA", "COD_SUBCATEGORIA", "COD_LINK") ALWAYS, 
+	 SUPPLEMENTAL LOG DATA (FOREIGN KEY) COLUMNS, 
+	 SUPPLEMENTAL LOG DATA (PRIMARY KEY) COLUMNS
+   ) SEGMENT CREATION IMMEDIATE 
+  PCTFREE 20 PCTUSED 70 INITRANS 1 MAXTRANS 255 
+ NOCOMPRESS LOGGING
+  STORAGE(INITIAL 124780544 NEXT 268435456 MINEXTENTS 1 MAXEXTENTS 2147483645
+  PCTINCREASE 0 FREELISTS 1 FREELIST GROUPS 1
+  BUFFER_POOL DEFAULT FLASH_CACHE DEFAULT CELL_FLASH_CACHE DEFAULT)
+  TABLESPACE "TBS_POCGG"  ENABLE ROW MOVEMENT ;
+
+CREATE OR REPLACE EDITIONABLE TRIGGER "POCGG"."TRG_AUD_OBRA_TITULAR" 
+AFTER INSERT OR UPDATE OR DELETE
+ON POCGG.OBRA_TITULAR
+FOR EACH ROW
+BEGIN
+DECLARE
+    v_tipo_operacao VARCHAR2(10);
+    v_chave_primaria VARCHAR2(4000);
+    v_dados_antigos CLOB;
+    v_dados_novos CLOB;
+BEGIN
+    -- Determina tipo de operação
+    IF INSERTING THEN
+        v_tipo_operacao := 'INSERT';
+        v_chave_primaria := 'COD_TITULARECAD=' || :NEW.COD_TITULARECAD || '|' || 'COD_OBRAMUSECAD=' || :NEW.COD_OBRAMUSECAD || '|' || 'COD_DIREITO=' || :NEW.COD_DIREITO || '|' || 'COD_CATEGORIA=' || :NEW.COD_CATEGORIA || '|' || 'COD_SUBCATEGORIA=' || :NEW.COD_SUBCATEGORIA || '|' || 'COD_LINK=' || :NEW.COD_LINK;
+        v_dados_antigos := NULL;
+        v_dados_novos := '{' ||
+    '"COD_TITULARECAD"' || ':' || NVL(TO_CHAR(:NEW.COD_TITULARECAD), 'null') || ',' ||
+    '"COD_OBRAMUSECAD"' || ':' || NVL(TO_CHAR(:NEW.COD_OBRAMUSECAD), 'null') || ',' ||
+    '"COD_DIREITO"' || ':' || '"'  || REPLACE(:NEW.COD_DIREITO, '"', '\"') || '"' || ',' ||
+    '"COD_CATEGORIA"' || ':' || '"'  || REPLACE(:NEW.COD_CATEGORIA, '"', '\"') || '"' || ',' ||
+    '"COD_SUBCATEGORIA"' || ':' || '"'  || REPLACE(:NEW.COD_SUBCATEGORIA, '"', '\"') || '"' || ',' ||
+    '"PCT_PARTICIPACAO"' || ':' || NVL(TO_CHAR(:NEW.PCT_PARTICIPACAO), 'null') || ',' ||
+    '"IND_VALIDACAO"' || ':' || '"'  || REPLACE(:NEW.IND_VALIDACAO, '"', '\"') || '"' || ',' ||
+    '"DAT_INICONTRATO"' || ':' || '"'  || TO_CHAR(:NEW.DAT_INICONTRATO, 'YYYY-MM-DD HH24:MI:SS') || '"' || ',' ||
+    '"DAT_TERCONTRATO"' || ':' || '"'  || TO_CHAR(:NEW.DAT_TERCONTRATO, 'YYYY-MM-DD HH24:MI:SS') || '"' || ',' ||
+    '"COD_PSEUDO"' || ':' || NVL(TO_CHAR(:NEW.COD_PSEUDO), 'null') || ',' ||
+    '"COD_OBRA_TITULAR"' || ':' || NVL(TO_CHAR(:NEW.COD_OBRA_TITULAR), 'null') || ',' ||
+    '"IND_SITUACAO"' || ':' || '"'  || REPLACE(:NEW.IND_SITUACAO, '"', '\"') || '"' || ',' ||
+    '"IND_BLOQUEIOPARCIAL"' || ':' || '"'  || REPLACE(:NEW.IND_BLOQUEIOPARCIAL, '"', '\"') || '"' || ',' ||
+    '"COD_LINK"' || ':' || NVL(TO_CHAR(:NEW.COD_LINK), 'null') || ',' ||
+    '"DELTA"' || ':' || '"'  || TO_CHAR(:NEW.DELTA, 'YYYY-MM-DD HH24:MI:SS') || '"' ||
+'}';
+
+    -- Insere registro de auditoria para INSERT
+        INSERT INTO POCGG.AUDITORIA_OGG_LOG (
+            TABELA_NOME,
+            TIPO_OPERACAO,
+            CHAVE_PRIMARIA,
+            DADOS_ANTIGOS,
+            DADOS_NOVOS,
+            USUARIO_BD,
+            DATA_AUDITORIA,
+            DAT_ATU_OGG
+        ) VALUES (
+            'OBRA_TITULAR',
+            v_tipo_operacao,
+            v_chave_primaria,
+            v_dados_antigos,
+            v_dados_novos,
+            USER,
+            SYSDATE,
+            :NEW.DELTA
+        );
+
+    ELSIF UPDATING THEN
+        v_tipo_operacao := 'UPDATE';
+        v_chave_primaria := 'COD_TITULARECAD=' || :NEW.COD_TITULARECAD || '|' || 'COD_OBRAMUSECAD=' || :NEW.COD_OBRAMUSECAD || '|' || 'COD_DIREITO=' || :NEW.COD_DIREITO || '|' || 'COD_CATEGORIA=' || :NEW.COD_CATEGORIA || '|' || 'COD_SUBCATEGORIA=' || :NEW.COD_SUBCATEGORIA || '|' || 'COD_LINK=' || :NEW.COD_LINK;
+        v_dados_antigos := '{' ||
+    '"COD_TITULARECAD"' || ':' || NVL(TO_CHAR(:OLD.COD_TITULARECAD), 'null') || ',' ||
+    '"COD_OBRAMUSECAD"' || ':' || NVL(TO_CHAR(:OLD.COD_OBRAMUSECAD), 'null') || ',' ||
+    '"COD_DIREITO"' || ':' || '"'  || REPLACE(:OLD.COD_DIREITO, '"', '\"') || '"' || ',' ||
+    '"COD_CATEGORIA"' || ':' || '"'  || REPLACE(:OLD.COD_CATEGORIA, '"', '\"') || '"' || ',' ||
+    '"COD_SUBCATEGORIA"' || ':' || '"'  || REPLACE(:OLD.COD_SUBCATEGORIA, '"', '\"') || '"' || ',' ||
+    '"PCT_PARTICIPACAO"' || ':' || NVL(TO_CHAR(:OLD.PCT_PARTICIPACAO), 'null') || ',' ||
+    '"IND_VALIDACAO"' || ':' || '"'  || REPLACE(:OLD.IND_VALIDACAO, '"', '\"') || '"' || ',' ||
+    '"DAT_INICONTRATO"' || ':' || '"'  || TO_CHAR(:OLD.DAT_INICONTRATO, 'YYYY-MM-DD HH24:MI:SS') || '"' || ',' ||
+    '"DAT_TERCONTRATO"' || ':' || '"'  || TO_CHAR(:OLD.DAT_TERCONTRATO, 'YYYY-MM-DD HH24:MI:SS') || '"' || ',' ||
+    '"COD_PSEUDO"' || ':' || NVL(TO_CHAR(:OLD.COD_PSEUDO), 'null') || ',' ||
+    '"COD_OBRA_TITULAR"' || ':' || NVL(TO_CHAR(:OLD.COD_OBRA_TITULAR), 'null') || ',' ||
+    '"IND_SITUACAO"' || ':' || '"'  || REPLACE(:OLD.IND_SITUACAO, '"', '\"') || '"' || ',' ||
+    '"IND_BLOQUEIOPARCIAL"' || ':' || '"'  || REPLACE(:OLD.IND_BLOQUEIOPARCIAL, '"', '\"') || '"' || ',' ||
+    '"COD_LINK"' || ':' || NVL(TO_CHAR(:OLD.COD_LINK), 'null') || ',' ||
+    '"DELTA"' || ':' || '"'  || TO_CHAR(:OLD.DELTA, 'YYYY-MM-DD HH24:MI:SS') || '"' ||
+'}';
+        v_dados_novos := '{' ||
+    '"COD_TITULARECAD"' || ':' || NVL(TO_CHAR(:NEW.COD_TITULARECAD), 'null') || ',' ||
+    '"COD_OBRAMUSECAD"' || ':' || NVL(TO_CHAR(:NEW.COD_OBRAMUSECAD), 'null') || ',' ||
+    '"COD_DIREITO"' || ':' || '"'  || REPLACE(:NEW.COD_DIREITO, '"', '\"') || '"' || ',' ||
+    '"COD_CATEGORIA"' || ':' || '"'  || REPLACE(:NEW.COD_CATEGORIA, '"', '\"') || '"' || ',' ||
+    '"COD_SUBCATEGORIA"' || ':' || '"'  || REPLACE(:NEW.COD_SUBCATEGORIA, '"', '\"') || '"' || ',' ||
+    '"PCT_PARTICIPACAO"' || ':' || NVL(TO_CHAR(:NEW.PCT_PARTICIPACAO), 'null') || ',' ||
+    '"IND_VALIDACAO"' || ':' || '"'  || REPLACE(:NEW.IND_VALIDACAO, '"', '\"') || '"' || ',' ||
+    '"DAT_INICONTRATO"' || ':' || '"'  || TO_CHAR(:NEW.DAT_INICONTRATO, 'YYYY-MM-DD HH24:MI:SS') || '"' || ',' ||
+    '"DAT_TERCONTRATO"' || ':' || '"'  || TO_CHAR(:NEW.DAT_TERCONTRATO, 'YYYY-MM-DD HH24:MI:SS') || '"' || ',' ||
+    '"COD_PSEUDO"' || ':' || NVL(TO_CHAR(:NEW.COD_PSEUDO), 'null') || ',' ||
+    '"COD_OBRA_TITULAR"' || ':' || NVL(TO_CHAR(:NEW.COD_OBRA_TITULAR), 'null') || ',' ||
+    '"IND_SITUACAO"' || ':' || '"'  || REPLACE(:NEW.IND_SITUACAO, '"', '\"') || '"' || ',' ||
+    '"IND_BLOQUEIOPARCIAL"' || ':' || '"'  || REPLACE(:NEW.IND_BLOQUEIOPARCIAL, '"', '\"') || '"' || ',' ||
+    '"COD_LINK"' || ':' || NVL(TO_CHAR(:NEW.COD_LINK), 'null') || ',' ||
+    '"DELTA"' || ':' || '"'  || TO_CHAR(:NEW.DELTA, 'YYYY-MM-DD HH24:MI:SS') || '"' ||
+'}';
+
+    -- Insere registro de auditoria para UPDATE
+        INSERT INTO POCGG.AUDITORIA_OGG_LOG (
+            TABELA_NOME,
+            TIPO_OPERACAO,
+            CHAVE_PRIMARIA,
+            DADOS_ANTIGOS,
+            DADOS_NOVOS,
+            USUARIO_BD,
+            DATA_AUDITORIA,
+            DAT_ATU_OGG
+        ) VALUES (
+            'OBRA_TITULAR',
+            v_tipo_operacao,
+            v_chave_primaria,
+            v_dados_antigos,
+            v_dados_novos,
+            USER,
+            SYSDATE,
+            :NEW.DELTA
+        );
+
+    ELSIF DELETING THEN
+        v_tipo_operacao := 'DELETE';
+        v_chave_primaria := 'COD_TITULARECAD=' || :OLD.COD_TITULARECAD || '|' || 'COD_OBRAMUSECAD=' || :OLD.COD_OBRAMUSECAD || '|' || 'COD_DIREITO=' || :OLD.COD_DIREITO || '|' || 'COD_CATEGORIA=' || :OLD.COD_CATEGORIA || '|' || 'COD_SUBCATEGORIA=' || :OLD.COD_SUBCATEGORIA || '|' || 'COD_LINK=' || :OLD.COD_LINK;
+        v_dados_antigos := '{' ||
+    '"COD_TITULARECAD"' || ':' || NVL(TO_CHAR(:OLD.COD_TITULARECAD), 'null') || ',' ||
+    '"COD_OBRAMUSECAD"' || ':' || NVL(TO_CHAR(:OLD.COD_OBRAMUSECAD), 'null') || ',' ||
+    '"COD_DIREITO"' || ':' || '"'  || REPLACE(:OLD.COD_DIREITO, '"', '\"') || '"' || ',' ||
+    '"COD_CATEGORIA"' || ':' || '"'  || REPLACE(:OLD.COD_CATEGORIA, '"', '\"') || '"' || ',' ||
+    '"COD_SUBCATEGORIA"' || ':' || '"'  || REPLACE(:OLD.COD_SUBCATEGORIA, '"', '\"') || '"' || ',' ||
+    '"PCT_PARTICIPACAO"' || ':' || NVL(TO_CHAR(:OLD.PCT_PARTICIPACAO), 'null') || ',' ||
+    '"IND_VALIDACAO"' || ':' || '"'  || REPLACE(:OLD.IND_VALIDACAO, '"', '\"') || '"' || ',' ||
+    '"DAT_INICONTRATO"' || ':' || '"'  || TO_CHAR(:OLD.DAT_INICONTRATO, 'YYYY-MM-DD HH24:MI:SS') || '"' || ',' ||
+    '"DAT_TERCONTRATO"' || ':' || '"'  || TO_CHAR(:OLD.DAT_TERCONTRATO, 'YYYY-MM-DD HH24:MI:SS') || '"' || ',' ||
+    '"COD_PSEUDO"' || ':' || NVL(TO_CHAR(:OLD.COD_PSEUDO), 'null') || ',' ||
+    '"COD_OBRA_TITULAR"' || ':' || NVL(TO_CHAR(:OLD.COD_OBRA_TITULAR), 'null') || ',' ||
+    '"IND_SITUACAO"' || ':' || '"'  || REPLACE(:OLD.IND_SITUACAO, '"', '\"') || '"' || ',' ||
+    '"IND_BLOQUEIOPARCIAL"' || ':' || '"'  || REPLACE(:OLD.IND_BLOQUEIOPARCIAL, '"', '\"') || '"' || ',' ||
+    '"COD_LINK"' || ':' || NVL(TO_CHAR(:OLD.COD_LINK), 'null') || ',' ||
+    '"DELTA"' || ':' || '"'  || TO_CHAR(:OLD.DELTA, 'YYYY-MM-DD HH24:MI:SS') || '"' ||
+'}';
+        v_dados_novos := NULL;
+    -- Insere registro de auditoria para DELETE
+        INSERT INTO POCGG.AUDITORIA_OGG_LOG (
+            TABELA_NOME,
+            TIPO_OPERACAO,
+            CHAVE_PRIMARIA,
+            DADOS_ANTIGOS,
+            DADOS_NOVOS,
+            USUARIO_BD,
+            DATA_AUDITORIA,
+            DAT_ATU_OGG
+        ) VALUES (
+            'OBRA_TITULAR',
+            v_tipo_operacao,
+            v_chave_primaria,
+            v_dados_antigos,
+            v_dados_novos,
+            USER,
+            SYSDATE,
+            SYSDATE
+        );
+
+    END IF;
+
+
+
+
+EXCEPTION
+    WHEN OTHERS THEN
+        -- Em caso de erro, registra na tabela de erros
+        RAISE_APPLICATION_ERROR(-20001,
+            'Erro na trigger de auditoria TRG_AUD_OBRA_TITULAR: ' || SQLERRM);
+END TRG_AUD_OBRA_TITULAR;
+
+END;
+
+/
+ALTER TRIGGER "POCGG"."TRG_AUD_OBRA_TITULAR" ENABLE;
+  CREATE OR REPLACE EDITIONABLE TRIGGER "POCGG"."TRG_OBRA_TITULAR_DAT_ATU_OGG" 
+BEFORE INSERT OR UPDATE ON POCGG.OBRA_TITULAR
+FOR EACH ROW
+BEGIN
+    :NEW.DELTA := SYSDATE;
+END;
+
+/
+ALTER TRIGGER "POCGG"."TRG_OBRA_TITULAR_DAT_ATU_OGG" ENABLE;
+
+GRANT SELECT ON "POCGG"."OBRA_TITULAR" TO "APL_ARQUITETURA_OGG";
+
+
+-- POCGG.SOCIEDADE definição
+
+CREATE TABLE "POCGG"."SOCIEDADE" 
+   (	"COD_SOCIEDADE" NUMBER(7,0) NOT NULL DISABLE, 
+	"IND_NACIONALCOL" CHAR(1) DEFAULT 'S' NOT NULL DISABLE, 
+	"IND_CISAC" CHAR(1) DEFAULT 'N' NOT NULL DISABLE, 
+	"IND_REPRESENTACAO" CHAR(1) DEFAULT 'N' NOT NULL DISABLE, 
+	"SGL_SOCIEDADE" VARCHAR2(22) NOT NULL DISABLE, 
+	"NOM_SOCIEDADE" VARCHAR2(80) NOT NULL DISABLE, 
+	"TIP_ENDERECO" CHAR(3) DEFAULT 'EST', 
+	"NRO_ENDERECO" NUMBER(6,0), 
+	"NRO_TELEFONE1" CHAR(16), 
+	"NRO_TELEFONE2" CHAR(16), 
+	"NRO_TELEFONE3" CHAR(16), 
+	"NRO_FAX1" CHAR(16), 
+	"NRO_FAX2" CHAR(16), 
+	"NRO_CEP" NUMBER(8,0), 
+	"COD_CGC" NUMBER(14,0), 
+	"DSC_ENDERECO" VARCHAR2(65), 
+	"DSC_COMPLEMENTO" VARCHAR2(15), 
+	"NOM_BAIRRO" VARCHAR2(15), 
+	"NOM_MUNICIPIO" VARCHAR2(50), 
+	"DSC_EMAIL" VARCHAR2(45), 
+	"DSC_HOMEPAGE" VARCHAR2(45), 
+	"NOM_PRESIDENTE" VARCHAR2(45), 
+	"NOM_REPRESENTANTE" VARCHAR2(45), 
+	"NOM_ADVOGADO" VARCHAR2(45), 
+	"DSC_OBSERVACAO" VARCHAR2(3000), 
+	"SGL_PAIS" CHAR(2) NOT NULL DISABLE, 
+	"SGL_UF" CHAR(2), 
+	"COD_MUNICIPIOECAD" NUMBER(5,0), 
+	"COD_BAIRRO" NUMBER, 
+	"COD_TIPOLOGRADOURO" NUMBER(3,0), 
+	"COD_CAE" NUMBER(3,0), 
+	"TIP_REPRESENTACAO" CHAR(1), 
+	"IND_SITUACAO" CHAR(1), 
+	"IND_PARTICIPADIVCANAL" CHAR(1) DEFAULT 'N' NOT NULL DISABLE, 
+	"TIP_SOCIEDADE" CHAR(1) DEFAULT 'A' NOT NULL DISABLE, 
+	"IND_SCAPR" CHAR(1) DEFAULT 'N' NOT NULL DISABLE, 
+	"DELTA" DATE DEFAULT SYSDATE, 
+	 CONSTRAINT "CKC_IND_SCAPR" CHECK (IND_SCAPR IN ('S','N')) DISABLE, 
+	 CONSTRAINT "CKC_IND_CISAC" CHECK (             IND_CISAC in ('S','N')) DISABLE, 
+	 CONSTRAINT "CKC_IND_REPRESENTACAO" CHECK (             IND_REPRESENTACAO in ('S','N')) DISABLE, 
+	 CONSTRAINT "CKC_TIP_ENDERECO" CHECK (             TIP_ENDERECO is null or (TIP_ENDERECO in ('EST','RES','COB','COM'))) DISABLE, 
+	 CONSTRAINT "CKC_IND_NACIONALCOL" CHECK (             IND_NACIONALCOL in ('S','N')) DISABLE, 
+	 CONSTRAINT "CHK_TIP_REPRESENTACAO" CHECK (TIP_REPRESENTACAO in
+('A','C','M')) DISABLE, 
+	 CONSTRAINT "CHK_SOCIEDADE_DIVCANAL" CHECK (IND_PARTICIPADIVCANAL IN ('S','N')) DISABLE, 
+	 CONSTRAINT "PK_SOCIEDADE" PRIMARY KEY ("COD_SOCIEDADE")
+  USING INDEX PCTFREE 20 INITRANS 2 MAXTRANS 255 COMPUTE STATISTICS 
+  STORAGE(INITIAL 17825792 NEXT 5242880 MINEXTENTS 1 MAXEXTENTS 2147483645
+  PCTINCREASE 0 FREELISTS 1 FREELIST GROUPS 1
+  BUFFER_POOL DEFAULT FLASH_CACHE DEFAULT CELL_FLASH_CACHE DEFAULT)
+  TABLESPACE "TBS_POCGG"  ENABLE, 
+	 SUPPLEMENTAL LOG DATA (UNIQUE INDEX) COLUMNS, 
+	 SUPPLEMENTAL LOG DATA (FOREIGN KEY) COLUMNS, 
+	 SUPPLEMENTAL LOG GROUP "GGS_108291" ("COD_SOCIEDADE") ALWAYS, 
+	 SUPPLEMENTAL LOG DATA (PRIMARY KEY) COLUMNS
+   ) SEGMENT CREATION IMMEDIATE 
+  PCTFREE 20 PCTUSED 70 INITRANS 2 MAXTRANS 255 
+ NOCOMPRESS LOGGING
+  STORAGE(INITIAL 5242880 NEXT 5242880 MINEXTENTS 1 MAXEXTENTS 2147483645
+  PCTINCREASE 0 FREELISTS 1 FREELIST GROUPS 1
+  BUFFER_POOL DEFAULT FLASH_CACHE DEFAULT CELL_FLASH_CACHE DEFAULT)
+  TABLESPACE "TBS_POCGG"  ENABLE ROW MOVEMENT ;
+
+CREATE OR REPLACE EDITIONABLE TRIGGER "POCGG"."TRG_AUD_SOCIEDADE" 
+AFTER INSERT OR UPDATE OR DELETE
+ON POCGG.SOCIEDADE
+FOR EACH ROW
+BEGIN
+DECLARE
+    v_tipo_operacao VARCHAR2(10);
+    v_chave_primaria VARCHAR2(4000);
+    v_dados_antigos CLOB;
+    v_dados_novos CLOB;
+BEGIN
+    -- Determina tipo de operação
+    IF INSERTING THEN
+        v_tipo_operacao := 'INSERT';
+        v_chave_primaria := 'COD_SOCIEDADE=' || :NEW.COD_SOCIEDADE;
+        v_dados_antigos := NULL;
+        v_dados_novos := '{' ||
+    '"COD_SOCIEDADE"' || ':' || NVL(TO_CHAR(:NEW.COD_SOCIEDADE), 'null') || ',' ||
+    '"IND_NACIONALCOL"' || ':' || '"'  || REPLACE(:NEW.IND_NACIONALCOL, '"', '\"') || '"' || ',' ||
+    '"IND_CISAC"' || ':' || '"'  || REPLACE(:NEW.IND_CISAC, '"', '\"') || '"' || ',' ||
+    '"IND_REPRESENTACAO"' || ':' || '"'  || REPLACE(:NEW.IND_REPRESENTACAO, '"', '\"') || '"' || ',' ||
+    '"SGL_SOCIEDADE"' || ':' || '"'  || REPLACE(:NEW.SGL_SOCIEDADE, '"', '\"') || '"' || ',' ||
+    '"NOM_SOCIEDADE"' || ':' || '"'  || REPLACE(:NEW.NOM_SOCIEDADE, '"', '\"') || '"' || ',' ||
+    '"TIP_ENDERECO"' || ':' || '"'  || REPLACE(:NEW.TIP_ENDERECO, '"', '\"') || '"' || ',' ||
+    '"NRO_ENDERECO"' || ':' || NVL(TO_CHAR(:NEW.NRO_ENDERECO), 'null') || ',' ||
+    '"NRO_TELEFONE1"' || ':' || '"'  || REPLACE(:NEW.NRO_TELEFONE1, '"', '\"') || '"' || ',' ||
+    '"NRO_TELEFONE2"' || ':' || '"'  || REPLACE(:NEW.NRO_TELEFONE2, '"', '\"') || '"' || ',' ||
+    '"NRO_TELEFONE3"' || ':' || '"'  || REPLACE(:NEW.NRO_TELEFONE3, '"', '\"') || '"' || ',' ||
+    '"NRO_FAX1"' || ':' || '"'  || REPLACE(:NEW.NRO_FAX1, '"', '\"') || '"' || ',' ||
+    '"NRO_FAX2"' || ':' || '"'  || REPLACE(:NEW.NRO_FAX2, '"', '\"') || '"' || ',' ||
+    '"NRO_CEP"' || ':' || NVL(TO_CHAR(:NEW.NRO_CEP), 'null') || ',' ||
+    '"COD_CGC"' || ':' || NVL(TO_CHAR(:NEW.COD_CGC), 'null') || ',' ||
+    '"DSC_ENDERECO"' || ':' || '"'  || REPLACE(:NEW.DSC_ENDERECO, '"', '\"') || '"' || ',' ||
+    '"DSC_COMPLEMENTO"' || ':' || '"'  || REPLACE(:NEW.DSC_COMPLEMENTO, '"', '\"') || '"' || ',' ||
+    '"NOM_BAIRRO"' || ':' || '"'  || REPLACE(:NEW.NOM_BAIRRO, '"', '\"') || '"' || ',' ||
+    '"NOM_MUNICIPIO"' || ':' || '"'  || REPLACE(:NEW.NOM_MUNICIPIO, '"', '\"') || '"' || ',' ||
+    '"DSC_EMAIL"' || ':' || '"'  || REPLACE(:NEW.DSC_EMAIL, '"', '\"') || '"' || ',' ||
+    '"DSC_HOMEPAGE"' || ':' || '"'  || REPLACE(:NEW.DSC_HOMEPAGE, '"', '\"') || '"' || ',' ||
+    '"NOM_PRESIDENTE"' || ':' || '"'  || REPLACE(:NEW.NOM_PRESIDENTE, '"', '\"') || '"' || ',' ||
+    '"NOM_REPRESENTANTE"' || ':' || '"'  || REPLACE(:NEW.NOM_REPRESENTANTE, '"', '\"') || '"' || ',' ||
+    '"NOM_ADVOGADO"' || ':' || '"'  || REPLACE(:NEW.NOM_ADVOGADO, '"', '\"') || '"' || ',' ||
+    '"DSC_OBSERVACAO"' || ':' || '"'  || REPLACE(:NEW.DSC_OBSERVACAO, '"', '\"') || '"' || ',' ||
+    '"SGL_PAIS"' || ':' || '"'  || REPLACE(:NEW.SGL_PAIS, '"', '\"') || '"' || ',' ||
+    '"SGL_UF"' || ':' || '"'  || REPLACE(:NEW.SGL_UF, '"', '\"') || '"' || ',' ||
+    '"COD_MUNICIPIOECAD"' || ':' || NVL(TO_CHAR(:NEW.COD_MUNICIPIOECAD), 'null') || ',' ||
+    '"COD_BAIRRO"' || ':' || NVL(TO_CHAR(:NEW.COD_BAIRRO), 'null') || ',' ||
+    '"COD_TIPOLOGRADOURO"' || ':' || NVL(TO_CHAR(:NEW.COD_TIPOLOGRADOURO), 'null') || ',' ||
+    '"COD_CAE"' || ':' || NVL(TO_CHAR(:NEW.COD_CAE), 'null') || ',' ||
+    '"TIP_REPRESENTACAO"' || ':' || '"'  || REPLACE(:NEW.TIP_REPRESENTACAO, '"', '\"') || '"' || ',' ||
+    '"IND_SITUACAO"' || ':' || '"'  || REPLACE(:NEW.IND_SITUACAO, '"', '\"') || '"' || ',' ||
+    '"IND_PARTICIPADIVCANAL"' || ':' || '"'  || REPLACE(:NEW.IND_PARTICIPADIVCANAL, '"', '\"') || '"' || ',' ||
+    '"TIP_SOCIEDADE"' || ':' || '"'  || REPLACE(:NEW.TIP_SOCIEDADE, '"', '\"') || '"' || ',' ||
+    '"IND_SCAPR"' || ':' || '"'  || REPLACE(:NEW.IND_SCAPR, '"', '\"') || '"' || ',' ||
+    '"DELTA"' || ':' || '"'  || TO_CHAR(:NEW.DELTA, 'YYYY-MM-DD HH24:MI:SS') || '"' ||
+'}';
+
+    -- Insere registro de auditoria para INSERT
+        INSERT INTO POCGG.AUDITORIA_OGG_LOG (
+            TABELA_NOME,
+            TIPO_OPERACAO,
+            CHAVE_PRIMARIA,
+            DADOS_ANTIGOS,
+            DADOS_NOVOS,
+            USUARIO_BD,
+            DATA_AUDITORIA,
+            DAT_ATU_OGG
+        ) VALUES (
+            'SOCIEDADE',
+            v_tipo_operacao,
+            v_chave_primaria,
+            v_dados_antigos,
+            v_dados_novos,
+            USER,
+            SYSDATE,
+            :NEW.DELTA
+        );
+
+    ELSIF UPDATING THEN
+        v_tipo_operacao := 'UPDATE';
+        v_chave_primaria := 'COD_SOCIEDADE=' || :NEW.COD_SOCIEDADE;
+        v_dados_antigos := '{' ||
+    '"COD_SOCIEDADE"' || ':' || NVL(TO_CHAR(:OLD.COD_SOCIEDADE), 'null') || ',' ||
+    '"IND_NACIONALCOL"' || ':' || '"'  || REPLACE(:OLD.IND_NACIONALCOL, '"', '\"') || '"' || ',' ||
+    '"IND_CISAC"' || ':' || '"'  || REPLACE(:OLD.IND_CISAC, '"', '\"') || '"' || ',' ||
+    '"IND_REPRESENTACAO"' || ':' || '"'  || REPLACE(:OLD.IND_REPRESENTACAO, '"', '\"') || '"' || ',' ||
+    '"SGL_SOCIEDADE"' || ':' || '"'  || REPLACE(:OLD.SGL_SOCIEDADE, '"', '\"') || '"' || ',' ||
+    '"NOM_SOCIEDADE"' || ':' || '"'  || REPLACE(:OLD.NOM_SOCIEDADE, '"', '\"') || '"' || ',' ||
+    '"TIP_ENDERECO"' || ':' || '"'  || REPLACE(:OLD.TIP_ENDERECO, '"', '\"') || '"' || ',' ||
+    '"NRO_ENDERECO"' || ':' || NVL(TO_CHAR(:OLD.NRO_ENDERECO), 'null') || ',' ||
+    '"NRO_TELEFONE1"' || ':' || '"'  || REPLACE(:OLD.NRO_TELEFONE1, '"', '\"') || '"' || ',' ||
+    '"NRO_TELEFONE2"' || ':' || '"'  || REPLACE(:OLD.NRO_TELEFONE2, '"', '\"') || '"' || ',' ||
+    '"NRO_TELEFONE3"' || ':' || '"'  || REPLACE(:OLD.NRO_TELEFONE3, '"', '\"') || '"' || ',' ||
+    '"NRO_FAX1"' || ':' || '"'  || REPLACE(:OLD.NRO_FAX1, '"', '\"') || '"' || ',' ||
+    '"NRO_FAX2"' || ':' || '"'  || REPLACE(:OLD.NRO_FAX2, '"', '\"') || '"' || ',' ||
+    '"NRO_CEP"' || ':' || NVL(TO_CHAR(:OLD.NRO_CEP), 'null') || ',' ||
+    '"COD_CGC"' || ':' || NVL(TO_CHAR(:OLD.COD_CGC), 'null') || ',' ||
+    '"DSC_ENDERECO"' || ':' || '"'  || REPLACE(:OLD.DSC_ENDERECO, '"', '\"') || '"' || ',' ||
+    '"DSC_COMPLEMENTO"' || ':' || '"'  || REPLACE(:OLD.DSC_COMPLEMENTO, '"', '\"') || '"' || ',' ||
+    '"NOM_BAIRRO"' || ':' || '"'  || REPLACE(:OLD.NOM_BAIRRO, '"', '\"') || '"' || ',' ||
+    '"NOM_MUNICIPIO"' || ':' || '"'  || REPLACE(:OLD.NOM_MUNICIPIO, '"', '\"') || '"' || ',' ||
+    '"DSC_EMAIL"' || ':' || '"'  || REPLACE(:OLD.DSC_EMAIL, '"', '\"') || '"' || ',' ||
+    '"DSC_HOMEPAGE"' || ':' || '"'  || REPLACE(:OLD.DSC_HOMEPAGE, '"', '\"') || '"' || ',' ||
+    '"NOM_PRESIDENTE"' || ':' || '"'  || REPLACE(:OLD.NOM_PRESIDENTE, '"', '\"') || '"' || ',' ||
+    '"NOM_REPRESENTANTE"' || ':' || '"'  || REPLACE(:OLD.NOM_REPRESENTANTE, '"', '\"') || '"' || ',' ||
+    '"NOM_ADVOGADO"' || ':' || '"'  || REPLACE(:OLD.NOM_ADVOGADO, '"', '\"') || '"' || ',' ||
+    '"DSC_OBSERVACAO"' || ':' || '"'  || REPLACE(:OLD.DSC_OBSERVACAO, '"', '\"') || '"' || ',' ||
+    '"SGL_PAIS"' || ':' || '"'  || REPLACE(:OLD.SGL_PAIS, '"', '\"') || '"' || ',' ||
+    '"SGL_UF"' || ':' || '"'  || REPLACE(:OLD.SGL_UF, '"', '\"') || '"' || ',' ||
+    '"COD_MUNICIPIOECAD"' || ':' || NVL(TO_CHAR(:OLD.COD_MUNICIPIOECAD), 'null') || ',' ||
+    '"COD_BAIRRO"' || ':' || NVL(TO_CHAR(:OLD.COD_BAIRRO), 'null') || ',' ||
+    '"COD_TIPOLOGRADOURO"' || ':' || NVL(TO_CHAR(:OLD.COD_TIPOLOGRADOURO), 'null') || ',' ||
+    '"COD_CAE"' || ':' || NVL(TO_CHAR(:OLD.COD_CAE), 'null') || ',' ||
+    '"TIP_REPRESENTACAO"' || ':' || '"'  || REPLACE(:OLD.TIP_REPRESENTACAO, '"', '\"') || '"' || ',' ||
+    '"IND_SITUACAO"' || ':' || '"'  || REPLACE(:OLD.IND_SITUACAO, '"', '\"') || '"' || ',' ||
+    '"IND_PARTICIPADIVCANAL"' || ':' || '"'  || REPLACE(:OLD.IND_PARTICIPADIVCANAL, '"', '\"') || '"' || ',' ||
+    '"TIP_SOCIEDADE"' || ':' || '"'  || REPLACE(:OLD.TIP_SOCIEDADE, '"', '\"') || '"' || ',' ||
+    '"IND_SCAPR"' || ':' || '"'  || REPLACE(:OLD.IND_SCAPR, '"', '\"') || '"' || ',' ||
+    '"DELTA"' || ':' || '"'  || TO_CHAR(:OLD.DELTA, 'YYYY-MM-DD HH24:MI:SS') || '"' ||
+'}';
+        v_dados_novos := '{' ||
+    '"COD_SOCIEDADE"' || ':' || NVL(TO_CHAR(:NEW.COD_SOCIEDADE), 'null') || ',' ||
+    '"IND_NACIONALCOL"' || ':' || '"'  || REPLACE(:NEW.IND_NACIONALCOL, '"', '\"') || '"' || ',' ||
+    '"IND_CISAC"' || ':' || '"'  || REPLACE(:NEW.IND_CISAC, '"', '\"') || '"' || ',' ||
+    '"IND_REPRESENTACAO"' || ':' || '"'  || REPLACE(:NEW.IND_REPRESENTACAO, '"', '\"') || '"' || ',' ||
+    '"SGL_SOCIEDADE"' || ':' || '"'  || REPLACE(:NEW.SGL_SOCIEDADE, '"', '\"') || '"' || ',' ||
+    '"NOM_SOCIEDADE"' || ':' || '"'  || REPLACE(:NEW.NOM_SOCIEDADE, '"', '\"') || '"' || ',' ||
+    '"TIP_ENDERECO"' || ':' || '"'  || REPLACE(:NEW.TIP_ENDERECO, '"', '\"') || '"' || ',' ||
+    '"NRO_ENDERECO"' || ':' || NVL(TO_CHAR(:NEW.NRO_ENDERECO), 'null') || ',' ||
+    '"NRO_TELEFONE1"' || ':' || '"'  || REPLACE(:NEW.NRO_TELEFONE1, '"', '\"') || '"' || ',' ||
+    '"NRO_TELEFONE2"' || ':' || '"'  || REPLACE(:NEW.NRO_TELEFONE2, '"', '\"') || '"' || ',' ||
+    '"NRO_TELEFONE3"' || ':' || '"'  || REPLACE(:NEW.NRO_TELEFONE3, '"', '\"') || '"' || ',' ||
+    '"NRO_FAX1"' || ':' || '"'  || REPLACE(:NEW.NRO_FAX1, '"', '\"') || '"' || ',' ||
+    '"NRO_FAX2"' || ':' || '"'  || REPLACE(:NEW.NRO_FAX2, '"', '\"') || '"' || ',' ||
+    '"NRO_CEP"' || ':' || NVL(TO_CHAR(:NEW.NRO_CEP), 'null') || ',' ||
+    '"COD_CGC"' || ':' || NVL(TO_CHAR(:NEW.COD_CGC), 'null') || ',' ||
+    '"DSC_ENDERECO"' || ':' || '"'  || REPLACE(:NEW.DSC_ENDERECO, '"', '\"') || '"' || ',' ||
+    '"DSC_COMPLEMENTO"' || ':' || '"'  || REPLACE(:NEW.DSC_COMPLEMENTO, '"', '\"') || '"' || ',' ||
+    '"NOM_BAIRRO"' || ':' || '"'  || REPLACE(:NEW.NOM_BAIRRO, '"', '\"') || '"' || ',' ||
+    '"NOM_MUNICIPIO"' || ':' || '"'  || REPLACE(:NEW.NOM_MUNICIPIO, '"', '\"') || '"' || ',' ||
+    '"DSC_EMAIL"' || ':' || '"'  || REPLACE(:NEW.DSC_EMAIL, '"', '\"') || '"' || ',' ||
+    '"DSC_HOMEPAGE"' || ':' || '"'  || REPLACE(:NEW.DSC_HOMEPAGE, '"', '\"') || '"' || ',' ||
+    '"NOM_PRESIDENTE"' || ':' || '"'  || REPLACE(:NEW.NOM_PRESIDENTE, '"', '\"') || '"' || ',' ||
+    '"NOM_REPRESENTANTE"' || ':' || '"'  || REPLACE(:NEW.NOM_REPRESENTANTE, '"', '\"') || '"' || ',' ||
+    '"NOM_ADVOGADO"' || ':' || '"'  || REPLACE(:NEW.NOM_ADVOGADO, '"', '\"') || '"' || ',' ||
+    '"DSC_OBSERVACAO"' || ':' || '"'  || REPLACE(:NEW.DSC_OBSERVACAO, '"', '\"') || '"' || ',' ||
+    '"SGL_PAIS"' || ':' || '"'  || REPLACE(:NEW.SGL_PAIS, '"', '\"') || '"' || ',' ||
+    '"SGL_UF"' || ':' || '"'  || REPLACE(:NEW.SGL_UF, '"', '\"') || '"' || ',' ||
+    '"COD_MUNICIPIOECAD"' || ':' || NVL(TO_CHAR(:NEW.COD_MUNICIPIOECAD), 'null') || ',' ||
+    '"COD_BAIRRO"' || ':' || NVL(TO_CHAR(:NEW.COD_BAIRRO), 'null') || ',' ||
+    '"COD_TIPOLOGRADOURO"' || ':' || NVL(TO_CHAR(:NEW.COD_TIPOLOGRADOURO), 'null') || ',' ||
+    '"COD_CAE"' || ':' || NVL(TO_CHAR(:NEW.COD_CAE), 'null') || ',' ||
+    '"TIP_REPRESENTACAO"' || ':' || '"'  || REPLACE(:NEW.TIP_REPRESENTACAO, '"', '\"') || '"' || ',' ||
+    '"IND_SITUACAO"' || ':' || '"'  || REPLACE(:NEW.IND_SITUACAO, '"', '\"') || '"' || ',' ||
+    '"IND_PARTICIPADIVCANAL"' || ':' || '"'  || REPLACE(:NEW.IND_PARTICIPADIVCANAL, '"', '\"') || '"' || ',' ||
+    '"TIP_SOCIEDADE"' || ':' || '"'  || REPLACE(:NEW.TIP_SOCIEDADE, '"', '\"') || '"' || ',' ||
+    '"IND_SCAPR"' || ':' || '"'  || REPLACE(:NEW.IND_SCAPR, '"', '\"') || '"' || ',' ||
+    '"DELTA"' || ':' || '"'  || TO_CHAR(:NEW.DELTA, 'YYYY-MM-DD HH24:MI:SS') || '"' ||
+'}';
+
+    -- Insere registro de auditoria para UPDATE
+        INSERT INTO POCGG.AUDITORIA_OGG_LOG (
+            TABELA_NOME,
+            TIPO_OPERACAO,
+            CHAVE_PRIMARIA,
+            DADOS_ANTIGOS,
+            DADOS_NOVOS,
+            USUARIO_BD,
+            DATA_AUDITORIA,
+            DAT_ATU_OGG
+        ) VALUES (
+            'SOCIEDADE',
+            v_tipo_operacao,
+            v_chave_primaria,
+            v_dados_antigos,
+            v_dados_novos,
+            USER,
+            SYSDATE,
+            :NEW.DELTA
+        );
+
+    ELSIF DELETING THEN
+        v_tipo_operacao := 'DELETE';
+        v_chave_primaria := 'COD_SOCIEDADE=' || :OLD.COD_SOCIEDADE;
+        v_dados_antigos := '{' ||
+    '"COD_SOCIEDADE"' || ':' || NVL(TO_CHAR(:OLD.COD_SOCIEDADE), 'null') || ',' ||
+    '"IND_NACIONALCOL"' || ':' || '"'  || REPLACE(:OLD.IND_NACIONALCOL, '"', '\"') || '"' || ',' ||
+    '"IND_CISAC"' || ':' || '"'  || REPLACE(:OLD.IND_CISAC, '"', '\"') || '"' || ',' ||
+    '"IND_REPRESENTACAO"' || ':' || '"'  || REPLACE(:OLD.IND_REPRESENTACAO, '"', '\"') || '"' || ',' ||
+    '"SGL_SOCIEDADE"' || ':' || '"'  || REPLACE(:OLD.SGL_SOCIEDADE, '"', '\"') || '"' || ',' ||
+    '"NOM_SOCIEDADE"' || ':' || '"'  || REPLACE(:OLD.NOM_SOCIEDADE, '"', '\"') || '"' || ',' ||
+    '"TIP_ENDERECO"' || ':' || '"'  || REPLACE(:OLD.TIP_ENDERECO, '"', '\"') || '"' || ',' ||
+    '"NRO_ENDERECO"' || ':' || NVL(TO_CHAR(:OLD.NRO_ENDERECO), 'null') || ',' ||
+    '"NRO_TELEFONE1"' || ':' || '"'  || REPLACE(:OLD.NRO_TELEFONE1, '"', '\"') || '"' || ',' ||
+    '"NRO_TELEFONE2"' || ':' || '"'  || REPLACE(:OLD.NRO_TELEFONE2, '"', '\"') || '"' || ',' ||
+    '"NRO_TELEFONE3"' || ':' || '"'  || REPLACE(:OLD.NRO_TELEFONE3, '"', '\"') || '"' || ',' ||
+    '"NRO_FAX1"' || ':' || '"'  || REPLACE(:OLD.NRO_FAX1, '"', '\"') || '"' || ',' ||
+    '"NRO_FAX2"' || ':' || '"'  || REPLACE(:OLD.NRO_FAX2, '"', '\"') || '"' || ',' ||
+    '"NRO_CEP"' || ':' || NVL(TO_CHAR(:OLD.NRO_CEP), 'null') || ',' ||
+    '"COD_CGC"' || ':' || NVL(TO_CHAR(:OLD.COD_CGC), 'null') || ',' ||
+    '"DSC_ENDERECO"' || ':' || '"'  || REPLACE(:OLD.DSC_ENDERECO, '"', '\"') || '"' || ',' ||
+    '"DSC_COMPLEMENTO"' || ':' || '"'  || REPLACE(:OLD.DSC_COMPLEMENTO, '"', '\"') || '"' || ',' ||
+    '"NOM_BAIRRO"' || ':' || '"'  || REPLACE(:OLD.NOM_BAIRRO, '"', '\"') || '"' || ',' ||
+    '"NOM_MUNICIPIO"' || ':' || '"'  || REPLACE(:OLD.NOM_MUNICIPIO, '"', '\"') || '"' || ',' ||
+    '"DSC_EMAIL"' || ':' || '"'  || REPLACE(:OLD.DSC_EMAIL, '"', '\"') || '"' || ',' ||
+    '"DSC_HOMEPAGE"' || ':' || '"'  || REPLACE(:OLD.DSC_HOMEPAGE, '"', '\"') || '"' || ',' ||
+    '"NOM_PRESIDENTE"' || ':' || '"'  || REPLACE(:OLD.NOM_PRESIDENTE, '"', '\"') || '"' || ',' ||
+    '"NOM_REPRESENTANTE"' || ':' || '"'  || REPLACE(:OLD.NOM_REPRESENTANTE, '"', '\"') || '"' || ',' ||
+    '"NOM_ADVOGADO"' || ':' || '"'  || REPLACE(:OLD.NOM_ADVOGADO, '"', '\"') || '"' || ',' ||
+    '"DSC_OBSERVACAO"' || ':' || '"'  || REPLACE(:OLD.DSC_OBSERVACAO, '"', '\"') || '"' || ',' ||
+    '"SGL_PAIS"' || ':' || '"'  || REPLACE(:OLD.SGL_PAIS, '"', '\"') || '"' || ',' ||
+    '"SGL_UF"' || ':' || '"'  || REPLACE(:OLD.SGL_UF, '"', '\"') || '"' || ',' ||
+    '"COD_MUNICIPIOECAD"' || ':' || NVL(TO_CHAR(:OLD.COD_MUNICIPIOECAD), 'null') || ',' ||
+    '"COD_BAIRRO"' || ':' || NVL(TO_CHAR(:OLD.COD_BAIRRO), 'null') || ',' ||
+    '"COD_TIPOLOGRADOURO"' || ':' || NVL(TO_CHAR(:OLD.COD_TIPOLOGRADOURO), 'null') || ',' ||
+    '"COD_CAE"' || ':' || NVL(TO_CHAR(:OLD.COD_CAE), 'null') || ',' ||
+    '"TIP_REPRESENTACAO"' || ':' || '"'  || REPLACE(:OLD.TIP_REPRESENTACAO, '"', '\"') || '"' || ',' ||
+    '"IND_SITUACAO"' || ':' || '"'  || REPLACE(:OLD.IND_SITUACAO, '"', '\"') || '"' || ',' ||
+    '"IND_PARTICIPADIVCANAL"' || ':' || '"'  || REPLACE(:OLD.IND_PARTICIPADIVCANAL, '"', '\"') || '"' || ',' ||
+    '"TIP_SOCIEDADE"' || ':' || '"'  || REPLACE(:OLD.TIP_SOCIEDADE, '"', '\"') || '"' || ',' ||
+    '"IND_SCAPR"' || ':' || '"'  || REPLACE(:OLD.IND_SCAPR, '"', '\"') || '"' || ',' ||
+    '"DELTA"' || ':' || '"'  || TO_CHAR(:OLD.DELTA, 'YYYY-MM-DD HH24:MI:SS') || '"' ||
+'}';
+        v_dados_novos := NULL;
+    -- Insere registro de auditoria para DELETE
+        INSERT INTO POCGG.AUDITORIA_OGG_LOG (
+            TABELA_NOME,
+            TIPO_OPERACAO,
+            CHAVE_PRIMARIA,
+            DADOS_ANTIGOS,
+            DADOS_NOVOS,
+            USUARIO_BD,
+            DATA_AUDITORIA,
+            DAT_ATU_OGG
+        ) VALUES (
+            'SOCIEDADE',
+            v_tipo_operacao,
+            v_chave_primaria,
+            v_dados_antigos,
+            v_dados_novos,
+            USER,
+            SYSDATE,
+            SYSDATE
+        );
+
+    END IF;
+
+
+
+
+EXCEPTION
+    WHEN OTHERS THEN
+        -- Em caso de erro, registra na tabela de erros
+        RAISE_APPLICATION_ERROR(-20001,
+            'Erro na trigger de auditoria TRG_AUD_SOCIEDADE: ' || SQLERRM);
+END TRG_AUD_SOCIEDADE;
+
+END;
+
+/
+ALTER TRIGGER "POCGG"."TRG_AUD_SOCIEDADE" ENABLE;
+  CREATE OR REPLACE EDITIONABLE TRIGGER "POCGG"."TRG_SOCIEDADE_DAT_ATU_OGG" 
+BEFORE INSERT OR UPDATE ON POCGG.SOCIEDADE
+FOR EACH ROW
+BEGIN
+    :NEW.DELTA := SYSDATE;
+END;
+
+/
+ALTER TRIGGER "POCGG"."TRG_SOCIEDADE_DAT_ATU_OGG" ENABLE;
+
+GRANT SELECT ON "POCGG"."SOCIEDADE" TO "APL_ARQUITETURA_OGG";
+
+
+-- POCGG.TITULAR definição
+
+CREATE TABLE "POCGG"."TITULAR" 
+   (	"COD_TITULARECAD" NUMBER(13,0) NOT NULL DISABLE, 
+	"COD_TITULARIDENTIFICADO" NUMBER(13,0), 
+	"COD_MUNICIPIOECAD" NUMBER(5,0), 
+	"COD_TIPOLOGRADOURO" NUMBER(3,0), 
+	"COD_BAIRRO" NUMBER, 
+	"TIP_PESSOA" CHAR(1) NOT NULL DISABLE, 
+	"NOM_TITULAR" VARCHAR2(70) NOT NULL DISABLE, 
+	"TIP_TITULAR" CHAR(3), 
+	"IND_NACIONALCOL" CHAR(1) NOT NULL DISABLE, 
+	"DAT_CADASTRO" DATE NOT NULL DISABLE, 
+	"DAT_IDTITULAR" DATE, 
+	"DAT_IDASSOCIACAO" DATE, 
+	"DAT_NASCIMENTO" DATE, 
+	"DAT_FALECIMENTO" DATE, 
+	"NOM_FANTASIA" VARCHAR2(70), 
+	"NOM_NAMETITULAR" VARCHAR2(70), 
+	"COD_CPF" NUMBER(12,0), 
+	"COD_CGC" NUMBER(14,0), 
+	"COD_ORIGEMRG" CHAR(7), 
+	"DAT_EMISSAORG" DATE, 
+	"COD_RG" NUMBER(20,0), 
+	"SGL_UFRG" CHAR(2), 
+	"NOM_PAI" VARCHAR2(45), 
+	"NOM_MAE" VARCHAR2(45), 
+	"TIP_ESTCIVIL" CHAR(2), 
+	"IND_SEXO" CHAR(1), 
+	"QTD_FILHOS" NUMBER(2,0), 
+	"DSC_PROFISSAO" VARCHAR2(45), 
+	"NOM_CONJUGE" VARCHAR2(45), 
+	"DSC_REFERENCIACONTATO" VARCHAR2(65), 
+	"NATURAL_TITULAR" CHAR(2), 
+	"NACIONALIDADE_TITULAR" CHAR(2), 
+	"TIP_ENDERECO" CHAR(3), 
+	"DSC_ENDERECO" VARCHAR2(65), 
+	"NRO_ENDERECO" CHAR(5), 
+	"DSC_COMPLEMENTO" VARCHAR2(15), 
+	"NRO_CEP" NUMBER(8,0), 
+	"SGL_UF" CHAR(2), 
+	"SGL_PAIS" CHAR(2), 
+	"NRO_TELEFONE1" CHAR(16), 
+	"NRO_TELEFONE2" CHAR(16), 
+	"NRO_FAX1" CHAR(16), 
+	"DSC_EMAIL" VARCHAR2(45), 
+	"DSC_HOMEPAGE" VARCHAR2(45), 
+	"IND_SUCESSORES" CHAR(1), 
+	"COD_OMB" VARCHAR2(13), 
+	"DSC_OBSERVACAO" VARCHAR2(3000), 
+	"IND_SITCADASTRAL" CHAR(1), 
+	"TIP_SITFINANCEIRA" CHAR(1), 
+	"PCT_BLOQUEIO" NUMBER(5,2), 
+	"COD_QUALITY" CHAR(2), 
+	"COD_CAE" NUMBER(11,0), 
+	"DAT_ATUALIZACAE" DATE, 
+	"SGL_IFPI" CHAR(3), 
+	"DAT_ATUALIZACAO" DATE, 
+	"COD_TITMIGRAOLD" CHAR(13), 
+	"NOM_BUSCA" VARCHAR2(80), 
+	"SOC_RESP_INFO" NUMBER(7,0), 
+	"COD_TITULARESTRANGEIRO" NUMBER(13,0), 
+	"DSC_OBS_ISRC" VARCHAR2(1000), 
+	"DAT_INST_ISRC" DATE, 
+	"NOMLOGIN" VARCHAR2(30), 
+	"COD_IPI" CHAR(11), 
+	"DSC_CORRESPONDENCIA" VARCHAR2(50), 
+	"COD_RESP_CADASTRO" NUMBER, 
+	"COD_MUNICIPIOECADNASCIMENTO" NUMBER, 
+	"SGL_RADICAL_IFPI" VARCHAR2(2), 
+	"COD_IPN" VARCHAR2(8), 
+	"DELTA" DATE DEFAULT SYSDATE, 
+	 CONSTRAINT "CKC_TIP_ENDERECO_TITULAR" CHECK (             TIP_ENDERECO is null or (TIP_ENDERECO in ('EST','RES','COB','COM'))) DISABLE, 
+	 CONSTRAINT "CKC_TIP_TITULAR_TITULAR" CHECK (TIP_TITULAR IN ('MCC','MSC','SCM','ESE','CMD','CCC','SCF','CFD','MCD','ESC','IMP')) DISABLE, 
+	 CONSTRAINT "CKC_IND_SITCADASTRAL_TITULAR" CHECK (             IND_SITCADASTRAL is null or (IND_SITCADASTRAL in ('F','P'))) DISABLE, 
+	 CONSTRAINT "CKC_TIP_ESTCIVIL_TITULAR" CHECK (             TIP_ESTCIVIL is null or (TIP_ESTCIVIL in ('S','C','V','DE','DI','O'))) DISABLE, 
+	 CONSTRAINT "CKC_TIP_PESSOA_TITULAR" CHECK (             TIP_PESSOA in ('F','J')) DISABLE, 
+	 CONSTRAINT "PK_TITULAR" PRIMARY KEY ("COD_TITULARECAD")
+  USING INDEX PCTFREE 20 INITRANS 2 MAXTRANS 255 COMPUTE STATISTICS 
+  STORAGE(INITIAL 119537664 NEXT 67108864 MINEXTENTS 1 MAXEXTENTS 2147483645
+  PCTINCREASE 0 FREELISTS 1 FREELIST GROUPS 1
+  BUFFER_POOL DEFAULT FLASH_CACHE DEFAULT CELL_FLASH_CACHE DEFAULT)
+  TABLESPACE "TBS_POCGG"  ENABLE, 
+	 CONSTRAINT "CKC_TIP_SITFINANCEIRA_TITULAR" CHECK (TIP_SITFINANCEIRA IS NULL OR (TIP_SITFINANCEIRA IN ('L','P','I','C', 'J'))) DISABLE, 
+	 CONSTRAINT "UK_TITULOAR" UNIQUE ("COD_CAE")
+  USING INDEX PCTFREE 20 INITRANS 2 MAXTRANS 255 COMPUTE STATISTICS 
+  STORAGE(INITIAL 25165824 NEXT 5242880 MINEXTENTS 1 MAXEXTENTS 2147483645
+  PCTINCREASE 0 FREELISTS 1 FREELIST GROUPS 1
+  BUFFER_POOL DEFAULT FLASH_CACHE DEFAULT CELL_FLASH_CACHE DEFAULT)
+  TABLESPACE "TBS_POCGG"  ENABLE, 
+	 CONSTRAINT "CKC_IND_SUCESSORES_TITULAR" CHECK (             IND_SUCESSORES is null or (IND_SUCESSORES in ('S','N'))) DISABLE, 
+	 CONSTRAINT "CKC_IND_NACIONALCOL_TITULAR" CHECK (             IND_NACIONALCOL in ('S','N')) DISABLE, 
+	 CONSTRAINT "CKC_IND_SEXO_TITULAR" CHECK (             IND_SEXO is null or (IND_SEXO in ('F','M'))) DISABLE, 
+	 SUPPLEMENTAL LOG DATA (PRIMARY KEY) COLUMNS, 
+	 SUPPLEMENTAL LOG DATA (UNIQUE INDEX) COLUMNS, 
+	 SUPPLEMENTAL LOG GROUP "GGS_108340" ("COD_TITULARECAD") ALWAYS, 
+	 SUPPLEMENTAL LOG DATA (FOREIGN KEY) COLUMNS
+   ) SEGMENT CREATION IMMEDIATE 
+  PCTFREE 20 PCTUSED 70 INITRANS 1 MAXTRANS 255 
+ NOCOMPRESS LOGGING
+  STORAGE(INITIAL 149946368 NEXT 268435456 MINEXTENTS 1 MAXEXTENTS 2147483645
+  PCTINCREASE 0 FREELISTS 1 FREELIST GROUPS 1
+  BUFFER_POOL DEFAULT FLASH_CACHE DEFAULT CELL_FLASH_CACHE DEFAULT)
+  TABLESPACE "TBS_POCGG"  ENABLE ROW MOVEMENT ;
+
+CREATE OR REPLACE EDITIONABLE TRIGGER "POCGG"."TRG_AUD_TITULAR" 
+AFTER INSERT OR UPDATE OR DELETE
+ON POCGG.TITULAR
+FOR EACH ROW
+BEGIN
+DECLARE
+    v_tipo_operacao VARCHAR2(10);
+    v_chave_primaria VARCHAR2(4000);
+    v_dados_antigos CLOB;
+    v_dados_novos CLOB;
+BEGIN
+    -- Determina tipo de operação
+    IF INSERTING THEN
+        v_tipo_operacao := 'INSERT';
+        v_chave_primaria := 'COD_TITULARECAD=' || :NEW.COD_TITULARECAD;
+        v_dados_antigos := NULL;
+        v_dados_novos := '{' ||
+    '"COD_TITULARECAD"' || ':' || NVL(TO_CHAR(:NEW.COD_TITULARECAD), 'null') || ',' ||
+    '"COD_TITULARIDENTIFICADO"' || ':' || NVL(TO_CHAR(:NEW.COD_TITULARIDENTIFICADO), 'null') || ',' ||
+    '"COD_MUNICIPIOECAD"' || ':' || NVL(TO_CHAR(:NEW.COD_MUNICIPIOECAD), 'null') || ',' ||
+    '"COD_TIPOLOGRADOURO"' || ':' || NVL(TO_CHAR(:NEW.COD_TIPOLOGRADOURO), 'null') || ',' ||
+    '"COD_BAIRRO"' || ':' || NVL(TO_CHAR(:NEW.COD_BAIRRO), 'null') || ',' ||
+    '"TIP_PESSOA"' || ':' || '"'  || REPLACE(:NEW.TIP_PESSOA, '"', '\"') || '"' || ',' ||
+    '"NOM_TITULAR"' || ':' || '"'  || REPLACE(:NEW.NOM_TITULAR, '"', '\"') || '"' || ',' ||
+    '"TIP_TITULAR"' || ':' || '"'  || REPLACE(:NEW.TIP_TITULAR, '"', '\"') || '"' || ',' ||
+    '"IND_NACIONALCOL"' || ':' || '"'  || REPLACE(:NEW.IND_NACIONALCOL, '"', '\"') || '"' || ',' ||
+    '"DAT_CADASTRO"' || ':' || '"'  || TO_CHAR(:NEW.DAT_CADASTRO, 'YYYY-MM-DD HH24:MI:SS') || '"' || ',' ||
+    '"DAT_IDTITULAR"' || ':' || '"'  || TO_CHAR(:NEW.DAT_IDTITULAR, 'YYYY-MM-DD HH24:MI:SS') || '"' || ',' ||
+    '"DAT_IDASSOCIACAO"' || ':' || '"'  || TO_CHAR(:NEW.DAT_IDASSOCIACAO, 'YYYY-MM-DD HH24:MI:SS') || '"' || ',' ||
+    '"DAT_NASCIMENTO"' || ':' || '"'  || TO_CHAR(:NEW.DAT_NASCIMENTO, 'YYYY-MM-DD HH24:MI:SS') || '"' || ',' ||
+    '"DAT_FALECIMENTO"' || ':' || '"'  || TO_CHAR(:NEW.DAT_FALECIMENTO, 'YYYY-MM-DD HH24:MI:SS') || '"' || ',' ||
+    '"NOM_FANTASIA"' || ':' || '"'  || REPLACE(:NEW.NOM_FANTASIA, '"', '\"') || '"' || ',' ||
+    '"NOM_NAMETITULAR"' || ':' || '"'  || REPLACE(:NEW.NOM_NAMETITULAR, '"', '\"') || '"' || ',' ||
+    '"COD_CPF"' || ':' || NVL(TO_CHAR(:NEW.COD_CPF), 'null') || ',' ||
+    '"COD_CGC"' || ':' || NVL(TO_CHAR(:NEW.COD_CGC), 'null') || ',' ||
+    '"COD_ORIGEMRG"' || ':' || '"'  || REPLACE(:NEW.COD_ORIGEMRG, '"', '\"') || '"' || ',' ||
+    '"DAT_EMISSAORG"' || ':' || '"'  || TO_CHAR(:NEW.DAT_EMISSAORG, 'YYYY-MM-DD HH24:MI:SS') || '"' || ',' ||
+    '"COD_RG"' || ':' || NVL(TO_CHAR(:NEW.COD_RG), 'null') || ',' ||
+    '"SGL_UFRG"' || ':' || '"'  || REPLACE(:NEW.SGL_UFRG, '"', '\"') || '"' || ',' ||
+    '"NOM_PAI"' || ':' || '"'  || REPLACE(:NEW.NOM_PAI, '"', '\"') || '"' || ',' ||
+    '"NOM_MAE"' || ':' || '"'  || REPLACE(:NEW.NOM_MAE, '"', '\"') || '"' || ',' ||
+    '"TIP_ESTCIVIL"' || ':' || '"'  || REPLACE(:NEW.TIP_ESTCIVIL, '"', '\"') || '"' || ',' ||
+    '"IND_SEXO"' || ':' || '"'  || REPLACE(:NEW.IND_SEXO, '"', '\"') || '"' || ',' ||
+    '"QTD_FILHOS"' || ':' || NVL(TO_CHAR(:NEW.QTD_FILHOS), 'null') || ',' ||
+    '"DSC_PROFISSAO"' || ':' || '"'  || REPLACE(:NEW.DSC_PROFISSAO, '"', '\"') || '"' || ',' ||
+    '"NOM_CONJUGE"' || ':' || '"'  || REPLACE(:NEW.NOM_CONJUGE, '"', '\"') || '"' || ',' ||
+    '"DSC_REFERENCIACONTATO"' || ':' || '"'  || REPLACE(:NEW.DSC_REFERENCIACONTATO, '"', '\"') || '"' || ',' ||
+    '"NATURAL_TITULAR"' || ':' || '"'  || REPLACE(:NEW.NATURAL_TITULAR, '"', '\"') || '"' || ',' ||
+    '"NACIONALIDADE_TITULAR"' || ':' || '"'  || REPLACE(:NEW.NACIONALIDADE_TITULAR, '"', '\"') || '"' || ',' ||
+    '"TIP_ENDERECO"' || ':' || '"'  || REPLACE(:NEW.TIP_ENDERECO, '"', '\"') || '"' || ',' ||
+    '"DSC_ENDERECO"' || ':' || '"'  || REPLACE(:NEW.DSC_ENDERECO, '"', '\"') || '"' || ',' ||
+    '"NRO_ENDERECO"' || ':' || '"'  || REPLACE(:NEW.NRO_ENDERECO, '"', '\"') || '"' || ',' ||
+    '"DSC_COMPLEMENTO"' || ':' || '"'  || REPLACE(:NEW.DSC_COMPLEMENTO, '"', '\"') || '"' || ',' ||
+    '"NRO_CEP"' || ':' || NVL(TO_CHAR(:NEW.NRO_CEP), 'null') || ',' ||
+    '"SGL_UF"' || ':' || '"'  || REPLACE(:NEW.SGL_UF, '"', '\"') || '"' || ',' ||
+    '"SGL_PAIS"' || ':' || '"'  || REPLACE(:NEW.SGL_PAIS, '"', '\"') || '"' || ',' ||
+    '"NRO_TELEFONE1"' || ':' || '"'  || REPLACE(:NEW.NRO_TELEFONE1, '"', '\"') || '"' || ',' ||
+    '"NRO_TELEFONE2"' || ':' || '"'  || REPLACE(:NEW.NRO_TELEFONE2, '"', '\"') || '"' || ',' ||
+    '"NRO_FAX1"' || ':' || '"'  || REPLACE(:NEW.NRO_FAX1, '"', '\"') || '"' || ',' ||
+    '"DSC_EMAIL"' || ':' || '"'  || REPLACE(:NEW.DSC_EMAIL, '"', '\"') || '"' || ',' ||
+    '"DSC_HOMEPAGE"' || ':' || '"'  || REPLACE(:NEW.DSC_HOMEPAGE, '"', '\"') || '"' || ',' ||
+    '"IND_SUCESSORES"' || ':' || '"'  || REPLACE(:NEW.IND_SUCESSORES, '"', '\"') || '"' || ',' ||
+    '"COD_OMB"' || ':' || '"'  || REPLACE(:NEW.COD_OMB, '"', '\"') || '"' || ',' ||
+    '"DSC_OBSERVACAO"' || ':' || '"'  || REPLACE(:NEW.DSC_OBSERVACAO, '"', '\"') || '"' || ',' ||
+    '"IND_SITCADASTRAL"' || ':' || '"'  || REPLACE(:NEW.IND_SITCADASTRAL, '"', '\"') || '"' || ',' ||
+    '"TIP_SITFINANCEIRA"' || ':' || '"'  || REPLACE(:NEW.TIP_SITFINANCEIRA, '"', '\"') || '"' || ',' ||
+    '"PCT_BLOQUEIO"' || ':' || NVL(TO_CHAR(:NEW.PCT_BLOQUEIO), 'null') || ',' ||
+    '"COD_QUALITY"' || ':' || '"'  || REPLACE(:NEW.COD_QUALITY, '"', '\"') || '"' || ',' ||
+    '"COD_CAE"' || ':' || NVL(TO_CHAR(:NEW.COD_CAE), 'null') || ',' ||
+    '"DAT_ATUALIZACAE"' || ':' || '"'  || TO_CHAR(:NEW.DAT_ATUALIZACAE, 'YYYY-MM-DD HH24:MI:SS') || '"' || ',' ||
+    '"SGL_IFPI"' || ':' || '"'  || REPLACE(:NEW.SGL_IFPI, '"', '\"') || '"' || ',' ||
+    '"DAT_ATUALIZACAO"' || ':' || '"'  || TO_CHAR(:NEW.DAT_ATUALIZACAO, 'YYYY-MM-DD HH24:MI:SS') || '"' || ',' ||
+    '"COD_TITMIGRAOLD"' || ':' || '"'  || REPLACE(:NEW.COD_TITMIGRAOLD, '"', '\"') || '"' || ',' ||
+    '"NOM_BUSCA"' || ':' || '"'  || REPLACE(:NEW.NOM_BUSCA, '"', '\"') || '"' || ',' ||
+    '"SOC_RESP_INFO"' || ':' || NVL(TO_CHAR(:NEW.SOC_RESP_INFO), 'null') || ',' ||
+    '"COD_TITULARESTRANGEIRO"' || ':' || NVL(TO_CHAR(:NEW.COD_TITULARESTRANGEIRO), 'null') || ',' ||
+    '"DSC_OBS_ISRC"' || ':' || '"'  || REPLACE(:NEW.DSC_OBS_ISRC, '"', '\"') || '"' || ',' ||
+    '"DAT_INST_ISRC"' || ':' || '"'  || TO_CHAR(:NEW.DAT_INST_ISRC, 'YYYY-MM-DD HH24:MI:SS') || '"' || ',' ||
+    '"NOMLOGIN"' || ':' || '"'  || REPLACE(:NEW.NOMLOGIN, '"', '\"') || '"' || ',' ||
+    '"COD_IPI"' || ':' || '"'  || REPLACE(:NEW.COD_IPI, '"', '\"') || '"' || ',' ||
+    '"DSC_CORRESPONDENCIA"' || ':' || '"'  || REPLACE(:NEW.DSC_CORRESPONDENCIA, '"', '\"') || '"' || ',' ||
+    '"COD_RESP_CADASTRO"' || ':' || NVL(TO_CHAR(:NEW.COD_RESP_CADASTRO), 'null') || ',' ||
+    '"COD_MUNICIPIOECADNASCIMENTO"' || ':' || NVL(TO_CHAR(:NEW.COD_MUNICIPIOECADNASCIMENTO), 'null') || ',' ||
+    '"SGL_RADICAL_IFPI"' || ':' || '"'  || REPLACE(:NEW.SGL_RADICAL_IFPI, '"', '\"') || '"' || ',' ||
+    '"COD_IPN"' || ':' || '"'  || REPLACE(:NEW.COD_IPN, '"', '\"') || '"' || ',' ||
+    '"DELTA"' || ':' || '"'  || TO_CHAR(:NEW.DELTA, 'YYYY-MM-DD HH24:MI:SS') || '"' ||
+'}';
+
+    -- Insere registro de auditoria para INSERT
+        INSERT INTO POCGG.AUDITORIA_OGG_LOG (
+            TABELA_NOME,
+            TIPO_OPERACAO,
+            CHAVE_PRIMARIA,
+            DADOS_ANTIGOS,
+            DADOS_NOVOS,
+            USUARIO_BD,
+            DATA_AUDITORIA,
+            DAT_ATU_OGG
+        ) VALUES (
+            'TITULAR',
+            v_tipo_operacao,
+            v_chave_primaria,
+            v_dados_antigos,
+            v_dados_novos,
+            USER,
+            SYSDATE,
+            :NEW.DELTA
+        );
+
+    ELSIF UPDATING THEN
+        v_tipo_operacao := 'UPDATE';
+        v_chave_primaria := 'COD_TITULARECAD=' || :NEW.COD_TITULARECAD;
+        v_dados_antigos := '{' ||
+    '"COD_TITULARECAD"' || ':' || NVL(TO_CHAR(:OLD.COD_TITULARECAD), 'null') || ',' ||
+    '"COD_TITULARIDENTIFICADO"' || ':' || NVL(TO_CHAR(:OLD.COD_TITULARIDENTIFICADO), 'null') || ',' ||
+    '"COD_MUNICIPIOECAD"' || ':' || NVL(TO_CHAR(:OLD.COD_MUNICIPIOECAD), 'null') || ',' ||
+    '"COD_TIPOLOGRADOURO"' || ':' || NVL(TO_CHAR(:OLD.COD_TIPOLOGRADOURO), 'null') || ',' ||
+    '"COD_BAIRRO"' || ':' || NVL(TO_CHAR(:OLD.COD_BAIRRO), 'null') || ',' ||
+    '"TIP_PESSOA"' || ':' || '"'  || REPLACE(:OLD.TIP_PESSOA, '"', '\"') || '"' || ',' ||
+    '"NOM_TITULAR"' || ':' || '"'  || REPLACE(:OLD.NOM_TITULAR, '"', '\"') || '"' || ',' ||
+    '"TIP_TITULAR"' || ':' || '"'  || REPLACE(:OLD.TIP_TITULAR, '"', '\"') || '"' || ',' ||
+    '"IND_NACIONALCOL"' || ':' || '"'  || REPLACE(:OLD.IND_NACIONALCOL, '"', '\"') || '"' || ',' ||
+    '"DAT_CADASTRO"' || ':' || '"'  || TO_CHAR(:OLD.DAT_CADASTRO, 'YYYY-MM-DD HH24:MI:SS') || '"' || ',' ||
+    '"DAT_IDTITULAR"' || ':' || '"'  || TO_CHAR(:OLD.DAT_IDTITULAR, 'YYYY-MM-DD HH24:MI:SS') || '"' || ',' ||
+    '"DAT_IDASSOCIACAO"' || ':' || '"'  || TO_CHAR(:OLD.DAT_IDASSOCIACAO, 'YYYY-MM-DD HH24:MI:SS') || '"' || ',' ||
+    '"DAT_NASCIMENTO"' || ':' || '"'  || TO_CHAR(:OLD.DAT_NASCIMENTO, 'YYYY-MM-DD HH24:MI:SS') || '"' || ',' ||
+    '"DAT_FALECIMENTO"' || ':' || '"'  || TO_CHAR(:OLD.DAT_FALECIMENTO, 'YYYY-MM-DD HH24:MI:SS') || '"' || ',' ||
+    '"NOM_FANTASIA"' || ':' || '"'  || REPLACE(:OLD.NOM_FANTASIA, '"', '\"') || '"' || ',' ||
+    '"NOM_NAMETITULAR"' || ':' || '"'  || REPLACE(:OLD.NOM_NAMETITULAR, '"', '\"') || '"' || ',' ||
+    '"COD_CPF"' || ':' || NVL(TO_CHAR(:OLD.COD_CPF), 'null') || ',' ||
+    '"COD_CGC"' || ':' || NVL(TO_CHAR(:OLD.COD_CGC), 'null') || ',' ||
+    '"COD_ORIGEMRG"' || ':' || '"'  || REPLACE(:OLD.COD_ORIGEMRG, '"', '\"') || '"' || ',' ||
+    '"DAT_EMISSAORG"' || ':' || '"'  || TO_CHAR(:OLD.DAT_EMISSAORG, 'YYYY-MM-DD HH24:MI:SS') || '"' || ',' ||
+    '"COD_RG"' || ':' || NVL(TO_CHAR(:OLD.COD_RG), 'null') || ',' ||
+    '"SGL_UFRG"' || ':' || '"'  || REPLACE(:OLD.SGL_UFRG, '"', '\"') || '"' || ',' ||
+    '"NOM_PAI"' || ':' || '"'  || REPLACE(:OLD.NOM_PAI, '"', '\"') || '"' || ',' ||
+    '"NOM_MAE"' || ':' || '"'  || REPLACE(:OLD.NOM_MAE, '"', '\"') || '"' || ',' ||
+    '"TIP_ESTCIVIL"' || ':' || '"'  || REPLACE(:OLD.TIP_ESTCIVIL, '"', '\"') || '"' || ',' ||
+    '"IND_SEXO"' || ':' || '"'  || REPLACE(:OLD.IND_SEXO, '"', '\"') || '"' || ',' ||
+    '"QTD_FILHOS"' || ':' || NVL(TO_CHAR(:OLD.QTD_FILHOS), 'null') || ',' ||
+    '"DSC_PROFISSAO"' || ':' || '"'  || REPLACE(:OLD.DSC_PROFISSAO, '"', '\"') || '"' || ',' ||
+    '"NOM_CONJUGE"' || ':' || '"'  || REPLACE(:OLD.NOM_CONJUGE, '"', '\"') || '"' || ',' ||
+    '"DSC_REFERENCIACONTATO"' || ':' || '"'  || REPLACE(:OLD.DSC_REFERENCIACONTATO, '"', '\"') || '"' || ',' ||
+    '"NATURAL_TITULAR"' || ':' || '"'  || REPLACE(:OLD.NATURAL_TITULAR, '"', '\"') || '"' || ',' ||
+    '"NACIONALIDADE_TITULAR"' || ':' || '"'  || REPLACE(:OLD.NACIONALIDADE_TITULAR, '"', '\"') || '"' || ',' ||
+    '"TIP_ENDERECO"' || ':' || '"'  || REPLACE(:OLD.TIP_ENDERECO, '"', '\"') || '"' || ',' ||
+    '"DSC_ENDERECO"' || ':' || '"'  || REPLACE(:OLD.DSC_ENDERECO, '"', '\"') || '"' || ',' ||
+    '"NRO_ENDERECO"' || ':' || '"'  || REPLACE(:OLD.NRO_ENDERECO, '"', '\"') || '"' || ',' ||
+    '"DSC_COMPLEMENTO"' || ':' || '"'  || REPLACE(:OLD.DSC_COMPLEMENTO, '"', '\"') || '"' || ',' ||
+    '"NRO_CEP"' || ':' || NVL(TO_CHAR(:OLD.NRO_CEP), 'null') || ',' ||
+    '"SGL_UF"' || ':' || '"'  || REPLACE(:OLD.SGL_UF, '"', '\"') || '"' || ',' ||
+    '"SGL_PAIS"' || ':' || '"'  || REPLACE(:OLD.SGL_PAIS, '"', '\"') || '"' || ',' ||
+    '"NRO_TELEFONE1"' || ':' || '"'  || REPLACE(:OLD.NRO_TELEFONE1, '"', '\"') || '"' || ',' ||
+    '"NRO_TELEFONE2"' || ':' || '"'  || REPLACE(:OLD.NRO_TELEFONE2, '"', '\"') || '"' || ',' ||
+    '"NRO_FAX1"' || ':' || '"'  || REPLACE(:OLD.NRO_FAX1, '"', '\"') || '"' || ',' ||
+    '"DSC_EMAIL"' || ':' || '"'  || REPLACE(:OLD.DSC_EMAIL, '"', '\"') || '"' || ',' ||
+    '"DSC_HOMEPAGE"' || ':' || '"'  || REPLACE(:OLD.DSC_HOMEPAGE, '"', '\"') || '"' || ',' ||
+    '"IND_SUCESSORES"' || ':' || '"'  || REPLACE(:OLD.IND_SUCESSORES, '"', '\"') || '"' || ',' ||
+    '"COD_OMB"' || ':' || '"'  || REPLACE(:OLD.COD_OMB, '"', '\"') || '"' || ',' ||
+    '"DSC_OBSERVACAO"' || ':' || '"'  || REPLACE(:OLD.DSC_OBSERVACAO, '"', '\"') || '"' || ',' ||
+    '"IND_SITCADASTRAL"' || ':' || '"'  || REPLACE(:OLD.IND_SITCADASTRAL, '"', '\"') || '"' || ',' ||
+    '"TIP_SITFINANCEIRA"' || ':' || '"'  || REPLACE(:OLD.TIP_SITFINANCEIRA, '"', '\"') || '"' || ',' ||
+    '"PCT_BLOQUEIO"' || ':' || NVL(TO_CHAR(:OLD.PCT_BLOQUEIO), 'null') || ',' ||
+    '"COD_QUALITY"' || ':' || '"'  || REPLACE(:OLD.COD_QUALITY, '"', '\"') || '"' || ',' ||
+    '"COD_CAE"' || ':' || NVL(TO_CHAR(:OLD.COD_CAE), 'null') || ',' ||
+    '"DAT_ATUALIZACAE"' || ':' || '"'  || TO_CHAR(:OLD.DAT_ATUALIZACAE, 'YYYY-MM-DD HH24:MI:SS') || '"' || ',' ||
+    '"SGL_IFPI"' || ':' || '"'  || REPLACE(:OLD.SGL_IFPI, '"', '\"') || '"' || ',' ||
+    '"DAT_ATUALIZACAO"' || ':' || '"'  || TO_CHAR(:OLD.DAT_ATUALIZACAO, 'YYYY-MM-DD HH24:MI:SS') || '"' || ',' ||
+    '"COD_TITMIGRAOLD"' || ':' || '"'  || REPLACE(:OLD.COD_TITMIGRAOLD, '"', '\"') || '"' || ',' ||
+    '"NOM_BUSCA"' || ':' || '"'  || REPLACE(:OLD.NOM_BUSCA, '"', '\"') || '"' || ',' ||
+    '"SOC_RESP_INFO"' || ':' || NVL(TO_CHAR(:OLD.SOC_RESP_INFO), 'null') || ',' ||
+    '"COD_TITULARESTRANGEIRO"' || ':' || NVL(TO_CHAR(:OLD.COD_TITULARESTRANGEIRO), 'null') || ',' ||
+    '"DSC_OBS_ISRC"' || ':' || '"'  || REPLACE(:OLD.DSC_OBS_ISRC, '"', '\"') || '"' || ',' ||
+    '"DAT_INST_ISRC"' || ':' || '"'  || TO_CHAR(:OLD.DAT_INST_ISRC, 'YYYY-MM-DD HH24:MI:SS') || '"' || ',' ||
+    '"NOMLOGIN"' || ':' || '"'  || REPLACE(:OLD.NOMLOGIN, '"', '\"') || '"' || ',' ||
+    '"COD_IPI"' || ':' || '"'  || REPLACE(:OLD.COD_IPI, '"', '\"') || '"' || ',' ||
+    '"DSC_CORRESPONDENCIA"' || ':' || '"'  || REPLACE(:OLD.DSC_CORRESPONDENCIA, '"', '\"') || '"' || ',' ||
+    '"COD_RESP_CADASTRO"' || ':' || NVL(TO_CHAR(:OLD.COD_RESP_CADASTRO), 'null') || ',' ||
+    '"COD_MUNICIPIOECADNASCIMENTO"' || ':' || NVL(TO_CHAR(:OLD.COD_MUNICIPIOECADNASCIMENTO), 'null') || ',' ||
+    '"SGL_RADICAL_IFPI"' || ':' || '"'  || REPLACE(:OLD.SGL_RADICAL_IFPI, '"', '\"') || '"' || ',' ||
+    '"COD_IPN"' || ':' || '"'  || REPLACE(:OLD.COD_IPN, '"', '\"') || '"' || ',' ||
+    '"DELTA"' || ':' || '"'  || TO_CHAR(:OLD.DELTA, 'YYYY-MM-DD HH24:MI:SS') || '"' ||
+'}';
+        v_dados_novos := '{' ||
+    '"COD_TITULARECAD"' || ':' || NVL(TO_CHAR(:NEW.COD_TITULARECAD), 'null') || ',' ||
+    '"COD_TITULARIDENTIFICADO"' || ':' || NVL(TO_CHAR(:NEW.COD_TITULARIDENTIFICADO), 'null') || ',' ||
+    '"COD_MUNICIPIOECAD"' || ':' || NVL(TO_CHAR(:NEW.COD_MUNICIPIOECAD), 'null') || ',' ||
+    '"COD_TIPOLOGRADOURO"' || ':' || NVL(TO_CHAR(:NEW.COD_TIPOLOGRADOURO), 'null') || ',' ||
+    '"COD_BAIRRO"' || ':' || NVL(TO_CHAR(:NEW.COD_BAIRRO), 'null') || ',' ||
+    '"TIP_PESSOA"' || ':' || '"'  || REPLACE(:NEW.TIP_PESSOA, '"', '\"') || '"' || ',' ||
+    '"NOM_TITULAR"' || ':' || '"'  || REPLACE(:NEW.NOM_TITULAR, '"', '\"') || '"' || ',' ||
+    '"TIP_TITULAR"' || ':' || '"'  || REPLACE(:NEW.TIP_TITULAR, '"', '\"') || '"' || ',' ||
+    '"IND_NACIONALCOL"' || ':' || '"'  || REPLACE(:NEW.IND_NACIONALCOL, '"', '\"') || '"' || ',' ||
+    '"DAT_CADASTRO"' || ':' || '"'  || TO_CHAR(:NEW.DAT_CADASTRO, 'YYYY-MM-DD HH24:MI:SS') || '"' || ',' ||
+    '"DAT_IDTITULAR"' || ':' || '"'  || TO_CHAR(:NEW.DAT_IDTITULAR, 'YYYY-MM-DD HH24:MI:SS') || '"' || ',' ||
+    '"DAT_IDASSOCIACAO"' || ':' || '"'  || TO_CHAR(:NEW.DAT_IDASSOCIACAO, 'YYYY-MM-DD HH24:MI:SS') || '"' || ',' ||
+    '"DAT_NASCIMENTO"' || ':' || '"'  || TO_CHAR(:NEW.DAT_NASCIMENTO, 'YYYY-MM-DD HH24:MI:SS') || '"' || ',' ||
+    '"DAT_FALECIMENTO"' || ':' || '"'  || TO_CHAR(:NEW.DAT_FALECIMENTO, 'YYYY-MM-DD HH24:MI:SS') || '"' || ',' ||
+    '"NOM_FANTASIA"' || ':' || '"'  || REPLACE(:NEW.NOM_FANTASIA, '"', '\"') || '"' || ',' ||
+    '"NOM_NAMETITULAR"' || ':' || '"'  || REPLACE(:NEW.NOM_NAMETITULAR, '"', '\"') || '"' || ',' ||
+    '"COD_CPF"' || ':' || NVL(TO_CHAR(:NEW.COD_CPF), 'null') || ',' ||
+    '"COD_CGC"' || ':' || NVL(TO_CHAR(:NEW.COD_CGC), 'null') || ',' ||
+    '"COD_ORIGEMRG"' || ':' || '"'  || REPLACE(:NEW.COD_ORIGEMRG, '"', '\"') || '"' || ',' ||
+    '"DAT_EMISSAORG"' || ':' || '"'  || TO_CHAR(:NEW.DAT_EMISSAORG, 'YYYY-MM-DD HH24:MI:SS') || '"' || ',' ||
+    '"COD_RG"' || ':' || NVL(TO_CHAR(:NEW.COD_RG), 'null') || ',' ||
+    '"SGL_UFRG"' || ':' || '"'  || REPLACE(:NEW.SGL_UFRG, '"', '\"') || '"' || ',' ||
+    '"NOM_PAI"' || ':' || '"'  || REPLACE(:NEW.NOM_PAI, '"', '\"') || '"' || ',' ||
+    '"NOM_MAE"' || ':' || '"'  || REPLACE(:NEW.NOM_MAE, '"', '\"') || '"' || ',' ||
+    '"TIP_ESTCIVIL"' || ':' || '"'  || REPLACE(:NEW.TIP_ESTCIVIL, '"', '\"') || '"' || ',' ||
+    '"IND_SEXO"' || ':' || '"'  || REPLACE(:NEW.IND_SEXO, '"', '\"') || '"' || ',' ||
+    '"QTD_FILHOS"' || ':' || NVL(TO_CHAR(:NEW.QTD_FILHOS), 'null') || ',' ||
+    '"DSC_PROFISSAO"' || ':' || '"'  || REPLACE(:NEW.DSC_PROFISSAO, '"', '\"') || '"' || ',' ||
+    '"NOM_CONJUGE"' || ':' || '"'  || REPLACE(:NEW.NOM_CONJUGE, '"', '\"') || '"' || ',' ||
+    '"DSC_REFERENCIACONTATO"' || ':' || '"'  || REPLACE(:NEW.DSC_REFERENCIACONTATO, '"', '\"') || '"' || ',' ||
+    '"NATURAL_TITULAR"' || ':' || '"'  || REPLACE(:NEW.NATURAL_TITULAR, '"', '\"') || '"' || ',' ||
+    '"NACIONALIDADE_TITULAR"' || ':' || '"'  || REPLACE(:NEW.NACIONALIDADE_TITULAR, '"', '\"') || '"' || ',' ||
+    '"TIP_ENDERECO"' || ':' || '"'  || REPLACE(:NEW.TIP_ENDERECO, '"', '\"') || '"' || ',' ||
+    '"DSC_ENDERECO"' || ':' || '"'  || REPLACE(:NEW.DSC_ENDERECO, '"', '\"') || '"' || ',' ||
+    '"NRO_ENDERECO"' || ':' || '"'  || REPLACE(:NEW.NRO_ENDERECO, '"', '\"') || '"' || ',' ||
+    '"DSC_COMPLEMENTO"' || ':' || '"'  || REPLACE(:NEW.DSC_COMPLEMENTO, '"', '\"') || '"' || ',' ||
+    '"NRO_CEP"' || ':' || NVL(TO_CHAR(:NEW.NRO_CEP), 'null') || ',' ||
+    '"SGL_UF"' || ':' || '"'  || REPLACE(:NEW.SGL_UF, '"', '\"') || '"' || ',' ||
+    '"SGL_PAIS"' || ':' || '"'  || REPLACE(:NEW.SGL_PAIS, '"', '\"') || '"' || ',' ||
+    '"NRO_TELEFONE1"' || ':' || '"'  || REPLACE(:NEW.NRO_TELEFONE1, '"', '\"') || '"' || ',' ||
+    '"NRO_TELEFONE2"' || ':' || '"'  || REPLACE(:NEW.NRO_TELEFONE2, '"', '\"') || '"' || ',' ||
+    '"NRO_FAX1"' || ':' || '"'  || REPLACE(:NEW.NRO_FAX1, '"', '\"') || '"' || ',' ||
+    '"DSC_EMAIL"' || ':' || '"'  || REPLACE(:NEW.DSC_EMAIL, '"', '\"') || '"' || ',' ||
+    '"DSC_HOMEPAGE"' || ':' || '"'  || REPLACE(:NEW.DSC_HOMEPAGE, '"', '\"') || '"' || ',' ||
+    '"IND_SUCESSORES"' || ':' || '"'  || REPLACE(:NEW.IND_SUCESSORES, '"', '\"') || '"' || ',' ||
+    '"COD_OMB"' || ':' || '"'  || REPLACE(:NEW.COD_OMB, '"', '\"') || '"' || ',' ||
+    '"DSC_OBSERVACAO"' || ':' || '"'  || REPLACE(:NEW.DSC_OBSERVACAO, '"', '\"') || '"' || ',' ||
+    '"IND_SITCADASTRAL"' || ':' || '"'  || REPLACE(:NEW.IND_SITCADASTRAL, '"', '\"') || '"' || ',' ||
+    '"TIP_SITFINANCEIRA"' || ':' || '"'  || REPLACE(:NEW.TIP_SITFINANCEIRA, '"', '\"') || '"' || ',' ||
+    '"PCT_BLOQUEIO"' || ':' || NVL(TO_CHAR(:NEW.PCT_BLOQUEIO), 'null') || ',' ||
+    '"COD_QUALITY"' || ':' || '"'  || REPLACE(:NEW.COD_QUALITY, '"', '\"') || '"' || ',' ||
+    '"COD_CAE"' || ':' || NVL(TO_CHAR(:NEW.COD_CAE), 'null') || ',' ||
+    '"DAT_ATUALIZACAE"' || ':' || '"'  || TO_CHAR(:NEW.DAT_ATUALIZACAE, 'YYYY-MM-DD HH24:MI:SS') || '"' || ',' ||
+    '"SGL_IFPI"' || ':' || '"'  || REPLACE(:NEW.SGL_IFPI, '"', '\"') || '"' || ',' ||
+    '"DAT_ATUALIZACAO"' || ':' || '"'  || TO_CHAR(:NEW.DAT_ATUALIZACAO, 'YYYY-MM-DD HH24:MI:SS') || '"' || ',' ||
+    '"COD_TITMIGRAOLD"' || ':' || '"'  || REPLACE(:NEW.COD_TITMIGRAOLD, '"', '\"') || '"' || ',' ||
+    '"NOM_BUSCA"' || ':' || '"'  || REPLACE(:NEW.NOM_BUSCA, '"', '\"') || '"' || ',' ||
+    '"SOC_RESP_INFO"' || ':' || NVL(TO_CHAR(:NEW.SOC_RESP_INFO), 'null') || ',' ||
+    '"COD_TITULARESTRANGEIRO"' || ':' || NVL(TO_CHAR(:NEW.COD_TITULARESTRANGEIRO), 'null') || ',' ||
+    '"DSC_OBS_ISRC"' || ':' || '"'  || REPLACE(:NEW.DSC_OBS_ISRC, '"', '\"') || '"' || ',' ||
+    '"DAT_INST_ISRC"' || ':' || '"'  || TO_CHAR(:NEW.DAT_INST_ISRC, 'YYYY-MM-DD HH24:MI:SS') || '"' || ',' ||
+    '"NOMLOGIN"' || ':' || '"'  || REPLACE(:NEW.NOMLOGIN, '"', '\"') || '"' || ',' ||
+    '"COD_IPI"' || ':' || '"'  || REPLACE(:NEW.COD_IPI, '"', '\"') || '"' || ',' ||
+    '"DSC_CORRESPONDENCIA"' || ':' || '"'  || REPLACE(:NEW.DSC_CORRESPONDENCIA, '"', '\"') || '"' || ',' ||
+    '"COD_RESP_CADASTRO"' || ':' || NVL(TO_CHAR(:NEW.COD_RESP_CADASTRO), 'null') || ',' ||
+    '"COD_MUNICIPIOECADNASCIMENTO"' || ':' || NVL(TO_CHAR(:NEW.COD_MUNICIPIOECADNASCIMENTO), 'null') || ',' ||
+    '"SGL_RADICAL_IFPI"' || ':' || '"'  || REPLACE(:NEW.SGL_RADICAL_IFPI, '"', '\"') || '"' || ',' ||
+    '"COD_IPN"' || ':' || '"'  || REPLACE(:NEW.COD_IPN, '"', '\"') || '"' || ',' ||
+    '"DELTA"' || ':' || '"'  || TO_CHAR(:NEW.DELTA, 'YYYY-MM-DD HH24:MI:SS') || '"' ||
+'}';
+
+    -- Insere registro de auditoria para UPDATE
+        INSERT INTO POCGG.AUDITORIA_OGG_LOG (
+            TABELA_NOME,
+            TIPO_OPERACAO,
+            CHAVE_PRIMARIA,
+            DADOS_ANTIGOS,
+            DADOS_NOVOS,
+            USUARIO_BD,
+            DATA_AUDITORIA,
+            DAT_ATU_OGG
+        ) VALUES (
+            'TITULAR',
+            v_tipo_operacao,
+            v_chave_primaria,
+            v_dados_antigos,
+            v_dados_novos,
+            USER,
+            SYSDATE,
+            :NEW.DELTA
+        );
+
+    ELSIF DELETING THEN
+        v_tipo_operacao := 'DELETE';
+        v_chave_primaria := 'COD_TITULARECAD=' || :OLD.COD_TITULARECAD;
+        v_dados_antigos := '{' ||
+    '"COD_TITULARECAD"' || ':' || NVL(TO_CHAR(:OLD.COD_TITULARECAD), 'null') || ',' ||
+    '"COD_TITULARIDENTIFICADO"' || ':' || NVL(TO_CHAR(:OLD.COD_TITULARIDENTIFICADO), 'null') || ',' ||
+    '"COD_MUNICIPIOECAD"' || ':' || NVL(TO_CHAR(:OLD.COD_MUNICIPIOECAD), 'null') || ',' ||
+    '"COD_TIPOLOGRADOURO"' || ':' || NVL(TO_CHAR(:OLD.COD_TIPOLOGRADOURO), 'null') || ',' ||
+    '"COD_BAIRRO"' || ':' || NVL(TO_CHAR(:OLD.COD_BAIRRO), 'null') || ',' ||
+    '"TIP_PESSOA"' || ':' || '"'  || REPLACE(:OLD.TIP_PESSOA, '"', '\"') || '"' || ',' ||
+    '"NOM_TITULAR"' || ':' || '"'  || REPLACE(:OLD.NOM_TITULAR, '"', '\"') || '"' || ',' ||
+    '"TIP_TITULAR"' || ':' || '"'  || REPLACE(:OLD.TIP_TITULAR, '"', '\"') || '"' || ',' ||
+    '"IND_NACIONALCOL"' || ':' || '"'  || REPLACE(:OLD.IND_NACIONALCOL, '"', '\"') || '"' || ',' ||
+    '"DAT_CADASTRO"' || ':' || '"'  || TO_CHAR(:OLD.DAT_CADASTRO, 'YYYY-MM-DD HH24:MI:SS') || '"' || ',' ||
+    '"DAT_IDTITULAR"' || ':' || '"'  || TO_CHAR(:OLD.DAT_IDTITULAR, 'YYYY-MM-DD HH24:MI:SS') || '"' || ',' ||
+    '"DAT_IDASSOCIACAO"' || ':' || '"'  || TO_CHAR(:OLD.DAT_IDASSOCIACAO, 'YYYY-MM-DD HH24:MI:SS') || '"' || ',' ||
+    '"DAT_NASCIMENTO"' || ':' || '"'  || TO_CHAR(:OLD.DAT_NASCIMENTO, 'YYYY-MM-DD HH24:MI:SS') || '"' || ',' ||
+    '"DAT_FALECIMENTO"' || ':' || '"'  || TO_CHAR(:OLD.DAT_FALECIMENTO, 'YYYY-MM-DD HH24:MI:SS') || '"' || ',' ||
+    '"NOM_FANTASIA"' || ':' || '"'  || REPLACE(:OLD.NOM_FANTASIA, '"', '\"') || '"' || ',' ||
+    '"NOM_NAMETITULAR"' || ':' || '"'  || REPLACE(:OLD.NOM_NAMETITULAR, '"', '\"') || '"' || ',' ||
+    '"COD_CPF"' || ':' || NVL(TO_CHAR(:OLD.COD_CPF), 'null') || ',' ||
+    '"COD_CGC"' || ':' || NVL(TO_CHAR(:OLD.COD_CGC), 'null') || ',' ||
+    '"COD_ORIGEMRG"' || ':' || '"'  || REPLACE(:OLD.COD_ORIGEMRG, '"', '\"') || '"' || ',' ||
+    '"DAT_EMISSAORG"' || ':' || '"'  || TO_CHAR(:OLD.DAT_EMISSAORG, 'YYYY-MM-DD HH24:MI:SS') || '"' || ',' ||
+    '"COD_RG"' || ':' || NVL(TO_CHAR(:OLD.COD_RG), 'null') || ',' ||
+    '"SGL_UFRG"' || ':' || '"'  || REPLACE(:OLD.SGL_UFRG, '"', '\"') || '"' || ',' ||
+    '"NOM_PAI"' || ':' || '"'  || REPLACE(:OLD.NOM_PAI, '"', '\"') || '"' || ',' ||
+    '"NOM_MAE"' || ':' || '"'  || REPLACE(:OLD.NOM_MAE, '"', '\"') || '"' || ',' ||
+    '"TIP_ESTCIVIL"' || ':' || '"'  || REPLACE(:OLD.TIP_ESTCIVIL, '"', '\"') || '"' || ',' ||
+    '"IND_SEXO"' || ':' || '"'  || REPLACE(:OLD.IND_SEXO, '"', '\"') || '"' || ',' ||
+    '"QTD_FILHOS"' || ':' || NVL(TO_CHAR(:OLD.QTD_FILHOS), 'null') || ',' ||
+    '"DSC_PROFISSAO"' || ':' || '"'  || REPLACE(:OLD.DSC_PROFISSAO, '"', '\"') || '"' || ',' ||
+    '"NOM_CONJUGE"' || ':' || '"'  || REPLACE(:OLD.NOM_CONJUGE, '"', '\"') || '"' || ',' ||
+    '"DSC_REFERENCIACONTATO"' || ':' || '"'  || REPLACE(:OLD.DSC_REFERENCIACONTATO, '"', '\"') || '"' || ',' ||
+    '"NATURAL_TITULAR"' || ':' || '"'  || REPLACE(:OLD.NATURAL_TITULAR, '"', '\"') || '"' || ',' ||
+    '"NACIONALIDADE_TITULAR"' || ':' || '"'  || REPLACE(:OLD.NACIONALIDADE_TITULAR, '"', '\"') || '"' || ',' ||
+    '"TIP_ENDERECO"' || ':' || '"'  || REPLACE(:OLD.TIP_ENDERECO, '"', '\"') || '"' || ',' ||
+    '"DSC_ENDERECO"' || ':' || '"'  || REPLACE(:OLD.DSC_ENDERECO, '"', '\"') || '"' || ',' ||
+    '"NRO_ENDERECO"' || ':' || '"'  || REPLACE(:OLD.NRO_ENDERECO, '"', '\"') || '"' || ',' ||
+    '"DSC_COMPLEMENTO"' || ':' || '"'  || REPLACE(:OLD.DSC_COMPLEMENTO, '"', '\"') || '"' || ',' ||
+    '"NRO_CEP"' || ':' || NVL(TO_CHAR(:OLD.NRO_CEP), 'null') || ',' ||
+    '"SGL_UF"' || ':' || '"'  || REPLACE(:OLD.SGL_UF, '"', '\"') || '"' || ',' ||
+    '"SGL_PAIS"' || ':' || '"'  || REPLACE(:OLD.SGL_PAIS, '"', '\"') || '"' || ',' ||
+    '"NRO_TELEFONE1"' || ':' || '"'  || REPLACE(:OLD.NRO_TELEFONE1, '"', '\"') || '"' || ',' ||
+    '"NRO_TELEFONE2"' || ':' || '"'  || REPLACE(:OLD.NRO_TELEFONE2, '"', '\"') || '"' || ',' ||
+    '"NRO_FAX1"' || ':' || '"'  || REPLACE(:OLD.NRO_FAX1, '"', '\"') || '"' || ',' ||
+    '"DSC_EMAIL"' || ':' || '"'  || REPLACE(:OLD.DSC_EMAIL, '"', '\"') || '"' || ',' ||
+    '"DSC_HOMEPAGE"' || ':' || '"'  || REPLACE(:OLD.DSC_HOMEPAGE, '"', '\"') || '"' || ',' ||
+    '"IND_SUCESSORES"' || ':' || '"'  || REPLACE(:OLD.IND_SUCESSORES, '"', '\"') || '"' || ',' ||
+    '"COD_OMB"' || ':' || '"'  || REPLACE(:OLD.COD_OMB, '"', '\"') || '"' || ',' ||
+    '"DSC_OBSERVACAO"' || ':' || '"'  || REPLACE(:OLD.DSC_OBSERVACAO, '"', '\"') || '"' || ',' ||
+    '"IND_SITCADASTRAL"' || ':' || '"'  || REPLACE(:OLD.IND_SITCADASTRAL, '"', '\"') || '"' || ',' ||
+    '"TIP_SITFINANCEIRA"' || ':' || '"'  || REPLACE(:OLD.TIP_SITFINANCEIRA, '"', '\"') || '"' || ',' ||
+    '"PCT_BLOQUEIO"' || ':' || NVL(TO_CHAR(:OLD.PCT_BLOQUEIO), 'null') || ',' ||
+    '"COD_QUALITY"' || ':' || '"'  || REPLACE(:OLD.COD_QUALITY, '"', '\"') || '"' || ',' ||
+    '"COD_CAE"' || ':' || NVL(TO_CHAR(:OLD.COD_CAE), 'null') || ',' ||
+    '"DAT_ATUALIZACAE"' || ':' || '"'  || TO_CHAR(:OLD.DAT_ATUALIZACAE, 'YYYY-MM-DD HH24:MI:SS') || '"' || ',' ||
+    '"SGL_IFPI"' || ':' || '"'  || REPLACE(:OLD.SGL_IFPI, '"', '\"') || '"' || ',' ||
+    '"DAT_ATUALIZACAO"' || ':' || '"'  || TO_CHAR(:OLD.DAT_ATUALIZACAO, 'YYYY-MM-DD HH24:MI:SS') || '"' || ',' ||
+    '"COD_TITMIGRAOLD"' || ':' || '"'  || REPLACE(:OLD.COD_TITMIGRAOLD, '"', '\"') || '"' || ',' ||
+    '"NOM_BUSCA"' || ':' || '"'  || REPLACE(:OLD.NOM_BUSCA, '"', '\"') || '"' || ',' ||
+    '"SOC_RESP_INFO"' || ':' || NVL(TO_CHAR(:OLD.SOC_RESP_INFO), 'null') || ',' ||
+    '"COD_TITULARESTRANGEIRO"' || ':' || NVL(TO_CHAR(:OLD.COD_TITULARESTRANGEIRO), 'null') || ',' ||
+    '"DSC_OBS_ISRC"' || ':' || '"'  || REPLACE(:OLD.DSC_OBS_ISRC, '"', '\"') || '"' || ',' ||
+    '"DAT_INST_ISRC"' || ':' || '"'  || TO_CHAR(:OLD.DAT_INST_ISRC, 'YYYY-MM-DD HH24:MI:SS') || '"' || ',' ||
+    '"NOMLOGIN"' || ':' || '"'  || REPLACE(:OLD.NOMLOGIN, '"', '\"') || '"' || ',' ||
+    '"COD_IPI"' || ':' || '"'  || REPLACE(:OLD.COD_IPI, '"', '\"') || '"' || ',' ||
+    '"DSC_CORRESPONDENCIA"' || ':' || '"'  || REPLACE(:OLD.DSC_CORRESPONDENCIA, '"', '\"') || '"' || ',' ||
+    '"COD_RESP_CADASTRO"' || ':' || NVL(TO_CHAR(:OLD.COD_RESP_CADASTRO), 'null') || ',' ||
+    '"COD_MUNICIPIOECADNASCIMENTO"' || ':' || NVL(TO_CHAR(:OLD.COD_MUNICIPIOECADNASCIMENTO), 'null') || ',' ||
+    '"SGL_RADICAL_IFPI"' || ':' || '"'  || REPLACE(:OLD.SGL_RADICAL_IFPI, '"', '\"') || '"' || ',' ||
+    '"COD_IPN"' || ':' || '"'  || REPLACE(:OLD.COD_IPN, '"', '\"') || '"' || ',' ||
+    '"DELTA"' || ':' || '"'  || TO_CHAR(:OLD.DELTA, 'YYYY-MM-DD HH24:MI:SS') || '"' ||
+'}';
+        v_dados_novos := NULL;
+    -- Insere registro de auditoria para DELETE
+        INSERT INTO POCGG.AUDITORIA_OGG_LOG (
+            TABELA_NOME,
+            TIPO_OPERACAO,
+            CHAVE_PRIMARIA,
+            DADOS_ANTIGOS,
+            DADOS_NOVOS,
+            USUARIO_BD,
+            DATA_AUDITORIA,
+            DAT_ATU_OGG
+        ) VALUES (
+            'TITULAR',
+            v_tipo_operacao,
+            v_chave_primaria,
+            v_dados_antigos,
+            v_dados_novos,
+            USER,
+            SYSDATE,
+            SYSDATE
+        );
+
+    END IF;
+
+
+
+
+EXCEPTION
+    WHEN OTHERS THEN
+        -- Em caso de erro, registra na tabela de erros
+        RAISE_APPLICATION_ERROR(-20001,
+            'Erro na trigger de auditoria TRG_AUD_TITULAR: ' || SQLERRM);
+END TRG_AUD_TITULAR;
+
+END;
+
+/
+ALTER TRIGGER "POCGG"."TRG_AUD_TITULAR" ENABLE;
+  CREATE OR REPLACE EDITIONABLE TRIGGER "POCGG"."TRG_TITULAR_DAT_ATU_OGG" 
+BEFORE INSERT OR UPDATE ON POCGG.TITULAR
+FOR EACH ROW
+BEGIN
+    :NEW.DELTA := SYSDATE;
+END;
+
+/
+ALTER TRIGGER "POCGG"."TRG_TITULAR_DAT_ATU_OGG" ENABLE;
+
+GRANT SELECT ON "POCGG"."TITULAR" TO "APL_ARQUITETURA_OGG";

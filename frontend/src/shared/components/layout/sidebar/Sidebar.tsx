@@ -41,7 +41,16 @@ const navigation = [
       { label: 'UDA', path: '/arrecadacao/uda' },
     ],
   },
-  { label: 'Distribuição', icon: Split, basePath: '/distribuicao', disabled: true, requiredRoles: [] },
+  {
+    label: 'Distribuição',
+    icon: Split,
+    basePath: '/distribuicao',
+    disabled: false,
+    requiredRoles: ['analista-distribuicao', 'consultor-distribuicao'],
+    children: [
+      { label: 'Rubricas', path: '/distribuicao/rubricas' },
+    ],
+  },
 ];
 
 interface SidebarProps {
@@ -57,6 +66,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
     'Cadastro': true,
     'Identificação': true,
     'Arrecadação': true,
+    'Distribuição': true,
   });
 
   const toggleSection = (label: string) => {

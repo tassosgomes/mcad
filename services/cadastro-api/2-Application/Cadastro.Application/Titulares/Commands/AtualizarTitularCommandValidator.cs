@@ -11,9 +11,6 @@ public class AtualizarTitularCommandValidator : AbstractValidator<AtualizarTitul
 
     public AtualizarTitularCommandValidator()
     {
-        RuleFor(x => x.Id)
-            .NotEmpty().WithMessage("ID é obrigatório");
-
         RuleFor(x => x.Nome)
             .NotEmpty().WithMessage("Nome é obrigatório")
             .MaximumLength(200).WithMessage("Nome deve ter no máximo 200 caracteres");

@@ -1,0 +1,798 @@
+openapi: 3.1.0
+
+info:
+  title: "Distribuição API — Processos de Distribuição"
+  description: |
+    API para gestão do ciclo de vida dos processos de distribuição de créditos.
+
+    **Contrato gerado a partir do PRD:** `tasks/distribuicao/prd-gestao-processos/prd.md`
+    **Data de geração:** 2026-04-10
+
+    ## Premissas Adotadas
+    - Autenticação JWT Bearer via Keycloak (Authorization Code + PKCE)
+    - Paginação por page/size (consistente com arrecadacao-api)
+    - Valores monetários como number (backend BigDecimal, nunca float/double)
+    - Erros seguem RFC 7807 (ProblemDetails)
+    - Campos JSON em camelCase
+    - Paths em português, plural, kebab-case onde aplicável
+    - Ações de transição de estado via POST em sub-recurso (ex: /processos/{id}/aprovar)
+    - Endpoint /processos/{id}/calcular define a interface mas a lógica de cálculo é da F03
+  version: "1.0.0"
+  contact:
+    name: "Time de Plataforma ECAD"
+
+servers:
+  - url: http://localhost:5004/api/v1
+    description: Desenvolvimento local (distribuicao-api)
+
+security:
+  - BearerAuth: []
+
+tags:
+  - name: Processos
+    description: "CRUD e ciclo de vida dos processos de distribuição"
+  - name: Disponibilidade
+    description: "Consulta de combinações rubrica+período prontas para distribuição"
+
+paths:
+
+  /processos/disponiveis:
+    get:
+      summary: Listar combinações disponíveis para distribuição
+      description: |
+        Retorna combinações rubrica+período que possuem Rol fechado E Verba disponível
+        e não possuem processo ativo (não-cancelado).
+        Usado na tela de criação de processo para o Analista selecionar.
+      operationId: listarDisponiveis
+      tags:
+        - Disponibilidade
+      responses:
+        "200":
+          description: Lista de combinações disponíveis
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DisponibilidadeResponse"
+              example:
+                - rubrica:
+                    sigla: "RADIO"
+                    nome: "Rádio AM/FM"
+                  periodo: "2026-03"
+                  verbaLiquida: 85000.00
+                  totalExecucoes: 1250
+                - rubrica:
+                    sigla: "TV_ABERTA"
+                    nome: "TV Aberta"
+                  periodo: "2026-03"
+                  verbaLiquida: 120000.00
+                  totalExecucoes: 3400
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+      x-frontend-notes: |
+        Exibir como lista/cards na tela de criação de processo.
+        Cada item mostra rubrica, período, verba e total de execuções.
+        Se array vazio, exibir mensagem "Nenhuma combinação disponível para distribuição."
+
+  /processos:
+    get:
+      summary: Listar processos de distribuição
+      description: |
+        Retorna lista paginada de processos de distribuição.
+        Suporta filtros por rubrica (sigla), período (YYYY-MM) e status (múltiplos).
+      operationId: listarProcessos
+      tags:
+        - Processos
+      parameters:
+        - name: page
+          in: query
+          description: Número da página (começa em 1)
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+            example: 1
+        - name: size
+          in: query
+          description: Itens por página (máx 50)
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 50
+            default: 20
+            example: 20
+        - name: rubrica
+          in: query
+          description: Filtrar por sigla da rubrica
+          schema:
+            type: string
+            example: "RADIO"
+        - name: periodo
+          in: query
+          description: Filtrar por período (YYYY-MM)
+          schema:
+            type: string
+            pattern: "^\\d{4}-\\d{2}$"
+            example: "2026-03"
+        - name: status
+          in: query
+          description: Filtrar por status (múltiplos separados por vírgula)
+          schema:
+            type: string
+            example: "CRIADO,CALCULADO"
+        - name: sort
+          in: query
+          description: "Ordenação (campo:direção). Campos: criadoEm, periodo, rubrica, status"
+          schema:
+            type: string
+            default: "criadoEm:desc"
+            example: "criadoEm:desc"
+      responses:
+        "200":
+          description: Lista paginada de processos
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProcessoListResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+      x-frontend-notes: |
+        Tabela com paginação. Filtros: select para rubrica (carregar de GET /rubricas),
+        input YYYY-MM para período, multi-select para status.
+        Badges coloridos por status: CRIADO (azul), CALCULADO (amarelo),
+        APROVADO (verde), FINALIZADO (verde escuro), CANCELADO (vermelho).
+        Linha clicável → navega para detalhes.
+      x-backend-notes: |
+        Índice composto em (rubrica_sigla, periodo) para filtro.
+        Índice em status para filtro.
+        Ordenação padrão: criadoEm DESC (mais recentes primeiro).
+
+    post:
+      summary: Criar processo de distribuição
+      description: |
+        Cria um novo processo de distribuição para uma rubrica+período.
+        Validações obrigatórias:
+        - Deve existir Rol fechado (não cancelado) para rubrica+período
+        - Deve existir Verba disponível para rubrica+período
+        - Não pode existir processo não-cancelado para rubrica+período
+        O processo é criado com status CRIADO.
+        Publica evento `distribuicao.processo.criado` via Outbox.
+      operationId: criarProcesso
+      tags:
+        - Processos
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CriarProcessoRequest"
+      responses:
+        "201":
+          description: Processo criado com sucesso
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProcessoResponse"
+              example:
+                id: "f47ac10b-58cc-4372-a567-0e02b2c3d479"
+                rubrica:
+                  sigla: "RADIO"
+                  nome: "Rádio AM/FM"
+                periodo: "2026-03"
+                status: "CRIADO"
+                verbaLiquida: 85000.00
+                totalExecucoes: null
+                analistaResponsavel: "João Silva"
+                criadoEm: "2026-04-10T14:30:00Z"
+                calculadoEm: null
+                aprovadoEm: null
+                finalizadoEm: null
+                canceladoEm: null
+                justificativaCancelamento: null
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "409":
+          description: Já existe processo ativo para rubrica+período
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetails"
+              example:
+                type: "https://tools.ietf.org/html/rfc7231#section-6.5.8"
+                title: "Conflict"
+                status: 409
+                detail: "Já existe um processo de distribuição ativo para rubrica RADIO período 2026-03"
+                instance: "/api/v1/processos"
+        "422":
+          description: Pré-requisitos não atendidos
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetails"
+              example:
+                type: "https://tools.ietf.org/html/rfc7231#section-6.5.1"
+                title: "Unprocessable Entity"
+                status: 422
+                detail: "Não existe Rol de Execuções fechado para rubrica RADIO período 2026-03"
+                instance: "/api/v1/processos"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+      x-frontend-notes: |
+        Após criação, redirecionar para a tela de detalhes do processo.
+        Em caso de 409, exibir toast de erro com link para o processo existente.
+        Em caso de 422, exibir toast com o motivo (Rol ou Verba ausente).
+      x-backend-notes: |
+        Transacional: validar pré-requisitos + criar processo + inserir outbox event.
+        O analista responsável é extraído do JWT (claim preferred_username ou name).
+
+  /processos/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: ID único do processo de distribuição
+        schema:
+          type: string
+          format: uuid
+          example: "f47ac10b-58cc-4372-a567-0e02b2c3d479"
+
+    get:
+      summary: Buscar processo por ID
+      description: |
+        Retorna os detalhes completos de um processo de distribuição,
+        incluindo datas de cada transição de estado e justificativa de cancelamento.
+      operationId: buscarProcessoPorId
+      tags:
+        - Processos
+      responses:
+        "200":
+          description: Processo encontrado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProcessoResponse"
+              example:
+                id: "f47ac10b-58cc-4372-a567-0e02b2c3d479"
+                rubrica:
+                  sigla: "RADIO"
+                  nome: "Rádio AM/FM"
+                periodo: "2026-03"
+                status: "CALCULADO"
+                verbaLiquida: 85000.00
+                totalExecucoes: 1250
+                analistaResponsavel: "João Silva"
+                criadoEm: "2026-04-10T14:30:00Z"
+                calculadoEm: "2026-04-10T14:35:00Z"
+                aprovadoEm: null
+                finalizadoEm: null
+                canceladoEm: null
+                justificativaCancelamento: null
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+      x-frontend-notes: |
+        Exibir botões de ação conforme status:
+        - CRIADO: "Calcular", "Cancelar"
+        - CALCULADO: "Aprovar", "Cancelar"
+        - APROVADO: "Finalizar", "Cancelar"
+        - FINALIZADO/CANCELADO: nenhum botão
+        Exibir timeline de transições com datas.
+
+  /processos/{id}/calcular:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          example: "f47ac10b-58cc-4372-a567-0e02b2c3d479"
+
+    post:
+      summary: Disparar cálculo de créditos
+      description: |
+        Dispara o cálculo de créditos para o processo (transição CRIADO → CALCULADO).
+        A lógica de cálculo é implementada na F03 — este endpoint define a interface
+        e a transição de estado.
+        Publica evento `distribuicao.processo.calculado` via Outbox ao concluir.
+      operationId: calcularProcesso
+      tags:
+        - Processos
+      responses:
+        "200":
+          description: Cálculo concluído com sucesso
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProcessoResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          description: Transição inválida (processo não está no estado CRIADO)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetails"
+              example:
+                type: "https://tools.ietf.org/html/rfc7231#section-6.5.1"
+                title: "Unprocessable Entity"
+                status: 422
+                detail: "Transição inválida: processo no estado CALCULADO não pode ser calculado novamente"
+                instance: "/api/v1/processos/f47ac10b-58cc-4372-a567-0e02b2c3d479/calcular"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+      x-frontend-notes: |
+        Pode demorar dependendo do volume de execuções.
+        Exibir loading/spinner durante a requisição.
+        Após sucesso, recarregar detalhes do processo (status CALCULADO).
+      x-backend-notes: |
+        A lógica de cálculo (split autoral/conexo, ponderação) será implementada na F03.
+        Este endpoint define apenas a interface e a transição de estado.
+        Até F03 ser implementada, a transição pode ser feita sem cálculo real (stub).
+
+  /processos/{id}/aprovar:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          example: "f47ac10b-58cc-4372-a567-0e02b2c3d479"
+
+    post:
+      summary: Aprovar processo calculado
+      description: |
+        Aprova o processo (transição CALCULADO → APROVADO).
+        Ação direta do Analista, sem confirmação adicional.
+        Publica evento `distribuicao.processo.aprovado` via Outbox.
+      operationId: aprovarProcesso
+      tags:
+        - Processos
+      responses:
+        "200":
+          description: Processo aprovado com sucesso
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProcessoResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          description: Transição inválida (processo não está no estado CALCULADO)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetails"
+              example:
+                type: "https://tools.ietf.org/html/rfc7231#section-6.5.1"
+                title: "Unprocessable Entity"
+                status: 422
+                detail: "Transição inválida: CRIADO → APROVADO. O processo precisa ser calculado antes de ser aprovado"
+                instance: "/api/v1/processos/f47ac10b-58cc-4372-a567-0e02b2c3d479/aprovar"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+      x-frontend-notes: |
+        Botão direto sem modal de confirmação (ação é reversível via cancelamento).
+        Após sucesso, recarregar detalhes (status APROVADO, botões "Finalizar" e "Cancelar").
+
+  /processos/{id}/finalizar:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          example: "f47ac10b-58cc-4372-a567-0e02b2c3d479"
+
+    post:
+      summary: Finalizar processo aprovado
+      description: |
+        Finaliza o processo (transição APROVADO → FINALIZADO). Ação irreversível.
+        Publica eventos `distribuicao.processo.finalizado` e `distribuicao.rol.processado` via Outbox.
+        O evento `distribuicao.rol.processado` bloqueia o cancelamento do Rol na Identificação.
+      operationId: finalizarProcesso
+      tags:
+        - Processos
+      responses:
+        "200":
+          description: Processo finalizado com sucesso
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProcessoResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          description: Transição inválida (processo não está no estado APROVADO)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetails"
+              example:
+                type: "https://tools.ietf.org/html/rfc7231#section-6.5.1"
+                title: "Unprocessable Entity"
+                status: 422
+                detail: "Transição inválida: processo no estado CALCULADO não pode ser finalizado. Aprove antes de finalizar"
+                instance: "/api/v1/processos/f47ac10b-58cc-4372-a567-0e02b2c3d479/finalizar"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+      x-frontend-notes: |
+        Exigir modal de confirmação antes de enviar a requisição:
+        "Esta ação é irreversível. Os créditos se tornarão definitivos e o Rol será bloqueado
+        para cancelamento. Deseja continuar?"
+        Botões: "Cancelar" e "Confirmar Finalização" (variant danger).
+      x-backend-notes: |
+        Transacional: transicionar estado + inserir 2 outbox events (processo.finalizado + rol.processado).
+        O evento rol.processado deve conter a referência ao Rol (captação_id) para a Identificação.
+
+  /processos/{id}/cancelar:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          example: "f47ac10b-58cc-4372-a567-0e02b2c3d479"
+
+    post:
+      summary: Cancelar processo
+      description: |
+        Cancela o processo (transição para CANCELADO a partir de qualquer estado exceto FINALIZADO).
+        Justificativa obrigatória (mínimo 10 caracteres).
+        Publica evento `distribuicao.processo.cancelado` via Outbox.
+        Após cancelamento, é possível criar novo processo para a mesma rubrica+período.
+      operationId: cancelarProcesso
+      tags:
+        - Processos
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CancelarProcessoRequest"
+      responses:
+        "200":
+          description: Processo cancelado com sucesso
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProcessoResponse"
+        "400":
+          description: Justificativa inválida
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetails"
+              example:
+                type: "https://tools.ietf.org/html/rfc7231#section-6.5.1"
+                title: "Bad Request"
+                status: 400
+                detail: "Justificativa é obrigatória e deve ter no mínimo 10 caracteres"
+                instance: "/api/v1/processos/f47ac10b-58cc-4372-a567-0e02b2c3d479/cancelar"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          description: Processo já finalizado (não pode ser cancelado)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetails"
+              example:
+                type: "https://tools.ietf.org/html/rfc7231#section-6.5.1"
+                title: "Unprocessable Entity"
+                status: 422
+                detail: "Processo finalizado não pode ser cancelado"
+                instance: "/api/v1/processos/f47ac10b-58cc-4372-a567-0e02b2c3d479/cancelar"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+      x-frontend-notes: |
+        Modal com textarea para justificativa (mínimo 10 caracteres).
+        Validar comprimento no frontend antes de enviar.
+        Botões: "Voltar" e "Confirmar Cancelamento" (variant danger).
+
+components:
+
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        Token JWT via Keycloak (Authorization Code + PKCE).
+        Roles: analista-distribuicao (leitura + ações), consultor-distribuicao (somente leitura).
+        Ações de escrita (criar, aprovar, finalizar, cancelar, calcular) requerem role analista-distribuicao.
+
+  responses:
+    Unauthorized:
+      description: Não autenticado — token ausente ou inválido
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ProblemDetails"
+          example:
+            type: "https://tools.ietf.org/html/rfc7231#section-6.5.1"
+            title: "Unauthorized"
+            status: 401
+            detail: "Token de autenticação ausente ou inválido"
+            instance: "/api/v1/processos"
+
+    NotFound:
+      description: Recurso não encontrado
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ProblemDetails"
+          example:
+            type: "https://tools.ietf.org/html/rfc7231#section-6.5.4"
+            title: "Resource Not Found"
+            status: 404
+            detail: "Processo de distribuição não encontrado"
+            instance: "/api/v1/processos/f47ac10b-58cc-4372-a567-0e02b2c3d479"
+
+    InternalServerError:
+      description: Erro interno do servidor
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ProblemDetails"
+          example:
+            type: "https://tools.ietf.org/html/rfc7231#section-6.6.1"
+            title: "Internal Server Error"
+            status: 500
+            detail: "An unexpected error occurred"
+            instance: "/api/v1/processos"
+            traceId: "0HN4B2E8M0T0K:00000001"
+
+  schemas:
+
+    RubricaResumo:
+      type: object
+      description: "Resumo da rubrica associada ao processo"
+      required:
+        - sigla
+        - nome
+      properties:
+        sigla:
+          type: string
+          maxLength: 20
+          description: Sigla da rubrica
+          example: "RADIO"
+        nome:
+          type: string
+          maxLength: 100
+          description: Nome completo da rubrica
+          example: "Rádio AM/FM"
+
+    ProcessoResponse:
+      type: object
+      description: "Processo de distribuição com todos os detalhes"
+      required:
+        - id
+        - rubrica
+        - periodo
+        - status
+        - verbaLiquida
+        - analistaResponsavel
+        - criadoEm
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Identificador único do processo
+          example: "f47ac10b-58cc-4372-a567-0e02b2c3d479"
+        rubrica:
+          $ref: "#/components/schemas/RubricaResumo"
+        periodo:
+          type: string
+          pattern: "^\\d{4}-\\d{2}$"
+          description: Período da distribuição (YYYY-MM)
+          example: "2026-03"
+        status:
+          type: string
+          enum:
+            - CRIADO
+            - CALCULADO
+            - APROVADO
+            - FINALIZADO
+            - CANCELADO
+          description: |
+            Status atual do processo:
+            - `CRIADO`: Processo criado, aguardando cálculo
+            - `CALCULADO`: Cálculo concluído, aguardando aprovação
+            - `APROVADO`: Créditos aprovados, aguardando finalização
+            - `FINALIZADO`: Processo encerrado, créditos definitivos (irreversível)
+            - `CANCELADO`: Processo invalidado
+          example: "CRIADO"
+        verbaLiquida:
+          type: number
+          description: "Verba líquida utilizada no processo (BigDecimal no backend). Snapshot do momento da criação"
+          example: 85000.00
+        totalExecucoes:
+          type: integer
+          nullable: true
+          description: "Total de execuções processadas (preenchido após cálculo — F03)"
+          example: null
+        analistaResponsavel:
+          type: string
+          description: Nome do analista que criou o processo (extraído do JWT)
+          example: "João Silva"
+        criadoEm:
+          type: string
+          format: date-time
+          description: Data de criação do processo
+          example: "2026-04-10T14:30:00Z"
+        calculadoEm:
+          type: string
+          format: date-time
+          nullable: true
+          description: Data em que o cálculo foi concluído
+          example: null
+        aprovadoEm:
+          type: string
+          format: date-time
+          nullable: true
+          description: Data da aprovação
+          example: null
+        finalizadoEm:
+          type: string
+          format: date-time
+          nullable: true
+          description: Data da finalização
+          example: null
+        canceladoEm:
+          type: string
+          format: date-time
+          nullable: true
+          description: Data do cancelamento
+          example: null
+        justificativaCancelamento:
+          type: string
+          nullable: true
+          description: Justificativa informada pelo analista ao cancelar
+          example: null
+
+    ProcessoListResponse:
+      type: object
+      required:
+        - items
+        - metadata
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/ProcessoResponse"
+        metadata:
+          $ref: "#/components/schemas/PaginationInfo"
+
+    PaginationInfo:
+      type: object
+      required:
+        - page
+        - size
+        - total
+        - totalPages
+      properties:
+        page:
+          type: integer
+          description: Página atual (começa em 1)
+          example: 1
+        size:
+          type: integer
+          description: Itens por página
+          example: 20
+        total:
+          type: integer
+          description: Total de itens
+          example: 42
+        totalPages:
+          type: integer
+          description: Total de páginas
+          example: 3
+
+    CriarProcessoRequest:
+      type: object
+      required:
+        - rubricaSigla
+        - periodo
+      properties:
+        rubricaSigla:
+          type: string
+          maxLength: 20
+          description: Sigla da rubrica para a qual criar o processo
+          example: "RADIO"
+        periodo:
+          type: string
+          pattern: "^\\d{4}-\\d{2}$"
+          description: Período da distribuição (YYYY-MM)
+          example: "2026-03"
+
+    CancelarProcessoRequest:
+      type: object
+      required:
+        - justificativa
+      properties:
+        justificativa:
+          type: string
+          minLength: 10
+          maxLength: 500
+          description: Justificativa obrigatória para o cancelamento (mínimo 10 caracteres)
+          example: "Dados incorretos no Rol de Execuções. Necessário recriar com dados corrigidos."
+
+    DisponibilidadeResponse:
+      type: object
+      description: "Combinação rubrica+período pronta para distribuição (tem Rol fechado + Verba disponível + sem processo ativo)"
+      required:
+        - rubrica
+        - periodo
+        - verbaLiquida
+        - totalExecucoes
+      properties:
+        rubrica:
+          $ref: "#/components/schemas/RubricaResumo"
+        periodo:
+          type: string
+          pattern: "^\\d{4}-\\d{2}$"
+          description: Período disponível
+          example: "2026-03"
+        verbaLiquida:
+          type: number
+          description: "Verba líquida disponível para a rubrica+período (BigDecimal no backend)"
+          example: 85000.00
+        totalExecucoes:
+          type: integer
+          description: Total de execuções no Rol fechado
+          example: 1250
+
+    ProblemDetails:
+      type: object
+      description: "Formato de erro RFC 7807 (ProblemDetails)"
+      required:
+        - type
+        - title
+        - status
+      properties:
+        type:
+          type: string
+          format: uri
+          description: URI de referência do tipo de erro
+          example: "https://tools.ietf.org/html/rfc7231#section-6.5.4"
+        title:
+          type: string
+          description: Título curto do erro
+          example: "Resource Not Found"
+        status:
+          type: integer
+          description: HTTP status code
+          example: 404
+        detail:
+          type: string
+          description: Descrição detalhada do erro
+          example: "Processo de distribuição não encontrado"
+        instance:
+          type: string
+          description: Path da requisição que gerou o erro
+          example: "/api/v1/processos/f47ac10b-58cc-4372-a567-0e02b2c3d479"
+        traceId:
+          type: string
+          nullable: true
+          description: ID de rastreamento (presente em erros 5xx)
+          example: "0HN4B2E8M0T0K:00000001"

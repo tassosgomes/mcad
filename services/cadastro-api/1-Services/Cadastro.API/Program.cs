@@ -32,9 +32,13 @@ var dbName     = Environment.GetEnvironmentVariable("CADASTRO_DB_NAME")     ?? "
 var dbSchema   = Environment.GetEnvironmentVariable("CADASTRO_DB_SCHEMA")   ?? "cadastro";
 var dbUser     = Environment.GetEnvironmentVariable("CADASTRO_DB_USER")     ?? "cadastro_svc";
 var dbPassword = Environment.GetEnvironmentVariable("CADASTRO_DB_PASSWORD") ?? string.Empty;
+var dbSslMode  = Environment.GetEnvironmentVariable("CADASTRO_DB_SSL_MODE") ?? "Disable";
 
 var connectionString =
-    $"Host={dbHost};Port={dbPort};Database={dbName};Username={dbUser};Password={dbPassword};Search Path={dbSchema}";
+    $"Host={dbHost};Port={dbPort};Database={dbName};Username={dbUser};Password={dbPassword};Search Path={dbSchema};SSL Mode={dbSslMode};Trust Server Certificate=true";
+
+var corsAllowedOrigins = (Environment.GetEnvironmentVariable("CORS_ALLOWED_ORIGINS") ?? "http://localhost:5173")
+    .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
 
 // ─── DbContext (EF Core + PostgreSQL) ─────────────────────────────────
 builder.Services.AddDbContext<CadastroDbContext>(options =>
@@ -91,6 +95,13 @@ builder.Services.AddAsyncApiDocs();
 // ─── Health Checks ─────────────────────────────────────────────────────
 builder.Services.AddHealthChecks();
 
+// ─── CORS ──────────────────────────────────────────────────────────────
+builder.Services.AddCors(options =>
+    options.AddDefaultPolicy(policy =>
+        policy.WithOrigins(corsAllowedOrigins)
+            .AllowAnyHeader()
+            .AllowAnyMethod()));
+
 // ─── Exception Handler (GlobalExceptionHandler → ProblemDetails) ───────
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddProblemDetails();
@@ -98,7 +109,7 @@ builder.Services.AddProblemDetails();
 if (authEnabled)
 {
     var oidcAuthority = Environment.GetEnvironmentVariable("OIDC_AUTHORITY");
-    var oidcAudience = Environment.GetEnvironmentVariable("OIDC_AUDIENCE") ?? "mcad-frontend";
+    var oidcAudience = Environment.GetEnvironmentVariable("OIDC_AUDIENCE") ?? "https://api.mcad.local";
 
     if (string.IsNullOrWhiteSpace(oidcAuthority))
     {
@@ -116,33 +127,32 @@ if (authEnabled)
             {
                 ValidIssuer = oidcAuthority,
                 ValidateIssuer = true,
-                ValidateAudience = false
-            };
-            options.Events = new JwtBearerEvents
-            {
-                OnTokenValidated = context =>
-                {
-                    var authorizedParty = context.Principal?.FindFirst("azp")?.Value;
-                    if (!string.Equals(authorizedParty, oidcAudience, StringComparison.Ordinal))
-                    {
-                        context.Fail("Token authorized party does not match configured audience.");
-                    }
-
-                    return Task.CompletedTask;
-                }
+                ValidateAudience = true,
+                ValidAudiences = [oidcAudience]
             };
         });
 
-    builder.Services.AddTransient<IClaimsTransformation, KeycloakClaimsTransformation>();
-    builder.Services.AddAuthorization(options =>
+    builder.Services.AddTransient<IClaimsTransformation, LogtoClaimsTransformation>();
+}
+
+builder.Services.AddAuthorization(options =>
+{
+    if (authEnabled)
     {
         options.FallbackPolicy = new AuthorizationPolicyBuilder()
             .RequireAuthenticatedUser()
             .Build();
-        options.AddPolicy("read", policy => policy.RequireRole("analista-cadastro", "consultor", "analista-identificacao"));
-        options.AddPolicy("write", policy => policy.RequireRole("analista-cadastro", "analista-identificacao"));
-    });
-}
+        // Logto emite scopes de API resource no access_token (claim "scope" espaço-separada).
+        // Roles não estão no access_token — a distinção read/write usa scopes:
+        //   access → todos os papéis  |  write → somente analistas
+        options.AddPolicy("read", policy => policy.RequireClaim("scope", "access"));
+        options.AddPolicy("write", policy => policy.RequireClaim("scope", "write"));
+        return;
+    }
+
+    options.AddPolicy("read", policy => policy.RequireAssertion(_ => true));
+    options.AddPolicy("write", policy => policy.RequireAssertion(_ => true));
+});
 
 // ─── Logging estruturado ───────────────────────────────────────────────
 builder.Logging.AddConsole();
@@ -151,6 +161,7 @@ var app = builder.Build();
 
 // ─── Middleware pipeline ───────────────────────────────────────────────
 app.UseExceptionHandler();
+app.UseCors();
 
 // Swagger e AsyncAPI antes do auth — middleware short-circuits antes da auth rodar
 app.UseSwaggerDocs();
@@ -158,27 +169,21 @@ app.UseSwaggerDocs();
 if (authEnabled)
 {
     app.UseAuthentication();
-    app.UseAuthorization();
 }
 else
 {
     app.Logger.LogWarning("Authentication is DISABLED");
 }
 
+app.UseAuthorization();
+
 // ─── Aplicar migrations + confirmar seed no startup ───────────────────
 using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<CadastroDbContext>();
-    try
-    {
-        context.Database.Migrate();
-        var count = context.Associacoes.Count();
-        app.Logger.LogInformation("Startup: {Count} associações no banco de dados", count);
-    }
-    catch (Exception ex)
-    {
-        app.Logger.LogWarning(ex, "Não foi possível aplicar migrations. Banco de dados pode não estar acessível.");
-    }
+    context.Database.Migrate();
+    var count = context.Associacoes.Count();
+    app.Logger.LogInformation("Startup: {Count} associações no banco de dados", count);
 }
 
 // ─── Endpoints ────────────────────────────────────────────────────────

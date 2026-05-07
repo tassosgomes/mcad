@@ -1,10 +1,15 @@
 using System.Security.Claims;
-using System.Text.Json;
 using Microsoft.AspNetCore.Authentication;
 
 namespace Cadastro.API.Infrastructure;
 
-public sealed class KeycloakClaimsTransformation : IClaimsTransformation
+// Logto emite:
+//   - roles como array flat na claim "roles" (scope "roles" requerido no ID token)
+//   - scopes da API resource como string espaço-separada na claim "scope" do access token
+// Esta transformação:
+//   1. Expande "roles" → role claims no ClaimsPrincipal
+//   2. Expande "scope" → individual scope claims (para uso em RequireClaim("scope", "access"))
+public sealed class LogtoClaimsTransformation : IClaimsTransformation
 {
     public Task<ClaimsPrincipal> TransformAsync(ClaimsPrincipal principal)
     {
@@ -13,36 +18,35 @@ public sealed class KeycloakClaimsTransformation : IClaimsTransformation
             return Task.FromResult(principal);
         }
 
-        var realmAccessClaim = principal.FindFirst("realm_access")?.Value;
-        if (string.IsNullOrWhiteSpace(realmAccessClaim))
+        // 1. Roles do ID token (claim "roles")
+        var existingRoles = new HashSet<string>(
+            principal.FindAll(identity.RoleClaimType).Select(c => c.Value),
+            StringComparer.OrdinalIgnoreCase);
+
+        foreach (var roleClaim in principal.FindAll("roles"))
         {
-            return Task.FromResult(principal);
-        }
-
-        try
-        {
-            using var document = JsonDocument.Parse(realmAccessClaim);
-            if (!document.RootElement.TryGetProperty("roles", out var rolesElement) || rolesElement.ValueKind != JsonValueKind.Array)
+            var role = roleClaim.Value;
+            if (!string.IsNullOrWhiteSpace(role) && existingRoles.Add(role))
             {
-                return Task.FromResult(principal);
-            }
-
-            var existingRoles = new HashSet<string>(principal.FindAll(identity.RoleClaimType).Select(claim => claim.Value), StringComparer.OrdinalIgnoreCase);
-
-            foreach (var roleElement in rolesElement.EnumerateArray())
-            {
-                var role = roleElement.GetString();
-                if (string.IsNullOrWhiteSpace(role) || !existingRoles.Add(role))
-                {
-                    continue;
-                }
-
                 identity.AddClaim(new Claim(identity.RoleClaimType, role));
             }
         }
-        catch (JsonException)
+
+        // 2. Scopes da API resource (claim "scope" espaço-separada)
+        var scopeString = principal.FindFirst("scope")?.Value;
+        if (!string.IsNullOrWhiteSpace(scopeString))
         {
-            return Task.FromResult(principal);
+            var existingScopes = new HashSet<string>(
+                principal.FindAll("scope").Select(c => c.Value),
+                StringComparer.Ordinal);
+
+            foreach (var scope in scopeString.Split(' ', StringSplitOptions.RemoveEmptyEntries))
+            {
+                if (existingScopes.Add(scope))
+                {
+                    identity.AddClaim(new Claim("scope", scope));
+                }
+            }
         }
 
         return Task.FromResult(principal);

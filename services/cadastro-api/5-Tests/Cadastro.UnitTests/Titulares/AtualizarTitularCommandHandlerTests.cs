@@ -49,7 +49,7 @@ public class AtualizarTitularCommandHandlerTests
         typeof(Titular).GetProperty("Id")!.SetValue(titular, titularId);
         typeof(Titular).GetProperty("Associacao")!.SetValue(titular, associacao);
 
-        _mockTitularRepo.Setup(r => r.GetByIdAsync(titularId, It.IsAny<CancellationToken>()))
+        _mockTitularRepo.Setup(r => r.GetByIdForUpdateAsync(titularId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(titular);
 
         // Act
@@ -60,7 +60,8 @@ public class AtualizarTitularCommandHandlerTests
         result.Nome.Should().Be("João Silva Alterado");
         result.Nacionalidade.Should().Be("US");
         result.Status.Should().Be("FALECIDO");
-        _mockTitularRepo.Verify(r => r.Update(It.IsAny<Titular>()), Times.Once);
+        // Update() não é mais chamado explicitamente — EF Core com tracking detecta mudanças automáticas
+        _mockTitularRepo.Verify(r => r.Update(It.IsAny<Titular>()), Times.Never);
         _mockTitularRepo.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
@@ -70,7 +71,7 @@ public class AtualizarTitularCommandHandlerTests
         // Arrange
         var command = new AtualizarTitularCommand(Guid.NewGuid(), "Teste", "BR", Guid.NewGuid(), "ATIVO", null);
 
-        _mockTitularRepo.Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+        _mockTitularRepo.Setup(r => r.GetByIdForUpdateAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((Titular?)null);
 
         // Act & Assert

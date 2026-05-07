@@ -1,0 +1,268 @@
+openapi: 3.1.0
+
+info:
+  title: "Distribuição API — Rubricas"
+  description: |
+    API read-only para consulta das rubricas de utilização musical sincronizadas da Arrecadação.
+
+    **Contrato gerado a partir do PRD:** `tasks/distribuicao/prd-sync-rubricas/prd.md`
+    **Data de geração:** 2026-04-08
+
+    ## Premissas Adotadas
+    - Autenticação JWT Bearer via Keycloak (Authorization Code + PKCE)
+    - Sem paginação (máximo 7 registros sincronizados da Arrecadação)
+    - Dados sincronizados via evento — apenas endpoints GET expostos
+    - Verbos de escrita (POST, PUT, PATCH, DELETE) retornam 405 Method Not Allowed
+    - Erros seguem RFC 7807 (ProblemDetails)
+    - Campos JSON em camelCase
+    - Busca individual por sigla (identificador natural da rubrica)
+    - Cópia local — fonte de verdade é a Arrecadação (D03)
+  version: "1.0.0"
+  contact:
+    name: "Time de Plataforma ECAD"
+
+servers:
+  - url: http://localhost:5004/api/v1
+    description: Desenvolvimento local (distribuicao-api)
+
+security:
+  - BearerAuth: []
+
+tags:
+  - name: Rubricas
+    description: "Consulta das rubricas sincronizadas da Arrecadação (dados read-only, event-driven ACL)"
+
+paths:
+
+  /rubricas:
+    get:
+      summary: Listar rubricas sincronizadas
+      description: |
+        Retorna a lista de rubricas sincronizadas via eventos da Arrecadação.
+        Dados originados do seed da Arrecadação e propagados via `arrecadacao.rubrica.criada`.
+        Sem paginação — retorna todos os registros disponíveis (esperado: 7).
+        Se nenhum evento foi consumido ainda, retorna array vazio.
+      operationId: listarRubricas
+      tags:
+        - Rubricas
+      responses:
+        "200":
+          description: Lista de rubricas retornada com sucesso
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/RubricaResponse"
+              example:
+                - id: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+                  sigla: "RADIO"
+                  nome: "Rádio AM/FM"
+                  exigeClassificacao: false
+                - id: "b2c3d4e5-f6a7-8901-bcde-f12345678901"
+                  sigla: "TV_ABERTA"
+                  nome: "TV Aberta"
+                  exigeClassificacao: true
+                - id: "c3d4e5f6-a7b8-9012-cdef-123456789012"
+                  sigla: "TV_FECHADA"
+                  nome: "TV Fechada"
+                  exigeClassificacao: true
+                - id: "d4e5f6a7-b8c9-0123-defa-234567890123"
+                  sigla: "CINEMA"
+                  nome: "Cinema"
+                  exigeClassificacao: true
+                - id: "e5f6a7b8-c9d0-1234-efab-345678901234"
+                  sigla: "VOD"
+                  nome: "Streaming Vídeo (VOD)"
+                  exigeClassificacao: true
+                - id: "f6a7b8c9-d0e1-2345-fabc-456789012345"
+                  sigla: "STREAMING_AUDIO"
+                  nome: "Streaming Áudio"
+                  exigeClassificacao: false
+                - id: "a7b8c9d0-e1f2-3456-abcd-567890123456"
+                  sigla: "SHOW"
+                  nome: "Show"
+                  exigeClassificacao: false
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+      x-frontend-notes: |
+        Tabela simples sem paginação, filtros ou busca. Máximo 7 registros.
+        Coluna exigeClassificacao com badge visual Sim/Não.
+        Se array vazio, exibir estado vazio: "Nenhuma rubrica sincronizada. Aguardando eventos da Arrecadação."
+      x-backend-notes: |
+        Query simples sem cache necessário — volume mínimo.
+        Dados são cópia local sincronizada via eventos RabbitMQ.
+        Verbos POST, PUT, PATCH, DELETE devem retornar 405 Method Not Allowed.
+
+  /rubricas/{sigla}:
+    parameters:
+      - name: sigla
+        in: path
+        required: true
+        description: Sigla única da rubrica (identificador natural)
+        schema:
+          type: string
+          example: "TV_ABERTA"
+
+    get:
+      summary: Buscar rubrica por sigla
+      description: |
+        Retorna os dados de uma rubrica específica pela sua sigla.
+        Usado internamente pela criação de processos de distribuição (F02) e pelo cálculo de créditos (F03).
+      operationId: buscarRubricaPorSigla
+      tags:
+        - Rubricas
+      responses:
+        "200":
+          description: Rubrica encontrada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RubricaResponse"
+              example:
+                id: "b2c3d4e5-f6a7-8901-bcde-f12345678901"
+                sigla: "TV_ABERTA"
+                nome: "TV Aberta"
+                exigeClassificacao: true
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+      x-frontend-notes: |
+        Usado internamente pelo dropdown/select de rubricas na criação de processo de distribuição (F02).
+
+components:
+
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: "Token JWT obtido via Keycloak (Authorization Code + PKCE). Roles: analista-distribuicao (leitura + operações), consultor-distribuicao (somente leitura). Ambos os perfis têm acesso aos endpoints GET de rubricas."
+
+  responses:
+    Unauthorized:
+      description: Não autenticado — token ausente ou inválido
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ProblemDetails"
+          example:
+            type: "https://tools.ietf.org/html/rfc7231#section-6.5.1"
+            title: "Unauthorized"
+            status: 401
+            detail: "Token de autenticação ausente ou inválido"
+            instance: "/api/v1/rubricas"
+
+    NotFound:
+      description: Recurso não encontrado
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ProblemDetails"
+          example:
+            type: "https://tools.ietf.org/html/rfc7231#section-6.5.4"
+            title: "Resource Not Found"
+            status: 404
+            detail: "Rubrica com sigla 'INEXISTENTE' não foi encontrada"
+            instance: "/api/v1/rubricas/INEXISTENTE"
+
+    MethodNotAllowed:
+      description: Método não permitido — rubricas são dados sincronizados e imutáveis localmente
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ProblemDetails"
+          example:
+            type: "https://tools.ietf.org/html/rfc7231#section-6.5.5"
+            title: "Method Not Allowed"
+            status: 405
+            detail: "Rubricas são dados sincronizados da Arrecadação e não podem ser modificados localmente"
+            instance: "/api/v1/rubricas"
+
+    InternalServerError:
+      description: Erro interno do servidor
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ProblemDetails"
+          example:
+            type: "https://tools.ietf.org/html/rfc7231#section-6.6.1"
+            title: "Internal Server Error"
+            status: 500
+            detail: "An unexpected error occurred"
+            instance: "/api/v1/rubricas"
+            traceId: "0HN4B2E8M0T0K:00000001"
+
+  schemas:
+
+    RubricaResponse:
+      type: object
+      description: "Representa uma rubrica de utilização musical sincronizada da Arrecadação"
+      required:
+        - id
+        - sigla
+        - nome
+        - exigeClassificacao
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Identificador único da rubrica (gerado localmente na Distribuição)
+          example: "b2c3d4e5-f6a7-8901-bcde-f12345678901"
+        sigla:
+          type: string
+          maxLength: 20
+          description: Sigla única da rubrica (identificador natural, chave de sincronização)
+          example: "TV_ABERTA"
+        nome:
+          type: string
+          maxLength: 100
+          description: Nome completo da rubrica
+          example: "TV Aberta"
+        exigeClassificacao:
+          type: boolean
+          description: |
+            Indica se execuções desta rubrica exigem classificação por tipo de utilização (TA, TE, PE, BK).
+            true = rubricas audiovisuais (TV Aberta, TV Fechada, Cinema, VOD).
+            false = demais rubricas (Rádio, Streaming Áudio, Show).
+          example: true
+
+    ProblemDetails:
+      type: object
+      description: "Formato de erro RFC 7807 (ProblemDetails)"
+      required:
+        - type
+        - title
+        - status
+      properties:
+        type:
+          type: string
+          format: uri
+          description: URI de referência do tipo de erro
+          example: "https://tools.ietf.org/html/rfc7231#section-6.5.4"
+        title:
+          type: string
+          description: Título curto do erro
+          example: "Resource Not Found"
+        status:
+          type: integer
+          description: HTTP status code
+          example: 404
+        detail:
+          type: string
+          description: Descrição detalhada do erro
+          example: "Rubrica com sigla 'INEXISTENTE' não foi encontrada"
+        instance:
+          type: string
+          description: Path da requisição que gerou o erro
+          example: "/api/v1/rubricas/INEXISTENTE"
+        traceId:
+          type: string
+          nullable: true
+          description: ID de rastreamento (presente em erros 5xx)
+          example: "0HN4B2E8M0T0K:00000001"

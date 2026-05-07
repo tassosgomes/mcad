@@ -78,9 +78,17 @@ public static class ObraEndpoints
         })
         .RequireAuthorization("write");
 
-        group.MapPost("/{id:guid}/bloquear", async (Guid id, [FromBody] Cadastro.Application.Status.Commands.BloquearObraCommand commandArgs, IDispatcher dispatcher, CancellationToken ct) =>
+        group.MapPost("/{id:guid}/bloquear", async (Guid id, [FromBody] BloquearObraRequest? request, IDispatcher dispatcher, CancellationToken ct) =>
         {
-            var command = new Cadastro.Application.Status.Commands.BloquearObraCommand(id, commandArgs.Justificativa);
+            if (request is null)
+            {
+                throw new Cadastro.Application.Common.Exceptions.ValidationException(new Dictionary<string, string[]>
+                {
+                    ["body"] = ["Body é obrigatório."]
+                });
+            }
+
+            var command = new Cadastro.Application.Status.Commands.BloquearObraCommand(id, request.Justificativa);
             var result = await dispatcher.SendAsync(command, ct);
             return Results.Ok(result);
         })
@@ -107,3 +115,4 @@ public static class ObraEndpoints
 public record AtualizarObraRequest(string Titulo, string? Subtitulo, string Tipo, string? Genero);
 public record DepurarObraRequest(string Titulo, string Tipo, string? Subtitulo, string? Genero);
 public record AlterarDominioPublicoRequest(bool DominioPublico);
+public record BloquearObraRequest(string Justificativa);

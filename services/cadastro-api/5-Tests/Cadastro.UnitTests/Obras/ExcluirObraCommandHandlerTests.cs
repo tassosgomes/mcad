@@ -59,6 +59,8 @@ public class ExcluirObraCommandHandlerTests
         var command = new ExcluirObraCommand(obra.Id);
 
         var act = () => _handler.HandleAsync(command, CancellationToken.None);
-        await act.Should().ThrowAsync<ConflictException>();
+        await act.Should()
+            .ThrowAsync<ConflictException>()
+            .WithMessage("Obra não pode ser excluída pois possui titularidades autorais vinculadas.");
     }
 }

@@ -25,7 +25,7 @@ public class ExcluirObraCommandHandler : ICommandHandler<ExcluirObraCommand, boo
             throw new ConflictException("Obras depuradas não podem ser excluídas.");
 
         if (await _repository.PossuiVinculosAsync(obra.Id, cancellationToken))
-            throw new ConflictException("A obra possui vínculos e não pode ser excluída.");
+            throw new ConflictException("Obra não pode ser excluída pois possui titularidades autorais vinculadas.");
 
         _repository.Delete(obra);
         await _repository.SaveChangesAsync(cancellationToken);

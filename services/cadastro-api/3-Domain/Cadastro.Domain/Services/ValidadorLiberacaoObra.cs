@@ -9,7 +9,7 @@ public static class ValidadorLiberacaoObra
         var pendencias = new List<PreRequisito>();
 
         pendencias.Add(new PreRequisito("Título", !string.IsNullOrWhiteSpace(obra.Titulo)));
-        pendencias.Add(new PreRequisito("Tipo", obra.Tipo != default));
+        pendencias.Add(new PreRequisito("Tipo", Enum.IsDefined(obra.Tipo)));
         
         pendencias.Add(new PreRequisito(
             "ISWC",

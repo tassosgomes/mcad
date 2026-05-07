@@ -1,6 +1,7 @@
 ---
 name: cy-create-techspec
 description: Creates a Technical Specification by translating PRD business requirements into implementation designs through interactive technical clarification. Use when a PRD exists and needs a technical plan, or when technical architecture decisions need documentation. Do not use for PRD creation, task breakdown, or direct code implementation.
+argument-hint: "[feature-name] [prd-file]"
 ---
 
 # Create TechSpec
@@ -8,7 +9,11 @@ description: Creates a Technical Specification by translating PRD business requi
 Translate business requirements into a detailed technical specification.
 
 <HARD-GATE>
-Do NOT generate the TechSpec document, write any file, or take any implementation action until you have presented the technical design section by section and the user has approved each section. This applies to EVERY TechSpec regardless of perceived simplicity.
+Do NOT write the TechSpec file until ALL phases are complete and the user has approved the final draft.
+Do NOT skip the codebase exploration — every TechSpec MUST be informed by existing architecture.
+Do NOT skip user interactions — the user MUST participate in shaping the TechSpec at every decision point.
+Do NOT require section-by-section approval — generate the complete draft, then let the user review it.
+This applies to EVERY TechSpec regardless of perceived simplicity.
 </HARD-GATE>
 
 ## Asking Questions
@@ -19,13 +24,28 @@ If your runtime does not provide such a tool, present the question as your compl
 
 ## Anti-Pattern: "This Is Too Simple To Need Technical Design Review"
 
-Every TechSpec goes through the full design review process. A single endpoint, a minor refactor, a configuration change — all of them. "Simple" technical changes are where unexamined assumptions about existing architecture cause the most integration failures. The design review can be brief for genuinely simple changes, but you MUST present it and get approval.
+Every TechSpec goes through the full design review process. A single endpoint, a minor refactor, a configuration change — all of them. "Simple" technical changes are where unexamined assumptions about existing architecture cause the most integration failures. The design review can be brief for genuinely simple changes, but you MUST ask technical clarification questions and get approval on the technical approach before writing the artifact.
+
+## Anti-Pattern: End-Of-Flow Bureaucracy
+
+Once the user has answered the technical clarification questions and approved an approach, do not force them through a second approval loop for System Architecture, Data Models, API Design, or other final document sections. Synthesize the approved direction into the TechSpec directly. The user can review and request edits in the generated file afterward.
 
 ## Required Inputs
 
 - Feature name identifying the `.compozy/tasks/<name>/` directory.
 - Optional: existing `_prd.md` as primary input.
 - Optional: existing `_techspec.md` for update mode.
+
+## Checklist
+
+You MUST create a task for each phase and complete them in order:
+
+1. **Gather context** — read PRD, ADRs, and explore codebase architecture
+2. **Ask technical questions** — 3-6 targeted questions on architecture, data models, APIs, testing
+3. **Create ADRs** — record significant technical decisions (architecture pattern, technology choices, data model approach)
+4. **Draft the TechSpec** — write using the canonical template from `references/techspec-template.md`
+5. **Review with user** — present the draft, iterate until approved
+6. **Save the file** — write to `.compozy/tasks/<name>/_techspec.md`
 
 ## Workflow
 
@@ -45,27 +65,41 @@ Every TechSpec goes through the full design review process. A single endpoint, a
    - Cover testing strategy and performance requirements.
    - Ask only one question per message. If a topic needs more exploration, break it into a sequence of individual questions.
    - Prefer multiple-choice questions when the options can be predetermined.
+   - Include a fallback option (e.g., "D) Other — describe") for flexibility.
 
-3. Present the technical design incrementally for approval.
-   - Present the design section by section, scaled to each section's complexity: a few sentences if straightforward, up to 200-300 words if nuanced.
-   - Present one section at a time and ask the user whether it looks right before moving to the next.
-   - Sections to cover: System Architecture, Core Interfaces, Data Models, API Design, Integration Points, Testing Approach, Development Sequencing.
-   - Be ready to revise any section based on feedback before proceeding.
-   - Apply YAGNI ruthlessly: remove any component, interface, or abstraction that is not strictly necessary.
-   - If the user requests changes to a section, revise and re-present that section.
-   - After all sections are approved, create an ADR for each significant technical decision (architecture pattern chosen, technology selected, data model approach, etc.):
+3. Create ADRs for significant technical decisions.
+   - For each significant decision (architecture pattern chosen, technology selected, data model approach, etc.):
      - Read `references/adr-template.md`.
      - Determine the next ADR number by listing existing files in `.compozy/tasks/<name>/adrs/`.
      - Fill the template: the chosen design as "Decision", rejected alternatives as "Alternatives Considered", and trade-offs as "Consequences". Set Status to "Accepted" and Date to today.
      - Write each ADR to `.compozy/tasks/<name>/adrs/adr-NNN.md` (zero-padded 3-digit sequential number).
 
-4. Generate the TechSpec document.
+4. Draft the TechSpec.
    - Read `references/techspec-template.md` and fill every applicable section.
-   - Include an "Architecture Decision Records" section listing all ADRs (from both PRD brainstorming and technical design) with their numbers, titles, and one-line summaries as links to the `adrs/` directory.
-   - Write the completed document to `.compozy/tasks/<name>/_techspec.md`.
+   - **MANDATORY — Architecture Decision Records section:** The generated TechSpec MUST end with an "Architecture Decision Records" section listing every ADR created during this process. Each entry must include the ADR number (e.g., ADR-001), title, and a one-line summary formatted as a link to the `adrs/` directory. Even simple features require at least one ADR documenting the primary technical approach chosen and alternatives rejected. If no ADRs were created in step 3, go back and create at least one before generating the document.
+   - Apply YAGNI ruthlessly: remove any component, interface, or abstraction that is not strictly necessary. Do NOT propose new packages or directories when the feature can be implemented by adding a single file to an existing package.
    - Every PRD goal and user story should map to a technical component.
    - Reference PRD sections by name but do not duplicate business context.
-   - Include code examples only for core interfaces, limited to 20 lines each.
+   - Include code examples only for core interfaces, limited to 20 lines each. The Core Interfaces section must contain at least one Go interface or struct definition as a code block, even for simple features — show the primary type that other components will depend on.
+   - The Development Sequencing section MUST include a numbered Build Order where every step after the first explicitly states which previous steps it depends on.
+   - Prefer active voice, omit needless words, use definite and specific language over vague generalities. Every sentence should earn its place.
+   - Language: **English**. Tone: clear, technical, consistent with existing project artifacts.
+   - Present the complete draft to the user for review.
+
+5. Review with the user.
+   - Present the draft and ask using the interactive question tool:
+     - "Here is the TechSpec draft. Please review and let me know:"
+     - A) Approved — save as is
+     - B) Adjust specific sections (tell me which ones)
+     - C) Rewrite section X (tell me what to change)
+     - D) Discard and start over
+   - If B or C: make the changes and present again.
+   - If D: go back to step 2.
+
+6. Save the TechSpec file.
+   - Write the completed document to `.compozy/tasks/<name>/_techspec.md`.
+   - Confirm the file path to the user.
+   - Remind the user that the next step is to create tasks using `cy-create-tasks` from this TechSpec.
 
 ## Process Flow
 
@@ -73,20 +107,17 @@ Every TechSpec goes through the full design review process. A single endpoint, a
 digraph create_techspec {
     "Gather context (PRD + codebase)" [shape=box];
     "Ask technical questions (one at a time)" [shape=box];
-    "Present design section by section" [shape=box];
-    "User approves section?" [shape=diamond];
-    "All sections approved?" [shape=diamond];
     "Create ADRs for key decisions" [shape=box];
-    "Generate TechSpec document" [shape=doublecircle];
+    "Draft TechSpec (canonical template)" [shape=box];
+    "User approves draft?" [shape=diamond];
+    "Save _techspec.md" [shape=doublecircle];
 
     "Gather context (PRD + codebase)" -> "Ask technical questions (one at a time)";
-    "Ask technical questions (one at a time)" -> "Present design section by section";
-    "Present design section by section" -> "User approves section?";
-    "User approves section?" -> "Present design section by section" [label="no, revise"];
-    "User approves section?" -> "All sections approved?" [label="yes"];
-    "All sections approved?" -> "Present design section by section" [label="next section"];
-    "All sections approved?" -> "Create ADRs for key decisions" [label="all done"];
-    "Create ADRs for key decisions" -> "Generate TechSpec document";
+    "Ask technical questions (one at a time)" -> "Create ADRs for key decisions";
+    "Create ADRs for key decisions" -> "Draft TechSpec (canonical template)";
+    "Draft TechSpec (canonical template)" -> "User approves draft?";
+    "User approves draft?" -> "Draft TechSpec (canonical template)" [label="no, revise"];
+    "User approves draft?" -> "Save _techspec.md" [label="approved"];
 }
 ```
 
@@ -103,5 +134,10 @@ digraph create_techspec {
 - **One question at a time** — Do not overwhelm with multiple questions in a single message
 - **Multiple choice preferred** — Easier for users to answer than open-ended when possible
 - **YAGNI ruthlessly** — Remove unnecessary components, abstractions, and interfaces from all designs
-- **Incremental validation** — Present design section by section, get approval before moving on
+- **Draft then review** — Generate the complete TechSpec draft first, then iterate with the user until approved
 - **Technical focus only** — Never ask business questions; that belongs in the PRD
+- **Trade-offs are mandatory** — Every Executive Summary must state the primary technical trade-off of the chosen approach
+- **PRD as input** — When `_prd.md` exists, use it as primary context; every PRD goal should map to a technical component
+- **Pipeline awareness** — The TechSpec feeds into `cy-create-tasks`; focus on HOW, not WHAT or WHY
+- **Template compliance** — Every TechSpec MUST follow the canonical template
+- **Language consistency** — Write all TechSpec content in English

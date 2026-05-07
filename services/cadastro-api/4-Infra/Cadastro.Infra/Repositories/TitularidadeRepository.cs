@@ -18,6 +18,7 @@ public class TitularidadeRepository : ITitularidadeRepository
     public async Task<IEnumerable<TitularidadeAutoral>> GetByObraIdAsync(Guid obraId, CancellationToken ct)
     {
         return await _context.TitularidadesAutorais
+            .AsNoTracking()
             .Include(t => t.Titular)
             .ThenInclude(t => t.Associacao)
             .Where(t => t.ObraId == obraId)

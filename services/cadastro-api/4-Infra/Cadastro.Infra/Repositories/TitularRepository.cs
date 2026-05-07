@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using Cadastro.Domain.Entities;
 using Cadastro.Domain.Enums;
 using Cadastro.Domain.Interfaces;
@@ -43,13 +44,12 @@ public class TitularRepository : ITitularRepository
 
         if (!string.IsNullOrWhiteSpace(filtro.Documento))
         {
-            // "Cpf" e "Cnpj" são colunas com HasConversion: EF Core não traduz
-            // t.Cpf.Valor → SQL diretamente. Buscamos os IDs via SqlQuery seguro.
-            var likeDoc = $"%{filtro.Documento.ToUpperInvariant()}%";
+            var likeDoc = $"%{NormalizeDocumentQuery(filtro.Documento)}%";
             var matchingIds = await _context.Database
                 .SqlQuery<Guid>($"""
                     SELECT "Id" AS "Value" FROM cadastro.titulares
-                    WHERE "Cpf" ILIKE {likeDoc} OR "Cnpj" ILIKE {likeDoc}
+                    WHERE UPPER(regexp_replace(COALESCE("Cpf", ''), '[^0-9A-Za-z]', '', 'g')) LIKE {likeDoc}
+                       OR UPPER(regexp_replace(COALESCE("Cnpj", ''), '[^0-9A-Za-z]', '', 'g')) LIKE {likeDoc}
                     """)
                 .ToListAsync(cancellationToken);
 
@@ -87,6 +87,18 @@ public class TitularRepository : ITitularRepository
     {
         return await _context.Titulares
             .AsNoTracking()
+            .Include(t => t.Associacao)
+            .FirstOrDefaultAsync(t => t.Id == id, cancellationToken);
+    }
+
+    /// <summary>
+    /// Busca titular COM rastreamento EF Core para uso em operações de escrita.
+    /// Não usa AsNoTracking — o contexto rastreia todas as propriedades e detecta
+    /// mudanças em AssociacaoId (FK) corretamente ao SaveChanges.
+    /// </summary>
+    public async Task<Titular?> GetByIdForUpdateAsync(Guid id, CancellationToken cancellationToken)
+    {
+        return await _context.Titulares
             .Include(t => t.Associacao)
             .FirstOrDefaultAsync(t => t.Id == id, cancellationToken);
     }
@@ -147,13 +159,15 @@ public class TitularRepository : ITitularRepository
 
     public async Task<IEnumerable<Titular>> BuscarParaAutocompleteAsync(string q, int limit, CancellationToken cancellationToken)
     {
-        var likeQ = $"%{q.ToUpperInvariant()}%";
+        var likeQ = $"%{NormalizeDocumentQuery(q)}%";
         var likeNome = $"%{q}%";
         
         var matchingIds = await _context.Database
             .SqlQuery<Guid>($"""
                 SELECT "Id" AS "Value" FROM cadastro.titulares
-                WHERE "Nome" ILIKE {likeNome} OR "Cpf" LIKE {likeQ} OR "Cnpj" LIKE {likeQ}
+                WHERE "Nome" ILIKE {likeNome}
+                   OR UPPER(regexp_replace(COALESCE("Cpf", ''), '[^0-9A-Za-z]', '', 'g')) LIKE {likeQ}
+                   OR UPPER(regexp_replace(COALESCE("Cnpj", ''), '[^0-9A-Za-z]', '', 'g')) LIKE {likeQ}
                 LIMIT {limit}
                 """)
             .ToListAsync(cancellationToken);
@@ -168,4 +182,7 @@ public class TitularRepository : ITitularRepository
 
         return resultado.OrderBy(t => t.Nome);
     }
+
+    private static string NormalizeDocumentQuery(string value)
+        => Regex.Replace(value ?? string.Empty, @"[^0-9A-Za-z]", "").ToUpperInvariant();
 }

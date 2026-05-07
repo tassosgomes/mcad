@@ -10,7 +10,7 @@ public class NotFoundException : Exception
     public object ResourceId { get; }
 
     public NotFoundException(string resourceName, object resourceId)
-        : base($"{resourceName} with ID '{resourceId}' was not found.")
+        : base($"{resourceName} com ID '{resourceId}' não foi encontrado")
     {
         ResourceName = resourceName;
         ResourceId = resourceId;

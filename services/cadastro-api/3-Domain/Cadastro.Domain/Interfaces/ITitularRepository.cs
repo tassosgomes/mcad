@@ -16,8 +16,15 @@ public interface ITitularRepository
     Task<(IEnumerable<Titular> Items, int Total)> ListarAsync(
         TitularFiltro filtro, CancellationToken cancellationToken);
 
-    /// <summary>Busca titular por ID incluindo a Associação (navigação).</summary>
+    /// <summary>Busca titular por ID incluindo a Associação (navegação). AsNoTracking — somente leitura.</summary>
     Task<Titular?> GetByIdAsync(Guid id, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Busca titular por ID COM rastreamento EF Core.
+    /// Usar exclusivamente em operações de escrita (Update) para garantir
+    /// que todas as propriedades, incluindo AssociacaoId com FK, sejam detectadas como modificadas.
+    /// </summary>
+    Task<Titular?> GetByIdForUpdateAsync(Guid id, CancellationToken cancellationToken);
 
     /// <summary>
     /// Verifica se já existe um titular com o documento informado.

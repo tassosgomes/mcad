@@ -54,7 +54,10 @@ load_env() {
 
 # ── Start ────────────────────────────────────────────────────────────────────
 cmd_start() {
-  info "Infraestrutura remota (db/rabbitmq/keycloak/minio em tasso.dev.br)"
+  info "Infraestrutura remota (db/rabbitmq/minio — Aiven/tasso.dev.br) | IDP: Logto Cloud"
+
+  # Carrega variáveis do root .env para todos os serviços
+  load_env "$ROOT_DIR/.env"
 
   # cadastro-api (.NET — porta 5001)
   info "Iniciando cadastro-api  → http://localhost:5001"
@@ -84,6 +87,16 @@ cmd_start() {
   ) &
   save_pid "arrecadacao-api" $!
 
+  # distribuicao-api (Java/Maven — porta 5004)
+  info "Iniciando distribuicao-api → http://localhost:5004"
+  (
+    cd "$ROOT_DIR/services/distribuicao-api"
+    load_env "$ROOT_DIR/.env"
+    mvn -pl distribuicao-api spring-boot:run -Dspring-boot.run.profiles=dev \
+      >> "$LOGS_DIR/distribuicao-api.log" 2>&1
+  ) &
+  save_pid "distribuicao-api" $!
+
   # frontend (Vite — porta 5173)
   info "Iniciando frontend          → http://localhost:5173"
   (
@@ -98,6 +111,7 @@ cmd_start() {
   echo -e "  cadastro-api      → http://localhost:5001"
   echo -e "  identificacao-api → http://localhost:5100"
   echo -e "  arrecadacao-api   → http://localhost:5003"
+  echo -e "  distribuicao-api  → http://localhost:5004"
   echo -e "  frontend          → http://localhost:5173"
   echo ""
   echo -e "  Para parar: ${YELLOW}./dev.sh stop${NC}"
@@ -106,6 +120,7 @@ cmd_start() {
 # ── Stop ─────────────────────────────────────────────────────────────────────
 cmd_stop() {
   kill_service "frontend"
+  kill_service "distribuicao-api"
   kill_service "arrecadacao-api"
   kill_service "identificacao-api"
   kill_service "cadastro-api"

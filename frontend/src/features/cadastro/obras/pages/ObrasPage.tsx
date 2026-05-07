@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { Plus } from 'lucide-react';
 import { PageHeader } from '@components/ui/page-header';
 import { Loading } from '@components/ui/loading';
@@ -17,11 +17,21 @@ import type { ObraMusical, ObraFiltros } from '../types/obra';
 import styles from './ObrasPage.module.css';
 
 export function ObrasPage() {
+  const location = useLocation();
   const navigate = useNavigate();
   const { showToast } = useToast();
   const { hasRole } = useAuth();
   const canWrite = hasRole('analista-cadastro');
-  const [filtros, setFiltros] = useState<ObraFiltros>({ page: 1, size: 20, sort: 'titulo' });
+  const createdObraTitle =
+    typeof location.state === 'object' && location.state !== null && 'createdObraTitle' in location.state
+      ? String(location.state.createdObraTitle)
+      : undefined;
+  const [filtros, setFiltros] = useState<ObraFiltros>({
+    page: 1,
+    size: 20,
+    sort: 'titulo',
+    titulo: createdObraTitle,
+  });
   const [obraParaExcluir, setObraParaExcluir] = useState<ObraMusical | null>(null);
   const { data, isLoading, error, refetch } = useObras(filtros);
   const deleteMutation = useDeleteObra();

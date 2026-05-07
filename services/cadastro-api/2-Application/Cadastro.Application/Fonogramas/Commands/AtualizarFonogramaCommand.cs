@@ -13,7 +13,8 @@ public record AtualizarFonogramaCommand(
     string Isrc,
     string PaisOrigem,
     DateOnly? DataGravacao,
-    DateOnly? DataLancamento
+    DateOnly? DataLancamento,
+    string? UrlAudio = null
 ) : ICommand<FonogramaResponse>;
 
 public class AtualizarFonogramaCommandValidator : AbstractValidator<AtualizarFonogramaCommand>
@@ -66,6 +67,11 @@ public class AtualizarFonogramaCommandHandler : ICommandHandler<AtualizarFonogra
             command.DataLancamento
         );
 
+        if (command.UrlAudio is not null || fonograma.UrlAudio is not null)
+        {
+            fonograma.DefinirUrlAudio(command.UrlAudio);
+        }
+
         _fonogramaRepository.Update(fonograma);
         await _fonogramaRepository.SaveChangesAsync(cancellationToken);
 
@@ -86,7 +92,9 @@ public class AtualizarFonogramaCommandHandler : ICommandHandler<AtualizarFonogra
             fStatus,
             fonograma.FonogramaDepuradoParaId,
             fonograma.CriadoEm,
-            fonograma.AtualizadoEm
+            fonograma.AtualizadoEm,
+            fonograma.UrlAudio,
+            fonograma.BloqueioJustificativa
         );
     }
 }

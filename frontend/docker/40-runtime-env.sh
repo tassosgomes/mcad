@@ -1,0 +1,40 @@
+#!/bin/sh
+set -eu
+
+export CADASTRO_API_BASE_URL="${CADASTRO_API_BASE_URL:-}"
+export IDENTIFICACAO_API_BASE_URL="${IDENTIFICACAO_API_BASE_URL:-}"
+export ARRECADACAO_API_BASE_URL="${ARRECADACAO_API_BASE_URL:-}"
+export DISTRIBUICAO_API_BASE_URL="${DISTRIBUICAO_API_BASE_URL:-}"
+export OIDC_AUTHORITY="${OIDC_AUTHORITY:-}"
+export OIDC_CLIENT_ID="${OIDC_CLIENT_ID:-}"
+export OIDC_AUDIENCE="${OIDC_AUDIENCE:-}"
+export OIDC_REDIRECT_URI="${OIDC_REDIRECT_URI:-}"
+export OIDC_POST_LOGOUT_REDIRECT_URI="${OIDC_POST_LOGOUT_REDIRECT_URI:-}"
+
+required_vars="
+CADASTRO_API_BASE_URL
+IDENTIFICACAO_API_BASE_URL
+ARRECADACAO_API_BASE_URL
+DISTRIBUICAO_API_BASE_URL
+OIDC_AUTHORITY
+OIDC_CLIENT_ID
+OIDC_AUDIENCE
+OIDC_REDIRECT_URI
+OIDC_POST_LOGOUT_REDIRECT_URI
+"
+
+for var_name in $required_vars; do
+  eval "value=\${$var_name}"
+  if [ -z "$value" ]; then
+    echo "ERROR: $var_name is required."
+    exit 1
+  fi
+done
+
+envsubst '${CADASTRO_API_BASE_URL} ${IDENTIFICACAO_API_BASE_URL} ${ARRECADACAO_API_BASE_URL} ${DISTRIBUICAO_API_BASE_URL} ${OIDC_AUTHORITY} ${OIDC_CLIENT_ID} ${OIDC_AUDIENCE} ${OIDC_REDIRECT_URI} ${OIDC_POST_LOGOUT_REDIRECT_URI}' \
+  < /usr/share/nginx/html/runtime-env.template.js \
+  > /usr/share/nginx/html/runtime-env.js
+
+rm /usr/share/nginx/html/runtime-env.template.js
+
+echo "runtime-env.js generated."

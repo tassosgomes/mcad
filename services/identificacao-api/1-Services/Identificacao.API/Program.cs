@@ -21,7 +21,11 @@ using Microsoft.IdentityModel.Tokens;
 using Minio;
 // Busca o .env na raiz do serviço (../../.. relativo ao dir do projeto)
 var envPath = Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", ".env");
-Env.Load(Path.GetFullPath(envPath));
+var fullEnvPath = Path.GetFullPath(envPath);
+if (File.Exists(fullEnvPath))
+{
+    Env.Load(fullEnvPath);
+}
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -32,8 +36,12 @@ var dbName = Environment.GetEnvironmentVariable("IDENTIFICACAO_DB_NAME") ?? "pos
 var dbUser = Environment.GetEnvironmentVariable("IDENTIFICACAO_DB_USER") ?? "postgres";
 var dbPassword = Environment.GetEnvironmentVariable("IDENTIFICACAO_DB_PASSWORD") ?? "postgres";
 var schema = Environment.GetEnvironmentVariable("IDENTIFICACAO_DB_SCHEMA") ?? "identificacao";
+var dbSslMode = Environment.GetEnvironmentVariable("IDENTIFICACAO_DB_SSL_MODE") ?? "Disable";
 
-var connectionString = $"Host={dbHost};Port={dbPort};Database={dbName};Username={dbUser};Password={dbPassword};Search Path={schema}";
+var connectionString = $"Host={dbHost};Port={dbPort};Database={dbName};Username={dbUser};Password={dbPassword};Search Path={schema};SSL Mode={dbSslMode};Trust Server Certificate=true";
+var corsAllowedOrigins = (Environment.GetEnvironmentVariable("CORS_ALLOWED_ORIGINS") ?? "http://localhost:5173")
+    .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+const string corsPolicyName = "FrontendOrigins";
 
 builder.Services.AddDbContext<IdentificacaoDbContext>(options =>
     options.UseNpgsql(connectionString, npgsql =>
@@ -102,7 +110,7 @@ var authEnabled = Environment.GetEnvironmentVariable("AUTH_ENABLED") == "true";
 if (authEnabled)
 {
     var authority = Environment.GetEnvironmentVariable("OIDC_AUTHORITY") ?? "http://localhost:8080/realms/mcad";
-    var audience = Environment.GetEnvironmentVariable("OIDC_AUDIENCE") ?? "mcad-frontend";
+    var audience = Environment.GetEnvironmentVariable("OIDC_AUDIENCE") ?? "https://api.mcad.local";
 
     builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         .AddJwtBearer(options =>
@@ -115,31 +123,21 @@ if (authEnabled)
             {
                 ValidIssuer = authority,
                 ValidateIssuer = true,
-                ValidateAudience = false,
+                ValidateAudience = true,
+                ValidAudiences = [audience],
                 ValidateLifetime = true,
                 NameClaimType = "preferred_username"
             };
-            options.Events = new JwtBearerEvents
-            {
-                OnTokenValidated = context =>
-                {
-                    var azp = context.Principal?.FindFirst("azp")?.Value;
-                    if (!string.Equals(azp, audience, StringComparison.Ordinal))
-                    {
-                        context.Fail("Token authorized party does not match configured audience.");
-                    }
-                    return Task.CompletedTask;
-                }
-            };
         });
 
-    builder.Services.AddTransient<IClaimsTransformation, KeycloakClaimsTransformation>();
+    builder.Services.AddTransient<IClaimsTransformation, LogtoClaimsTransformation>();
 
     builder.Services.AddAuthorization(options =>
     {
         options.FallbackPolicy = new AuthorizationPolicyBuilder().RequireAuthenticatedUser().Build();
-        options.AddPolicy("read", p => p.RequireRole("analista-identificacao", "consultor-identificacao"));
-        options.AddPolicy("write", p => p.RequireRole("analista-identificacao"));
+        // Scopes de API resource (Logto): access → todos os papéis, write → somente analistas
+        options.AddPolicy("read", p => p.RequireClaim("scope", "access"));
+        options.AddPolicy("write", p => p.RequireClaim("scope", "write"));
     });
 }
 else
@@ -158,8 +156,11 @@ builder.Services.AddProblemDetails();
 
 // Configura CORS
 builder.Services.AddCors(options =>
-    options.AddDefaultPolicy(policy =>
-        policy.WithOrigins("http://localhost:5173").AllowAnyHeader().AllowAnyMethod()));
+    options.AddPolicy(corsPolicyName, policy =>
+        policy.WithOrigins(corsAllowedOrigins)
+            .AllowAnyHeader()
+            .AllowAnyMethod()
+            .AllowCredentials()));
 
 // ─── Swagger (documentação REST) ──────────────────────────────────────
 builder.Services.AddSwaggerDocs();
@@ -176,7 +177,7 @@ builder.WebHost.UseUrls("http://0.0.0.0:5100");
 var app = builder.Build();
 
 // Enable CORS
-app.UseCors();
+app.UseCors(corsPolicyName);
 
 // Exception Handling
 app.UseExceptionHandler();
@@ -199,7 +200,7 @@ else
 app.MapAsyncApiDocs();
 
 // Map Endpoints
-app.MapHealthChecks("/health");
+app.MapHealthChecks("/health").AllowAnonymous();
 app.MapFechamentoEndpoints();
 app.MapRubricaEndpoints();
 app.MapCaptacaoEndpoints();

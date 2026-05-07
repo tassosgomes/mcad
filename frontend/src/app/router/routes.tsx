@@ -3,10 +3,19 @@ import { createBrowserRouter, Navigate } from 'react-router-dom';
 import { MainLayout } from '@components/layout/main-layout';
 import { Loading } from '@components/ui/loading';
 import { CallbackPage, LoggedOutPage, ProtectedRoute, RequireRole, SilentCallbackPage } from '@shared/auth';
+import { useAuth } from '@shared/auth/useAuth';
+import { getDefaultAuthorizedPath } from '@shared/auth/authorizedRoutes';
 
 const CadastroRoutes = lazy(() => import('@features/cadastro'));
 const IdentificacaoRoutes = lazy(() => import('@features/identificacao'));
 const ArrecadacaoRoutes = lazy(() => import('@features/arrecadacao'));
+const DistribuicaoRoutes = lazy(() => import('@features/distribuicao'));
+
+function HomeRedirect() {
+  const { roles } = useAuth();
+
+  return <Navigate to={getDefaultAuthorizedPath(roles)} replace />;
+}
 
 export const router = createBrowserRouter([
   {
@@ -29,7 +38,7 @@ export const router = createBrowserRouter([
       </ProtectedRoute>
     ),
     children: [
-      { index: true, element: <Navigate to="/cadastro/associacoes" replace /> },
+      { index: true, element: <HomeRedirect /> },
       { 
         path: 'cadastro/*', 
         element: (
@@ -59,6 +68,16 @@ export const router = createBrowserRouter([
             </Suspense>
           </RequireRole>
         ) 
+      },
+      {
+        path: 'distribuicao/*',
+        element: (
+          <RequireRole roles={['analista-distribuicao', 'consultor-distribuicao']}>
+            <Suspense fallback={<Loading />}>
+              <DistribuicaoRoutes />
+            </Suspense>
+          </RequireRole>
+        )
       },
     ],
   },

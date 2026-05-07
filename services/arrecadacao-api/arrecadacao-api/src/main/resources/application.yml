@@ -5,7 +5,7 @@ spring:
   application:
     name: arrecadacao-api
   datasource:
-    url: jdbc:postgresql://${ARRECADACAO_DB_HOST:localhost}:${ARRECADACAO_DB_PORT:5432}/${ARRECADACAO_DB_NAME:mcad}?currentSchema=${ARRECADACAO_DB_SCHEMA:arrecadacao}
+    url: jdbc:postgresql://${ARRECADACAO_DB_HOST:localhost}:${ARRECADACAO_DB_PORT:5432}/${ARRECADACAO_DB_NAME:mcad}?currentSchema=${ARRECADACAO_DB_SCHEMA:arrecadacao}&sslmode=${ARRECADACAO_DB_SSL_MODE:disable}
     username: ${ARRECADACAO_DB_USER:arrecadacao_svc}
     password: ${ARRECADACAO_DB_PASSWORD:}
     hikari:

@@ -122,7 +122,7 @@ public class CodigoIntegrationTests : IClassFixture<CadastroApiFactory>, IAsyncL
             Nome = "Titular Nome Editado",
             Nacionalidade = "Argentina",
             AssociacaoId = _associacaoId,
-            Status = "PendenteValidacao"
+            Status = "ATIVO"
         };
         var putResp = await _client.PutAsJsonAsync($"/api/v1/titulares/{titular1.Id}", edicao);
         putResp.EnsureSuccessStatusCode();

@@ -1,4 +1,6 @@
-const BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api/v1';
+import { runtimeConfig } from '@/shared/config/runtimeConfig';
+
+const BASE_URL = runtimeConfig.cadastroApiBaseUrl;
 
 let getAuthToken: (() => string | null) | null = null;
 

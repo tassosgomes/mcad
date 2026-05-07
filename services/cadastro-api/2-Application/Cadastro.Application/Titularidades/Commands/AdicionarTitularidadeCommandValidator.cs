@@ -13,8 +13,5 @@ public class AdicionarTitularidadeCommandValidator : AbstractValidator<Adicionar
             .NotEmpty()
             .Must(c => Enum.TryParse<CategoriaAutoral>(c, true, out _))
             .WithMessage("Categoria deve ser 'AUTOR' ou 'EDITOR'");
-        RuleFor(x => x.Percentual)
-            .GreaterThan(0)
-            .LessThanOrEqualTo(100);
     }
 }

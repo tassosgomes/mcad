@@ -1,16 +1,19 @@
 import { useEffect } from 'react';
 import { Button } from '@components/ui/button';
 import { userManager } from './authConfig';
+import { clearOidcClientState } from './oidcStorageCleanup';
 
 const LOGOUT_IN_PROGRESS_KEY = 'auth.logout_in_progress';
 
 export function LoggedOutPage() {
   useEffect(() => {
+    clearOidcClientState();
     sessionStorage.removeItem(LOGOUT_IN_PROGRESS_KEY);
     void userManager.removeUser();
   }, []);
 
   const handleLogin = async () => {
+    clearOidcClientState();
     await userManager.signinRedirect();
   };
 

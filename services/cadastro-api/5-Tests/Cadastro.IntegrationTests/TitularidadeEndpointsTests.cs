@@ -80,7 +80,7 @@ public class TitularidadeEndpointsTests : IClassFixture<CadastroApiFactory>
         return created!.Id;
     }
 
-    private async Task<Guid> SeedTitularPJAsync(string nome = "Editora PJ", string cnpj = "20279612000185")
+    private async Task<Guid> SeedTitularPJAsync(string nome = "Editora PJ", string cnpj = "11222333000181")
     {
         var assocResponse = await _client.GetFromJsonAsync<dynamic[]>("/api/v1/associacoes");
         var assocId = Guid.Parse(assocResponse![0].GetProperty("id").GetString()!);
@@ -107,6 +107,9 @@ public class TitularidadeEndpointsTests : IClassFixture<CadastroApiFactory>
         result!.SomaPercentual.Should().Be(50.0m);
         result.SomaCompleta.Should().BeFalse();
         result.Titularidades.Should().HaveCount(1);
+        result.Titularidades.First().Titular.Id.Should().Be(titularId);
+        result.Titularidades.First().Categoria.Should().Be("AUTOR");
+        result.Titularidades.First().Percentual.Should().Be(50.0m);
     }
 
     [Fact]
@@ -170,6 +173,38 @@ public class TitularidadeEndpointsTests : IClassFixture<CadastroApiFactory>
     }
 
     [Fact]
+    public async Task Adicionar_PercentualInvalido_Retorna422()
+    {
+        var obraId = await SeedObraAsync("Percentual Invalido Add");
+        var titularId = await SeedTitularPFAsync("Autor Percentual Invalido");
+
+        var res = await _client.PostAsJsonAsync(
+            $"/api/v1/obras/{obraId}/titularidades",
+            new AdicionarTitularidadeRequest(titularId, "AUTOR", 0.0m));
+
+        res.StatusCode.Should().Be(HttpStatusCode.UnprocessableEntity);
+    }
+
+    [Fact]
+    public async Task Editar_PercentualInvalido_Retorna422()
+    {
+        var obraId = await SeedObraAsync("Percentual Invalido Edit");
+        var titularId = await SeedTitularPFAsync("Autor Percentual Edit");
+
+        var addRes = await _client.PostAsJsonAsync(
+            $"/api/v1/obras/{obraId}/titularidades",
+            new AdicionarTitularidadeRequest(titularId, "AUTOR", 50.0m));
+        var addResult = await addRes.Content.ReadFromJsonAsync<TitularidadesResponse>();
+        var titularidadeId = addResult!.Titularidades.First().Id;
+
+        var editRes = await _client.PutAsJsonAsync(
+            $"/api/v1/obras/{obraId}/titularidades/{titularidadeId}",
+            new EditarTitularidadeRequest(150.0m));
+
+        editRes.StatusCode.Should().Be(HttpStatusCode.UnprocessableEntity);
+    }
+
+    [Fact]
     public async Task Remover_TitularidadeExistente_Retorna200ESomaAtualizada()
     {
         var obraId = await SeedObraAsync("Remover Obra");
@@ -197,6 +232,18 @@ public class TitularidadeEndpointsTests : IClassFixture<CadastroApiFactory>
         
         var result = await getRes.Content.ReadFromJsonAsync<List<TitularResumoResponse>>();
         result.Should().Contain(t => t.Id == titularId && t.Nome == "Caetano Veloso");
+    }
+
+    [Fact]
+    public async Task Buscar_AutocompleteTitularesPorDocumentoFormatado()
+    {
+        var titularId = await SeedTitularPJAsync("Editora Documento Formatado", "11222333000181");
+
+        var getRes = await _client.GetAsync("/api/v1/titulares/busca?q=222.333/0001");
+        getRes.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var result = await getRes.Content.ReadFromJsonAsync<List<TitularResumoResponse>>();
+        result.Should().Contain(t => t.Id == titularId && t.Nome == "Editora Documento Formatado");
     }
 
     [Fact]

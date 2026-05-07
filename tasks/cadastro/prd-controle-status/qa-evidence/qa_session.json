@@ -1,0 +1,64 @@
+{
+  "session": {
+    "created_at": "2026-04-10T00:00:00Z",
+    "prd_path": "tasks/cadastro/prd-controle-status/prd.md",
+    "techspec_path": "tasks/cadastro/prd-controle-status/techspec.md"
+  },
+  "scope": {
+    "user_stories_in_scope": [
+      { "task_id": "qa_task_01", "slug": "liberar-obra", "description": "Liberar obra (API+DB)" },
+      { "task_id": "qa_task_02", "slug": "bloquear-obra", "description": "Bloquear obra (API+DB)" },
+      { "task_id": "qa_task_03", "slug": "desbloquear-obra", "description": "Desbloquear obra (API+DB)" },
+      { "task_id": "qa_task_04", "slug": "transicao-auto-fonograma", "description": "Transição PENDENTE_VALIDACAO→PENDENTE_DOCUMENTACAO (API+DB)" },
+      { "task_id": "qa_task_05", "slug": "url-audio", "description": "URL de áudio (API+DB)" },
+      { "task_id": "qa_task_06", "slug": "liberar-fonograma", "description": "Liberar fonograma (API+DB)" },
+      { "task_id": "qa_task_07", "slug": "bloquear-desbloquear-fonograma", "description": "Bloquear/desbloquear fonograma (API+DB)" },
+      { "task_id": "qa_task_08", "slug": "controle-acesso", "description": "Controle de acesso analista vs consultor (API)" },
+      { "task_id": "qa_task_09", "slug": "ui-obra", "description": "UI ObraDetailPage" },
+      { "task_id": "qa_task_10", "slug": "ui-fonograma", "description": "UI FonogramaDetailPage" }
+    ],
+    "excluded": []
+  },
+  "environment": {
+    "base_url": "http://localhost:5001/api/v1",
+    "auth": {
+      "enabled": true,
+      "type": "bearer",
+      "token_endpoint": "https://keycloak.tasso.dev.br/realms/mcad/protocol/openid-connect/token",
+      "credentials_env": {
+        "username_var": "QA_USERNAME",
+        "password_var": "QA_PASSWORD"
+      }
+    }
+  },
+  "database": {
+    "enabled": true,
+    "type": "postgresql",
+    "connection_string_env": "QA_DB_CONNECTION_STRING",
+    "docker_image": "postgres:16-alpine"
+  },
+  "report": {
+    "formats": ["markdown"],
+    "output_dir": "tasks/cadastro/prd-controle-status/qa-evidence"
+  },
+  "execution": {
+    "tasks": [
+      { "id": "qa_task_01", "slug": "liberar-obra", "description": "Liberar obra", "type": ["api", "db"], "depends_on": [], "can_run_parallel_with": ["qa_task_04", "qa_task_05", "qa_task_08"] },
+      { "id": "qa_task_02", "slug": "bloquear-obra", "description": "Bloquear obra", "type": ["api", "db"], "depends_on": ["qa_task_01"], "can_run_parallel_with": [] },
+      { "id": "qa_task_03", "slug": "desbloquear-obra", "description": "Desbloquear obra", "type": ["api", "db"], "depends_on": ["qa_task_02"], "can_run_parallel_with": ["qa_task_06", "qa_task_07"] },
+      { "id": "qa_task_04", "slug": "transicao-auto-fonograma", "description": "Transição auto fonograma", "type": ["api", "db"], "depends_on": [], "can_run_parallel_with": ["qa_task_01", "qa_task_05", "qa_task_08"] },
+      { "id": "qa_task_05", "slug": "url-audio", "description": "URL de áudio", "type": ["api", "db"], "depends_on": [], "can_run_parallel_with": ["qa_task_01", "qa_task_04", "qa_task_08"] },
+      { "id": "qa_task_06", "slug": "liberar-fonograma", "description": "Liberar fonograma", "type": ["api", "db"], "depends_on": ["qa_task_04"], "can_run_parallel_with": ["qa_task_03", "qa_task_07"] },
+      { "id": "qa_task_07", "slug": "bloquear-desbloquear-fonograma", "description": "Bloquear/desbloquear fonograma", "type": ["api", "db"], "depends_on": [], "can_run_parallel_with": ["qa_task_03", "qa_task_06"] },
+      { "id": "qa_task_08", "slug": "controle-acesso", "description": "Controle de acesso", "type": ["api"], "depends_on": [], "can_run_parallel_with": ["qa_task_01", "qa_task_04", "qa_task_05"] },
+      { "id": "qa_task_09", "slug": "ui-obra", "description": "UI ObraDetailPage", "type": ["ui"], "depends_on": ["qa_task_03"], "can_run_parallel_with": ["qa_task_10"] },
+      { "id": "qa_task_10", "slug": "ui-fonograma", "description": "UI FonogramaDetailPage", "type": ["ui"], "depends_on": ["qa_task_07"], "can_run_parallel_with": ["qa_task_09"] }
+    ],
+    "phases": [
+      { "phase": 1, "mode": "parallel", "tasks": ["qa_task_01", "qa_task_04", "qa_task_05", "qa_task_08"] },
+      { "phase": 2, "mode": "sequential", "tasks": ["qa_task_02"] },
+      { "phase": 3, "mode": "parallel", "tasks": ["qa_task_03", "qa_task_06", "qa_task_07"] },
+      { "phase": 4, "mode": "parallel", "tasks": ["qa_task_09", "qa_task_10"] }
+    ]
+  }
+}

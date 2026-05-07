@@ -15,11 +15,16 @@ public class AtualizarObraCommandValidator : AbstractValidator<AtualizarObraComm
     public AtualizarObraCommandValidator()
     {
         RuleFor(x => x.Id).NotEmpty();
-        RuleFor(x => x.Titulo).NotEmpty().MaximumLength(300);
+        RuleFor(x => x.Titulo)
+            .NotEmpty()
+            .WithMessage("Título é obrigatório.")
+            .MaximumLength(300);
         RuleFor(x => x.Subtitulo).MaximumLength(300);
         RuleFor(x => x.Tipo)
+            .Cascade(CascadeMode.Stop)
             .NotEmpty()
-            .Must(t => Enum.TryParse<TipoObra>(t.Replace("_", ""), true, out _))
+            .WithMessage("Tipo é obrigatório.")
+            .Must(t => !string.IsNullOrWhiteSpace(t) && Enum.TryParse<TipoObra>(t.Replace("_", ""), true, out _))
             .WithMessage("Tipo inválido.");
         RuleFor(x => x.Genero).MaximumLength(100);
     }

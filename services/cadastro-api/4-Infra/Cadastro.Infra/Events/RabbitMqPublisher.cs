@@ -3,6 +3,7 @@ using CloudNative.CloudEvents.SystemTextJson;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using RabbitMQ.Client;
+using System.Text;
 
 namespace Cadastro.Infra.Events;
 
@@ -25,7 +26,7 @@ public class RabbitMqPublisher : IRabbitMqPublisher, IDisposable, IAsyncDisposab
     {
         _logger = logger;
 
-        var rabbitUrl = configuration["RABBITMQ_URL"] ?? "amqp://guest:guest@localhost:5672";
+        var rabbitUrl = ResolveRabbitMqUrl(configuration);
         var rabbitVhost = configuration["RABBITMQ_VHOST"];
 
         try
@@ -102,5 +103,55 @@ public class RabbitMqPublisher : IRabbitMqPublisher, IDisposable, IAsyncDisposab
         _disposed = true;
         if (_channel is not null) await _channel.DisposeAsync();
         if (_connection is not null) await _connection.DisposeAsync();
+    }
+
+    internal static string ResolveRabbitMqUrl(IConfiguration configuration)
+    {
+        var rabbitUrl = configuration["RABBITMQ_URL"];
+        if (!string.IsNullOrWhiteSpace(rabbitUrl))
+        {
+            return rabbitUrl;
+        }
+
+        var host = configuration["RABBITMQ_HOST"];
+        if (string.IsNullOrWhiteSpace(host))
+        {
+            return "amqp://guest:guest@localhost:5672";
+        }
+
+        var port = configuration["RABBITMQ_PORT"];
+        var user = configuration["RABBITMQ_USER"];
+        var password = configuration["RABBITMQ_PASSWORD"];
+        var vhost = configuration["RABBITMQ_VHOST"];
+        var scheme = string.Equals(port, "5671", StringComparison.Ordinal) ? "amqps" : "amqp";
+
+        var builder = new StringBuilder();
+        builder.Append(scheme).Append("://");
+
+        if (!string.IsNullOrWhiteSpace(user))
+        {
+            builder.Append(Uri.EscapeDataString(user));
+
+            if (!string.IsNullOrWhiteSpace(password))
+            {
+                builder.Append(':').Append(Uri.EscapeDataString(password));
+            }
+
+            builder.Append('@');
+        }
+
+        builder.Append(host);
+
+        if (!string.IsNullOrWhiteSpace(port))
+        {
+            builder.Append(':').Append(port);
+        }
+
+        if (!string.IsNullOrWhiteSpace(vhost))
+        {
+            builder.Append('/').Append(Uri.EscapeDataString(vhost));
+        }
+
+        return builder.ToString();
     }
 }

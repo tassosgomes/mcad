@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>QA Report — F06 Participacao Conexa</title>
+<style>
+  body { font-family: Arial, sans-serif; max-width: 1000px; margin: 40px auto; padding: 0 20px; color: #333; }
+  h1 { color: #1a1a2e; border-bottom: 3px solid #1a1a2e; padding-bottom: 10px; }
+  h2 { color: #16213e; border-bottom: 1px solid #ddd; padding-bottom: 5px; margin-top: 30px; }
+  h3 { color: #0f3460; }
+  table { border-collapse: collapse; width: 100%; margin: 15px 0; }
+  th { background: #1a1a2e; color: white; padding: 8px 12px; text-align: left; }
+  td { border: 1px solid #ddd; padding: 6px 12px; }
+  tr:nth-child(even) { background: #f5f5f5; }
+  code { background: #f0f0f0; padding: 2px 4px; border-radius: 3px; font-size: 0.9em; }
+  pre { background: #1a1a2e; color: #e0e0e0; padding: 15px; border-radius: 5px; overflow-x: auto; }
+  pre code { background: none; color: inherit; padding: 0; }
+  .pass { color: #27ae60; font-weight: bold; }
+</style>
+</head>
+<body>
+<h1>Relatório Consolidado de Testes QA — F06: Participação Conexa Automática</h1>
+
+<p><strong>Data de execução:</strong> 2026-04-11
+<strong>Feature:</strong> F06 — Participação Conexa Automática (Percentuais por Categoria)
+<strong>PRD:</strong> tasks/cadastro/prd-participacao-conexa/prd.md
+<strong>Techspec:</strong> tasks/cadastro/prd-participacao-conexa/techspec.md
+<strong>Ambiente:</strong> http://localhost:5001/api/v1
+<strong>Banco:</strong> PostgreSQL — db.tasso.dev.br:5432/mcad (schema: cadastro)
+<strong>Auth:</strong> Keycloak JWT — analista.teste (analista-cadastro)</p>
+
+<hr />
+
+<h2>Resultado Geral</h2>
+
+<pre><code>TASKS TOTAL: 5
+PASS:        5
+FAIL:        0
+BLOCKED:     0
+</code></pre>
+
+<p><strong>Status: 5/5 PASS</strong></p>
+
+<hr />
+
+<h2>Resumo por Task</h2>
+
+<table>
+<thead>
+<tr>
+  <th>Task</th>
+  <th>User Story</th>
+  <th>Tipo</th>
+  <th>Cenários</th>
+  <th>Status</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>qa<em>task</em>01_composicao-participantes</td>
+  <td>HU-01: Composição de participantes</td>
+  <td>API + DB</td>
+  <td>10/10</td>
+  <td>PASS</td>
+</tr>
+<tr>
+  <td>qa<em>task</em>02_calculo-automatico</td>
+  <td>HU-02: Cálculo automático de percentuais</td>
+  <td>API + DB</td>
+  <td>7/7</td>
+  <td>PASS</td>
+</tr>
+<tr>
+  <td>qa<em>task</em>03_ajuste-manual</td>
+  <td>HU-03: Ajuste manual de percentual</td>
+  <td>API</td>
+  <td>5/5</td>
+  <td>PASS</td>
+</tr>
+<tr>
+  <td>qa<em>task</em>04_recalculo-composicao</td>
+  <td>HU-04: Recálculo ao alterar composição</td>
+  <td>API</td>
+  <td>3/3</td>
+  <td>PASS</td>
+</tr>
+<tr>
+  <td>qa<em>task</em>05_depuracao-liberado</td>
+  <td>HU-05: Depuração de fonograma LIBERADO</td>
+  <td>API + DB</td>
+  <td>9/9</td>
+  <td>PASS</td>
+</tr>
+</tbody>
+</table>
+
+<p><strong>Total de cenários executados: 34/34 PASS</strong></p>
+
+<hr />
+
+<h2>qa<em>task</em>01 — Composição de Participantes: PASS (10/10)</h2>
+
+<p><strong>Fonograma de teste criado:</strong> <code>ff6075db-450e-4054-9832-0f7d21f42ae7</code> (ISRC: BRQA02600001)</p>
+
+<table>
+<thead>
+<tr>
+  <th>Cenário</th>
+  <th>Expectativa</th>
+  <th>Resultado</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>POST INTERPRETE → 201, percentual null</td>
+  <td>HTTP 201 + percentual=null</td>
+  <td>PASS</td>
+</tr>
+<tr>
+  <td>POST mesmo titular + categoria diferente (RF-02) → 201</td>
+  <td>HTTP 201 + editavel=false para músico</td>
+  <td>PASS</td>
+</tr>
+<tr>
+  <td>POST mesmo titular + mesma categoria (RF-03) → 409</td>
+  <td>HTTP 409 "já está vinculado"</td>
+  <td>PASS</td>
+</tr>
+<tr>
+  <td>POST PRODUTOR_FONOGRAFICO → 201</td>
+  <td>HTTP 201 + percentual=null</td>
+  <td>PASS</td>
+</tr>
+<tr>
+  <td>GET todos percentuais null, somaCalculada=false</td>
+  <td>all null, somaCalculada=false</td>
+  <td>PASS</td>
+</tr>
+<tr>
+  <td>DELETE → 200 com lista atualizada</td>
+  <td>HTTP 200, lista com 2 itens</td>
+  <td>PASS</td>
+</tr>
+<tr>
+  <td>DB: 2 rows em participacoes_conexas</td>
+  <td>INTERPRETE + PRODUTOR, Percentual NULL</td>
+  <td>PASS</td>
+</tr>
+<tr>
+  <td>DB: PercentuaisDesatualizados=false</td>
+  <td>false</td>
+  <td>PASS</td>
+</tr>
+</tbody>
+</table>
+
+<hr />
+
+<h2>qa<em>task</em>02 — Cálculo Automático de Percentuais: PASS (7/7)</h2>
+
+<p><strong>Fonogramas criados:</strong> QA-F01 a QA-F06</p>
+
+<table>
+<thead>
+<tr>
+  <th>Cenário</th>
+  <th>Expectativa</th>
+  <th>Resultado</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>1 INT + 1 PROD + 1 MUS → 43.7/41.7/14.6</td>
+  <td>somaPercentual=100</td>
+  <td>PASS</td>
+</tr>
+<tr>
+  <td>DB: Percentual 4 casas decimais, PercentuaisDesatualizados=false</td>
+  <td>43.7000, 41.7000, 14.6000</td>
+  <td>PASS</td>
+</tr>
+<tr>
+  <td>1 INT + 1 PROD sem músico → 50/50</td>
+  <td>INT=50, PROD=50</td>
+  <td>PASS</td>
+</tr>
+<tr>
+  <td>2 INT + 1 PROD + 2 MUS (dueto) → split correto</td>
+  <td>cada INT=21.85, PROD=41.7, cada MUS=7.3</td>
+  <td>PASS</td>
+</tr>
+<tr>
+  <td>1 INT + 1 PROD + 3 MUS → RN-12 arredondamento</td>
+  <td>MUS1=4.8668, MUS2=4.8666, MUS3=4.8666</td>
+  <td>PASS</td>
+</tr>
+<tr>
+  <td>Calcular sem PRODUTOR → 422</td>
+  <td>"deve ter ao menos 1 Produtor Fonográfico"</td>
+  <td>PASS</td>
+</tr>
+<tr>
+  <td>Calcular sem INTÉRPRETE → 422</td>
+  <td>"deve ter ao menos 1 Intérprete"</td>
+  <td>PASS</td>
+</tr>
+</tbody>
+</table>
+
+<hr />
+
+<h2>qa<em>task</em>03 — Ajuste Manual de Percentuais: PASS (5/5)</h2>
+
+<p><strong>Fonograma de teste:</strong> QA-F03 <code>fd9a8166-6fe8-4c12-a676-7cef6266dcde</code> (2 INT + 1 PROD + 2 MUS)</p>
+
+<table>
+<thead>
+<tr>
+  <th>Cenário</th>
+  <th>Expectativa</th>
+  <th>Resultado</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>PUT INTERPRETE percentual=30.0000 → 200</td>
+  <td>HTTP 200 + percentual=30.0000</td>
+  <td>PASS</td>
+</tr>
+<tr>
+  <td>PUT INTERPRETE 2 percentual=13.7000 → 200</td>
+  <td>HTTP 200 + percentual=13.7000</td>
+  <td>PASS</td>
+</tr>
+<tr>
+  <td>PUT PRODUTOR percentual=41.7000 → 200</td>
+  <td>HTTP 200 + percentual=41.7000</td>
+  <td>PASS</td>
+</tr>
+<tr>
+  <td>PUT MUSICO percentual=10.0000 → 422</td>
+  <td>"Músico Executante não pode ser editado"</td>
+  <td>PASS</td>
+</tr>
+<tr>
+  <td>GET: editavel=false para músicos, true para INT/PROD</td>
+  <td>flags corretas</td>
+  <td>PASS</td>
+</tr>
+</tbody>
+</table>
+
+<hr />
+
+<h2>qa<em>task</em>04 — Recálculo ao Alterar Composição: PASS (3/3)</h2>
+
+<p><strong>Fonograma de teste:</strong> QA-F03 (com ajustes manuais da task_03)</p>
+
+<table>
+<thead>
+<tr>
+  <th>Cenário</th>
+  <th>Expectativa</th>
+  <th>Resultado</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>POST add participant → percentuaisDesatualizados=true</td>
+  <td>true imediatamente após adição</td>
+  <td>PASS</td>
+</tr>
+<tr>
+  <td>POST calcular → recalcula, ajustes manuais descartados</td>
+  <td>distribuição igualitária (14.5668/14.5666/14.5666)</td>
+  <td>PASS</td>
+</tr>
+<tr>
+  <td>DELETE participant → percentuaisDesatualizados=true</td>
+  <td>true imediatamente após remoção</td>
+  <td>PASS</td>
+</tr>
+</tbody>
+</table>
+
+<hr />
+
+<h2>qa<em>task</em>05 — Depuração de Fonograma LIBERADO: PASS (9/9)</h2>
+
+<p><strong>Fonogramas:</strong>
+- Original (LIBERADO → DEPURADO): <code>876a6275-52cb-42d6-96dc-2e8ccca0b2bb</code>
+- Novo (PENDENTE_VALIDACAO): <code>28a70324-3899-4fa7-ac4a-f8a19216bdb3</code></p>
+
+<table>
+<thead>
+<tr>
+  <th>Cenário</th>
+  <th>Expectativa</th>
+  <th>Resultado</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>POST participacoes LIBERADO → 409 DEPURACAO_NECESSARIA</td>
+  <td>HTTP 409 + code=DEPURACAO_NECESSARIA</td>
+  <td>PASS</td>
+</tr>
+<tr>
+  <td>PUT participacoes LIBERADO → 409 DEPURACAO_NECESSARIA</td>
+  <td>HTTP 409 + mensagem contextual</td>
+  <td>PASS</td>
+</tr>
+<tr>
+  <td>DELETE participacoes LIBERADO → 409 DEPURACAO_NECESSARIA</td>
+  <td>HTTP 409 + mensagem contextual</td>
+  <td>PASS</td>
+</tr>
+<tr>
+  <td>POST calcular LIBERADO → 409 DEPURACAO_NECESSARIA</td>
+  <td>HTTP 409 + mensagem contextual</td>
+  <td>PASS</td>
+</tr>
+<tr>
+  <td>POST depurar → 201</td>
+  <td>fonogramaDepurado=DEPURADO, novoFonograma=PENDENTE_VALIDACAO</td>
+  <td>PASS</td>
+</tr>
+<tr>
+  <td>Novo fonograma inicia sem participações</td>
+  <td>participacoes=[]</td>
+  <td>PASS</td>
+</tr>
+<tr>
+  <td>POST participacoes DEPURADO → 422</td>
+  <td>"Fonogramas depurados não podem ser alterados"</td>
+  <td>PASS</td>
+</tr>
+<tr>
+  <td>DB: original=DEPURADO com ref ao novo</td>
+  <td>FonogramaDepuradoParaId correto</td>
+  <td>PASS</td>
+</tr>
+</tbody>
+</table>
+
+<hr />
+
+<h2>Regras de Negócio Validadas</h2>
+
+<table>
+<thead>
+<tr>
+  <th>Regra</th>
+  <th>Descrição</th>
+  <th>Testada</th>
+  <th>Resultado</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>RF-01</td>
+  <td>Adicionar participante sem percentual</td>
+  <td>Sim</td>
+  <td>PASS</td>
+</tr>
+<tr>
+  <td>RF-02</td>
+  <td>Mesmo titular pode ter categorias diferentes</td>
+  <td>Sim</td>
+  <td>PASS</td>
+</tr>
+<tr>
+  <td>RF-03</td>
+  <td>Mesmo titular + mesma categoria → 409</td>
+  <td>Sim</td>
+  <td>PASS</td>
+</tr>
+<tr>
+  <td>RF-05</td>
+  <td>Músico automaticamente adicionado como não editável</td>
+  <td>Sim (via editavel=false)</td>
+  <td>PASS</td>
+</tr>
+<tr>
+  <td>RF-06</td>
+  <td>POST /calcular distribui por categoria</td>
+  <td>Sim</td>
+  <td>PASS</td>
+</tr>
+<tr>
+  <td>RN-12</td>
+  <td>Truncamento 4 casas decimais + remainder ao primeiro</td>
+  <td>Sim (3 músicos)</td>
+  <td>PASS</td>
+</tr>
+<tr>
+  <td>RF-09</td>
+  <td>percentuaisDesatualizados=true após add/remove</td>
+  <td>Sim</td>
+  <td>PASS</td>
+</tr>
+<tr>
+  <td>RF-10</td>
+  <td>Recálculo descarta ajustes manuais</td>
+  <td>Sim</td>
+  <td>PASS</td>
+</tr>
+<tr>
+  <td>RF-11</td>
+  <td>Mínimo 1 INT + 1 PROD para calcular</td>
+  <td>Sim</td>
+  <td>PASS</td>
+</tr>
+<tr>
+  <td>RF-12</td>
+  <td>LIBERADO bloqueia add/edit/delete/calcular com 409</td>
+  <td>Sim</td>
+  <td>PASS</td>
+</tr>
+<tr>
+  <td>RF-14</td>
+  <td>POST /depurar → original DEPURADO + novo PENDENTE_VALIDACAO</td>
+  <td>Sim</td>
+  <td>PASS</td>
+</tr>
+<tr>
+  <td>RF-15</td>
+  <td>DEPURADO é read-only (422)</td>
+  <td>Sim</td>
+  <td>PASS</td>
+</tr>
+</tbody>
+</table>
+
+<hr />
+
+<h2>Observações e Anomalias</h2>
+
+<h3>Serialização de percentuais na API</h3>
+
+<p>A API serializa percentuais sem zeros à direita desnecessários (ex: <code>43.7</code> em vez de <code>43.7000</code>), enquanto o banco armazena com 4 casas decimais conforme RN-12. Funcionalmente correto — não há perda de precisão.</p>
+
+<h3>Status de fonogramas novos</h3>
+
+<p>Fonogramas recém-criados recebem status <code>PENDENTE_VALIDACAO</code> (não <code>PENDENTE</code>). Todos os cenários de composição, cálculo e edição funcionaram neste status.</p>
+
+<h3>Endpoint POST /depurar requer body</h3>
+
+<p>O endpoint <code>POST /fonogramas/{id}/depurar</code> exige body com <code>{isrc, paisOrigem, dataGravacao, dataLancamento}</code>. O contrato de F06 não documenta isso explicitamente (a feature reutiliza o endpoint de F05). Tentativa inicial sem body retornou HTTP 500 com mensagem "Required parameter 'DepurarFonogramaRequest request' was not provided from body." Após fornecer o body correto, o endpoint funcionou como esperado (201).</p>
+
+<h3>Novo fonograma após depuração sem participações copiadas</h3>
+
+<p>O novo fonograma criado pela depuração não herda as participações do original. Começa com <code>participacoes: []</code>. O analista deve inserir as participações manualmente. Comportamento considerado correto dado que o propósito da depuração é permitir correções no fonograma.</p>
+
+<hr />
+
+<h2>Dados de Teste Criados</h2>
+
+<table>
+<thead>
+<tr>
+  <th>Fonograma</th>
+  <th>ISRC</th>
+  <th>Status Final</th>
+  <th>Propósito</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>ff6075db</td>
+  <td>BRQA02600001</td>
+  <td>PENDENTE_VALIDACAO</td>
+  <td>task<em>01, task</em>02 (C1)</td>
+</tr>
+<tr>
+  <td>9621d31f</td>
+  <td>BRQA02600002</td>
+  <td>PENDENTE_VALIDACAO</td>
+  <td>task_02 (C2: sem músico)</td>
+</tr>
+<tr>
+  <td>fd9a8166</td>
+  <td>BRQA02600003</td>
+  <td>PENDENTE_VALIDACAO</td>
+  <td>task<em>02 (C3), task</em>03, task_04</td>
+</tr>
+<tr>
+  <td>b55d0509</td>
+  <td>BRQA02600004</td>
+  <td>PENDENTE_VALIDACAO</td>
+  <td>task_02 (C4: rounding)</td>
+</tr>
+<tr>
+  <td>8acc36df</td>
+  <td>BRQA02600005</td>
+  <td>PENDENTE_VALIDACAO</td>
+  <td>task_02 (C5a: só INT)</td>
+</tr>
+<tr>
+  <td>0b449bad</td>
+  <td>BRQA02600006</td>
+  <td>PENDENTE_VALIDACAO</td>
+  <td>task_02 (C5b: só PROD)</td>
+</tr>
+<tr>
+  <td>876a6275</td>
+  <td>BRQA02600007</td>
+  <td>DEPURADO</td>
+  <td>task_05 (original)</td>
+</tr>
+<tr>
+  <td>28a70324</td>
+  <td>BRQA02600008</td>
+  <td>PENDENTE_VALIDACAO</td>
+  <td>task_05 (novo após depuração)</td>
+</tr>
+</tbody>
+</table>
+
+<hr />
+
+<h2>Arquivos de Evidência</h2>
+
+<pre><code>qa-evidence/
+├── qa_session.json
+├── qa_report_consolidated.md         (este arquivo)
+├── qa_report_consolidated.pdf
+├── qa_task_01_composicao-participantes/
+│   └── qa_report_task_01.md
+├── qa_task_02_calculo-automatico/
+│   └── qa_report_task_02.md
+├── qa_task_03_ajuste-manual/
+│   └── qa_report_task_03.md
+├── qa_task_04_recalculo-composicao/
+│   └── qa_report_task_04.md
+└── qa_task_05_depuracao-liberado/
+    └── qa_report_task_05.md
+</code></pre>
+
+</body>
+</html>

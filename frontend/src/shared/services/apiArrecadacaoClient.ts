@@ -1,5 +1,6 @@
-export const BASE_URL =
-  import.meta.env.VITE_ARRECADACAO_API_BASE_URL || 'http://localhost:5003/api/v1';
+import { runtimeConfig } from '@/shared/config/runtimeConfig';
+
+export const BASE_URL = runtimeConfig.arrecadacaoApiBaseUrl;
 
 let getAuthToken: (() => string | null) | null = null;
 

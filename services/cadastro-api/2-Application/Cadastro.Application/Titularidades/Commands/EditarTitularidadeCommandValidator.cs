@@ -8,8 +8,5 @@ public class EditarTitularidadeCommandValidator : AbstractValidator<EditarTitula
     {
         RuleFor(x => x.ObraId).NotEmpty();
         RuleFor(x => x.Id).NotEmpty();
-        RuleFor(x => x.Percentual)
-            .GreaterThan(0)
-            .LessThanOrEqualTo(100);
     }
 }

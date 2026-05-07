@@ -49,7 +49,8 @@ public class ListarObrasQueryHandler : IQueryHandler<ListarObrasQuery, ObraListR
         DominioPublico: o.DominioPublico,
         ObraDepuradaParaId: o.ObraDepuradaParaId,
         CriadoEm: o.CriadoEm,
-        AtualizadoEm: o.AtualizadoEm
+        AtualizadoEm: o.AtualizadoEm,
+        BloqueioJustificativa: o.BloqueioJustificativa
     );
 
     private static string vToTipoObra(Cadastro.Domain.Enums.TipoObra t)

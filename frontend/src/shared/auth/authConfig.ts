@@ -5,18 +5,25 @@ import {
   WebStorageStateStore,
 } from 'oidc-client-ts';
 
-function requireEnv(name: 'VITE_OIDC_AUTHORITY' | 'VITE_OIDC_CLIENT_ID' | 'VITE_OIDC_REDIRECT_URI' | 'VITE_OIDC_POST_LOGOUT_REDIRECT_URI'): string {
-  const value = import.meta.env[name];
+import { runtimeConfig } from '@/shared/config/runtimeConfig';
 
+function requireRuntimeValue(name: string, value: string): string {
   if (!value) {
-    throw new Error(`Missing required OIDC environment variable: ${name}`);
+    throw new Error(`Missing required OIDC runtime configuration: ${name}`);
   }
 
   return value;
 }
 
+function getOidcRedirectUri(): string {
+  return requireRuntimeValue('OIDC_REDIRECT_URI', runtimeConfig.oidcRedirectUri);
+}
+
 function resolvePostLogoutRedirectUri(): string {
-  const configuredUri = requireEnv('VITE_OIDC_POST_LOGOUT_REDIRECT_URI');
+  const configuredUri = requireRuntimeValue(
+    'OIDC_POST_LOGOUT_REDIRECT_URI',
+    runtimeConfig.oidcPostLogoutRedirectUri,
+  );
 
   try {
     const parsedUri = new URL(configuredUri);
@@ -33,7 +40,7 @@ function resolvePostLogoutRedirectUri(): string {
 }
 
 function resolveSilentRedirectUri(): string {
-  const redirectUri = requireEnv('VITE_OIDC_REDIRECT_URI');
+  const redirectUri = getOidcRedirectUri();
 
   try {
     const parsedUri = new URL(redirectUri);
@@ -47,13 +54,25 @@ function resolveSilentRedirectUri(): string {
 }
 
 export const oidcConfig: UserManagerSettings = {
-  authority: requireEnv('VITE_OIDC_AUTHORITY'),
-  client_id: requireEnv('VITE_OIDC_CLIENT_ID'),
-  redirect_uri: requireEnv('VITE_OIDC_REDIRECT_URI'),
+  authority: requireRuntimeValue('OIDC_AUTHORITY', runtimeConfig.oidcAuthority),
+  client_id: requireRuntimeValue('OIDC_CLIENT_ID', runtimeConfig.oidcClientId),
+  redirect_uri: getOidcRedirectUri(),
   post_logout_redirect_uri: resolvePostLogoutRedirectUri(),
   silent_redirect_uri: resolveSilentRedirectUri(),
   response_type: 'code',
-  scope: 'openid profile',
+  // 'access' e 'write' são scopes da API resource https://api.mcad.local.
+  // Sem pelo menos um scope do resource, o Logto emite um token opaco (sem aud da API).
+  // 'access' → todos os papéis;  'write' → somente analistas.
+  scope: 'openid profile roles access write',
+  // Logto (RFC 8707): o parâmetro 'resource' precisa estar em AMBOS os requests —
+  // na autorização (extraQueryParams) E na troca de código (extraTokenParams).
+  // Sem isso o Logto emite um token opaco sem aud da API.
+  extraQueryParams: {
+    resource: runtimeConfig.oidcAudience,
+  },
+  extraTokenParams: {
+    resource: runtimeConfig.oidcAudience,
+  },
   automaticSilentRenew: true,
   userStore: new WebStorageStateStore({
     store: new InMemoryWebStorage(),

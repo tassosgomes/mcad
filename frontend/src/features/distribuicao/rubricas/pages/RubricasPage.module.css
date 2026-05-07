@@ -1,0 +1,37 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.notice {
+  padding: var(--space-4) var(--space-5);
+  border: 1px solid rgba(67, 70, 85, 0.12);
+  border-radius: var(--radius-xl);
+  background: linear-gradient(135deg, rgba(15, 23, 42, 0.02), rgba(30, 64, 175, 0.05));
+  color: var(--color-text-secondary);
+  font-size: var(--text-sm);
+}
+
+.notice p {
+  margin: 0;
+}
+
+.emptyState {
+  padding: var(--space-10) var(--space-6);
+  border: 1px dashed rgba(67, 70, 85, 0.2);
+  border-radius: var(--radius-xl);
+  background: var(--color-bg-floor);
+  text-align: center;
+}
+
+.emptyState h2 {
+  margin: 0 0 var(--space-2);
+  font-size: var(--text-lg);
+  color: var(--color-text-primary);
+}
+
+.emptyState p {
+  margin: 0;
+  color: var(--color-text-muted);
+}

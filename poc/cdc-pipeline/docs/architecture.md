@@ -14,20 +14,20 @@ Fase 2 (cutover):   mcad (R/W) ──CDC──▶ Legado (R/O)
 
 ```
 ┌──────────────────────┐
-│   PostgreSQL 5433    │
+│   Oracle 1521        │
 │   (simula Oracle)    │
 │                      │
 │  ecad_legado schema  │
 │  ┌────────────────┐  │
-│  │ TB_ASSOCIACAO   │  │
+│  │ TB_ASSOCIACAO   │ │
 │  │ TB_TITULAR      │  │       ┌─────────────────────────────────────────────────┐
 │  │ TB_OBRA         │──WAL──▶ │              Kafka Ecosystem                    │
 │  │ TB_TITULARIDADE │  │       │                                                 │
 │  │ TB_FONOGRAMA    │  │       │  ┌──────────┐    ┌────────┐    ┌────────────┐  │
 │  │ TB_PARTICIPACAO │  │       │  │ Debezium │──▶│ Topics  │──▶│  ksqlDB    │  │
-│  │ TB_HIST_BLOQ    │  │       │  │ Source   │    │ (raw)   │    │ Transform  │  │
-│  └────────────────┘  │       │  └──────────┘    └────────┘    └─────┬──────┘  │
-└──────────────────────┘       │                                      │         │
+│  │ TB_HIST_BLOQ    │  │       │  │ Source   │    │ (raw)   │   │ Transform  │  │
+│  └────────────────┘  │        │  └──────────┘    └────────┘    └─────┬──────┘  │
+└──────────────────────┘       │                                       │         │
                                 │                               ┌─────▼──────┐  │
                                 │                               │  Topics    │  │
                                 │                               │ (MCAD_*)   │  │
@@ -39,7 +39,7 @@ Fase 2 (cutover):   mcad (R/W) ──CDC──▶ Legado (R/O)
                                 └─────────────────────────────────────┼─────────┘
                                                                       │
                                                          ┌────────────▼─────────┐
-                                                         │   PostgreSQL 5432    │
+                                                         │   Oracle 1521        │
                                                          │                      │
                                                          │  ┌────────────────┐  │
                                                          │  │ cdc_staging    │  │

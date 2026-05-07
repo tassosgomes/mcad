@@ -15,9 +15,13 @@ export function ObraCreatePage() {
 
   async function handleSubmit(data: CriarObraRequest) {
     try {
-      await createMutation.mutateAsync(data);
+      const obra = await createMutation.mutateAsync(data);
       showToast('Obra criada com sucesso', 'success');
-      navigate('/cadastro/obras');
+      navigate('/cadastro/obras', {
+        state: {
+          createdObraTitle: obra.titulo,
+        },
+      });
     } catch (err: unknown) {
       const problem = err as { detail?: string };
       showToast(problem.detail || 'Erro ao criar obra', 'error');

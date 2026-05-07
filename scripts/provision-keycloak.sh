@@ -39,6 +39,11 @@ export ANALISTA_ARRECADACAO_EMAIL="${KEYCLOAK_ANALISTA_ARRECADACAO_EMAIL:-analis
 export ANALISTA_ARRECADACAO_FIRST_NAME="${KEYCLOAK_ANALISTA_ARRECADACAO_FIRST_NAME:-Analista}"
 export ANALISTA_ARRECADACAO_LAST_NAME="${KEYCLOAK_ANALISTA_ARRECADACAO_LAST_NAME:-Arrecadacao}"
 export ANALISTA_ARRECADACAO_PASSWORD="${KEYCLOAK_ANALISTA_ARRECADACAO_PASSWORD:-Analista123!}"
+export ANALISTA_DISTRIBUICAO_USERNAME="${KEYCLOAK_ANALISTA_DISTRIBUICAO_USERNAME:-analista.distrib}"
+export ANALISTA_DISTRIBUICAO_EMAIL="${KEYCLOAK_ANALISTA_DISTRIBUICAO_EMAIL:-analista.distrib@mcad.dev}"
+export ANALISTA_DISTRIBUICAO_FIRST_NAME="${KEYCLOAK_ANALISTA_DISTRIBUICAO_FIRST_NAME:-Analista}"
+export ANALISTA_DISTRIBUICAO_LAST_NAME="${KEYCLOAK_ANALISTA_DISTRIBUICAO_LAST_NAME:-Distribuicao}"
+export ANALISTA_DISTRIBUICAO_PASSWORD="${KEYCLOAK_ANALISTA_DISTRIBUICAO_PASSWORD:-Analista123!}"
 export CONSULTOR_USERNAME="${KEYCLOAK_CONSULTOR_USERNAME:-consultor.teste}"
 export CONSULTOR_EMAIL="${KEYCLOAK_CONSULTOR_EMAIL:-consultor@mcad.dev}"
 export CONSULTOR_FIRST_NAME="${KEYCLOAK_CONSULTOR_FIRST_NAME:-Consultor}"
@@ -49,6 +54,11 @@ export CONSULTOR_ARRECADACAO_EMAIL="${KEYCLOAK_CONSULTOR_ARRECADACAO_EMAIL:-cons
 export CONSULTOR_ARRECADACAO_FIRST_NAME="${KEYCLOAK_CONSULTOR_ARRECADACAO_FIRST_NAME:-Consultor}"
 export CONSULTOR_ARRECADACAO_LAST_NAME="${KEYCLOAK_CONSULTOR_ARRECADACAO_LAST_NAME:-Arrecadacao}"
 export CONSULTOR_ARRECADACAO_PASSWORD="${KEYCLOAK_CONSULTOR_ARRECADACAO_PASSWORD:-Consultor123!}"
+export CONSULTOR_DISTRIBUICAO_USERNAME="${KEYCLOAK_CONSULTOR_DISTRIBUICAO_USERNAME:-consultor.distrib}"
+export CONSULTOR_DISTRIBUICAO_EMAIL="${KEYCLOAK_CONSULTOR_DISTRIBUICAO_EMAIL:-consultor.distrib@mcad.dev}"
+export CONSULTOR_DISTRIBUICAO_FIRST_NAME="${KEYCLOAK_CONSULTOR_DISTRIBUICAO_FIRST_NAME:-Consultor}"
+export CONSULTOR_DISTRIBUICAO_LAST_NAME="${KEYCLOAK_CONSULTOR_DISTRIBUICAO_LAST_NAME:-Distribuicao}"
+export CONSULTOR_DISTRIBUICAO_PASSWORD="${KEYCLOAK_CONSULTOR_DISTRIBUICAO_PASSWORD:-Consultor123!}"
 
 python3 - <<'PY'
 import json
@@ -241,6 +251,33 @@ def ensure_direct_access_client(token: str) -> dict:
     return created[0]
 
 
+def ensure_audience_mapper(token: str, client_internal_id: str, target_audience: str) -> None:
+    mapper_name = f"audience-{target_audience}"
+    mappers = request_json(
+        "GET",
+        f"/admin/realms/{realm_name}/clients/{client_internal_id}/protocol-mappers/models",
+        token,
+    ) or []
+    if any(m.get("name") == mapper_name for m in mappers):
+        return
+
+    request_json(
+        "POST",
+        f"/admin/realms/{realm_name}/clients/{client_internal_id}/protocol-mappers/models",
+        token,
+        {
+            "name": mapper_name,
+            "protocol": "openid-connect",
+            "protocolMapper": "oidc-audience-mapper",
+            "config": {
+                "included.client.audience": target_audience,
+                "id.token.claim": "false",
+                "access.token.claim": "true",
+            },
+        },
+    )
+
+
 def ensure_user(token: str, username: str, email: str, first_name: str, last_name: str, password: str, role_name: str) -> None:
     users = request_json(
         "GET",
@@ -322,10 +359,14 @@ ensure_realm(admin_token)
 ensure_role(admin_token, "analista-cadastro", "Analista de Cadastro (leitura + escrita)")
 ensure_role(admin_token, "analista-identificacao", "Analista de Identificação (leitura + escrita)")
 ensure_role(admin_token, "analista-arrecadacao", "Analista de Arrecadação (leitura + escrita)")
+ensure_role(admin_token, "analista-distribuicao", "Analista de Distribuição (leitura + escrita)")
 ensure_role(admin_token, "consultor", "Consultor (somente leitura)")
 ensure_role(admin_token, "consultor-arrecadacao", "Consultor de Arrecadação (somente leitura)")
-ensure_client(admin_token)
-ensure_direct_access_client(admin_token)
+ensure_role(admin_token, "consultor-distribuicao", "Consultor de Distribuição (somente leitura)")
+frontend_client = ensure_client(admin_token)
+ensure_audience_mapper(admin_token, frontend_client["id"], client_id)
+direct_client = ensure_direct_access_client(admin_token)
+ensure_audience_mapper(admin_token, direct_client["id"], client_id)
 ensure_user(
     admin_token,
     os.environ["ANALISTA_USERNAME"],
@@ -364,12 +405,30 @@ ensure_user(
 )
 ensure_user(
     admin_token,
+    os.environ["ANALISTA_DISTRIBUICAO_USERNAME"],
+    os.environ["ANALISTA_DISTRIBUICAO_EMAIL"],
+    os.environ["ANALISTA_DISTRIBUICAO_FIRST_NAME"],
+    os.environ["ANALISTA_DISTRIBUICAO_LAST_NAME"],
+    os.environ["ANALISTA_DISTRIBUICAO_PASSWORD"],
+    "analista-distribuicao",
+)
+ensure_user(
+    admin_token,
     os.environ["CONSULTOR_ARRECADACAO_USERNAME"],
     os.environ["CONSULTOR_ARRECADACAO_EMAIL"],
     os.environ["CONSULTOR_ARRECADACAO_FIRST_NAME"],
     os.environ["CONSULTOR_ARRECADACAO_LAST_NAME"],
     os.environ["CONSULTOR_ARRECADACAO_PASSWORD"],
     "consultor-arrecadacao",
+)
+ensure_user(
+    admin_token,
+    os.environ["CONSULTOR_DISTRIBUICAO_USERNAME"],
+    os.environ["CONSULTOR_DISTRIBUICAO_EMAIL"],
+    os.environ["CONSULTOR_DISTRIBUICAO_FIRST_NAME"],
+    os.environ["CONSULTOR_DISTRIBUICAO_LAST_NAME"],
+    os.environ["CONSULTOR_DISTRIBUICAO_PASSWORD"],
+    "consultor-distribuicao",
 )
 
 print(json.dumps(
@@ -380,8 +439,10 @@ print(json.dumps(
         "analistaUser": os.environ["ANALISTA_USERNAME"],
         "analistaIdentUser": os.environ["ANALISTA_IDENT_USERNAME"],
         "analistaArrecadacaoUser": os.environ["ANALISTA_ARRECADACAO_USERNAME"],
+        "analistaDistribuicaoUser": os.environ["ANALISTA_DISTRIBUICAO_USERNAME"],
         "consultorUser": os.environ["CONSULTOR_USERNAME"],
         "consultorArrecadacaoUser": os.environ["CONSULTOR_ARRECADACAO_USERNAME"],
+        "consultorDistribuicaoUser": os.environ["CONSULTOR_DISTRIBUICAO_USERNAME"],
     },
     indent=2,
 ))

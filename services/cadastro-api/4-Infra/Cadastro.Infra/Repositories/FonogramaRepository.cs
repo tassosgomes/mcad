@@ -26,9 +26,21 @@ public class FonogramaRepository : IFonogramaRepository
         if (!string.IsNullOrWhiteSpace(filtro.Isrc))
         {
             var isrcLimpo = filtro.Isrc.Replace("-", "").ToUpperInvariant();
-            if (isrcLimpo.Length == 12) {
-                var isrcVo = Cadastro.Domain.ValueObjects.Isrc.Create(isrcLimpo);
-                query = query.Where(f => f.Isrc == isrcVo);
+            if (isrcLimpo.Length == 12)
+            {
+                try
+                {
+                    var isrcVo = Cadastro.Domain.ValueObjects.Isrc.Create(isrcLimpo);
+                    query = query.Where(f => f.Isrc == isrcVo);
+                }
+                catch
+                {
+                    query = AplicarFiltroParcialIsrc(query, isrcLimpo);
+                }
+            }
+            else
+            {
+                query = AplicarFiltroParcialIsrc(query, isrcLimpo);
             }
         }
 
@@ -54,16 +66,24 @@ public class FonogramaRepository : IFonogramaRepository
 
         var total = await query.CountAsync(ct);
 
-        query = filtro.Sort?.ToLowerInvariant() switch
+        // Normaliza "campo,direção" (ex: "isrc,desc") para "campo_direção" (ex: "isrc_desc")
+        var sortKey = filtro.Sort?.ToLowerInvariant() ?? "isrc";
+        if (sortKey.Contains(','))
         {
-            "isrc_desc" => query.OrderByDescending(f => f.Isrc),
-            "obra" => query.OrderBy(f => f.Obra.Titulo),
-            "obra_desc" => query.OrderByDescending(f => f.Obra.Titulo),
-            "status" => query.OrderBy(f => f.Status),
-            "status_desc" => query.OrderByDescending(f => f.Status),
-            "pais" => query.OrderBy(f => f.PaisOrigem),
-            "pais_desc" => query.OrderByDescending(f => f.PaisOrigem),
-            _ => query.OrderBy(f => f.Isrc)
+            var parts = sortKey.Split(',', 2);
+            sortKey = $"{parts[0].Trim()}_{parts[1].Trim()}";
+        }
+
+        query = sortKey switch
+        {
+            "isrc_desc"  => query.OrderByDescending(f => f.Isrc),
+            "obra"       => query.OrderBy(f => f.Obra.Titulo),
+            "obra_desc"  => query.OrderByDescending(f => f.Obra.Titulo),
+            "status"     => query.OrderBy(f => f.Status),
+            "status_desc"=> query.OrderByDescending(f => f.Status),
+            "pais"       => query.OrderBy(f => f.PaisOrigem),
+            "pais_desc"  => query.OrderByDescending(f => f.PaisOrigem),
+            _            => query.OrderBy(f => f.Isrc)
         };
 
         var items = await query
@@ -159,5 +179,19 @@ public class FonogramaRepository : IFonogramaRepository
     public async Task SaveChangesAsync(CancellationToken ct)
     {
         await _context.SaveChangesAsync(ct);
+    }
+
+    private IQueryable<Fonograma> AplicarFiltroParcialIsrc(IQueryable<Fonograma> query, string isrcParcial)
+    {
+        var pattern = $"%{isrcParcial}%";
+
+        var matchingIds = _context.Database
+            .SqlQuery<Guid>($"""
+                SELECT "Id" AS "Value"
+                FROM cadastro.fonogramas
+                WHERE "Isrc" ILIKE {pattern}
+                """);
+
+        return query.Where(f => matchingIds.Contains(f.Id));
     }
 }

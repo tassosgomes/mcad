@@ -14,11 +14,16 @@ public class CriarObraCommandValidator : AbstractValidator<CriarObraCommand>
 {
     public CriarObraCommandValidator()
     {
-        RuleFor(x => x.Titulo).NotEmpty().MaximumLength(300);
+        RuleFor(x => x.Titulo)
+            .NotEmpty()
+            .WithMessage("Título é obrigatório.")
+            .MaximumLength(300);
         RuleFor(x => x.Subtitulo).MaximumLength(300);
         RuleFor(x => x.Tipo)
+            .Cascade(CascadeMode.Stop)
             .NotEmpty()
-            .Must(t => Enum.TryParse<TipoObra>(t.Replace("_", ""), true, out _))
+            .WithMessage("Tipo é obrigatório.")
+            .Must(t => !string.IsNullOrWhiteSpace(t) && Enum.TryParse<TipoObra>(t.Replace("_", ""), true, out _))
             .WithMessage("Tipo inválido. Valores aceitos: MUSICAL, LITEROMUSICAL, VERSAO, POT_POURRI");
         RuleFor(x => x.Genero).MaximumLength(100);
     }

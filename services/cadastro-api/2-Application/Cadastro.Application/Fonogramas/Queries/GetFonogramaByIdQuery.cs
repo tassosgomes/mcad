@@ -41,7 +41,9 @@ public class GetFonogramaByIdHandler : IQueryHandler<GetFonogramaByIdQuery, Fono
             fStatus,
             f.FonogramaDepuradoParaId,
             f.CriadoEm,
-            f.AtualizadoEm
+            f.AtualizadoEm,
+            f.UrlAudio,
+            f.BloqueioJustificativa
         );
     }
 }

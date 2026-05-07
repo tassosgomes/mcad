@@ -4,9 +4,11 @@ import type { User } from 'oidc-client-ts';
 import { Loading } from '@components/ui/loading';
 import { setArrecadacaoAuthTokenProvider } from '@services/apiArrecadacaoClient';
 import { setAuthTokenProvider } from '@services/apiClient';
+import { setDistribuicaoAuthTokenProvider } from '@services/apiDistribuicaoClient';
 import { setIdentificacaoAuthTokenProvider } from '@services/apiIdentificacaoClient';
 import { AuthContext } from './AuthContext';
 import { userManager } from './authConfig';
+import { clearOidcClientState } from './oidcStorageCleanup';
 
 const LOGOUT_IN_PROGRESS_KEY = 'auth.logout_in_progress';
 
@@ -14,44 +16,14 @@ interface AuthProviderProps {
   children: ReactNode;
 }
 
-interface RealmAccessProfile {
-  realm_access?: {
-    roles?: unknown;
-  };
-}
-
-function decodeJwtPayload(token: string): Record<string, unknown> | null {
-  const [, payload] = token.split('.');
-
-  if (!payload) {
-    return null;
-  }
-
-  try {
-    const normalized = payload.replace(/-/g, '+').replace(/_/g, '/');
-    const padded = normalized.padEnd(Math.ceil(normalized.length / 4) * 4, '=');
-    const decoded = atob(padded);
-    return JSON.parse(decoded) as Record<string, unknown>;
-  } catch {
-    return null;
-  }
-}
-
 function extractRoles(user: User | null): string[] {
-  const roles = (user?.profile as RealmAccessProfile | undefined)?.realm_access?.roles;
+  const roles = user?.profile?.roles;
 
   if (Array.isArray(roles)) {
     return roles.filter((role): role is string => typeof role === 'string');
   }
 
-  const accessTokenPayload = user?.access_token ? decodeJwtPayload(user.access_token) : null;
-  const tokenRoles = (accessTokenPayload?.realm_access as RealmAccessProfile['realm_access'] | undefined)?.roles;
-
-  if (!Array.isArray(tokenRoles)) {
-    return [];
-  }
-
-  return tokenRoles.filter((role): role is string => typeof role === 'string');
+  return [];
 }
 
 export function AuthProvider({ children }: AuthProviderProps) {
@@ -105,6 +77,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const isAuthenticated = user !== null && !user.expired;
 
   const login = async () => {
+    clearOidcClientState();
     sessionStorage.removeItem(LOGOUT_IN_PROGRESS_KEY);
     setIsLoggingOut(false);
     const returnUrl = `${window.location.pathname}${window.location.search}${window.location.hash}`;
@@ -125,11 +98,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
   useEffect(() => {
     setArrecadacaoAuthTokenProvider(() => user?.access_token ?? null);
     setAuthTokenProvider(() => user?.access_token ?? null);
+    setDistribuicaoAuthTokenProvider(() => user?.access_token ?? null);
     setIdentificacaoAuthTokenProvider(() => user?.access_token ?? null);
 
     return () => {
       setArrecadacaoAuthTokenProvider(null);
       setAuthTokenProvider(null);
+      setDistribuicaoAuthTokenProvider(null);
       setIdentificacaoAuthTokenProvider(null);
     };
   }, [user]);

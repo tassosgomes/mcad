@@ -34,7 +34,7 @@ public static class FonogramaEndpoints
 
         group.MapPut("/{id:guid}", async (Guid id, [FromBody] AtualizarFonogramaRequest request, IDispatcher dispatcher, CancellationToken ct) =>
         {
-            var command = new AtualizarFonogramaCommand(id, request.Isrc, request.PaisOrigem, request.DataGravacao, request.DataLancamento);
+            var command = new AtualizarFonogramaCommand(id, request.Isrc, request.PaisOrigem, request.DataGravacao, request.DataLancamento, request.UrlAudio);
             var result = await dispatcher.SendAsync(command, ct);
             return Results.Ok(result);
         })
@@ -72,9 +72,17 @@ public static class FonogramaEndpoints
         })
         .RequireAuthorization("write");
 
-        group.MapPost("/{id:guid}/bloquear", async (Guid id, [FromBody] Cadastro.Application.Status.Commands.BloquearFonogramaCommand commandArgs, IDispatcher dispatcher, CancellationToken ct) =>
+        group.MapPost("/{id:guid}/bloquear", async (Guid id, [FromBody] BloquearFonogramaRequest? request, IDispatcher dispatcher, CancellationToken ct) =>
         {
-            var command = new Cadastro.Application.Status.Commands.BloquearFonogramaCommand(id, commandArgs.Justificativa);
+            if (request is null)
+            {
+                throw new Cadastro.Application.Common.Exceptions.ValidationException(new Dictionary<string, string[]>
+                {
+                    ["body"] = ["Body é obrigatório."]
+                });
+            }
+
+            var command = new Cadastro.Application.Status.Commands.BloquearFonogramaCommand(id, request.Justificativa);
             var result = await dispatcher.SendAsync(command, ct);
             return Results.Ok(result);
         })
@@ -106,5 +114,6 @@ public static class FonogramaEndpoints
     }
 }
 
-public record AtualizarFonogramaRequest(string Isrc, string PaisOrigem, DateOnly? DataGravacao, DateOnly? DataLancamento);
+public record AtualizarFonogramaRequest(string Isrc, string PaisOrigem, DateOnly? DataGravacao, DateOnly? DataLancamento, string? UrlAudio = null);
 public record DepurarFonogramaRequest(string Isrc, string PaisOrigem, DateOnly? DataGravacao, DateOnly? DataLancamento);
+public record BloquearFonogramaRequest(string Justificativa);

@@ -13,11 +13,16 @@ public record DepurarObraCommand(Guid Id, string Titulo, string Tipo, string? Su
 public class DepurarObraCommandHandler : ICommandHandler<DepurarObraCommand, DepuracaoResponse>
 {
     private readonly IObraRepository _repository;
+    private readonly ITitularidadeRepository _titularidadeRepository;
     private readonly IOutboxEventWriter _outbox;
 
-    public DepurarObraCommandHandler(IObraRepository repository, IOutboxEventWriter outbox)
+    public DepurarObraCommandHandler(
+        IObraRepository repository,
+        ITitularidadeRepository titularidadeRepository,
+        IOutboxEventWriter outbox)
     {
         _repository = repository;
+        _titularidadeRepository = titularidadeRepository;
         _outbox = outbox;
     }
 
@@ -31,6 +36,9 @@ public class DepurarObraCommandHandler : ICommandHandler<DepurarObraCommand, Dep
 
         var novaObraTipo = Enum.Parse<TipoObra>(request.Tipo.Replace("_", ""), true);
         var novaObra = ObraMusical.Criar(request.Titulo, novaObraTipo, request.Subtitulo, request.Genero);
+        var titularidadesOriginais = (await _titularidadeRepository
+            .GetByObraIdAsync(obraOriginal.Id, cancellationToken))
+            .ToList();
 
         // Captura o ISWC original antes da depuração
         var iswcOriginal = obraOriginal.Iswc;
@@ -39,6 +47,17 @@ public class DepurarObraCommandHandler : ICommandHandler<DepurarObraCommand, Dep
 
         _repository.Update(obraOriginal);
         await _repository.AddAsync(novaObra, cancellationToken);
+
+        foreach (var titularidadeOriginal in titularidadesOriginais)
+        {
+            var novaTitularidade = TitularidadeAutoral.Criar(
+                novaObra.Id,
+                titularidadeOriginal.TitularId,
+                titularidadeOriginal.Categoria,
+                titularidadeOriginal.Percentual);
+
+            await _titularidadeRepository.AddAsync(novaTitularidade, cancellationToken);
+        }
 
         // Registrar evento na outbox — mesma transação (RF-17)
         _outbox.AddEvent("cadastro.obra.depurada", obraOriginal.Id.ToString(), new

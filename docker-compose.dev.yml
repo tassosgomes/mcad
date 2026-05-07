@@ -39,36 +39,6 @@ services:
       timeout: 5s
       retries: 10
 
-  # ── Keycloak ──────────────────────────────────────────────────────
-  mcad-keycloak:
-    image: quay.io/keycloak/keycloak:24.0
-    container_name: mcad-keycloak
-    restart: unless-stopped
-    command: start-dev
-    environment:
-      KC_DB: postgres
-      KC_DB_URL: jdbc:postgresql://mcad-postgres:5432/mcad
-      KC_DB_USERNAME: gestauto
-      KC_DB_PASSWORD: gestauto123
-      KC_DB_SCHEMA: keycloak
-      KEYCLOAK_ADMIN: admin
-      KEYCLOAK_ADMIN_PASSWORD: admin
-      KC_HOSTNAME_STRICT: "false"
-      KC_HTTP_ENABLED: "true"
-      KC_HTTP_PORT: 8080
-      KC_PROXY: edge
-    ports:
-      - "8080:8080"
-    depends_on:
-      mcad-postgres:
-        condition: service_healthy
-    healthcheck:
-      test: ["CMD-SHELL", "curl -fsS http://localhost:8080/health/ready || exit 1"]
-      interval: 15s
-      timeout: 10s
-      retries: 20
-      start_period: 60s
-
   # ── MinIO ─────────────────────────────────────────────────────────
   mcad-minio:
     image: minio/minio:latest
@@ -89,8 +59,40 @@ services:
       timeout: 5s
       retries: 5
 
+  distribuicao-api:
+    build:
+      context: ./services/distribuicao-api
+      dockerfile: Dockerfile
+    container_name: mcad-distribuicao-api
+    restart: unless-stopped
+    environment:
+      SERVER_PORT: 5004
+      DB_HOST: mcad-postgres
+      DB_PORT: 5432
+      DB_NAME: mcad
+      DB_USER_DISTRIBUICAO: distribuicao_app
+      DB_PASSWORD_DISTRIBUICAO: ${DB_PASSWORD_DISTRIBUICAO:-distribuicao_app}
+      DB_SCHEMA_DISTRIBUICAO: distribuicao
+      RABBITMQ_HOST: mcad-rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USER: mcad
+      RABBITMQ_PASSWORD: mcad
+      RABBITMQ_VHOST: mcad
+      OIDC_AUTHORITY: http://mcad-keycloak:8080/realms/mcad
+      AUTH_ENABLED: "false"
+    ports:
+      - "5004:5004"
+    depends_on:
+      mcad-postgres:
+        condition: service_healthy
+      mcad-rabbitmq:
+        condition: service_healthy
+      mcad-keycloak:
+        condition: service_healthy
+
 # NOTE: cadastro-api e identificacao-api rodam no host via `dotnet run`
 # NOTE: arrecadacao-api rodará no host via Spring Boot na porta 5003
+# NOTE: distribuicao-api pode rodar via Docker Compose ou host via `./dev.sh`
 # Ver README para instruções de execução local das APIs
 
 volumes:

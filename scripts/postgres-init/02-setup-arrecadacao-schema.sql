@@ -20,7 +20,7 @@ WHERE NOT EXISTS (
 \gexec
 
 -- 3. Grants — acesso restrito ao schema arrecadacao
-GRANT USAGE ON SCHEMA arrecadacao TO arrecadacao_svc;
+GRANT USAGE, CREATE ON SCHEMA arrecadacao TO arrecadacao_svc;
 GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA arrecadacao TO arrecadacao_svc;
 ALTER DEFAULT PRIVILEGES IN SCHEMA arrecadacao
     GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO arrecadacao_svc;

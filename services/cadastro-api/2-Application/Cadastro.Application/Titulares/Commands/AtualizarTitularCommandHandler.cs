@@ -42,8 +42,11 @@ public class AtualizarTitularCommandHandler : ICommandHandler<AtualizarTitularCo
             throw new Cadastro.Application.Common.Exceptions.ValidationException(errors);
         }
 
-        // 2. Buscar titular
-        var titular = await _titularRepository.GetByIdAsync(command.Id, cancellationToken)
+        // 2. Buscar titular COM rastreamento (tracking) para que o EF Core
+        //    detecte as alterações em todas as propriedades, incluindo AssociacaoId (FK).
+        //    Não usar GetByIdAsync (AsNoTracking) pois o Update() com entidade desanexada
+        //    e navigation property nula ignora silenciosamente a mudança de AssociacaoId.
+        var titular = await _titularRepository.GetByIdForUpdateAsync(command.Id, cancellationToken)
             ?? throw new NotFoundException("Titular", command.Id);
 
         // 3. Verificar que associação existe
@@ -59,8 +62,9 @@ public class AtualizarTitularCommandHandler : ICommandHandler<AtualizarTitularCo
             : null;
 
         // 6. Aplicar atualização (Tipo e Documento permanecem imutáveis)
+        //    Com tracking ativo, o EF Core detecta as mudanças automaticamente ao SaveChanges.
+        //    Não é necessário chamar Update() explicitamente.
         titular.Atualizar(command.Nome, command.Nacionalidade, command.AssociacaoId, status, caeIpi);
-        _titularRepository.Update(titular);
         await _titularRepository.SaveChangesAsync(cancellationToken);
 
         // 7. Reload com Associação

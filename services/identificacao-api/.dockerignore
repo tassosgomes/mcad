@@ -1,0 +1,10 @@
+**/bin/
+**/obj/
+.env
+.env.*
+.git/
+.vs/
+.vscode/
+TestResults/
+test-results/
+test_output.txt
