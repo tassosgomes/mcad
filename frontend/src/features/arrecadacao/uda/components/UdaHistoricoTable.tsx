@@ -1,3 +1,5 @@
+import { RowAuditHistoryButton } from '@features/auditoria/components/RowAuditHistoryButton';
+import { auditEntityTypes } from '@features/auditoria/constants/auditEntityTypes';
 import { useHistoricoUda } from '../hooks/useHistoricoUda';
 import { useUdaVigente } from '../hooks/useUdaVigente';
 import { formatBRL } from '../../shared/utils/formatCurrency';
@@ -41,6 +43,7 @@ export function UdaHistoricoTable() {
             <th className={styles.th}>DATA VIGÊNCIA</th>
             <th className={styles.th}>CRIADO EM</th>
             <th className={styles.th}>CRIADO POR</th>
+            <th className={styles.th} aria-label="Histórico">HISTÓRICO</th>
           </tr>
         </thead>
         <tbody>
@@ -62,6 +65,13 @@ export function UdaHistoricoTable() {
                   <span className={styles.criadoPor}>
                     {uda.criadoPor ?? 'Sistema'}
                   </span>
+                </td>
+                <td className={styles.td}>
+                  <RowAuditHistoryButton
+                    entityType={auditEntityTypes.uda}
+                    entityId={uda.id}
+                    entityLabel={uda.dataVigencia}
+                  />
                 </td>
               </tr>
             );

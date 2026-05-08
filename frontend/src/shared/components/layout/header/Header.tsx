@@ -12,6 +12,7 @@ const ROLE_LABELS: Array<[string, string]> = [
   ['analista-arrecadacao', 'Analista de Arrecadação'],
   ['analista-identificacao', 'Analista de Identificação'],
   ['analista-cadastro', 'Analista de Cadastro'],
+  ['analista-distribuicao', 'Analista de Distribuição'],
   ['consultor-arrecadacao', 'Consultor de Arrecadação'],
   ['consultor-identificacao', 'Consultor de Identificação'],
   ['consultor', 'Consultor'],

@@ -15,10 +15,17 @@
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-blue), var(--shadow-md);
   width: 100%;
-  max-width: 640px;
   margin: var(--space-4);
   animation: slideUp var(--transition-base) ease;
   overflow: hidden;
+}
+
+.md {
+  max-width: 640px;
+}
+
+.lg {
+  max-width: 1080px;
 }
 
 .header {

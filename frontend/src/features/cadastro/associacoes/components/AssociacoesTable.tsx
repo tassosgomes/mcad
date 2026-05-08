@@ -1,4 +1,6 @@
 import { Table } from '@components/ui/table';
+import { RowAuditHistoryButton } from '@features/auditoria/components/RowAuditHistoryButton';
+import { auditEntityTypes } from '@features/auditoria/constants/auditEntityTypes';
 import type { Associacao } from '../types/associacao';
 import styles from './AssociacoesTable.module.css';
 
@@ -14,6 +16,17 @@ const columns = [
     key: 'cnpj', 
     header: 'CNPJ', 
     render: (v: string) => <span className={styles.mono}>{v}</span> 
+  },
+  {
+    key: 'historico',
+    header: 'Histórico',
+    render: (_value: unknown, item: Associacao) => (
+      <RowAuditHistoryButton
+        entityType={auditEntityTypes.associacao}
+        entityId={item.id}
+        entityLabel={item.sigla}
+      />
+    ),
   },
 ];
 

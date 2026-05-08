@@ -1,4 +1,6 @@
 import { Badge } from '@components/ui/badge';
+import { RowAuditHistoryButton } from '@features/auditoria/components/RowAuditHistoryButton';
+import { auditEntityTypes } from '@features/auditoria/constants/auditEntityTypes';
 import type { CreditoCalculo, PaginationMetadata } from '../types/calculo';
 import {
   formatCategoria,
@@ -40,12 +42,13 @@ export function CreditosTable({ creditos, metadata, onPageChange }: CreditosTabl
               <th>Valor da obra</th>
               <th>Crédito</th>
               <th>Status</th>
+              <th>Histórico</th>
             </tr>
           </thead>
           <tbody>
             {creditos.length === 0 ? (
               <tr>
-                <td className={styles.empty} colSpan={9}>
+                <td className={styles.empty} colSpan={10}>
                   Nenhum crédito encontrado para os filtros atuais.
                 </td>
               </tr>
@@ -72,6 +75,13 @@ export function CreditosTable({ creditos, metadata, onPageChange }: CreditosTabl
                   <td className={styles.creditValue}>{formatCurrency(credito.valorCredito)}</td>
                   <td>
                     <Badge variant="success">{formatStatusCredito(credito.status)}</Badge>
+                  </td>
+                  <td>
+                    <RowAuditHistoryButton
+                      entityType={auditEntityTypes.credito}
+                      entityId={credito.id}
+                      entityLabel={credito.titularNome}
+                    />
                   </td>
                 </tr>
               ))

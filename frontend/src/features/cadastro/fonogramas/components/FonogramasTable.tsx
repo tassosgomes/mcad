@@ -1,5 +1,7 @@
 import { Pencil, Trash2, ChevronsUpDown, ChevronUp, ChevronDown } from 'lucide-react';
 import { Badge } from '@components/ui/badge';
+import { RowAuditHistoryButton } from '@features/auditoria/components/RowAuditHistoryButton';
+import { auditEntityTypes } from '@features/auditoria/constants/auditEntityTypes';
 import type { FonogramaResumo } from '../types/fonograma';
 import { formatIsrc } from '../utils/isrcFormatter';
 import styles from './FonogramasTable.module.css';
@@ -68,7 +70,7 @@ export function FonogramasTable({ data, canWrite, sort, onSortChange, onEdit, on
               </button>
             </th>
             <th className={styles.th}>LANÇAMENTO</th>
-            {canWrite && <th className={`${styles.th} ${styles.textRight}`}>Ações</th>}
+            <th className={`${styles.th} ${styles.textRight}`}>Ações</th>
           </tr>
         </thead>
         <tbody>
@@ -95,9 +97,15 @@ export function FonogramasTable({ data, canWrite, sort, onSortChange, onEdit, on
               <td className={styles.td}>
                 <span className={styles.data}>{fonograma.dataLancamento || '—'}</span>
               </td>
-              {canWrite && (
-                <td className={styles.td}>
-                  <div className={styles.actions}>
+              <td className={styles.td}>
+                <div className={styles.actions}>
+                  <RowAuditHistoryButton
+                    entityType={auditEntityTypes.fonograma}
+                    entityId={fonograma.id}
+                    entityLabel={fonograma.isrcFormatado}
+                  />
+                  {canWrite && (
+                    <>
                     <button
                       className={styles.actionBtn}
                       onClick={() => onEdit(fonograma.id)}
@@ -118,9 +126,10 @@ export function FonogramasTable({ data, canWrite, sort, onSortChange, onEdit, on
                     >
                       <Trash2 size={15} />
                     </button>
-                  </div>
-                </td>
-              )}
+                    </>
+                  )}
+                </div>
+              </td>
             </tr>
           ))}
         </tbody>

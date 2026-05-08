@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { NavLink } from 'react-router-dom';
-import { Database, Search, Banknote, Split, ChevronDown } from 'lucide-react';
+import { Database, Search, Banknote, Split, ChevronDown, ScrollText } from 'lucide-react';
 import { useAuth } from '@shared/auth';
 import styles from './Sidebar.module.css';
 
@@ -52,6 +52,23 @@ const navigation = [
       { label: 'Rubricas', path: '/distribuicao/rubricas' },
     ],
   },
+  {
+    label: 'Auditoria',
+    icon: ScrollText,
+    basePath: '/auditoria',
+    disabled: false,
+    requiredRoles: [
+      'analista-cadastro',
+      'analista-identificacao',
+      'analista-arrecadacao',
+      'analista-distribuicao',
+    ],
+    children: [
+      { label: 'Eventos por entidade', path: '/auditoria/eventos' },
+      { label: 'Acessos a telas', path: '/auditoria/acessos' },
+      { label: 'Relatórios', path: '/auditoria/relatorios' },
+    ],
+  },
 ];
 
 interface SidebarProps {
@@ -68,6 +85,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
     'Identificação': true,
     'Arrecadação': true,
     'Distribuição': true,
+    'Auditoria': true,
   });
 
   const toggleSection = (label: string) => {

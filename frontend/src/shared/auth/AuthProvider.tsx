@@ -3,9 +3,11 @@ import { useEffect, useState } from 'react';
 import type { User } from 'oidc-client-ts';
 import { Loading } from '@components/ui/loading';
 import { setArrecadacaoAuthTokenProvider } from '@services/apiArrecadacaoClient';
+import { setAuditoriaAuthTokenProvider } from '@services/apiAuditoriaClient';
 import { setAuthTokenProvider } from '@services/apiClient';
 import { setDistribuicaoAuthTokenProvider } from '@services/apiDistribuicaoClient';
 import { setIdentificacaoAuthTokenProvider } from '@services/apiIdentificacaoClient';
+import { setAuthenticatedFetchUnauthorizedHandler } from '@services/authenticatedFetch';
 import { AuthContext } from './AuthContext';
 import { userManager } from './authConfig';
 import { clearOidcClientState } from './oidcStorageCleanup';
@@ -26,6 +28,19 @@ function extractRoles(user: User | null): string[] {
   return [];
 }
 
+function getCurrentReturnUrl(): string {
+  const returnUrl = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+
+  return returnUrl || '/';
+}
+
+async function startLoginRedirect() {
+  clearOidcClientState();
+  sessionStorage.removeItem(LOGOUT_IN_PROGRESS_KEY);
+  sessionStorage.setItem('returnUrl', getCurrentReturnUrl());
+  await userManager.signinRedirect();
+}
+
 export function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -41,6 +56,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
     };
 
     const handleUserUnloaded = () => {
+      setUser(null);
+    };
+
+    const handleAccessTokenExpired = () => {
+      setUser(null);
+    };
+
+    const handleSilentRenewError = () => {
       setUser(null);
     };
 
@@ -63,6 +86,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
     userManager.events.addUserLoaded(handleUserLoaded);
     userManager.events.addUserUnloaded(handleUserUnloaded);
+    userManager.events.addAccessTokenExpired(handleAccessTokenExpired);
+    userManager.events.addSilentRenewError(handleSilentRenewError);
 
     void loadUser();
 
@@ -70,6 +95,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
       isMounted = false;
       userManager.events.removeUserLoaded(handleUserLoaded);
       userManager.events.removeUserUnloaded(handleUserUnloaded);
+      userManager.events.removeAccessTokenExpired(handleAccessTokenExpired);
+      userManager.events.removeSilentRenewError(handleSilentRenewError);
     };
   }, []);
 
@@ -77,12 +104,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const isAuthenticated = user !== null && !user.expired;
 
   const login = async () => {
-    clearOidcClientState();
-    sessionStorage.removeItem(LOGOUT_IN_PROGRESS_KEY);
+    await startLoginRedirect();
     setIsLoggingOut(false);
-    const returnUrl = `${window.location.pathname}${window.location.search}${window.location.hash}`;
-    sessionStorage.setItem('returnUrl', returnUrl || '/');
-    await userManager.signinRedirect();
   };
 
   const logout = async () => {
@@ -97,17 +120,43 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   useEffect(() => {
     setArrecadacaoAuthTokenProvider(() => user?.access_token ?? null);
+    setAuditoriaAuthTokenProvider(() => user?.access_token ?? null);
     setAuthTokenProvider(() => user?.access_token ?? null);
     setDistribuicaoAuthTokenProvider(() => user?.access_token ?? null);
     setIdentificacaoAuthTokenProvider(() => user?.access_token ?? null);
 
     return () => {
       setArrecadacaoAuthTokenProvider(null);
+      setAuditoriaAuthTokenProvider(null);
       setAuthTokenProvider(null);
       setDistribuicaoAuthTokenProvider(null);
       setIdentificacaoAuthTokenProvider(null);
     };
   }, [user]);
+
+  useEffect(() => {
+    setAuthenticatedFetchUnauthorizedHandler(async () => {
+      try {
+        const renewedUser = await userManager.signinSilent();
+        const activeUser = renewedUser && !renewedUser.expired ? renewedUser : null;
+        setUser(activeUser);
+
+        return activeUser?.access_token ?? null;
+      } catch {
+        setUser(null);
+
+        if (sessionStorage.getItem(LOGOUT_IN_PROGRESS_KEY) !== 'true') {
+          await startLoginRedirect();
+        }
+
+        return null;
+      }
+    });
+
+    return () => {
+      setAuthenticatedFetchUnauthorizedHandler(null);
+    };
+  }, []);
 
   if (isLoading) {
     return <Loading />;

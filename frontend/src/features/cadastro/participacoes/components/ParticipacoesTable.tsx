@@ -2,6 +2,8 @@ import { useState, useRef, useEffect } from 'react';
 import { Lock, Trash2 } from 'lucide-react';
 import { Badge } from '@components/ui/badge';
 import { Button } from '@components/ui/button';
+import { RowAuditHistoryButton } from '@features/auditoria/components/RowAuditHistoryButton';
+import { auditEntityTypes } from '@features/auditoria/constants/auditEntityTypes';
 import type { ParticipacaoItem } from '../types/participacao';
 import { CATEGORIA_LABELS } from '../types/participacao';
 import styles from './ParticipacoesTable.module.css';
@@ -110,7 +112,7 @@ export function ParticipacoesTable({
             <th>Documento</th>
             <th>Categoria</th>
             <th>Percentual</th>
-            {!isReadOnly && <th className={styles.actionsHeader}>Ações</th>}
+            <th className={styles.actionsHeader}>Ações</th>
           </tr>
         </thead>
         <tbody>
@@ -149,8 +151,13 @@ export function ParticipacoesTable({
                   />
                 )}
               </td>
-              {!isReadOnly && (
-                <td className={styles.actionsCell}>
+              <td className={styles.actionsCell}>
+                <RowAuditHistoryButton
+                  entityType={auditEntityTypes.participacao}
+                  entityId={item.id}
+                  entityLabel={item.titular.nome}
+                />
+                {!isReadOnly && (
                   <Button
                     variant="ghost"
                     size="sm"
@@ -161,8 +168,8 @@ export function ParticipacoesTable({
                   >
                     <Trash2 size={14} />
                   </Button>
-                </td>
-              )}
+                )}
+              </td>
             </tr>
           ))}
         </tbody>

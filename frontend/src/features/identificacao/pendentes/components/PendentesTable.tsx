@@ -1,6 +1,8 @@
 import { Link } from 'react-router-dom';
 import { Button } from '@components/ui/button';
 import { Badge } from '@components/ui/badge';
+import { RowAuditHistoryButton } from '@features/auditoria/components/RowAuditHistoryButton';
+import { auditEntityTypes } from '@features/auditoria/constants/auditEntityTypes';
 import type { ExecucaoPendente } from '../types/pendente';
 import styles from './PendentesTable.module.css';
 
@@ -98,6 +100,11 @@ export function PendentesTable({ data, sort, onSortChange, onResolve }: Pendente
                 </div>
               </td>
               <td className={`${styles.td} ${styles.actionsCell}`}>
+                <RowAuditHistoryButton
+                  entityType={auditEntityTypes.pendente}
+                  entityId={pendente.id}
+                  entityLabel={pendente.obraTitulo ?? pendente.fonogramaIsrc ?? pendente.id}
+                />
                 <Button 
                   size="sm" 
                   onClick={() => onResolve(pendente)}

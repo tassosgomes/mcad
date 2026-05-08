@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { apiPostDist, setDistribuicaoAuthTokenProvider } from '@services/apiDistribuicaoClient';
+import { setAuthenticatedFetchUnauthorizedHandler } from '@services/authenticatedFetch';
 import { calcularProcesso, consultarCalculoProcesso } from './processosCalculoApi';
 
 function mockJsonResponse(body: unknown): Response {
@@ -57,6 +58,29 @@ describe('processosCalculoApi', () => {
     );
     const requestInit = fetchMock.mock.calls[0][1] as RequestInit;
     expect((requestInit.headers as Headers).get('Authorization')).toBe('Bearer token-123');
+  });
+
+  it('renews the token and retries once when the backend returns unauthorized', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch')
+      .mockResolvedValueOnce(new Response(null, { status: 401, statusText: 'Unauthorized' }))
+      .mockResolvedValueOnce(mockJsonResponse({
+        processoId: 'processo-1',
+        status: 'CALCULADO',
+        resumo: {},
+        creditos: { items: [], metadata: { page: 1, size: 10, total: 0, totalPages: 0 } },
+      }));
+
+    setDistribuicaoAuthTokenProvider(() => 'expired-token');
+    setAuthenticatedFetchUnauthorizedHandler(async () => 'renewed-token');
+
+    await consultarCalculoProcesso('processo-1', { page: 1, size: 10 });
+
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    const firstRequestInit = fetchMock.mock.calls[0][1] as RequestInit;
+    const secondRequestInit = fetchMock.mock.calls[1][1] as RequestInit;
+
+    expect((firstRequestInit.headers as Headers).get('Authorization')).toBe('Bearer expired-token');
+    expect((secondRequestInit.headers as Headers).get('Authorization')).toBe('Bearer renewed-token');
   });
 
   it('serializes optional POST bodies through the shared client', async () => {

@@ -1,5 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { Eye } from 'lucide-react';
+import { RowAuditHistoryButton } from '@features/auditoria/components/RowAuditHistoryButton';
+import { auditEntityTypes } from '@features/auditoria/constants/auditEntityTypes';
 import { StatusBadgePagamento } from './StatusBadgePagamento';
 import { formatBRL, formatUdas } from '../../shared/utils/formatCurrency';
 import type { Pagamento } from '../types/pagamento';
@@ -59,6 +61,11 @@ export function PagamentosTable({ data }: PagamentosTableProps) {
               </td>
               <td className={styles.td}>
                 <div className={styles.actions}>
+                  <RowAuditHistoryButton
+                    entityType={auditEntityTypes.pagamento}
+                    entityId={pagamento.id}
+                    entityLabel={pagamento.periodo}
+                  />
                   <button
                     className={styles.actionBtn}
                     onClick={() => navigate(`/arrecadacao/pagamentos/${pagamento.id}`)}

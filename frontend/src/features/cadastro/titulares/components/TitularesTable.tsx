@@ -1,5 +1,7 @@
 import { Pencil, Trash2, ChevronsUpDown, ChevronUp, ChevronDown } from 'lucide-react';
 import { Badge } from '@components/ui/badge';
+import { RowAuditHistoryButton } from '@features/auditoria/components/RowAuditHistoryButton';
+import { auditEntityTypes } from '@features/auditoria/constants/auditEntityTypes';
 import type { Titular, TitularStatus, TitularTipo } from '../types/titular';
 import styles from './TitularesTable.module.css';
 
@@ -87,7 +89,7 @@ export function TitularesTable({ data, canWrite, sort, onSortChange, onEdit, onD
                 STATUS <SortIcon field="status" currentSort={sort} />
               </button>
             </th>
-            {canWrite && <th className={`${styles.th} ${styles.textRight}`} aria-label="Ações">Ações</th>}
+            <th className={`${styles.th} ${styles.textRight}`} aria-label="Ações">Ações</th>
           </tr>
         </thead>
         <tbody>
@@ -111,9 +113,15 @@ export function TitularesTable({ data, canWrite, sort, onSortChange, onEdit, onD
               <td className={styles.td}>
                 <Badge variant={STATUS_VARIANT[titular.status]}>{titular.status}</Badge>
               </td>
-              {canWrite && (
-                <td className={styles.td}>
-                  <div className={styles.actions}>
+              <td className={styles.td}>
+                <div className={styles.actions}>
+                  <RowAuditHistoryButton
+                    entityType={auditEntityTypes.titular}
+                    entityId={titular.id}
+                    entityLabel={titular.nome}
+                  />
+                  {canWrite && (
+                    <>
                     <button
                       className={styles.actionBtn}
                       onClick={() => onEdit(titular.id)}
@@ -132,9 +140,10 @@ export function TitularesTable({ data, canWrite, sort, onSortChange, onEdit, onD
                     >
                       <Trash2 size={15} />
                     </button>
-                  </div>
-                </td>
-              )}
+                    </>
+                  )}
+                </div>
+              </td>
             </tr>
           ))}
         </tbody>

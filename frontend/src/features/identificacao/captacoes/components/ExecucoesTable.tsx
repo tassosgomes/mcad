@@ -1,5 +1,7 @@
 import { Edit2, Trash2 } from 'lucide-react';
 import { Badge } from '@shared/components/ui/badge';
+import { RowAuditHistoryButton } from '@features/auditoria/components/RowAuditHistoryButton';
+import { auditEntityTypes } from '@features/auditoria/constants/auditEntityTypes';
 import type { Execucao } from '../types/execucao';
 import type { Captacao } from '../types/captacao';
 import styles from './ExecucoesTable.module.css';
@@ -126,6 +128,11 @@ export function ExecucoesTable({
                   </Badge>
                 </td>
                 <td className={`${styles.td} ${styles.actionsCell}`}>
+                  <RowAuditHistoryButton
+                    entityType={auditEntityTypes.execucao}
+                    entityId={execucao.id}
+                    entityLabel={execucao.obraTitulo}
+                  />
                   {canModify && (
                     <>
                       <button

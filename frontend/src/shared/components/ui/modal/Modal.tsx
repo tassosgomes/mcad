@@ -8,9 +8,10 @@ export interface ModalProps {
   title: string;
   children: ReactNode;
   actions?: ReactNode;
+  size?: 'md' | 'lg';
 }
 
-export function Modal({ isOpen, onClose, title, children, actions }: ModalProps) {
+export function Modal({ isOpen, onClose, title, children, actions, size = 'md' }: ModalProps) {
   // Close on Escape key
   useEffect(() => {
     if (!isOpen) return;
@@ -26,7 +27,7 @@ export function Modal({ isOpen, onClose, title, children, actions }: ModalProps)
   return (
     <div className={styles.overlay} onClick={onClose} role="dialog" aria-modal aria-label={title}>
       <div
-        className={styles.modal}
+        className={[styles.modal, styles[size]].join(' ')}
         onClick={(e) => e.stopPropagation()}
         role="document"
       >

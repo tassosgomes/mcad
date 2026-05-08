@@ -1,6 +1,8 @@
 import { ArrowDown, ArrowUp, Edit, Eye } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@components/ui/button';
+import { RowAuditHistoryButton } from '@features/auditoria/components/RowAuditHistoryButton';
+import { auditEntityTypes } from '@features/auditoria/constants/auditEntityTypes';
 import { useAuth } from '@shared/auth';
 import { StatusBadgeUsuarioMusica } from './StatusBadgeUsuarioMusica';
 import type { UsuarioMusica } from '../types/usuario-musica';
@@ -86,6 +88,11 @@ export function UsuariosMusicaTable({ data, sort, onSortChange }: UsuariosMusica
               </td>
               <td className={styles.td}>
                 <div className={styles.actions}>
+                  <RowAuditHistoryButton
+                    entityType={auditEntityTypes.usuarioMusica}
+                    entityId={usuario.id}
+                    entityLabel={usuario.razaoSocial}
+                  />
                   <Button
                     variant="ghost"
                     size="sm"

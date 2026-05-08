@@ -1,5 +1,7 @@
 import { Eye, Trash2 } from 'lucide-react';
 import { Badge } from '@components/ui/badge';
+import { RowAuditHistoryButton } from '@features/auditoria/components/RowAuditHistoryButton';
+import { auditEntityTypes } from '@features/auditoria/constants/auditEntityTypes';
 
 import type { Captacao } from '../types/captacao';
 import styles from './CaptacoesTable.module.css';
@@ -120,6 +122,11 @@ export function CaptacoesTable({
                 </td>
                 <td className={styles.td}>{captacao.analistaResponsavel.nome}</td>
                 <td className={`${styles.td} ${styles.actionsCell}`}>
+                  <RowAuditHistoryButton
+                    entityType={auditEntityTypes.captacao}
+                    entityId={captacao.id}
+                    entityLabel={captacao.usuarioDeMusica}
+                  />
                   <button
                     className={styles.actionButton}
                     onClick={() => onView(captacao.id)}

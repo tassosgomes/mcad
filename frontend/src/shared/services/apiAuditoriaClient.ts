@@ -1,10 +1,10 @@
 import { runtimeConfig } from '@/shared/config/runtimeConfig';
 import { createAuthenticatedFetchClient } from './authenticatedFetch';
 
-export const BASE_URL = runtimeConfig.arrecadacaoApiBaseUrl;
+export const BASE_URL = runtimeConfig.auditoriaApiBaseUrl;
 const authenticatedClient = createAuthenticatedFetchClient();
 
-export function setArrecadacaoAuthTokenProvider(fn: (() => string | null) | null) {
+export function setAuditoriaAuthTokenProvider(fn: (() => string | null) | null) {
   authenticatedClient.setAuthTokenProvider(fn);
 }
 
@@ -18,13 +18,13 @@ async function handleError(response: Response, path: string): Promise<never> {
   throw problem;
 }
 
-export async function apiGetArr<T>(path: string): Promise<T> {
+export async function apiGetAudit<T>(path: string): Promise<T> {
   const response = await authenticatedClient.fetchWithAuth(`${BASE_URL}${path}`);
   if (!response.ok) return handleError(response, path);
   return response.json() as Promise<T>;
 }
 
-export async function apiPostArr<T>(path: string, body: unknown): Promise<T> {
+export async function apiPostAudit<T>(path: string, body: unknown): Promise<T> {
   const response = await authenticatedClient.fetchWithAuth(`${BASE_URL}${path}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -32,19 +32,4 @@ export async function apiPostArr<T>(path: string, body: unknown): Promise<T> {
   });
   if (!response.ok) return handleError(response, path);
   return response.json() as Promise<T>;
-}
-
-export async function apiPutArr<T>(path: string, body: unknown): Promise<T> {
-  const response = await authenticatedClient.fetchWithAuth(`${BASE_URL}${path}`, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
-  });
-  if (!response.ok) return handleError(response, path);
-  return response.json() as Promise<T>;
-}
-
-export async function apiDeleteArr(path: string): Promise<void> {
-  const response = await authenticatedClient.fetchWithAuth(`${BASE_URL}${path}`, { method: 'DELETE' });
-  if (!response.ok) return handleError(response, path);
 }

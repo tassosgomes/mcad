@@ -1,5 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { Eye } from 'lucide-react';
+import { RowAuditHistoryButton } from '@features/auditoria/components/RowAuditHistoryButton';
+import { auditEntityTypes } from '@features/auditoria/constants/auditEntityTypes';
 import { StatusBadgeLicenca } from './StatusBadgeLicenca';
 import type { Licenca } from '../types/licenca';
 import styles from './LicencasTable.module.css';
@@ -62,6 +64,11 @@ export function LicencasTable({ data }: LicencasTableProps) {
               </td>
               <td className={styles.td}>
                 <div className={styles.actions}>
+                  <RowAuditHistoryButton
+                    entityType={auditEntityTypes.licenca}
+                    entityId={licenca.id}
+                    entityLabel={licenca.usuarioMusica.razaoSocial}
+                  />
                   <button
                     className={styles.actionBtn}
                     onClick={() => navigate(`/arrecadacao/licencas/${licenca.id}`)}

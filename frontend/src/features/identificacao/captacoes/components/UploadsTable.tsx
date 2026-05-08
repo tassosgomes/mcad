@@ -1,4 +1,6 @@
 import { Badge } from '@/shared/components/ui/badge/Badge';
+import { RowAuditHistoryButton } from '@features/auditoria/components/RowAuditHistoryButton';
+import { auditEntityTypes } from '@features/auditoria/constants/auditEntityTypes';
 import type { Upload, StatusUpload } from '../types/upload';
 import styles from './UploadsTable.module.css';
 
@@ -45,6 +47,7 @@ export function UploadsTable({ uploads, onExpandErrors, errosExpandidoId }: Uplo
             <th>Total Linhas</th>
             <th>Exec. Criadas</th>
             <th>Erros</th>
+            <th>Histórico</th>
           </tr>
         </thead>
         <tbody>
@@ -78,6 +81,13 @@ export function UploadsTable({ uploads, onExpandErrors, errosExpandidoId }: Uplo
                   ) : (
                     '-'
                   )}
+                </td>
+                <td>
+                  <RowAuditHistoryButton
+                    entityType={auditEntityTypes.upload}
+                    entityId={u.id}
+                    entityLabel={u.nomeArquivo}
+                  />
                 </td>
               </tr>
             );
