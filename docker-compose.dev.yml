@@ -90,6 +90,27 @@ services:
       mcad-keycloak:
         condition: service_healthy
 
+  bff:
+    build:
+      context: ./services/bff
+      dockerfile: Dockerfile
+    container_name: mcad-bff
+    restart: unless-stopped
+    environment:
+      BFF_PORT: 5200
+      BFF_HOST: 0.0.0.0
+      CADASTRO_API_BASE_URL: http://host.docker.internal:5001/api/v1
+      IDENTIFICACAO_API_BASE_URL: http://host.docker.internal:5100/api/v1
+      ARRECADACAO_API_BASE_URL: http://host.docker.internal:5003/api/v1
+      DISTRIBUICAO_API_BASE_URL: http://distribuicao-api:5004/api/v1
+      AUDITORIA_API_BASE_URL: https://api-audit.tasso.dev.br/api/v1
+    ports:
+      - "5200:5200"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      - distribuicao-api
+
 # NOTE: cadastro-api e identificacao-api rodam no host via `dotnet run`
 # NOTE: arrecadacao-api rodará no host via Spring Boot na porta 5003
 # NOTE: distribuicao-api pode rodar via Docker Compose ou host via `./dev.sh`

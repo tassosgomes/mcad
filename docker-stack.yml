@@ -210,13 +210,46 @@ services:
         - traefik.http.routers.mcad-distribuicao.tls.certresolver=cloudflare-resolver
         - traefik.http.services.mcad-distribuicao.loadbalancer.server.port=5004
 
+  mcad-bff:
+    image: ${BFF_IMAGE:-tassosgomes/mcad-bff:latest}
+    environment:
+      BFF_PORT: 5200
+      BFF_HOST: 0.0.0.0
+      CADASTRO_API_BASE_URL: http://mcad-cadastro-api:5001/api/v1
+      IDENTIFICACAO_API_BASE_URL: http://mcad-identificacao-api:5100/api/v1
+      ARRECADACAO_API_BASE_URL: http://mcad-arrecadacao-api:5003/api/v1
+      DISTRIBUICAO_API_BASE_URL: http://mcad-distribuicao-api:5004/api/v1
+      AUDITORIA_API_BASE_URL: ${AUDITORIA_API_BASE_URL:-https://api-audit.tasso.dev.br/api/v1}
+    networks:
+      - mcad-internal
+      - traefik-public
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:5200/health/live').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    deploy:
+      replicas: ${BFF_REPLICAS:-1}
+      restart_policy:
+        condition: on-failure
+      labels:
+        - traefik.enable=true
+        - traefik.docker.network=traefik-public
+        - traefik.http.routers.mcad-bff.rule=Host(`${BFF_HOST:-mcad-bff.tasso.dev.br}`)
+        - traefik.http.routers.mcad-bff.entrypoints=websecure
+        - traefik.http.routers.mcad-bff.tls=true
+        - traefik.http.routers.mcad-bff.tls.certresolver=cloudflare-resolver
+        - traefik.http.services.mcad-bff.loadbalancer.server.port=5200
+
   mcad-frontend:
     image: ${FRONTEND_IMAGE:-mcad-frontend:latest}
     environment:
-      CADASTRO_API_BASE_URL: ${CADASTRO_API_BASE_URL:-https://mcad-cadastro.tasso.dev.br/api/v1}
-      IDENTIFICACAO_API_BASE_URL: ${IDENTIFICACAO_API_BASE_URL:-https://mcad-identificacao.tasso.dev.br/api/v1}
-      ARRECADACAO_API_BASE_URL: ${ARRECADACAO_API_BASE_URL:-https://mcad-arrecadacao.tasso.dev.br/api/v1}
-      DISTRIBUICAO_API_BASE_URL: ${DISTRIBUICAO_API_BASE_URL:-https://mcad-distribuicao.tasso.dev.br/api/v1}
+      CADASTRO_API_BASE_URL: ${CADASTRO_API_BASE_URL:-https://${BFF_HOST:-mcad-bff.tasso.dev.br}/api/cadastro/v1}
+      IDENTIFICACAO_API_BASE_URL: ${IDENTIFICACAO_API_BASE_URL:-https://${BFF_HOST:-mcad-bff.tasso.dev.br}/api/identificacao/v1}
+      ARRECADACAO_API_BASE_URL: ${ARRECADACAO_API_BASE_URL:-https://${BFF_HOST:-mcad-bff.tasso.dev.br}/api/arrecadacao/v1}
+      DISTRIBUICAO_API_BASE_URL: ${DISTRIBUICAO_API_BASE_URL:-https://${BFF_HOST:-mcad-bff.tasso.dev.br}/api/distribuicao/v1}
+      AUDITORIA_API_BASE_URL: ${AUDITORIA_API_BASE_URL:-https://${BFF_HOST:-mcad-bff.tasso.dev.br}/api/auditoria/v1}
       OIDC_AUTHORITY: ${OIDC_AUTHORITY:?OIDC_AUTHORITY is required for frontend}
       OIDC_CLIENT_ID: ${FRONTEND_OIDC_CLIENT_ID:?FRONTEND_OIDC_CLIENT_ID is required}
       OIDC_AUDIENCE: ${FRONTEND_OIDC_AUDIENCE:-mcad-frontend}

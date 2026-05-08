@@ -3,6 +3,7 @@ type RuntimeEnv = {
   IDENTIFICACAO_API_BASE_URL?: string;
   ARRECADACAO_API_BASE_URL?: string;
   DISTRIBUICAO_API_BASE_URL?: string;
+  AUDITORIA_API_BASE_URL?: string;
   OIDC_AUTHORITY?: string;
   OIDC_CLIENT_ID?: string;
   OIDC_AUDIENCE?: string;
@@ -25,18 +26,22 @@ const getRuntimeValue = (key: keyof RuntimeEnv, fallback = ''): string => {
 };
 
 export const runtimeConfig = {
-  cadastroApiBaseUrl: getRuntimeValue('CADASTRO_API_BASE_URL', '/api/v1'),
+  cadastroApiBaseUrl: getRuntimeValue('CADASTRO_API_BASE_URL', '/api/cadastro/v1'),
   identificacaoApiBaseUrl: getRuntimeValue(
     'IDENTIFICACAO_API_BASE_URL',
-    'http://localhost:5100/api/v1',
+    '/api/identificacao/v1',
   ),
   arrecadacaoApiBaseUrl: getRuntimeValue(
     'ARRECADACAO_API_BASE_URL',
-    'http://localhost:5003/api/v1',
+    '/api/arrecadacao/v1',
   ),
   distribuicaoApiBaseUrl: getRuntimeValue(
     'DISTRIBUICAO_API_BASE_URL',
-    'http://localhost:5004/api/v1',
+    '/api/distribuicao/v1',
+  ),
+  auditoriaApiBaseUrl: getRuntimeValue(
+    'AUDITORIA_API_BASE_URL',
+    '/api/auditoria/v1',
   ),
   oidcAuthority: getRuntimeValue('OIDC_AUTHORITY'),
   oidcClientId: getRuntimeValue('OIDC_CLIENT_ID'),
