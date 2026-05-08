@@ -25,6 +25,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+      packages: read
     defaults:
       run:
         working-directory: services/cadastro-api
@@ -36,8 +37,30 @@ jobs:
         with:
           dotnet-version: '8.0.x'
 
+      - name: Generate NuGet config
+        env:
+          GITHUB_PACKAGES_TOKEN: ${{ secrets.GH_PACKAGES_READ_TOKEN || github.token }}
+        run: |
+          mkdir -p .ci
+          cat > .ci/NuGet.config <<EOF
+          <?xml version="1.0" encoding="utf-8"?>
+          <configuration>
+            <packageSources>
+              <clear />
+              <add key="nuget.org" value="https://api.nuget.org/v3/index.json" />
+              <add key="github" value="https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json" />
+            </packageSources>
+            <packageSourceCredentials>
+              <github>
+                <add key="Username" value="${{ github.actor }}" />
+                <add key="ClearTextPassword" value="${GITHUB_PACKAGES_TOKEN}" />
+              </github>
+            </packageSourceCredentials>
+          </configuration>
+          EOF
+
       - name: Restore dependencies
-        run: dotnet restore Cadastro.sln
+        run: dotnet restore Cadastro.sln --configfile .ci/NuGet.config
 
       - name: Run unit tests
         run: dotnet test 5-Tests/Cadastro.UnitTests/Cadastro.UnitTests.csproj --configuration Release --no-restore --logger "trx;LogFileName=cadastro-unit.trx"
@@ -72,6 +95,8 @@ jobs:
             ${{ env.DOCKERHUB_NAMESPACE }}/mcad-cadastro-api:latest
           cache-from: type=gha,scope=cadastro-api
           cache-to: type=gha,mode=max,scope=cadastro-api
+          secret-files: |
+            nuget_config=services/cadastro-api/.ci/NuGet.config
 
   # ---------------------------------------------------------------------------
   # Identificacao API (.NET 8)

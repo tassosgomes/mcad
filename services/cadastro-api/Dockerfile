@@ -1,3 +1,4 @@
+# syntax=docker/dockerfile:1.7
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
 
@@ -8,7 +9,8 @@ COPY 2-Application/Cadastro.Application/Cadastro.Application.csproj 2-Applicatio
 COPY 3-Domain/Cadastro.Domain/Cadastro.Domain.csproj 3-Domain/Cadastro.Domain/
 COPY 4-Infra/Cadastro.Infra/Cadastro.Infra.csproj 4-Infra/Cadastro.Infra/
 
-RUN dotnet restore 1-Services/Cadastro.API/Cadastro.API.csproj
+RUN --mount=type=secret,id=nuget_config,dst=/root/.nuget/NuGet/NuGet.Config,required=false \
+    dotnet restore 1-Services/Cadastro.API/Cadastro.API.csproj
 
 COPY 1-Services/ 1-Services/
 COPY 2-Application/ 2-Application/
