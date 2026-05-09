@@ -15,6 +15,27 @@
           }
         }
       },
+      "Ecad.Audit.Contract/0.1.0": {
+        "type": "package",
+        "compile": {
+          "lib/net8.0/Ecad.Audit.Contract.dll": {}
+        },
+        "runtime": {
+          "lib/net8.0/Ecad.Audit.Contract.dll": {}
+        }
+      },
+      "Ecad.Audit.Sdk/0.1.0": {
+        "type": "package",
+        "dependencies": {
+          "Ecad.Audit.Contract": "0.1.0"
+        },
+        "compile": {
+          "lib/net8.0/Ecad.Audit.Sdk.dll": {}
+        },
+        "runtime": {
+          "lib/net8.0/Ecad.Audit.Sdk.dll": {}
+        }
+      },
       "FluentValidation/11.11.0": {
         "type": "package",
         "compile": {
@@ -263,6 +284,30 @@
         "lib/netstandard2.1/CloudNative.CloudEvents.pdb",
         "lib/netstandard2.1/CloudNative.CloudEvents.xml",
         "nuget-icon.png"
+      ]
+    },
+    "Ecad.Audit.Contract/0.1.0": {
+      "sha512": "YEpkTTOEcAveBD40tIJL5iTLDEUopDvevm20ZGmB9bX24nsRyYh49P8rUtNHyINq+/LJAAFp1Ay4tnuF0++Otw==",
+      "type": "package",
+      "path": "ecad.audit.contract/0.1.0",
+      "files": [
+        ".nupkg.metadata",
+        "README.md",
+        "ecad.audit.contract.0.1.0.nupkg.sha512",
+        "ecad.audit.contract.nuspec",
+        "lib/net8.0/Ecad.Audit.Contract.dll"
+      ]
+    },
+    "Ecad.Audit.Sdk/0.1.0": {
+      "sha512": "Q3t4RQET4QMkrioRg6pxQWfM+cLk1jAQYY9oFsgPYTPiCz5gY7S2YdvP6R8UQotD5AHSdiWqTmbtWQAWUkcGIA==",
+      "type": "package",
+      "path": "ecad.audit.sdk/0.1.0",
+      "files": [
+        ".nupkg.metadata",
+        "README.md",
+        "ecad.audit.sdk.0.1.0.nupkg.sha512",
+        "ecad.audit.sdk.nuspec",
+        "lib/net8.0/Ecad.Audit.Sdk.dll"
       ]
     },
     "FluentValidation/11.11.0": {
@@ -658,6 +703,7 @@
   },
   "projectFileDependencyGroups": {
     "net8.0": [
+      "Ecad.Audit.Sdk >= 0.1.0",
       "FluentValidation >= 11.11.0",
       "Identificacao.Domain >= 1.0.0",
       "MediatR >= 12.2.0",
@@ -685,7 +731,8 @@
       ],
       "sources": {
         "/usr/lib/dotnet/library-packs": {},
-        "https://api.nuget.org/v3/index.json": {}
+        "https://api.nuget.org/v3/index.json": {},
+        "https://nuget.pkg.github.com/tassosgomes/index.json": {}
       },
       "frameworks": {
         "net8.0": {
@@ -713,6 +760,10 @@
       "net8.0": {
         "targetAlias": "net8.0",
         "dependencies": {
+          "Ecad.Audit.Sdk": {
+            "target": "Package",
+            "version": "[0.1.0, )"
+          },
           "FluentValidation": {
             "target": "Package",
             "version": "[11.11.0, )"

@@ -1,3 +1,4 @@
+using Identificacao.Application.Audit;
 using Identificacao.Application.Common;
 using Identificacao.Application.Common.Exceptions;
 using Identificacao.Application.Captacoes.Responses;
@@ -10,11 +11,16 @@ public class AtualizarCaptacaoCommandHandler : ICommandHandler<AtualizarCaptacao
 {
     private readonly ICaptacaoRepository _captacaoRepo;
     private readonly IRubricaRepository _rubricaRepo;
+    private readonly IIdentificacaoAuditPublisher _auditPublisher;
 
-    public AtualizarCaptacaoCommandHandler(ICaptacaoRepository captacaoRepo, IRubricaRepository rubricaRepo)
+    public AtualizarCaptacaoCommandHandler(
+        ICaptacaoRepository captacaoRepo,
+        IRubricaRepository rubricaRepo,
+        IIdentificacaoAuditPublisher auditPublisher)
     {
         _captacaoRepo = captacaoRepo;
         _rubricaRepo = rubricaRepo;
+        _auditPublisher = auditPublisher;
     }
 
     public async Task<CaptacaoResponse> HandleAsync(AtualizarCaptacaoCommand cmd, CancellationToken ct)
@@ -39,8 +45,13 @@ public class AtualizarCaptacaoCommandHandler : ICommandHandler<AtualizarCaptacao
         if (await _captacaoRepo.ExisteAtivaParaRubricaPeriodoAsync(cmd.RubricaId, cmd.Periodo, captacao.Id, ct))
             throw new ConflictException($"Já existe uma captação ativa para {rubrica.Nome} em {cmd.Periodo}");
 
+        var before = IdentificacaoAuditMappers.Map(captacao);
         captacao.Atualizar(cmd.RubricaId, cmd.Periodo, cmd.UsuarioDeMusica);
 
+        await _auditPublisher.PublishAsync(
+            "Captacao", captacao.Id.ToString(), IdentificacaoAuditOperation.CaptacaoUpdate,
+            before: before, after: IdentificacaoAuditMappers.Map(captacao),
+            screenId: "IDENTIFICACAO_CAPTACOES", screenName: "Captações", cancellationToken: ct);
         await _captacaoRepo.SaveChangesAsync(ct);
 
         var rubricaResponse = new RubricaResponse(rubrica.Id, rubrica.Sigla, rubrica.Nome, rubrica.ExigeClassificacao);

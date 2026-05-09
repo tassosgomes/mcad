@@ -64,6 +64,14 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<IAuditContextProvider, HttpAuditContextProvider>();
 builder.Services.AddScoped<ObraAuditEventFactory>();
 builder.Services.AddScoped<IObraAuditPublisher, ObraAuditPublisher>();
+builder.Services.AddScoped<FonogramaAuditEventFactory>();
+builder.Services.AddScoped<IFonogramaAuditPublisher, FonogramaAuditPublisher>();
+builder.Services.AddScoped<TitularAuditEventFactory>();
+builder.Services.AddScoped<ITitularAuditPublisher, TitularAuditPublisher>();
+builder.Services.AddScoped<TitularidadeAuditEventFactory>();
+builder.Services.AddScoped<ITitularidadeAuditPublisher, TitularidadeAuditPublisher>();
+builder.Services.AddScoped<ParticipacaoAuditEventFactory>();
+builder.Services.AddScoped<IParticipacaoAuditPublisher, ParticipacaoAuditPublisher>();
 builder.Services.AddScoped<IAuditOutboxRepository, PostgresAuditOutboxRepository>();
 builder.Services.AddScoped<IAuditClient, EfAuditOutboxClient>();
 

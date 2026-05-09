@@ -1,3 +1,5 @@
+# syntax=docker/dockerfile:1.7
+
 FROM maven:3.9.9-eclipse-temurin-21 AS build
 WORKDIR /workspace
 
@@ -13,7 +15,8 @@ COPY distribuicao-application/src distribuicao-application/src
 COPY distribuicao-infra/src distribuicao-infra/src
 COPY distribuicao-api/src distribuicao-api/src
 
-RUN mvn -pl distribuicao-api -am package -DskipTests
+RUN --mount=type=secret,id=maven_settings,target=/root/.m2/settings.xml \
+    mvn -pl distribuicao-api -am package -DskipTests
 
 FROM eclipse-temurin:21-jre-alpine AS runtime
 WORKDIR /app

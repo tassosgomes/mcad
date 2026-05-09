@@ -1,3 +1,4 @@
+using Cadastro.Application.Audit;
 using Cadastro.Application.Common.CQRS;
 using Cadastro.Application.Common.Exceptions;
 using Cadastro.Application.Participacoes.Queries;
@@ -13,13 +14,16 @@ public class AjustarPercentualCommandHandler : ICommandHandler<AjustarPercentual
 {
     private readonly IParticipacaoRepository _repository;
     private readonly IFonogramaRepository _fonogramaRepository;
+    private readonly IParticipacaoAuditPublisher _auditPublisher;
 
     public AjustarPercentualCommandHandler(
         IParticipacaoRepository repository,
-        IFonogramaRepository fonogramaRepository)
+        IFonogramaRepository fonogramaRepository,
+        IParticipacaoAuditPublisher auditPublisher)
     {
         _repository = repository;
         _fonogramaRepository = fonogramaRepository;
+        _auditPublisher = auditPublisher;
     }
 
     public async Task<ParticipacoesResponse> HandleAsync(AjustarPercentualCommand command, CancellationToken cancellationToken)
@@ -38,9 +42,11 @@ public class AjustarPercentualCommandHandler : ICommandHandler<AjustarPercentual
         if (participacao.FonogramaId != command.FonogramaId)
             throw new NotFoundException(nameof(ParticipacaoConexa), command.ParticipacaoId);
 
+        var before = _auditPublisher.Snapshot(participacao);
         // DomainException se músico (rejeita 422)
         participacao.AjustarPercentualManual(command.Percentual);
 
+        await _auditPublisher.PublishAsync(participacao, ParticipacaoAuditOperation.Adjust, before, cancellationToken);
         await _repository.SaveChangesAsync(cancellationToken);
 
         var todas = (await _repository.GetByFonogramaIdAsync(command.FonogramaId, cancellationToken)).ToList();

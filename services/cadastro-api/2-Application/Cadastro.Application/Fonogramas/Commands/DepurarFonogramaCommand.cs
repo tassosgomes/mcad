@@ -1,3 +1,4 @@
+using Cadastro.Application.Audit;
 using Cadastro.Application.Common.CQRS;
 using Cadastro.Application.Common.Exceptions;
 using Cadastro.Application.Fonogramas.Responses;
@@ -37,11 +38,16 @@ public class DepurarFonogramaCommandHandler : ICommandHandler<DepurarFonogramaCo
 {
     private readonly IFonogramaRepository _fonogramaRepository;
     private readonly IOutboxEventWriter _outbox;
+    private readonly IFonogramaAuditPublisher _auditPublisher;
 
-    public DepurarFonogramaCommandHandler(IFonogramaRepository fonogramaRepository, IOutboxEventWriter outbox)
+    public DepurarFonogramaCommandHandler(
+        IFonogramaRepository fonogramaRepository,
+        IOutboxEventWriter outbox,
+        IFonogramaAuditPublisher auditPublisher)
     {
         _fonogramaRepository = fonogramaRepository;
         _outbox = outbox;
+        _auditPublisher = auditPublisher;
     }
 
     public async Task<DepuracaoFonogramaResponse> HandleAsync(DepurarFonogramaCommand command, CancellationToken cancellationToken)
@@ -57,6 +63,8 @@ public class DepurarFonogramaCommandHandler : ICommandHandler<DepurarFonogramaCo
 
         if (await _fonogramaRepository.ExisteIsrcAsync(novoIsrc.Valor, original.Id, cancellationToken))
             throw new ConflictException($"Já existe um fonograma com o ISRC '{novoIsrc.Formatado}'.");
+
+        var beforeOriginal = _auditPublisher.Snapshot(original);
 
         var novoFonograma = Fonograma.Criar(
             novoIsrc,
@@ -81,6 +89,8 @@ public class DepurarFonogramaCommandHandler : ICommandHandler<DepurarFonogramaCo
             obraId = original.ObraId,
         });
 
+        await _auditPublisher.PublishAsync(original, FonogramaAuditOperation.Depurate, beforeOriginal, cancellationToken);
+        await _auditPublisher.PublishAsync(novoFonograma, FonogramaAuditOperation.Create, before: null, cancellationToken);
         await _fonogramaRepository.SaveChangesAsync(cancellationToken);
 
         var obraStatus = original.Obra.Status == StatusObra.DominioPublico ? "DOMINIO_PUBLICO" : original.Obra.Status.ToString().ToUpperInvariant();

@@ -1,5 +1,7 @@
 package br.com.ecad.arrecadacao.application.commands.handlers;
 
+import br.com.ecad.arrecadacao.application.audit.AuditContextProvider;
+import br.com.ecad.arrecadacao.application.audit.GenericAuditEventFactory;
 import br.com.ecad.arrecadacao.application.commands.EstornarPagamentoCommand;
 import br.com.ecad.arrecadacao.application.cqrs.CommandHandler;
 import br.com.ecad.arrecadacao.application.dto.LicencaResumoResponse;
@@ -12,6 +14,8 @@ import br.com.ecad.arrecadacao.domain.exceptions.EntidadeNaoEncontradaException;
 import br.com.ecad.arrecadacao.domain.interfaces.OutboxEventWriter;
 import br.com.ecad.arrecadacao.domain.interfaces.PagamentoRepository;
 import br.com.ecad.arrecadacao.domain.interfaces.VerbaService;
+import br.org.ecad.audit.contract.DataAction;
+import br.org.ecad.audit.sdk.AuditClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -26,16 +30,29 @@ public class EstornarPagamentoCommandHandler
 
     private static final Logger LOGGER = LoggerFactory.getLogger(EstornarPagamentoCommandHandler.class);
 
+    private static final String ENTITY_TYPE = "Pagamento";
+    private static final String SCREEN_ID = "ARRECADACAO_PAGAMENTOS";
+    private static final String SCREEN_NAME = "Pagamentos";
+
     private final PagamentoRepository pagamentoRepository;
     private final VerbaService verbaService;
     private final OutboxEventWriter outboxEventWriter;
+    private final AuditClient auditClient;
+    private final GenericAuditEventFactory auditFactory;
+    private final AuditContextProvider auditContextProvider;
 
     public EstornarPagamentoCommandHandler(PagamentoRepository pagamentoRepository,
                                            VerbaService verbaService,
-                                           OutboxEventWriter outboxEventWriter) {
+                                           OutboxEventWriter outboxEventWriter,
+                                           AuditClient auditClient,
+                                           GenericAuditEventFactory auditFactory,
+                                           AuditContextProvider auditContextProvider) {
         this.pagamentoRepository = pagamentoRepository;
         this.verbaService = verbaService;
         this.outboxEventWriter = outboxEventWriter;
+        this.auditClient = auditClient;
+        this.auditFactory = auditFactory;
+        this.auditContextProvider = auditContextProvider;
     }
 
     @Override
@@ -65,10 +82,37 @@ public class EstornarPagamentoCommandHandler
             pagamento.getId().toString(),
             buildEventPayload(pagamento, rubricaSigla));
 
+        // 7. Auditoria
+        var auditCtx = auditContextProvider.current(cmd.autor());
+        var entityId = pagamento.getId().toString();
+        Map<String, Object> after = mapPagamento(pagamento);
+        auditClient.publish(auditFactory.userAction(
+            ENTITY_TYPE, entityId,
+            "ESTORNAR_PAGAMENTO", "Estornar pagamento",
+            "Pagamento estornado: " + cmd.justificativa(), SCREEN_ID, SCREEN_NAME, auditCtx));
+        auditClient.publish(auditFactory.dataChange(
+            ENTITY_TYPE, entityId, DataAction.UPDATE,
+            null, after,
+            "Pagamento estornado", SCREEN_ID, SCREEN_NAME, auditCtx));
+
         LOGGER.info("Payment reversed: id={}, autor={}", cmd.pagamentoId(), cmd.autor());
 
-        // 7. Mapear e retornar response
+        // 8. Mapear e retornar response
         return toResponse(pagamento);
+    }
+
+    private Map<String, Object> mapPagamento(Pagamento p) {
+        Map<String, Object> data = new HashMap<>();
+        data.put("id", p.getId().toString());
+        data.put("licencaId", p.getLicencaId().toString());
+        data.put("status", p.getStatus().name());
+        data.put("quantidadeUdas", p.getQuantidadeUdas().toPlainString());
+        data.put("valorBruto", p.getValorBruto().toPlainString());
+        data.put("periodo", p.getPeriodo() == null ? null : p.getPeriodo().toString());
+        data.put("justificativaEstorno", p.getJustificativaEstorno());
+        data.put("estornadoPor", p.getEstornadoPor());
+        data.put("estornadoEm", p.getEstornadoEm() == null ? null : p.getEstornadoEm().toString());
+        return data;
     }
 
     private Map<String, Object> buildEventPayload(Pagamento pagamento, String rubricaSigla) {

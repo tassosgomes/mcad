@@ -15,18 +15,22 @@ interface LicencaFormProps {
   isSubmitting: boolean;
 }
 
-const RUBRICA_OPTIONS = [
-  { value: 'RADIO', label: 'Rádio' },
-  { value: 'TV_ABERTA', label: 'TV Aberta' },
-  { value: 'TV_FECHADA', label: 'TV Fechada' },
-  { value: 'INTERNET', label: 'Internet' },
-  { value: 'SHOWS', label: 'Shows' },
-  { value: 'SONORIZACAO', label: 'Sonorização' },
-  { value: 'OUTROS', label: 'Outros' },
-];
+interface RubricaResumo {
+  id: string;
+  sigla: string;
+  nome: string;
+}
 
-interface UsuarioMusicaListResponse {
-  data: UsuarioMusicaResumo[];
+interface BackendUsuarioMusicaItem {
+  id: string;
+  razaoSocial: string;
+  cnpj?: string;
+  cnpjValor?: string;
+  cnpjFormatado?: string;
+}
+
+interface BackendUsuarioMusicaPage {
+  items: BackendUsuarioMusicaItem[];
 }
 
 function getTodayStr(): string {
@@ -47,13 +51,28 @@ export function LicencaForm({ onSubmit, onCancel, isSubmitting }: LicencaFormPro
   const { data: usuariosData, isFetching: isFetchingUsuarios } = useQuery({
     queryKey: ['usuarios-musica-search', usuarioBuscaDebounced],
     queryFn: () =>
-      apiGetArr<UsuarioMusicaListResponse>(
+      apiGetArr<BackendUsuarioMusicaPage>(
         `/usuarios-musica?razaoSocial=${encodeURIComponent(usuarioBuscaDebounced)}&status=ATIVO&size=10`
       ),
     enabled: usuarioBuscaDebounced.length >= 2,
   });
 
-  const usuariosResults: UsuarioMusicaResumo[] = usuariosData?.data ?? [];
+  const usuariosResults: UsuarioMusicaResumo[] = (usuariosData?.items ?? []).map((u) => ({
+    id: u.id,
+    razaoSocial: u.razaoSocial,
+    cnpjFormatado: u.cnpjFormatado ?? u.cnpj ?? u.cnpjValor ?? '',
+  }));
+
+  const { data: rubricasData } = useQuery({
+    queryKey: ['rubricas-arrecadacao'],
+    queryFn: () => apiGetArr<RubricaResumo[]>('/rubricas'),
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const rubricaOptions = (rubricasData ?? []).map((r) => ({
+    value: r.id,
+    label: r.nome,
+  }));
 
   function validate(): boolean {
     const newErrors: Record<string, string> = {};
@@ -127,7 +146,7 @@ export function LicencaForm({ onSubmit, onCancel, isSubmitting }: LicencaFormPro
               setRubricaId(val);
               setErrors((prev) => ({ ...prev, rubricaId: '' }));
             }}
-            options={RUBRICA_OPTIONS}
+            options={rubricaOptions}
             placeholder="Selecione a rubrica..."
             error={errors.rubricaId}
           />

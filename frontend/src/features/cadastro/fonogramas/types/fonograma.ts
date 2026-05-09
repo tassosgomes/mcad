@@ -35,10 +35,12 @@ export interface FonogramaFiltros {
 
 export interface FonogramaListResponse {
   data: FonogramaResumo[];
-  page: number;
-  size: number;
-  totalPages: number;
-  totalRecords: number;
+  pagination: {
+    page: number;
+    size: number;
+    total: number;
+    totalPages: number;
+  };
 }
 
 export interface FonogramaResumo {

@@ -1,3 +1,4 @@
+using Cadastro.Application.Audit;
 using Cadastro.Application.Common.CQRS;
 using Cadastro.Application.Common.Exceptions;
 using Cadastro.Application.Fonogramas.Responses;
@@ -36,10 +37,14 @@ public class AtualizarFonogramaCommandValidator : AbstractValidator<AtualizarFon
 public class AtualizarFonogramaCommandHandler : ICommandHandler<AtualizarFonogramaCommand, FonogramaResponse>
 {
     private readonly IFonogramaRepository _fonogramaRepository;
+    private readonly IFonogramaAuditPublisher _auditPublisher;
 
-    public AtualizarFonogramaCommandHandler(IFonogramaRepository fonogramaRepository)
+    public AtualizarFonogramaCommandHandler(
+        IFonogramaRepository fonogramaRepository,
+        IFonogramaAuditPublisher auditPublisher)
     {
         _fonogramaRepository = fonogramaRepository;
+        _auditPublisher = auditPublisher;
     }
 
     public async Task<FonogramaResponse> HandleAsync(AtualizarFonogramaCommand command, CancellationToken cancellationToken)
@@ -60,6 +65,8 @@ public class AtualizarFonogramaCommandHandler : ICommandHandler<AtualizarFonogra
             throw new ConflictException($"Já existe um fonograma com o ISRC '{novoIsrc.Formatado}'.");
         }
 
+        var before = _auditPublisher.Snapshot(fonograma);
+
         fonograma.Atualizar(
             novoIsrc,
             command.PaisOrigem,
@@ -73,6 +80,7 @@ public class AtualizarFonogramaCommandHandler : ICommandHandler<AtualizarFonogra
         }
 
         _fonogramaRepository.Update(fonograma);
+        await _auditPublisher.PublishAsync(fonograma, FonogramaAuditOperation.Update, before, cancellationToken);
         await _fonogramaRepository.SaveChangesAsync(cancellationToken);
 
         var obraStatus = fonograma.Obra.Status == StatusObra.DominioPublico ? "DOMINIO_PUBLICO" : fonograma.Obra.Status.ToString().ToUpperInvariant();

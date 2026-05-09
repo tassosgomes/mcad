@@ -1,0 +1,81 @@
+- generic [ref=e2]:
+  - generic [ref=e3]:
+    - banner [ref=e4]:
+      - generic [ref=e5]:
+        - button "Menu" [ref=e6] [cursor=pointer]:
+          - img [ref=e7]
+        - generic [ref=e8]:
+          - heading "mini-ECAD" [level=1] [ref=e9]
+          - generic [ref=e10]: Sistema de Gestão de Direitos Autorais
+      - generic [ref=e11]:
+        - generic [ref=e12]: Analista Arrecadacao
+        - generic [ref=e13]: Analista de Arrecadação
+        - button "Sair" [ref=e14] [cursor=pointer]:
+          - img [ref=e15]
+    - complementary [ref=e18]:
+      - navigation [ref=e19]:
+        - generic [ref=e20]:
+          - button "Arrecadação" [ref=e21] [cursor=pointer]:
+            - generic [ref=e22]:
+              - img [ref=e23]
+              - generic [ref=e26]: Arrecadação
+            - img [ref=e27]
+          - generic [ref=e29]:
+            - link "Usuários de Música" [active] [ref=e30] [cursor=pointer]:
+              - /url: /arrecadacao/usuarios-musica
+            - link "Licenças" [ref=e31] [cursor=pointer]:
+              - /url: /arrecadacao/licencas
+            - link "Pagamentos" [ref=e32] [cursor=pointer]:
+              - /url: /arrecadacao/pagamentos
+            - link "UDA" [ref=e33] [cursor=pointer]:
+              - /url: /arrecadacao/uda
+        - generic [ref=e34]:
+          - button "Auditoria" [ref=e35] [cursor=pointer]:
+            - generic [ref=e36]:
+              - img [ref=e37]
+              - generic [ref=e40]: Auditoria
+            - img [ref=e41]
+          - generic [ref=e43]:
+            - link "Eventos por entidade" [ref=e44] [cursor=pointer]:
+              - /url: /auditoria/eventos
+            - link "Acessos a telas" [ref=e45] [cursor=pointer]:
+              - /url: /auditoria/acessos
+            - link "Relatórios" [ref=e46] [cursor=pointer]:
+              - /url: /auditoria/relatorios
+    - main [ref=e47]:
+      - generic [ref=e82]:
+        - generic [ref=e83]:
+          - generic [ref=e84]:
+            - heading "Usuários de Música" [level=1] [ref=e85]
+            - paragraph [ref=e86]: Cadastre e acompanhe empresas licenciadas para uso público de música.
+          - button "Novo Usuário" [ref=e88] [cursor=pointer]:
+            - img [ref=e89]
+            - text: Novo Usuário
+        - generic [ref=e90]:
+          - textbox "Filtrar por razão social" [ref=e92]:
+            - /placeholder: Razão social
+          - textbox "Filtrar por CNPJ" [ref=e94]:
+            - /placeholder: CNPJ
+          - combobox "Filtrar por status" [ref=e96] [cursor=pointer]:
+            - option "Todos os status" [disabled] [selected]
+            - option "Ativo"
+            - option "Inativo"
+          - textbox "Filtrar por cidade" [ref=e98]:
+            - /placeholder: Cidade
+          - button "Limpar filtros" [ref=e99] [cursor=pointer]
+        - paragraph [ref=e101]: Nenhum usuário de música encontrado.
+        - generic [ref=e102]:
+          - generic [ref=e103]:
+            - text: Mostrando
+            - strong [ref=e104]: 0–0
+            - text: de
+            - strong [ref=e105]: "0"
+          - generic [ref=e106]:
+            - button "Página anterior" [disabled] [ref=e107]:
+              - img [ref=e108]
+              - text: Anterior
+            - generic [ref=e110]: 1 / 0
+            - button "Próxima página" [disabled] [ref=e111]:
+              - text: Próximo
+              - img [ref=e112]
+  - generic "Notificações"

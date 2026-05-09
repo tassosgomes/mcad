@@ -1,3 +1,4 @@
+using Cadastro.Application.Audit;
 using Cadastro.Application.Common.CQRS;
 using Cadastro.Application.Common.Exceptions;
 using Cadastro.Application.Participacoes.Queries;
@@ -14,15 +15,18 @@ public class AdicionarParticipacaoCommandHandler : ICommandHandler<AdicionarPart
     private readonly IParticipacaoRepository _repository;
     private readonly IFonogramaRepository _fonogramaRepository;
     private readonly ITitularRepository _titularRepository;
+    private readonly IParticipacaoAuditPublisher _auditPublisher;
 
     public AdicionarParticipacaoCommandHandler(
         IParticipacaoRepository repository,
         IFonogramaRepository fonogramaRepository,
-        ITitularRepository titularRepository)
+        ITitularRepository titularRepository,
+        IParticipacaoAuditPublisher auditPublisher)
     {
         _repository = repository;
         _fonogramaRepository = fonogramaRepository;
         _titularRepository = titularRepository;
+        _auditPublisher = auditPublisher;
     }
 
     public async Task<ParticipacoesResponse> HandleAsync(AdicionarParticipacaoCommand command, CancellationToken cancellationToken)
@@ -46,6 +50,7 @@ public class AdicionarParticipacaoCommandHandler : ICommandHandler<AdicionarPart
 
         var participacao = ParticipacaoConexa.Criar(command.FonogramaId, command.TitularId, categoria);
         await _repository.AddAsync(participacao, cancellationToken);
+        await _auditPublisher.PublishAsync(participacao, ParticipacaoAuditOperation.Add, before: null, cancellationToken);
 
         // Marcar desatualizados se já havia cálculo anterior
         var todasAntes = (await _repository.GetByFonogramaIdAsync(command.FonogramaId, cancellationToken)).ToList();

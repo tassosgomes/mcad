@@ -1,0 +1,76 @@
+- generic [ref=e2]:
+  - generic [ref=e3]:
+    - banner [ref=e4]:
+      - generic [ref=e5]:
+        - button "Menu" [ref=e6] [cursor=pointer]:
+          - img [ref=e7]
+        - generic [ref=e8]:
+          - heading "mini-ECAD" [level=1] [ref=e9]
+          - generic [ref=e10]: Sistema de Gestão de Direitos Autorais
+      - generic [ref=e11]:
+        - generic [ref=e12]: Analista Arrecadacao
+        - generic [ref=e13]: Analista de Arrecadação
+        - button "Sair" [ref=e14] [cursor=pointer]:
+          - img [ref=e15]
+    - complementary [ref=e18]:
+      - navigation [ref=e19]:
+        - generic [ref=e20]:
+          - button "Arrecadação" [ref=e21] [cursor=pointer]:
+            - generic [ref=e22]:
+              - img [ref=e23]
+              - generic [ref=e26]: Arrecadação
+            - img [ref=e27]
+          - generic [ref=e29]:
+            - link "Usuários de Música" [ref=e30] [cursor=pointer]:
+              - /url: /arrecadacao/usuarios-musica
+            - link "Licenças" [ref=e31] [cursor=pointer]:
+              - /url: /arrecadacao/licencas
+            - link "Pagamentos" [ref=e32] [cursor=pointer]:
+              - /url: /arrecadacao/pagamentos
+            - link "UDA" [ref=e33] [cursor=pointer]:
+              - /url: /arrecadacao/uda
+        - generic [ref=e34]:
+          - button "Auditoria" [ref=e35] [cursor=pointer]:
+            - generic [ref=e36]:
+              - img [ref=e37]
+              - generic [ref=e40]: Auditoria
+            - img [ref=e41]
+          - generic [ref=e43]:
+            - link "Eventos por entidade" [ref=e44] [cursor=pointer]:
+              - /url: /auditoria/eventos
+            - link "Acessos a telas" [ref=e45] [cursor=pointer]:
+              - /url: /auditoria/acessos
+            - link "Relatórios" [ref=e46] [cursor=pointer]:
+              - /url: /auditoria/relatorios
+    - main [ref=e47]:
+      - generic [ref=e48]:
+        - generic [ref=e49]:
+          - generic [ref=e50]:
+            - heading "Licenças" [level=1] [ref=e51]
+            - paragraph [ref=e52]: Gerencie as licenças de execução pública dos usuários de música.
+          - button "Nova Licença" [ref=e54] [cursor=pointer]:
+            - img [ref=e55]
+            - text: Nova Licença
+        - generic [ref=e56]:
+          - textbox "Filtrar por razão social" [ref=e58]:
+            - /placeholder: Buscar por razão social...
+          - combobox "Filtrar por rubrica" [ref=e60] [cursor=pointer]:
+            - option "Todas as rubricas" [disabled] [selected]
+            - option "Rádio"
+            - option "TV Aberta"
+            - option "TV Fechada"
+            - option "Internet"
+            - option "Shows"
+            - option "Sonorização"
+            - option "Outros"
+          - combobox "Filtrar por status" [ref=e62] [cursor=pointer]:
+            - option "Todos os status" [disabled] [selected]
+            - option "Ativa"
+            - option "Suspensa"
+            - option "Encerrada"
+          - combobox "Filtrar por vigência" [ref=e64] [cursor=pointer]:
+            - option "Todas as vigências" [disabled] [selected]
+            - option "Vigentes"
+            - option "Expiradas"
+          - button "Limpar filtros" [ref=e65] [cursor=pointer]
+  - generic "Notificações"

@@ -1,4 +1,5 @@
 using Identificacao.Domain.Entities;
+using Identificacao.Infra.Audit;
 using Microsoft.EntityFrameworkCore;
 
 namespace Identificacao.Infra.Data;
@@ -16,6 +17,7 @@ public class IdentificacaoDbContext : DbContext
     public DbSet<Upload> Uploads => Set<Upload>();
     public DbSet<ErroUpload> ErrosUpload => Set<ErroUpload>();
     public DbSet<OutboxEvent> OutboxEvents => Set<OutboxEvent>();
+    public DbSet<AuditOutboxEvent> AuditOutboxEvents => Set<AuditOutboxEvent>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

@@ -1,5 +1,6 @@
 using System;
 using System.Threading;
+using Identificacao.API.Infrastructure;
 using Identificacao.Application.Common;
 using Identificacao.Application.Uploads.Commands;
 using Identificacao.Application.Uploads.Queries;
@@ -23,7 +24,7 @@ public static class UploadEndpoints
             IDispatcher dispatcher,
             CancellationToken ct) =>
         {
-            var analistaId = Guid.Parse(httpContext.User.FindFirst("sub")?.Value ?? Guid.Empty.ToString());
+            var analistaId = httpContext.User.GetAnalistaId();
             using var stream = arquivo.OpenReadStream();
 
             var command = new CriarUploadCommand(captacaoId, arquivo.FileName, stream, analistaId);

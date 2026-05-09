@@ -1,3 +1,4 @@
+using Identificacao.API.Infrastructure;
 using Identificacao.Application.Common;
 using Identificacao.Application.Captacoes.Commands;
 using Identificacao.Application.Captacoes.Queries;
@@ -52,8 +53,8 @@ public static class CaptacaoEndpoints
             IDispatcher dispatcher,
             CancellationToken ct) =>
         {
-            var analistaId = Guid.Parse(httpContext.User.FindFirst("sub")?.Value ?? throw new UnauthorizedAccessException("Usuário ausente no token"));
-            var analistaNome = httpContext.User.FindFirst("name")?.Value ?? "Desconhecido";
+            var analistaId = httpContext.User.GetAnalistaId();
+            var analistaNome = httpContext.User.GetAnalistaNome();
 
             var command = new CriarCaptacaoCommand(
                 request.RubricaId, request.Periodo, request.UsuarioDeMusica,
@@ -71,7 +72,7 @@ public static class CaptacaoEndpoints
             IDispatcher dispatcher,
             CancellationToken ct) =>
         {
-            var analistaId = Guid.Parse(httpContext.User.FindFirst("sub")?.Value ?? throw new UnauthorizedAccessException("Usuário ausente no token"));
+            var analistaId = httpContext.User.GetAnalistaId();
 
             var command = new AtualizarCaptacaoCommand(
                 id, request.RubricaId, request.Periodo, request.UsuarioDeMusica, analistaId);
@@ -87,7 +88,7 @@ public static class CaptacaoEndpoints
             IDispatcher dispatcher,
             CancellationToken ct) =>
         {
-            var analistaId = Guid.Parse(httpContext.User.FindFirst("sub")?.Value ?? throw new UnauthorizedAccessException("Usuário ausente no token"));
+            var analistaId = httpContext.User.GetAnalistaId();
 
             var command = new ExcluirCaptacaoCommand(id, analistaId);
 

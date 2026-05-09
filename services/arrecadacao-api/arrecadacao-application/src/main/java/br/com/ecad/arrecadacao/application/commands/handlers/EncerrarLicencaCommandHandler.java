@@ -1,5 +1,8 @@
 package br.com.ecad.arrecadacao.application.commands.handlers;
 
+import br.com.ecad.arrecadacao.application.audit.AuditContextProvider;
+import br.com.ecad.arrecadacao.application.audit.GenericAuditEventFactory;
+import br.com.ecad.arrecadacao.application.audit.LicencaAuditMapper;
 import br.com.ecad.arrecadacao.application.commands.EncerrarLicencaCommand;
 import br.com.ecad.arrecadacao.application.cqrs.CommandHandler;
 import br.com.ecad.arrecadacao.application.dto.LicencaResponse;
@@ -13,25 +16,40 @@ import br.com.ecad.arrecadacao.domain.interfaces.HistoricoStatusLicencaRepositor
 import br.com.ecad.arrecadacao.domain.interfaces.LicencaRepository;
 import br.com.ecad.arrecadacao.domain.interfaces.RubricaRepository;
 import br.com.ecad.arrecadacao.domain.interfaces.UsuarioMusicaRepository;
+import br.org.ecad.audit.contract.DataAction;
+import br.org.ecad.audit.sdk.AuditClient;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 @Component
 public class EncerrarLicencaCommandHandler implements CommandHandler<EncerrarLicencaCommand, LicencaResponse> {
 
+    private static final String ENTITY_TYPE = "Licenca";
+    private static final String SCREEN_ID = "ARRECADACAO_LICENCAS";
+    private static final String SCREEN_NAME = "Licenças";
+
     private final LicencaRepository licencaRepository;
     private final HistoricoStatusLicencaRepository historicoRepository;
     private final UsuarioMusicaRepository usuarioMusicaRepository;
     private final RubricaRepository rubricaRepository;
+    private final AuditClient auditClient;
+    private final GenericAuditEventFactory auditFactory;
+    private final AuditContextProvider auditContextProvider;
 
     public EncerrarLicencaCommandHandler(LicencaRepository licencaRepository,
                                          HistoricoStatusLicencaRepository historicoRepository,
                                          UsuarioMusicaRepository usuarioMusicaRepository,
-                                         RubricaRepository rubricaRepository) {
+                                         RubricaRepository rubricaRepository,
+                                         AuditClient auditClient,
+                                         GenericAuditEventFactory auditFactory,
+                                         AuditContextProvider auditContextProvider) {
         this.licencaRepository = licencaRepository;
         this.historicoRepository = historicoRepository;
         this.usuarioMusicaRepository = usuarioMusicaRepository;
         this.rubricaRepository = rubricaRepository;
+        this.auditClient = auditClient;
+        this.auditFactory = auditFactory;
+        this.auditContextProvider = auditContextProvider;
     }
 
     @Override
@@ -40,15 +58,28 @@ public class EncerrarLicencaCommandHandler implements CommandHandler<EncerrarLic
         var licenca = licencaRepository.findById(cmd.id())
             .orElseThrow(() -> new EntidadeNaoEncontradaException("Licenca nao encontrada: " + cmd.id()));
 
+        var before = LicencaAuditMapper.map(licenca);
+
         // Domain method com guard -> throws IllegalStateException se transicao invalida
         var historico = licenca.encerrar(cmd.justificativa(), cmd.autor());
 
         licencaRepository.save(licenca);
         historicoRepository.save(historico);
 
+        var auditCtx = auditContextProvider.current(cmd.autor());
+        var entityId = licenca.getId().toString();
+        auditClient.publish(auditFactory.userAction(
+            ENTITY_TYPE, entityId,
+            "ENCERRAR_LICENCA", "Encerrar licença",
+            "Licença encerrada: " + cmd.justificativa(), SCREEN_ID, SCREEN_NAME, auditCtx));
+        auditClient.publish(auditFactory.dataChange(
+            ENTITY_TYPE, entityId, DataAction.UPDATE,
+            before, LicencaAuditMapper.map(licenca),
+            "Licença encerrada", SCREEN_ID, SCREEN_NAME, auditCtx));
+
         var usuarioMusica = usuarioMusicaRepository.findById(licenca.getUsuarioMusicaId()).orElseThrow();
         var rubrica = rubricaRepository.findById(licenca.getRubricaId()).orElseThrow();
-        
+
         return toResponse(licenca, usuarioMusica, rubrica);
     }
 

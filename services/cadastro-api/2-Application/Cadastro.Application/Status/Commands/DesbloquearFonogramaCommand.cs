@@ -1,3 +1,4 @@
+using Cadastro.Application.Audit;
 using Cadastro.Application.Common.CQRS;
 using Cadastro.Application.Common.Exceptions;
 using Cadastro.Application.Fonogramas.Responses;
@@ -13,11 +14,16 @@ public class DesbloquearFonogramaCommandHandler : ICommandHandler<DesbloquearFon
 {
     private readonly IFonogramaRepository _fonogramaRepository;
     private readonly IHistoricoBloqueioRepository _historicoRepository;
+    private readonly IFonogramaAuditPublisher _auditPublisher;
 
-    public DesbloquearFonogramaCommandHandler(IFonogramaRepository fonogramaRepository, IHistoricoBloqueioRepository historicoRepository)
+    public DesbloquearFonogramaCommandHandler(
+        IFonogramaRepository fonogramaRepository,
+        IHistoricoBloqueioRepository historicoRepository,
+        IFonogramaAuditPublisher auditPublisher)
     {
         _fonogramaRepository = fonogramaRepository;
         _historicoRepository = historicoRepository;
+        _auditPublisher = auditPublisher;
     }
 
     public async Task<FonogramaResponse> HandleAsync(DesbloquearFonogramaCommand command, CancellationToken cancellationToken)
@@ -25,12 +31,14 @@ public class DesbloquearFonogramaCommandHandler : ICommandHandler<DesbloquearFon
         var fonograma = await _fonogramaRepository.GetByIdAsync(command.Id, cancellationToken)
             ?? throw new NotFoundException(nameof(Fonograma), command.Id);
 
+        var before = _auditPublisher.Snapshot(fonograma);
         fonograma.Desbloquear();
-        
+
         var historico = HistoricoBloqueio.CriarDesbloqueio("FONOGRAMA", fonograma.Id);
         _historicoRepository.Add(historico);
 
         _fonogramaRepository.Update(fonograma);
+        await _auditPublisher.PublishAsync(fonograma, FonogramaAuditOperation.Unblock, before, cancellationToken);
         await _fonogramaRepository.SaveChangesAsync(cancellationToken);
 
         var obraStatus = fonograma.Obra.Status == StatusObra.DominioPublico ? "DOMINIO_PUBLICO" : fonograma.Obra.Status.ToString().ToUpperInvariant();

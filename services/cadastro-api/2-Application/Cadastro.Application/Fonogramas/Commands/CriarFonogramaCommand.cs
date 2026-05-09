@@ -1,3 +1,4 @@
+using Cadastro.Application.Audit;
 using Cadastro.Application.Common.CQRS;
 using Cadastro.Application.Common.Exceptions;
 using Cadastro.Application.Fonogramas.Responses;
@@ -38,13 +39,16 @@ public class CriarFonogramaCommandHandler : ICommandHandler<CriarFonogramaComman
 {
     private readonly IFonogramaRepository _fonogramaRepository;
     private readonly IObraRepository _obraRepository;
+    private readonly IFonogramaAuditPublisher _auditPublisher;
 
     public CriarFonogramaCommandHandler(
         IFonogramaRepository fonogramaRepository,
-        IObraRepository obraRepository)
+        IObraRepository obraRepository,
+        IFonogramaAuditPublisher auditPublisher)
     {
         _fonogramaRepository = fonogramaRepository;
         _obraRepository = obraRepository;
+        _auditPublisher = auditPublisher;
     }
 
     public async Task<FonogramaResponse> HandleAsync(CriarFonogramaCommand command, CancellationToken cancellationToken)
@@ -71,6 +75,7 @@ public class CriarFonogramaCommandHandler : ICommandHandler<CriarFonogramaComman
         );
 
         await _fonogramaRepository.AddAsync(fonograma, cancellationToken);
+        await _auditPublisher.PublishAsync(fonograma, FonogramaAuditOperation.Create, before: null, cancellationToken);
         await _fonogramaRepository.SaveChangesAsync(cancellationToken);
 
         var obraStatus = obra.Status == StatusObra.DominioPublico ? "DOMINIO_PUBLICO" : obra.Status.ToString().ToUpperInvariant();

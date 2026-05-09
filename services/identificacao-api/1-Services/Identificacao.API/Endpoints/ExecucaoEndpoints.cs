@@ -1,3 +1,4 @@
+using Identificacao.API.Infrastructure;
 using Identificacao.Application.Common;
 using Identificacao.Application.Execucoes.Commands;
 using Identificacao.Application.Execucoes.Queries;
@@ -33,9 +34,7 @@ public static class ExecucaoEndpoints
             IDispatcher dispatcher,
             CancellationToken ct) =>
         {
-            var analistaIdStr = httpContext.User.FindFirst("sub")?.Value 
-                                ?? httpContext.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-            var analistaId = Guid.Parse(analistaIdStr!);
+            var analistaId = httpContext.User.GetAnalistaId();
 
             var command = new CriarExecucaoCommand(
                 captacaoId, request.ObraId, request.FonogramaId,
@@ -55,9 +54,7 @@ public static class ExecucaoEndpoints
             IDispatcher dispatcher,
             CancellationToken ct) =>
         {
-            var analistaIdStr = httpContext.User.FindFirst("sub")?.Value 
-                                ?? httpContext.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-            var analistaId = Guid.Parse(analistaIdStr!);
+            var analistaId = httpContext.User.GetAnalistaId();
 
             var command = new AtualizarExecucaoCommand(
                 captacaoId, id,
@@ -77,9 +74,7 @@ public static class ExecucaoEndpoints
             IDispatcher dispatcher,
             CancellationToken ct) =>
         {
-            var analistaIdStr = httpContext.User.FindFirst("sub")?.Value 
-                                ?? httpContext.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-            var analistaId = Guid.Parse(analistaIdStr!);
+            var analistaId = httpContext.User.GetAnalistaId();
 
             await dispatcher.SendAsync<bool>(new ExcluirExecucaoCommand(captacaoId, id, analistaId), ct);
             return Results.NoContent();

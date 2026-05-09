@@ -1,3 +1,4 @@
+using Identificacao.Application.Audit;
 using Identificacao.Application.Common;
 using Identificacao.Application.Common.Exceptions;
 using Identificacao.Application.Execucoes.Responses;
@@ -15,17 +16,20 @@ public class CriarExecucaoCommandHandler : ICommandHandler<CriarExecucaoCommand,
     private readonly ICaptacaoRepository _captacaoRepo;
     private readonly ITipoUtilizacaoRepository _tipoUtilizacaoRepo;
     private readonly ICadastroHttpClient _cadastroClient;
+    private readonly IIdentificacaoAuditPublisher _auditPublisher;
 
     public CriarExecucaoCommandHandler(
         IExecucaoRepository execucaoRepo,
         ICaptacaoRepository captacaoRepo,
         ITipoUtilizacaoRepository tipoUtilizacaoRepo,
-        ICadastroHttpClient cadastroClient)
+        ICadastroHttpClient cadastroClient,
+        IIdentificacaoAuditPublisher auditPublisher)
     {
         _execucaoRepo = execucaoRepo;
         _captacaoRepo = captacaoRepo;
         _tipoUtilizacaoRepo = tipoUtilizacaoRepo;
         _cadastroClient = cadastroClient;
+        _auditPublisher = auditPublisher;
     }
 
     public async Task<ExecucaoResponse> HandleAsync(CriarExecucaoCommand command, CancellationToken ct)
@@ -94,6 +98,10 @@ public class CriarExecucaoCommandHandler : ICommandHandler<CriarExecucaoCommand,
             statusExecucao);
 
         await _execucaoRepo.AddAsync(execucao, ct);
+        await _auditPublisher.PublishAsync(
+            "Execucao", execucao.Id.ToString(), IdentificacaoAuditOperation.ExecucaoCreate,
+            before: null, after: IdentificacaoAuditMappers.Map(execucao),
+            screenId: "IDENTIFICACAO_EXECUCOES", screenName: "Execuções", cancellationToken: ct);
         await _execucaoRepo.SaveChangesAsync(ct);
 
         return new ExecucaoResponse(

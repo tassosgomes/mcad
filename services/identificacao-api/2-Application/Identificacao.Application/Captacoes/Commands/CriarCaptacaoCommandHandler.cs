@@ -1,3 +1,4 @@
+using Identificacao.Application.Audit;
 using Identificacao.Application.Common;
 using Identificacao.Application.Common.Exceptions;
 using Identificacao.Application.Captacoes.Responses;
@@ -11,11 +12,16 @@ public class CriarCaptacaoCommandHandler : ICommandHandler<CriarCaptacaoCommand,
 {
     private readonly ICaptacaoRepository _captacaoRepo;
     private readonly IRubricaRepository _rubricaRepo;
+    private readonly IIdentificacaoAuditPublisher _auditPublisher;
 
-    public CriarCaptacaoCommandHandler(ICaptacaoRepository captacaoRepo, IRubricaRepository rubricaRepo)
+    public CriarCaptacaoCommandHandler(
+        ICaptacaoRepository captacaoRepo,
+        IRubricaRepository rubricaRepo,
+        IIdentificacaoAuditPublisher auditPublisher)
     {
         _captacaoRepo = captacaoRepo;
         _rubricaRepo = rubricaRepo;
+        _auditPublisher = auditPublisher;
     }
 
     public async Task<CaptacaoResponse> HandleAsync(CriarCaptacaoCommand cmd, CancellationToken ct)
@@ -31,6 +37,10 @@ public class CriarCaptacaoCommandHandler : ICommandHandler<CriarCaptacaoCommand,
             cmd.AnalistaId, cmd.AnalistaNome);
 
         await _captacaoRepo.AddAsync(captacao, ct);
+        await _auditPublisher.PublishAsync(
+            "Captacao", captacao.Id.ToString(), IdentificacaoAuditOperation.CaptacaoCreate,
+            before: null, after: IdentificacaoAuditMappers.Map(captacao),
+            screenId: "IDENTIFICACAO_CAPTACOES", screenName: "Captações", cancellationToken: ct);
         await _captacaoRepo.SaveChangesAsync(ct);
 
         var rubricaResponse = new RubricaResponse(rubrica.Id, rubrica.Sigla, rubrica.Nome, rubrica.ExigeClassificacao);

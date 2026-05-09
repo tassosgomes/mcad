@@ -9,6 +9,8 @@
       "Identificacao.Infra/1.0.0": {
         "dependencies": {
           "CloudNative.CloudEvents.SystemTextJson": "2.8.0",
+          "Ecad.Audit.Sdk": "0.1.0",
+          "Identificacao.Application": "1.0.0",
           "Identificacao.Domain": "1.0.0",
           "Microsoft.EntityFrameworkCore": "9.0.4",
           "Microsoft.EntityFrameworkCore.Design": "9.0.4",
@@ -48,11 +50,58 @@
           }
         }
       },
+      "Ecad.Audit.Contract/0.1.0": {
+        "runtime": {
+          "lib/net8.0/Ecad.Audit.Contract.dll": {
+            "assemblyVersion": "1.0.0.0",
+            "fileVersion": "1.0.0.0"
+          }
+        }
+      },
+      "Ecad.Audit.Sdk/0.1.0": {
+        "dependencies": {
+          "Ecad.Audit.Contract": "0.1.0"
+        },
+        "runtime": {
+          "lib/net8.0/Ecad.Audit.Sdk.dll": {
+            "assemblyVersion": "1.0.0.0",
+            "fileVersion": "1.0.0.0"
+          }
+        }
+      },
+      "FluentValidation/11.11.0": {
+        "runtime": {
+          "lib/net8.0/FluentValidation.dll": {
+            "assemblyVersion": "11.0.0.0",
+            "fileVersion": "11.11.0.0"
+          }
+        }
+      },
       "Humanizer.Core/2.14.1": {
         "runtime": {
           "lib/net6.0/Humanizer.dll": {
             "assemblyVersion": "2.14.0.0",
             "fileVersion": "2.14.1.48190"
+          }
+        }
+      },
+      "MediatR/12.2.0": {
+        "dependencies": {
+          "MediatR.Contracts": "2.0.1",
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "10.0.5"
+        },
+        "runtime": {
+          "lib/net6.0/MediatR.dll": {
+            "assemblyVersion": "12.0.0.0",
+            "fileVersion": "12.2.0.0"
+          }
+        }
+      },
+      "MediatR.Contracts/2.0.1": {
+        "runtime": {
+          "lib/netstandard2.0/MediatR.Contracts.dll": {
+            "assemblyVersion": "2.0.1.0",
+            "fileVersion": "2.0.1.0"
           }
         }
       },
@@ -749,6 +798,22 @@
           }
         }
       },
+      "Identificacao.Application/1.0.0": {
+        "dependencies": {
+          "Ecad.Audit.Sdk": "0.1.0",
+          "FluentValidation": "11.11.0",
+          "Identificacao.Domain": "1.0.0",
+          "MediatR": "12.2.0",
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "10.0.5",
+          "Microsoft.Extensions.Hosting.Abstractions": "10.0.5"
+        },
+        "runtime": {
+          "Identificacao.Application.dll": {
+            "assemblyVersion": "1.0.0.0",
+            "fileVersion": "1.0.0.0"
+          }
+        }
+      },
       "Identificacao.Domain/1.0.0": {
         "dependencies": {
           "CloudNative.CloudEvents": "2.8.0"
@@ -789,12 +854,47 @@
       "path": "communitytoolkit.highperformance/8.4.0",
       "hashPath": "communitytoolkit.highperformance.8.4.0.nupkg.sha512"
     },
+    "Ecad.Audit.Contract/0.1.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-YEpkTTOEcAveBD40tIJL5iTLDEUopDvevm20ZGmB9bX24nsRyYh49P8rUtNHyINq+/LJAAFp1Ay4tnuF0++Otw==",
+      "path": "ecad.audit.contract/0.1.0",
+      "hashPath": "ecad.audit.contract.0.1.0.nupkg.sha512"
+    },
+    "Ecad.Audit.Sdk/0.1.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-Q3t4RQET4QMkrioRg6pxQWfM+cLk1jAQYY9oFsgPYTPiCz5gY7S2YdvP6R8UQotD5AHSdiWqTmbtWQAWUkcGIA==",
+      "path": "ecad.audit.sdk/0.1.0",
+      "hashPath": "ecad.audit.sdk.0.1.0.nupkg.sha512"
+    },
+    "FluentValidation/11.11.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-cyIVdQBwSipxWG8MA3Rqox7iNbUNUTK5bfJi9tIdm4CAfH71Oo5ABLP4/QyrUwuakqpUEPGtE43BDddvEehuYw==",
+      "path": "fluentvalidation/11.11.0",
+      "hashPath": "fluentvalidation.11.11.0.nupkg.sha512"
+    },
     "Humanizer.Core/2.14.1": {
       "type": "package",
       "serviceable": true,
       "sha512": "sha512-lQKvtaTDOXnoVJ20ibTuSIOf2i0uO0MPbDhd1jm238I+U/2ZnRENj0cktKZhtchBMtCUSRQ5v4xBCUbKNmyVMw==",
       "path": "humanizer.core/2.14.1",
       "hashPath": "humanizer.core.2.14.1.nupkg.sha512"
+    },
+    "MediatR/12.2.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-8TUFrHapKi6D74PhnSNEguRsH91HNGyP3R4ZQdgDorJgl9Wac5Prh0vA33QfrniAaS6L2xNNhc6vxzg+5AIbwA==",
+      "path": "mediatr/12.2.0",
+      "hashPath": "mediatr.12.2.0.nupkg.sha512"
+    },
+    "MediatR.Contracts/2.0.1": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-FYv95bNT4UwcNA+G/J1oX5OpRiSUxteXaUt2BJbRSdRNiIUNbggJF69wy6mnk2wYToaanpdXZdCwVylt96MpwQ==",
+      "path": "mediatr.contracts/2.0.1",
+      "hashPath": "mediatr.contracts.2.0.1.nupkg.sha512"
     },
     "Microsoft.Bcl.AsyncInterfaces/7.0.0": {
       "type": "package",
@@ -1096,6 +1196,11 @@
       "sha512": "sha512-7mu9v0QDv66ar3DpGSZHg9NuNcxDaaAcnMULuZlaTpP9+hwXhrxNGsF5GmLkSHxFdb5bBc1TzeujsRgTrPWi+Q==",
       "path": "system.threading.ratelimiting/8.0.0",
       "hashPath": "system.threading.ratelimiting.8.0.0.nupkg.sha512"
+    },
+    "Identificacao.Application/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
     },
     "Identificacao.Domain/1.0.0": {
       "type": "project",

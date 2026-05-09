@@ -1,3 +1,4 @@
+using Cadastro.Application.Audit;
 using Cadastro.Application.Common.CQRS;
 using Cadastro.Application.Common.Exceptions;
 using Cadastro.Application.Titularidades.Queries;
@@ -14,15 +15,18 @@ public class AdicionarTitularidadeCommandHandler : ICommandHandler<AdicionarTitu
     private readonly ITitularidadeRepository _repository;
     private readonly IObraRepository _obraRepository;
     private readonly ITitularRepository _titularRepository;
+    private readonly ITitularidadeAuditPublisher _auditPublisher;
 
     public AdicionarTitularidadeCommandHandler(
         ITitularidadeRepository repository,
         IObraRepository obraRepository,
-        ITitularRepository titularRepository)
+        ITitularRepository titularRepository,
+        ITitularidadeAuditPublisher auditPublisher)
     {
         _repository = repository;
         _obraRepository = obraRepository;
         _titularRepository = titularRepository;
+        _auditPublisher = auditPublisher;
     }
 
     public async Task<TitularidadesResponse> HandleAsync(AdicionarTitularidadeCommand command, CancellationToken cancellationToken)
@@ -47,8 +51,9 @@ public class AdicionarTitularidadeCommandHandler : ICommandHandler<AdicionarTitu
             throw new ConflictException("Este titular já está vinculado com esta categoria nesta obra");
 
         var titularidade = TitularidadeAutoral.Criar(command.ObraId, command.TitularId, categoria, command.Percentual);
-        
+
         await _repository.AddAsync(titularidade, cancellationToken);
+        await _auditPublisher.PublishAsync(titularidade, TitularidadeAuditOperation.Add, before: null, cancellationToken);
         await _repository.SaveChangesAsync(cancellationToken);
 
         // Recalcular response

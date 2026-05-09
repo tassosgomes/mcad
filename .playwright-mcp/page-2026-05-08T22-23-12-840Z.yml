@@ -1,0 +1,124 @@
+- generic [ref=e2]:
+  - generic [ref=e3]:
+    - banner [ref=e4]:
+      - generic [ref=e5]:
+        - button "Menu" [ref=e6] [cursor=pointer]:
+          - img [ref=e7]
+        - generic [ref=e8]:
+          - heading "mini-ECAD" [level=1] [ref=e9]
+          - generic [ref=e10]: Sistema de Gestão de Direitos Autorais
+      - generic [ref=e11]:
+        - generic [ref=e12]: Analista Arrecadacao
+        - generic [ref=e13]: Analista de Arrecadação
+        - button "Sair" [ref=e14] [cursor=pointer]:
+          - img [ref=e15]
+    - complementary [ref=e18]:
+      - navigation [ref=e19]:
+        - generic [ref=e20]:
+          - button "Arrecadação" [ref=e21] [cursor=pointer]:
+            - generic [ref=e22]:
+              - img [ref=e23]
+              - generic [ref=e26]: Arrecadação
+            - img [ref=e27]
+          - generic [ref=e29]:
+            - link "Usuários de Música" [ref=e30] [cursor=pointer]:
+              - /url: /arrecadacao/usuarios-musica
+            - link "Licenças" [ref=e31] [cursor=pointer]:
+              - /url: /arrecadacao/licencas
+            - link "Pagamentos" [ref=e32] [cursor=pointer]:
+              - /url: /arrecadacao/pagamentos
+            - link "UDA" [ref=e33] [cursor=pointer]:
+              - /url: /arrecadacao/uda
+        - generic [ref=e34]:
+          - button "Auditoria" [ref=e35] [cursor=pointer]:
+            - generic [ref=e36]:
+              - img [ref=e37]
+              - generic [ref=e40]: Auditoria
+            - img [ref=e41]
+          - generic [ref=e43]:
+            - link "Eventos por entidade" [ref=e44] [cursor=pointer]:
+              - /url: /auditoria/eventos
+            - link "Acessos a telas" [ref=e45] [cursor=pointer]:
+              - /url: /auditoria/acessos
+            - link "Relatórios" [ref=e46] [cursor=pointer]:
+              - /url: /auditoria/relatorios
+    - main [ref=e47]:
+      - generic [ref=e114]:
+        - generic [ref=e115]:
+          - button "Usuários de Música" [ref=e116] [cursor=pointer]:
+            - img [ref=e117]
+            - text: Usuários de Música
+          - generic [ref=e120]:
+            - heading "Novo Usuário de Música" [level=1] [ref=e121]
+            - paragraph [ref=e122]: Cadastro de estabelecimento licenciado.
+        - generic [ref=e124]:
+          - generic [ref=e125]:
+            - heading "Identificação" [level=2] [ref=e126]
+            - generic [ref=e127]:
+              - generic [ref=e128]:
+                - generic [ref=e129]:
+                  - generic [ref=e130]: Razão social
+                  - generic [ref=e131]: "*"
+                - textbox "Razão social" [ref=e133]
+              - generic [ref=e134]:
+                - generic [ref=e136]: Nome fantasia
+                - textbox "Nome fantasia" [ref=e138]
+              - generic [ref=e139]:
+                - generic [ref=e140]:
+                  - generic [ref=e141]: CNPJ
+                  - generic [ref=e142]: "*"
+                - textbox "00.000.000/0000-00" [ref=e144]
+          - generic [ref=e145]:
+            - heading "Endereço" [level=2] [ref=e146]
+            - generic [ref=e147]:
+              - generic [ref=e148]:
+                - generic [ref=e149]:
+                  - generic [ref=e150]: CEP
+                  - generic [ref=e151]: "*"
+                - textbox "00000-000" [ref=e153]
+              - generic [ref=e154]:
+                - generic [ref=e155]:
+                  - generic [ref=e156]: UF
+                  - generic [ref=e157]: "*"
+                - textbox "SP" [ref=e159]
+              - generic [ref=e160]:
+                - generic [ref=e161]:
+                  - generic [ref=e162]: Logradouro
+                  - generic [ref=e163]: "*"
+                - textbox "Rua, avenida, praça" [ref=e165]
+              - generic [ref=e166]:
+                - generic [ref=e167]:
+                  - generic [ref=e168]: Número
+                  - generic [ref=e169]: "*"
+                - textbox "Número" [ref=e171]
+              - generic [ref=e172]:
+                - generic [ref=e174]: Complemento
+                - textbox "Sala, bloco, andar" [ref=e176]
+              - generic [ref=e177]:
+                - generic [ref=e178]:
+                  - generic [ref=e179]: Bairro
+                  - generic [ref=e180]: "*"
+                - textbox "Bairro" [ref=e182]
+              - generic [ref=e183]:
+                - generic [ref=e184]:
+                  - generic [ref=e185]: Cidade
+                  - generic [ref=e186]: "*"
+                - textbox "Cidade" [ref=e188]
+          - generic [ref=e189]:
+            - heading "Contato" [level=2] [ref=e190]
+            - generic [ref=e191]:
+              - generic [ref=e192]:
+                - generic [ref=e193]:
+                  - generic [ref=e194]: Responsável
+                  - generic [ref=e195]: "*"
+                - textbox "Nome do responsável" [ref=e197]
+              - generic [ref=e198]:
+                - generic [ref=e200]: Telefone
+                - textbox "(00) 00000-0000" [ref=e202]
+              - generic [ref=e203]:
+                - generic [ref=e205]: E-mail
+                - textbox "contato@empresa.com.br" [ref=e207]
+          - generic [ref=e208]:
+            - button "Cancelar" [ref=e209] [cursor=pointer]
+            - button "Cadastrar usuário" [ref=e210] [cursor=pointer]
+  - generic "Notificações"

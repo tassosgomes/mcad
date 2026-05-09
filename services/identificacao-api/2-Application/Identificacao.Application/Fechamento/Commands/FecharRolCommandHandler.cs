@@ -1,3 +1,4 @@
+using Identificacao.Application.Audit;
 using Identificacao.Application.Common;
 using Identificacao.Application.Fechamento.Responses;
 using Identificacao.Application.Fechamento.Payloads;
@@ -15,17 +16,20 @@ public class FecharRolCommandHandler : ICommandHandler<FecharRolCommand, Fechame
     private readonly IExecucaoRepository _execucaoRepo;
     private readonly IOutboxEventWriter _outboxWriter;
     private readonly IQueryHandler<ValidarPreRequisitosQuery, PreRequisitosResponse> _preRequisitosHandler;
+    private readonly IIdentificacaoAuditPublisher _auditPublisher;
 
     public FecharRolCommandHandler(
         ICaptacaoRepository captacaoRepo,
         IExecucaoRepository execucaoRepo,
         IOutboxEventWriter outboxWriter,
-        IQueryHandler<ValidarPreRequisitosQuery, PreRequisitosResponse> preRequisitosHandler)
+        IQueryHandler<ValidarPreRequisitosQuery, PreRequisitosResponse> preRequisitosHandler,
+        IIdentificacaoAuditPublisher auditPublisher)
     {
         _captacaoRepo = captacaoRepo;
         _execucaoRepo = execucaoRepo;
         _outboxWriter = outboxWriter;
         _preRequisitosHandler = preRequisitosHandler;
+        _auditPublisher = auditPublisher;
     }
 
     public async Task<FechamentoResponse> HandleAsync(FecharRolCommand cmd, CancellationToken ct)
@@ -46,6 +50,7 @@ public class FecharRolCommandHandler : ICommandHandler<FecharRolCommand, Fechame
                 primeiroFalho.Id, preRequisitos.Itens);
         }
 
+        var before = IdentificacaoAuditMappers.Map(captacao);
         captacao.Fechar();
 
         var execucoes = await _execucaoRepo.ListarTodasDaCaptacaoAsync(cmd.CaptacaoId, ct);
@@ -54,6 +59,10 @@ public class FecharRolCommandHandler : ICommandHandler<FecharRolCommand, Fechame
         // outbox
         _outboxWriter.AddEvent("identificacao.rol.fechado", cmd.CaptacaoId.ToString(), payload);
 
+        await _auditPublisher.PublishAsync(
+            "Captacao", captacao.Id.ToString(), IdentificacaoAuditOperation.CaptacaoFechar,
+            before: before, after: IdentificacaoAuditMappers.Map(captacao),
+            screenId: "IDENTIFICACAO_CAPTACOES", screenName: "Captações", cancellationToken: ct);
         await _captacaoRepo.SaveChangesAsync(ct);
 
         return new FechamentoResponse(cmd.CaptacaoId, "FECHADA", DateTime.UtcNow,

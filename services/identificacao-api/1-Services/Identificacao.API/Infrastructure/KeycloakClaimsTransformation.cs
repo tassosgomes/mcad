@@ -9,19 +9,26 @@ namespace Identificacao.API.Infrastructure;
 // Esta transformação:
 //   1. Expande "roles" → role claims no ClaimsPrincipal
 //   2. Expande "scope" → individual scope claims (para uso em RequireClaim("scope", "access"))
-public class LogtoClaimsTransformation : IClaimsTransformation
+public sealed class LogtoClaimsTransformation : IClaimsTransformation
 {
     public Task<ClaimsPrincipal> TransformAsync(ClaimsPrincipal principal)
     {
-        if (principal.Identity is not ClaimsIdentity identity)
+        if (principal.Identity is not ClaimsIdentity identity || !identity.IsAuthenticated)
+        {
             return Task.FromResult(principal);
+        }
 
         // 1. Roles do ID token (claim "roles")
-        foreach (var roleClaim in principal.FindAll("roles"))
+        var existingRoles = new HashSet<string>(
+            principal.FindAll(identity.RoleClaimType).Select(c => c.Value),
+            StringComparer.OrdinalIgnoreCase);
+
+        foreach (var roleClaim in principal.FindAll("roles").ToList())
         {
-            if (!string.IsNullOrWhiteSpace(roleClaim.Value) && !identity.HasClaim(ClaimTypes.Role, roleClaim.Value))
+            var role = roleClaim.Value;
+            if (!string.IsNullOrWhiteSpace(role) && existingRoles.Add(role))
             {
-                identity.AddClaim(new Claim(ClaimTypes.Role, roleClaim.Value));
+                identity.AddClaim(new Claim(identity.RoleClaimType, role));
             }
         }
 

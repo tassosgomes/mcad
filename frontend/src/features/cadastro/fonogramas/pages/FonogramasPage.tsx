@@ -84,12 +84,7 @@ export function FonogramasPage() {
             onDelete={setFonoParaExcluir}
           />
           <Pagination
-            pagination={{
-              page: data.page,
-              size: data.size,
-              totalPages: data.totalPages,
-              total: data.totalRecords,
-            }}
+            pagination={data.pagination}
             onPageChange={(page) => setFiltros((prev) => ({ ...prev, page }))}
           />
         </>

@@ -1,3 +1,4 @@
+using Identificacao.Application.Audit;
 using Identificacao.Application.Common;
 using Identificacao.Application.Common.Exceptions;
 using Identificacao.Domain.Enums;
@@ -10,11 +11,16 @@ public class ResolverPendenteCommandHandler : ICommandHandler<ResolverPendenteCo
 {
     private readonly IExecucaoRepository _execucaoRepo;
     private readonly ICadastroHttpClient _cadastroHttpClient;
+    private readonly IIdentificacaoAuditPublisher _auditPublisher;
 
-    public ResolverPendenteCommandHandler(IExecucaoRepository execucaoRepo, ICadastroHttpClient cadastroHttpClient)
+    public ResolverPendenteCommandHandler(
+        IExecucaoRepository execucaoRepo,
+        ICadastroHttpClient cadastroHttpClient,
+        IIdentificacaoAuditPublisher auditPublisher)
     {
         _execucaoRepo = execucaoRepo;
         _cadastroHttpClient = cadastroHttpClient;
+        _auditPublisher = auditPublisher;
     }
 
     public async Task<bool> HandleAsync(ResolverPendenteCommand command, CancellationToken cancellationToken)
@@ -63,7 +69,12 @@ public class ResolverPendenteCommandHandler : ICommandHandler<ResolverPendenteCo
             iswc = obra.Iswc;
         }
 
+        var before = IdentificacaoAuditMappers.Map(execucao);
         execucao.Resolver(command.ObraId, command.FonogramaId, titulo, isrc, iswc, interpretes);
+        await _auditPublisher.PublishAsync(
+            "Execucao", execucao.Id.ToString(), IdentificacaoAuditOperation.PendenteResolve,
+            before: before, after: IdentificacaoAuditMappers.Map(execucao),
+            screenId: "IDENTIFICACAO_PENDENTES", screenName: "Pendentes", cancellationToken: cancellationToken);
         await _execucaoRepo.SaveChangesAsync(cancellationToken);
         return true;
     }

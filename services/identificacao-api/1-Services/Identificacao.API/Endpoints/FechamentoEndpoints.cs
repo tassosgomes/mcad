@@ -1,3 +1,4 @@
+using Identificacao.API.Infrastructure;
 using Identificacao.Application.Common;
 using Identificacao.Application.Fechamento.Commands;
 using Identificacao.Application.Fechamento.Queries;
@@ -22,14 +23,7 @@ public static class FechamentoEndpoints
         group.MapPost("/fechar", async (Guid captacaoId,
             HttpContext httpContext, IDispatcher dispatcher, CancellationToken ct) =>
         {
-            var userIdStr = httpContext.User.FindFirst("sub")?.Value 
-                         ?? httpContext.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-            
-            if (string.IsNullOrEmpty(userIdStr) || !Guid.TryParse(userIdStr, out var analistaId))
-            {
-                // Fallback provisório caso não use IAM (ou ambiente local sem setup auth)
-                analistaId = Guid.Empty; 
-            }
+            var analistaId = httpContext.User.GetAnalistaId();
 
             var result = await dispatcher.SendAsync(new FecharRolCommand(captacaoId, analistaId), ct);
             return Results.Ok(result);

@@ -1,0 +1,25 @@
+{
+  "name": "mcad-identity-sync-api",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/index.js",
+    "test": "node --test dist/*.test.js"
+  },
+  "dependencies": {
+    "amqplib": "^0.10.5",
+    "fastify": "^5.8.5"
+  },
+  "devDependencies": {
+    "@types/amqplib": "^0.10.7",
+    "@types/node": "^25.6.2",
+    "tsx": "^4.21.0",
+    "typescript": "^5.8.3"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}

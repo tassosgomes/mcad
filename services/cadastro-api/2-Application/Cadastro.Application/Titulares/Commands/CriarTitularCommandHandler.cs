@@ -1,3 +1,4 @@
+using Cadastro.Application.Audit;
 using Cadastro.Application.Common.CQRS;
 using Cadastro.Application.Common.Exceptions;
 using Cadastro.Application.Titulares.Queries;
@@ -20,17 +21,20 @@ public class CriarTitularCommandHandler : ICommandHandler<CriarTitularCommand, T
     private readonly IAssociacaoRepository _associacaoRepository;
     private readonly IValidator<CriarTitularCommand> _validator;
     private readonly IOutboxEventWriter _outbox;
+    private readonly ITitularAuditPublisher _auditPublisher;
 
     public CriarTitularCommandHandler(
         ITitularRepository titularRepository,
         IAssociacaoRepository associacaoRepository,
         IValidator<CriarTitularCommand> validator,
-        IOutboxEventWriter outbox)
+        IOutboxEventWriter outbox,
+        ITitularAuditPublisher auditPublisher)
     {
         _titularRepository = titularRepository;
         _associacaoRepository = associacaoRepository;
         _validator = validator;
         _outbox = outbox;
+        _auditPublisher = auditPublisher;
     }
 
     public async Task<TitularResponse> HandleAsync(
@@ -92,6 +96,7 @@ public class CriarTitularCommandHandler : ICommandHandler<CriarTitularCommand, T
             documento = titular.DocumentoFormatado,
         });
 
+        await _auditPublisher.PublishAsync(titular, TitularAuditOperation.Create, before: null, cancellationToken);
         await _titularRepository.SaveChangesAsync(cancellationToken);
 
         // Reload com Associação para o response

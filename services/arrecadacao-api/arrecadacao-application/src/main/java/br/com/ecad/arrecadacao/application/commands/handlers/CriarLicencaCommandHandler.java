@@ -1,5 +1,8 @@
 package br.com.ecad.arrecadacao.application.commands.handlers;
 
+import br.com.ecad.arrecadacao.application.audit.AuditContextProvider;
+import br.com.ecad.arrecadacao.application.audit.GenericAuditEventFactory;
+import br.com.ecad.arrecadacao.application.audit.LicencaAuditMapper;
 import br.com.ecad.arrecadacao.application.commands.CriarLicencaCommand;
 import br.com.ecad.arrecadacao.application.cqrs.CommandHandler;
 import br.com.ecad.arrecadacao.application.dto.LicencaResponse;
@@ -16,25 +19,40 @@ import br.com.ecad.arrecadacao.domain.interfaces.LicencaRepository;
 import br.com.ecad.arrecadacao.domain.interfaces.RubricaRepository;
 import br.com.ecad.arrecadacao.domain.interfaces.UsuarioMusicaRepository;
 import br.com.ecad.arrecadacao.domain.exceptions.EntidadeNaoEncontradaException;
+import br.org.ecad.audit.contract.DataAction;
+import br.org.ecad.audit.sdk.AuditClient;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 @Component
 public class CriarLicencaCommandHandler implements CommandHandler<CriarLicencaCommand, LicencaResponse> {
 
+    private static final String ENTITY_TYPE = "Licenca";
+    private static final String SCREEN_ID = "ARRECADACAO_LICENCAS";
+    private static final String SCREEN_NAME = "Licenças";
+
     private final LicencaRepository licencaRepository;
     private final HistoricoStatusLicencaRepository historicoRepository;
     private final UsuarioMusicaRepository usuarioMusicaRepository;
     private final RubricaRepository rubricaRepository;
+    private final AuditClient auditClient;
+    private final GenericAuditEventFactory auditFactory;
+    private final AuditContextProvider auditContextProvider;
 
     public CriarLicencaCommandHandler(LicencaRepository licencaRepository,
                                       HistoricoStatusLicencaRepository historicoRepository,
                                       UsuarioMusicaRepository usuarioMusicaRepository,
-                                      RubricaRepository rubricaRepository) {
+                                      RubricaRepository rubricaRepository,
+                                      AuditClient auditClient,
+                                      GenericAuditEventFactory auditFactory,
+                                      AuditContextProvider auditContextProvider) {
         this.licencaRepository = licencaRepository;
         this.historicoRepository = historicoRepository;
         this.usuarioMusicaRepository = usuarioMusicaRepository;
         this.rubricaRepository = rubricaRepository;
+        this.auditClient = auditClient;
+        this.auditFactory = auditFactory;
+        this.auditContextProvider = auditContextProvider;
     }
 
     @Override
@@ -68,7 +86,19 @@ public class CriarLicencaCommandHandler implements CommandHandler<CriarLicencaCo
             "Licenca criada", cmd.autor());
         historicoRepository.save(historico);
 
-        // 5. Mapear para response com dados expandidos
+        // 5. Auditoria
+        var auditCtx = auditContextProvider.current(cmd.autor());
+        var entityId = licenca.getId().toString();
+        auditClient.publish(auditFactory.userAction(
+            ENTITY_TYPE, entityId,
+            "CADASTRAR_LICENCA", "Cadastrar licença",
+            "Licença cadastrada", SCREEN_ID, SCREEN_NAME, auditCtx));
+        auditClient.publish(auditFactory.dataChange(
+            ENTITY_TYPE, entityId, DataAction.CREATE,
+            null, LicencaAuditMapper.map(licenca),
+            "Licença cadastrada", SCREEN_ID, SCREEN_NAME, auditCtx));
+
+        // 6. Mapear para response com dados expandidos
         return toResponse(licenca, usuarioMusica, rubrica);
     }
 

@@ -1,3 +1,4 @@
+using Cadastro.Application.Audit;
 using Cadastro.Application.Common.CQRS;
 using Cadastro.Application.Common.Exceptions;
 using Cadastro.Application.Titularidades.Queries;
@@ -13,11 +14,16 @@ public class RemoverTitularidadeCommandHandler : ICommandHandler<RemoverTitulari
 {
     private readonly ITitularidadeRepository _repository;
     private readonly IObraRepository _obraRepository;
+    private readonly ITitularidadeAuditPublisher _auditPublisher;
 
-    public RemoverTitularidadeCommandHandler(ITitularidadeRepository repository, IObraRepository obraRepository)
+    public RemoverTitularidadeCommandHandler(
+        ITitularidadeRepository repository,
+        IObraRepository obraRepository,
+        ITitularidadeAuditPublisher auditPublisher)
     {
         _repository = repository;
         _obraRepository = obraRepository;
+        _auditPublisher = auditPublisher;
     }
 
     public async Task<TitularidadesResponse> HandleAsync(RemoverTitularidadeCommand command, CancellationToken cancellationToken)
@@ -36,7 +42,9 @@ public class RemoverTitularidadeCommandHandler : ICommandHandler<RemoverTitulari
         if (titularidade.ObraId != command.ObraId)
             throw new DomainException("A titularidade não pertence à obra informada");
 
+        var before = _auditPublisher.Snapshot(titularidade);
         _repository.Delete(titularidade);
+        await _auditPublisher.PublishAsync(titularidade, TitularidadeAuditOperation.Remove, before, cancellationToken);
         await _repository.SaveChangesAsync(cancellationToken);
 
         // Recalcular response

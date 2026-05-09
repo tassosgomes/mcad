@@ -346,6 +346,59 @@ jobs:
           cache-to: type=gha,mode=max,scope=bff
 
   # ---------------------------------------------------------------------------
+  # Identity Sync API (Node.js / Fastify)
+  # ---------------------------------------------------------------------------
+  identity-sync-api:
+    name: identity-sync-api · test+build+push
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    defaults:
+      run:
+        working-directory: services/identity-sync-api
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: services/identity-sync-api/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Run tests
+        run: npm test
+
+      - name: Set up Docker Buildx
+        if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Docker Hub
+        if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and push image
+        uses: docker/build-push-action@v6
+        with:
+          context: services/identity-sync-api
+          file: services/identity-sync-api/Dockerfile
+          push: ${{ github.event_name == 'push' || github.event_name == 'workflow_dispatch' }}
+          tags: |
+            ${{ env.DOCKERHUB_NAMESPACE }}/mcad-identity-sync-api:${{ env.IMAGE_TAG }}
+            ${{ env.DOCKERHUB_NAMESPACE }}/mcad-identity-sync-api:latest
+          cache-from: type=gha,scope=identity-sync-api
+          cache-to: type=gha,mode=max,scope=identity-sync-api
+
+  # ---------------------------------------------------------------------------
   # Summary gate so branch protection can require a single check.
   # ---------------------------------------------------------------------------
   ci-cd-summary:
@@ -357,6 +410,7 @@ jobs:
       - arrecadacao-api
       - distribuicao-api
       - bff
+      - identity-sync-api
     if: always()
     steps:
       - name: Aggregate result
@@ -367,11 +421,13 @@ jobs:
           echo "arrecadacao:     ${{ needs.arrecadacao-api.result }}"
           echo "distribuicao:    ${{ needs.distribuicao-api.result }}"
           echo "bff:             ${{ needs.bff.result }}"
+          echo "identity-sync:   ${{ needs.identity-sync-api.result }}"
           if [[ "${{ needs.cadastro-api.result }}"      != "success" ]] \
             || [[ "${{ needs.identificacao-api.result }}" != "success" ]] \
             || [[ "${{ needs.arrecadacao-api.result }}"   != "success" ]] \
             || [[ "${{ needs.distribuicao-api.result }}"  != "success" ]] \
-            || [[ "${{ needs.bff.result }}"               != "success" ]]; then
+            || [[ "${{ needs.bff.result }}"               != "success" ]] \
+            || [[ "${{ needs.identity-sync-api.result }}" != "success" ]]; then
             echo "One or more service jobs failed."
             exit 1
           fi

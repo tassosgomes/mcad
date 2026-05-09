@@ -1,3 +1,4 @@
+using Cadastro.Application.Audit;
 using Cadastro.Application.Common.CQRS;
 using Cadastro.Application.Common.Exceptions;
 using Cadastro.Application.Participacoes.Queries;
@@ -14,13 +15,16 @@ public class CalcularPercentuaisCommandHandler : ICommandHandler<CalcularPercent
 {
     private readonly IParticipacaoRepository _repository;
     private readonly IFonogramaRepository _fonogramaRepository;
+    private readonly IParticipacaoAuditPublisher _auditPublisher;
 
     public CalcularPercentuaisCommandHandler(
         IParticipacaoRepository repository,
-        IFonogramaRepository fonogramaRepository)
+        IFonogramaRepository fonogramaRepository,
+        IParticipacaoAuditPublisher auditPublisher)
     {
         _repository = repository;
         _fonogramaRepository = fonogramaRepository;
+        _auditPublisher = auditPublisher;
     }
 
     public async Task<ParticipacoesResponse> HandleAsync(CalcularPercentuaisCommand command, CancellationToken cancellationToken)
@@ -34,6 +38,7 @@ public class CalcularPercentuaisCommandHandler : ICommandHandler<CalcularPercent
             throw new DepuracaoNecessariaException("Recalcular participações de fonograma LIBERADO requer depuração");
 
         var participacoes = (await _repository.GetByFonogramaIdAsync(command.FonogramaId, cancellationToken)).ToList();
+        var snapshotsAntes = participacoes.ToDictionary(p => p.Id, p => _auditPublisher.Snapshot(p));
 
         // Domain Service calcula — DomainException se sem intérprete ou produtor
         CalculadoraConexos.Calcular(participacoes);
@@ -41,6 +46,11 @@ public class CalcularPercentuaisCommandHandler : ICommandHandler<CalcularPercent
         fonograma.MarcarPercentuaisAtualizados();
         fonograma.TransicionarParaPendenteDocumentacao();
         _fonogramaRepository.Update(fonograma);
+
+        foreach (var p in participacoes)
+        {
+            await _auditPublisher.PublishAsync(p, ParticipacaoAuditOperation.Calculate, snapshotsAntes[p.Id], cancellationToken);
+        }
 
         await _repository.SaveChangesAsync(cancellationToken);
 

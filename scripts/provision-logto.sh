@@ -50,6 +50,20 @@ FRONTEND_APP_NAME = "mcad-frontend"
 API_RESOURCE_NAME = "mcad-apis"
 API_RESOURCE_INDICATOR = "https://api.mcad.local"
 
+ACCESS_TOKEN_ROLES_CUSTOMIZER_SCRIPT = """const getCustomJwtClaims = async ({ context, token }) => {
+  const audiences = Array.isArray(token.aud) ? token.aud : [token.aud];
+
+  const roles = (context.user.roles ?? [])
+    .filter((role) =>
+      (role.scopes ?? []).some((scope) =>
+        audiences.includes(scope.resource?.indicator)
+      )
+    )
+    .map((role) => role.name);
+
+  return { roles };
+};"""
+
 ROLES = [
     ("analista-cadastro",      "Analista de Cadastro (leitura + escrita)"),
     ("analista-identificacao", "Analista de Identificação (leitura + escrita)"),
@@ -265,35 +279,120 @@ def ensure_user(token: str, username: str, name: str, password: str, role_id: st
     print(f"    Role atribuída ao usuário {username}")
 
 
+def ensure_access_token_roles_customizer(token: str) -> None:
+    """Garante que o access token JWT inclua a claim 'roles' filtrada pelo API Resource."""
+    payload = {
+        "script": ACCESS_TOKEN_ROLES_CUSTOMIZER_SCRIPT,
+        "environmentVariables": {},
+        "contextSample": {
+            "user": {
+                "id": "user_123",
+                "username": "analista_arrecadacao",
+                "primaryEmail": "analista_arrecadacao@mcad.dev",
+                "primaryPhone": None,
+                "name": "Analista Arrecadacao",
+                "avatar": None,
+                "customData": {},
+                "identities": {},
+                "profile": {},
+                "applicationId": "mcad-frontend",
+                "isSuspended": False,
+                "hasPassword": True,
+                "ssoIdentities": [],
+                "mfaVerificationFactors": [],
+                "roles": [
+                    {
+                        "id": "role_arrecadacao",
+                        "name": "analista-arrecadacao",
+                        "description": "Analista de Arrecadação (leitura + escrita)",
+                        "scopes": [
+                            {
+                                "id": "scope_write",
+                                "name": "write",
+                                "description": "Operações de escrita nas APIs mcad",
+                                "resourceId": "resource_mcad",
+                                "resource": {
+                                    "tenantId": "tenant_mcad",
+                                    "id": "resource_mcad",
+                                    "name": API_RESOURCE_NAME,
+                                    "indicator": API_RESOURCE_INDICATOR,
+                                    "isDefault": False,
+                                    "accessTokenTtl": 3600,
+                                },
+                            },
+                        ],
+                    },
+                ],
+                "organizations": [],
+                "organizationRoles": [],
+            },
+            "grant": {
+                "type": "urn:ietf:params:oauth:grant-type:token-exchange",
+                "subjectTokenContext": {},
+            },
+            "interaction": {
+                "interactionEvent": "SignIn",
+                "userId": "user_123",
+            },
+        },
+        "tokenSample": {
+            "jti": "sample-token",
+            "aud": API_RESOURCE_INDICATOR,
+            "scope": "access write",
+            "clientId": FRONTEND_APP_NAME,
+            "accountId": "user_123",
+            "grantId": "grant_123",
+            "gty": "authorization_code",
+            "kind": "AccessToken",
+        },
+        "blockIssuanceOnError": True,
+    }
+
+    customizers = api("GET", "/configs/jwt-customizer", token) or []
+    existing = next((c for c in customizers if c.get("key") == "jwt.accessToken"), None)
+    existing_value = (existing or {}).get("value") or {}
+    if existing_value.get("script") == ACCESS_TOKEN_ROLES_CUSTOMIZER_SCRIPT:
+        print("  JWT customizer de access token já existe")
+        return
+
+    api("PUT", "/configs/jwt-customizer/access-token", token, payload)
+    action = "atualizado" if existing else "criado"
+    print(f"  JWT customizer de access token {action} com claim 'roles'")
+
+
 # ── Main ──────────────────────────────────────────────────────────────────────
 
-print("\n[1/5] Obtendo token M2M...")
+print("\n[1/6] Obtendo token M2M...")
 token = get_token()
 print("  Token obtido com sucesso.")
 
-print("\n[2/5] Garantindo API Resource e scopes...")
+print("\n[2/6] Garantindo API Resource e scopes...")
 resource_id, scope_ids = ensure_api_resource(token)
 # Roles de analista recebem access + write; consultores recebem apenas access
 ANALISTA_ROLE_NAMES = {"analista-cadastro", "analista-identificacao", "analista-arrecadacao", "analista-distribuicao"}
 
-print("\n[3/5] Garantindo aplicação SPA frontend...")
+print("\n[3/6] Garantindo aplicação SPA frontend...")
 frontend_app_id = ensure_frontend_app(token)
 
-print("\n[4/5] Garantindo roles...")
+print("\n[4/6] Garantindo roles...")
 role_ids = {}
 for role_name, role_desc in ROLES:
     scopes = [scope_ids["access"], scope_ids["write"]] if role_name in ANALISTA_ROLE_NAMES else [scope_ids["access"]]
     role_ids[role_name] = ensure_role(token, role_name, role_desc, scopes)
 
-print("\n[5/5] Garantindo usuários de teste...")
+print("\n[5/6] Garantindo usuários de teste...")
 for user in USERS:
     ensure_user(token, user["username"], user["name"], user["password"], role_ids[user["role"]])
+
+print("\n[6/6] Garantindo JWT customizer do access token...")
+ensure_access_token_roles_customizer(token)
 
 print("\n✓ Provisionamento concluído.")
 print(json.dumps({
     "oidcAuthority": f"{base_url}/oidc",
     "apiResourceIndicator": API_RESOURCE_INDICATOR,
     "frontendAppId": frontend_app_id,
+    "accessTokenCustomizer": "jwt.accessToken.roles",
     "roles": list(role_ids.keys()),
     "users": [u["username"] for u in USERS],
 }, indent=2))

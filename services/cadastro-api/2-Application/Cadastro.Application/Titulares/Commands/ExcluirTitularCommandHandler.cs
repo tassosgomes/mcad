@@ -1,3 +1,4 @@
+using Cadastro.Application.Audit;
 using Cadastro.Application.Common.CQRS;
 using Cadastro.Application.Common.Exceptions;
 using Cadastro.Domain.Interfaces;
@@ -11,10 +12,14 @@ namespace Cadastro.Application.Titulares.Commands;
 public class ExcluirTitularCommandHandler : ICommandHandler<ExcluirTitularCommand, bool>
 {
     private readonly ITitularRepository _repository;
+    private readonly ITitularAuditPublisher _auditPublisher;
 
-    public ExcluirTitularCommandHandler(ITitularRepository repository)
+    public ExcluirTitularCommandHandler(
+        ITitularRepository repository,
+        ITitularAuditPublisher auditPublisher)
     {
         _repository = repository;
+        _auditPublisher = auditPublisher;
     }
 
     public async Task<bool> HandleAsync(
@@ -31,7 +36,9 @@ public class ExcluirTitularCommandHandler : ICommandHandler<ExcluirTitularComman
                 "Titular não pode ser excluído pois possui vínculos com obras ou fonogramas");
 
         // 3. Excluir e persistir
+        var before = _auditPublisher.Snapshot(titular);
         _repository.Delete(titular);
+        await _auditPublisher.PublishAsync(titular, TitularAuditOperation.Delete, before, cancellationToken);
         await _repository.SaveChangesAsync(cancellationToken);
 
         return true;

@@ -2,6 +2,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using FluentValidation;
+using Identificacao.Application.Audit;
 using Identificacao.Application.Common;
 using Identificacao.Application.Common.Exceptions;
 using Identificacao.Application.Uploads.Responses;
@@ -16,12 +17,18 @@ public class CriarUploadCommandHandler : ICommandHandler<CriarUploadCommand, Upl
     private readonly ICaptacaoRepository _captacaoRepo;
     private readonly IUploadRepository _uploadRepo;
     private readonly IMinioService _minioService;
+    private readonly IIdentificacaoAuditPublisher _auditPublisher;
 
-    public CriarUploadCommandHandler(ICaptacaoRepository captacaoRepo, IUploadRepository uploadRepo, IMinioService minioService)
+    public CriarUploadCommandHandler(
+        ICaptacaoRepository captacaoRepo,
+        IUploadRepository uploadRepo,
+        IMinioService minioService,
+        IIdentificacaoAuditPublisher auditPublisher)
     {
         _captacaoRepo = captacaoRepo;
         _uploadRepo = uploadRepo;
         _minioService = minioService;
+        _auditPublisher = auditPublisher;
     }
 
     public async Task<UploadResponse> HandleAsync(CriarUploadCommand cmd, CancellationToken ct)
@@ -46,6 +53,10 @@ public class CriarUploadCommandHandler : ICommandHandler<CriarUploadCommand, Upl
         typeof(Upload).GetProperty("MinioKey")?.SetValue(upload, minioKey);
 
         await _uploadRepo.AddAsync(upload, ct);
+        await _auditPublisher.PublishAsync(
+            "Upload", upload.Id.ToString(), IdentificacaoAuditOperation.UploadCreate,
+            before: null, after: IdentificacaoAuditMappers.Map(upload),
+            screenId: "IDENTIFICACAO_UPLOADS", screenName: "Uploads CSV", cancellationToken: ct);
         await _uploadRepo.SaveChangesAsync(ct);
 
         return new UploadResponse(

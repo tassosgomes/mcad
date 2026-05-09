@@ -1,3 +1,4 @@
+using Cadastro.Application.Audit;
 using Cadastro.Application.Common.CQRS;
 using Cadastro.Application.Common.Exceptions;
 using Cadastro.Application.Titularidades.Queries;
@@ -13,11 +14,16 @@ public class EditarTitularidadeCommandHandler : ICommandHandler<EditarTitularida
 {
     private readonly ITitularidadeRepository _repository;
     private readonly IObraRepository _obraRepository;
+    private readonly ITitularidadeAuditPublisher _auditPublisher;
 
-    public EditarTitularidadeCommandHandler(ITitularidadeRepository repository, IObraRepository obraRepository)
+    public EditarTitularidadeCommandHandler(
+        ITitularidadeRepository repository,
+        IObraRepository obraRepository,
+        ITitularidadeAuditPublisher auditPublisher)
     {
         _repository = repository;
         _obraRepository = obraRepository;
+        _auditPublisher = auditPublisher;
     }
 
     public async Task<TitularidadesResponse> HandleAsync(EditarTitularidadeCommand command, CancellationToken cancellationToken)
@@ -36,9 +42,11 @@ public class EditarTitularidadeCommandHandler : ICommandHandler<EditarTitularida
         if (titularidade.ObraId != command.ObraId)
             throw new DomainException("A titularidade não pertence à obra informada");
 
+        var before = _auditPublisher.Snapshot(titularidade);
         titularidade.AlterarPercentual(command.Percentual);
-        
+
         _repository.Update(titularidade);
+        await _auditPublisher.PublishAsync(titularidade, TitularidadeAuditOperation.Edit, before, cancellationToken);
         await _repository.SaveChangesAsync(cancellationToken);
 
         // Recalcular response

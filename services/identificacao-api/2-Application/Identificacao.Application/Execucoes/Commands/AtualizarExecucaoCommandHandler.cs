@@ -1,3 +1,4 @@
+using Identificacao.Application.Audit;
 using Identificacao.Application.Common;
 using Identificacao.Application.Common.Exceptions;
 using Identificacao.Application.Execucoes.Responses;
@@ -15,17 +16,20 @@ public class AtualizarExecucaoCommandHandler : ICommandHandler<AtualizarExecucao
     private readonly ICaptacaoRepository _captacaoRepo;
     private readonly ITipoUtilizacaoRepository _tipoUtilizacaoRepo;
     private readonly ICadastroHttpClient _cadastroClient;
+    private readonly IIdentificacaoAuditPublisher _auditPublisher;
 
     public AtualizarExecucaoCommandHandler(
         IExecucaoRepository execucaoRepo,
         ICaptacaoRepository captacaoRepo,
         ITipoUtilizacaoRepository tipoUtilizacaoRepo,
-        ICadastroHttpClient cadastroClient)
+        ICadastroHttpClient cadastroClient,
+        IIdentificacaoAuditPublisher auditPublisher)
     {
         _execucaoRepo = execucaoRepo;
         _captacaoRepo = captacaoRepo;
         _tipoUtilizacaoRepo = tipoUtilizacaoRepo;
         _cadastroClient = cadastroClient;
+        _auditPublisher = auditPublisher;
     }
 
     public async Task<ExecucaoResponse> HandleAsync(AtualizarExecucaoCommand command, CancellationToken ct)
@@ -82,6 +86,7 @@ public class AtualizarExecucaoCommandHandler : ICommandHandler<AtualizarExecucao
 
         var statusExecucao = obra.Status == "LIBERADA" ? StatusExecucao.Identificada : StatusExecucao.Pendente;
 
+        var before = IdentificacaoAuditMappers.Map(execucao);
         execucao.Atualizar(
             command.ObraId,
             command.FonogramaId,
@@ -96,6 +101,10 @@ public class AtualizarExecucaoCommandHandler : ICommandHandler<AtualizarExecucao
             command.TituloPrograma,
             statusExecucao);
 
+        await _auditPublisher.PublishAsync(
+            "Execucao", execucao.Id.ToString(), IdentificacaoAuditOperation.ExecucaoUpdate,
+            before: before, after: IdentificacaoAuditMappers.Map(execucao),
+            screenId: "IDENTIFICACAO_EXECUCOES", screenName: "Execuções", cancellationToken: ct);
         await _execucaoRepo.SaveChangesAsync(ct);
 
         return new ExecucaoResponse(

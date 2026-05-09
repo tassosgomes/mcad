@@ -1,9 +1,13 @@
 package br.com.ecad.distribuicao.application.commands.handlers;
 
+import br.com.ecad.distribuicao.application.audit.AuditContextProvider;
+import br.com.ecad.distribuicao.application.audit.GenericAuditEventFactory;
 import br.com.ecad.distribuicao.application.commands.CalcularProcessoCommand;
 import br.com.ecad.distribuicao.application.dto.CalcularProcessoResponse;
 import br.com.ecad.distribuicao.application.services.ParsedRol;
 import br.com.ecad.distribuicao.application.services.RolPayloadParser;
+import br.org.ecad.audit.contract.DataAction;
+import br.org.ecad.audit.sdk.AuditClient;
 import br.com.ecad.distribuicao.domain.calculo.CalculadoraCreditos;
 import br.com.ecad.distribuicao.domain.calculo.CalculoCreditosInput;
 import br.com.ecad.distribuicao.domain.calculo.OwnershipSnapshot;
@@ -26,6 +30,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
+import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
@@ -43,6 +48,10 @@ public class CalcularProcessoCommandHandler {
     private static final String GENERATED_CREDITS_METRIC = "distribuicao.calculo.creditos.generated";
     private static final String CALCULATION_FAILURES_METRIC = "distribuicao.calculo.failures";
 
+    private static final String ENTITY_TYPE = "ProcessoDistribuicao";
+    private static final String SCREEN_ID = "DISTRIBUICAO_PROCESSOS";
+    private static final String SCREEN_NAME = "Processos";
+
     private final ProcessoRepository processoRepository;
     private final SnapshotRolRepository snapshotRolRepository;
     private final SnapshotVerbaRepository snapshotVerbaRepository;
@@ -53,6 +62,9 @@ public class CalcularProcessoCommandHandler {
     private final ObjectMapper objectMapper;
     private final CalculadoraCreditos calculadoraCreditos;
     private final MeterRegistry meterRegistry;
+    private final AuditClient auditClient;
+    private final GenericAuditEventFactory auditFactory;
+    private final AuditContextProvider auditContextProvider;
 
     public CalcularProcessoCommandHandler(
             ProcessoRepository processoRepository,
@@ -63,7 +75,10 @@ public class CalcularProcessoCommandHandler {
             OutboxEventRepository outboxEventRepository,
             RolPayloadParser rolPayloadParser,
             ObjectMapper objectMapper,
-            MeterRegistry meterRegistry) {
+            MeterRegistry meterRegistry,
+            AuditClient auditClient,
+            GenericAuditEventFactory auditFactory,
+            AuditContextProvider auditContextProvider) {
         this.processoRepository = Objects.requireNonNull(processoRepository, "processoRepository must not be null");
         this.snapshotRolRepository = Objects.requireNonNull(snapshotRolRepository, "snapshotRolRepository must not be null");
         this.snapshotVerbaRepository = Objects.requireNonNull(snapshotVerbaRepository, "snapshotVerbaRepository must not be null");
@@ -74,6 +89,9 @@ public class CalcularProcessoCommandHandler {
         this.objectMapper = Objects.requireNonNull(objectMapper, "objectMapper must not be null");
         this.calculadoraCreditos = new CalculadoraCreditos();
         this.meterRegistry = Objects.requireNonNull(meterRegistry, "meterRegistry must not be null");
+        this.auditClient = Objects.requireNonNull(auditClient, "auditClient must not be null");
+        this.auditFactory = Objects.requireNonNull(auditFactory, "auditFactory must not be null");
+        this.auditContextProvider = Objects.requireNonNull(auditContextProvider, "auditContextProvider must not be null");
     }
 
     @Transactional
@@ -115,6 +133,27 @@ public class CalcularProcessoCommandHandler {
                     EVENT_TYPE,
                     processo.getId().toString(),
                     criarPayloadEvento(processoSalvo, resultado)));
+
+            // Auditoria
+            var auditCtx = auditContextProvider.current("system");
+            var entityId = processoSalvo.getId().toString();
+            Map<String, Object> after = Map.of(
+                    "id", entityId,
+                    "rubricaSigla", processoSalvo.getRubricaSigla(),
+                    "periodo", processoSalvo.getPeriodo(),
+                    "status", processoSalvo.getStatus().name(),
+                    "totalExecucoes", resultado.resumo().totalExecucoes(),
+                    "totalObras", resultado.resumo().totalObras(),
+                    "totalCreditos", resultado.resumo().totalCreditos(),
+                    "valorTotalCalculado", resultado.resumo().valorTotalCalculado().toPlainString());
+            auditClient.publish(auditFactory.userAction(
+                    ENTITY_TYPE, entityId,
+                    "CALCULAR_PROCESSO", "Calcular processo de distribuição",
+                    "Processo de distribuição calculado", SCREEN_ID, SCREEN_NAME, auditCtx));
+            auditClient.publish(auditFactory.dataChange(
+                    ENTITY_TYPE, entityId, DataAction.UPDATE,
+                    null, after,
+                    "Processo de distribuição calculado", SCREEN_ID, SCREEN_NAME, auditCtx));
 
             recordDuration(startedAt, "success");
             recordGeneratedCredits(resultado.resumo().totalCreditos());

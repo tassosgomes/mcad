@@ -1,3 +1,4 @@
+using Identificacao.Application.Audit;
 using Identificacao.Application.Common;
 using Identificacao.Application.Pendentes.Responses;
 using Identificacao.Domain.Enums;
@@ -10,11 +11,16 @@ public class ResolverPendentesEmLoteCommandHandler : ICommandHandler<ResolverPen
 {
     private readonly IExecucaoRepository _execucaoRepo;
     private readonly ICadastroHttpClient _cadastroHttpClient;
+    private readonly IIdentificacaoAuditPublisher _auditPublisher;
 
-    public ResolverPendentesEmLoteCommandHandler(IExecucaoRepository execucaoRepo, ICadastroHttpClient cadastroHttpClient)
+    public ResolverPendentesEmLoteCommandHandler(
+        IExecucaoRepository execucaoRepo,
+        ICadastroHttpClient cadastroHttpClient,
+        IIdentificacaoAuditPublisher auditPublisher)
     {
         _execucaoRepo = execucaoRepo;
         _cadastroHttpClient = cadastroHttpClient;
+        _auditPublisher = auditPublisher;
     }
 
     public async Task<ResolverLoteResponse> HandleAsync(ResolverPendentesEmLoteCommand command, CancellationToken cancellationToken)
@@ -83,7 +89,12 @@ public class ResolverPendentesEmLoteCommandHandler : ICommandHandler<ResolverPen
                     continue;
                 }
 
+                var before = IdentificacaoAuditMappers.Map(execucao);
                 execucao.Resolver(command.ObraId, command.FonogramaId, titulo, isrc, iswc, interpretes);
+                await _auditPublisher.PublishAsync(
+                    "Execucao", execucao.Id.ToString(), IdentificacaoAuditOperation.PendenteResolveLote,
+                    before: before, after: IdentificacaoAuditMappers.Map(execucao),
+                    screenId: "IDENTIFICACAO_PENDENTES", screenName: "Pendentes", cancellationToken: cancellationToken);
                 resolvidas++;
             }
             catch (DomainException ex)

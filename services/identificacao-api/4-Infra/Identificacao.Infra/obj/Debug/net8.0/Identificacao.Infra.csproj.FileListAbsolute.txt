@@ -16,3 +16,5 @@
 /home/tsgomes/mcad/services/identificacao-api/4-Infra/Identificacao.Infra/obj/Debug/net8.0/Identificacao.Infra.pdb
 /home/tsgomes/mcad/services/identificacao-api/4-Infra/Identificacao.Infra/obj/Debug/net8.0/Identificacao.Infra.genruntimeconfig.cache
 /home/tsgomes/mcad/services/identificacao-api/4-Infra/Identificacao.Infra/obj/Debug/net8.0/ref/Identificacao.Infra.dll
+/home/tsgomes/mcad/services/identificacao-api/4-Infra/Identificacao.Infra/bin/Debug/net8.0/Identificacao.Application.dll
+/home/tsgomes/mcad/services/identificacao-api/4-Infra/Identificacao.Infra/bin/Debug/net8.0/Identificacao.Application.pdb

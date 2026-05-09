@@ -1,3 +1,4 @@
+# syntax=docker/dockerfile:1.7
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
 
@@ -7,7 +8,8 @@ COPY 2-Application/Identificacao.Application/Identificacao.Application.csproj 2-
 COPY 3-Domain/Identificacao.Domain/Identificacao.Domain.csproj 3-Domain/Identificacao.Domain/
 COPY 4-Infra/Identificacao.Infra/Identificacao.Infra.csproj 4-Infra/Identificacao.Infra/
 
-RUN dotnet restore 1-Services/Identificacao.API/Identificacao.API.csproj
+RUN --mount=type=secret,id=nuget_config,dst=/root/.nuget/NuGet/NuGet.Config,required=false \
+    dotnet restore 1-Services/Identificacao.API/Identificacao.API.csproj
 
 COPY 1-Services/ 1-Services/
 COPY 2-Application/ 2-Application/

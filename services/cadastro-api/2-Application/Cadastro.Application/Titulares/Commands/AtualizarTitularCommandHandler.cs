@@ -1,3 +1,4 @@
+using Cadastro.Application.Audit;
 using Cadastro.Application.Common.CQRS;
 using Cadastro.Application.Common.Exceptions;
 using Cadastro.Application.Titulares.Queries;
@@ -18,15 +19,18 @@ public class AtualizarTitularCommandHandler : ICommandHandler<AtualizarTitularCo
     private readonly ITitularRepository _titularRepository;
     private readonly IAssociacaoRepository _associacaoRepository;
     private readonly IValidator<AtualizarTitularCommand> _validator;
+    private readonly ITitularAuditPublisher _auditPublisher;
 
     public AtualizarTitularCommandHandler(
         ITitularRepository titularRepository,
         IAssociacaoRepository associacaoRepository,
-        IValidator<AtualizarTitularCommand> validator)
+        IValidator<AtualizarTitularCommand> validator,
+        ITitularAuditPublisher auditPublisher)
     {
         _titularRepository = titularRepository;
         _associacaoRepository = associacaoRepository;
         _validator = validator;
+        _auditPublisher = auditPublisher;
     }
 
     public async Task<TitularResponse> HandleAsync(
@@ -64,7 +68,9 @@ public class AtualizarTitularCommandHandler : ICommandHandler<AtualizarTitularCo
         // 6. Aplicar atualização (Tipo e Documento permanecem imutáveis)
         //    Com tracking ativo, o EF Core detecta as mudanças automaticamente ao SaveChanges.
         //    Não é necessário chamar Update() explicitamente.
+        var before = _auditPublisher.Snapshot(titular);
         titular.Atualizar(command.Nome, command.Nacionalidade, command.AssociacaoId, status, caeIpi);
+        await _auditPublisher.PublishAsync(titular, TitularAuditOperation.Update, before, cancellationToken);
         await _titularRepository.SaveChangesAsync(cancellationToken);
 
         // 7. Reload com Associação

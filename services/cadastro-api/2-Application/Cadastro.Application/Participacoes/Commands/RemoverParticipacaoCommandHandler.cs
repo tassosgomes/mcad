@@ -1,3 +1,4 @@
+using Cadastro.Application.Audit;
 using Cadastro.Application.Common.CQRS;
 using Cadastro.Application.Common.Exceptions;
 using Cadastro.Application.Participacoes.Queries;
@@ -13,13 +14,16 @@ public class RemoverParticipacaoCommandHandler : ICommandHandler<RemoverParticip
 {
     private readonly IParticipacaoRepository _repository;
     private readonly IFonogramaRepository _fonogramaRepository;
+    private readonly IParticipacaoAuditPublisher _auditPublisher;
 
     public RemoverParticipacaoCommandHandler(
         IParticipacaoRepository repository,
-        IFonogramaRepository fonogramaRepository)
+        IFonogramaRepository fonogramaRepository,
+        IParticipacaoAuditPublisher auditPublisher)
     {
         _repository = repository;
         _fonogramaRepository = fonogramaRepository;
+        _auditPublisher = auditPublisher;
     }
 
     public async Task<ParticipacoesResponse> HandleAsync(RemoverParticipacaoCommand command, CancellationToken cancellationToken)
@@ -40,8 +44,10 @@ public class RemoverParticipacaoCommandHandler : ICommandHandler<RemoverParticip
 
         // Verificar se havia cálculo antes de remover
         bool tinhaCalculo = participacao.Percentual.HasValue;
-        
+        var before = _auditPublisher.Snapshot(participacao);
+
         _repository.Delete(participacao);
+        await _auditPublisher.PublishAsync(participacao, ParticipacaoAuditOperation.Remove, before, cancellationToken);
 
         if (tinhaCalculo)
         {

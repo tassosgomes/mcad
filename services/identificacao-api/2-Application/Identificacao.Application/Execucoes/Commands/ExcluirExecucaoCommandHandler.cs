@@ -1,3 +1,4 @@
+using Identificacao.Application.Audit;
 using Identificacao.Application.Common;
 using Identificacao.Application.Common.Exceptions;
 using Identificacao.Domain.Enums;
@@ -10,13 +11,16 @@ public class ExcluirExecucaoCommandHandler : ICommandHandler<ExcluirExecucaoComm
 {
     private readonly IExecucaoRepository _execucaoRepo;
     private readonly ICaptacaoRepository _captacaoRepo;
+    private readonly IIdentificacaoAuditPublisher _auditPublisher;
 
     public ExcluirExecucaoCommandHandler(
         IExecucaoRepository execucaoRepo,
-        ICaptacaoRepository captacaoRepo)
+        ICaptacaoRepository captacaoRepo,
+        IIdentificacaoAuditPublisher auditPublisher)
     {
         _execucaoRepo = execucaoRepo;
         _captacaoRepo = captacaoRepo;
+        _auditPublisher = auditPublisher;
     }
 
     public async Task<bool> HandleAsync(ExcluirExecucaoCommand command, CancellationToken ct)
@@ -35,7 +39,13 @@ public class ExcluirExecucaoCommandHandler : ICommandHandler<ExcluirExecucaoComm
         if (execucao == null)
             throw new NotFoundException("Execução não encontrada.");
 
+        var before = IdentificacaoAuditMappers.Map(execucao);
+
         await _execucaoRepo.RemoveAsync(execucao, ct);
+        await _auditPublisher.PublishAsync(
+            "Execucao", execucao.Id.ToString(), IdentificacaoAuditOperation.ExecucaoDelete,
+            before: before, after: null,
+            screenId: "IDENTIFICACAO_EXECUCOES", screenName: "Execuções", cancellationToken: ct);
         await _execucaoRepo.SaveChangesAsync(ct);
         return true;
     }

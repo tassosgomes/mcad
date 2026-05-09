@@ -242,6 +242,41 @@ services:
         - traefik.http.routers.mcad-bff.tls.certresolver=cloudflare-resolver
         - traefik.http.services.mcad-bff.loadbalancer.server.port=5200
 
+  mcad-identity-sync-api:
+    image: ${IDENTITY_SYNC_API_IMAGE:-tassosgomes/mcad-identity-sync-api:latest}
+    environment:
+      IDENTITY_SYNC_PORT: 5300
+      IDENTITY_SYNC_HOST: 0.0.0.0
+      LOGTO_WEBHOOK_SYNC_KEY: ${LOGTO_WEBHOOK_SYNC_KEY:?LOGTO_WEBHOOK_SYNC_KEY is required}
+      RABBITMQ_HOST: kebnekaise.lmq.cloudamqp.com
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USER: ${RABBITMQ_USER:-mcad}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:?RABBITMQ_PASSWORD is required}
+      RABBITMQ_VHOST: ${RABBITMQ_VHOST:-mcad}
+      RABBITMQ_URL: amqp://${RABBITMQ_USER:-mcad}:${RABBITMQ_PASSWORD:?RABBITMQ_PASSWORD is required}@kebnekaise.lmq.cloudamqp.com:5672/${RABBITMQ_VHOST:-mcad}
+      IDENTITY_EVENTS_EXCHANGE: ${IDENTITY_EVENTS_EXCHANGE:-identity.events}
+    networks:
+      - mcad-internal
+      - traefik-public
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:5300/health/live').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    deploy:
+      replicas: ${IDENTITY_SYNC_API_REPLICAS:-1}
+      restart_policy:
+        condition: on-failure
+      labels:
+        - traefik.enable=true
+        - traefik.docker.network=traefik-public
+        - traefik.http.routers.mcad-identity-sync.rule=Host(`${IDENTITY_SYNC_API_HOST:-mcad-identity-sync.tasso.dev.br}`)
+        - traefik.http.routers.mcad-identity-sync.entrypoints=websecure
+        - traefik.http.routers.mcad-identity-sync.tls=true
+        - traefik.http.routers.mcad-identity-sync.tls.certresolver=cloudflare-resolver
+        - traefik.http.services.mcad-identity-sync.loadbalancer.server.port=5300
+
   mcad-frontend:
     image: ${FRONTEND_IMAGE:-mcad-frontend:latest}
     environment:

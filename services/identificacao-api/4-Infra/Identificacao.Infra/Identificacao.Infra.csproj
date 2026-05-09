@@ -2,10 +2,12 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\3-Domain\Identificacao.Domain\Identificacao.Domain.csproj" />
+    <ProjectReference Include="..\..\2-Application\Identificacao.Application\Identificacao.Application.csproj" />
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="CloudNative.CloudEvents.SystemTextJson" Version="2.8.0" />
+    <PackageReference Include="Ecad.Audit.Sdk" Version="0.1.0" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.4" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.4">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>

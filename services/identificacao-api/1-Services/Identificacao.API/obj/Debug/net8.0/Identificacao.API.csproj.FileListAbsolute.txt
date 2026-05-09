@@ -176,3 +176,8 @@
 /home/tsgomes/mcad/services/identificacao-api/1-Services/Identificacao.API/bin/Debug/net8.0/Swashbuckle.AspNetCore.SwaggerGen.dll
 /home/tsgomes/mcad/services/identificacao-api/1-Services/Identificacao.API/bin/Debug/net8.0/Swashbuckle.AspNetCore.SwaggerUI.dll
 /home/tsgomes/mcad/services/identificacao-api/1-Services/Identificacao.API/obj/Debug/net8.0/Identificacao.API.MvcApplicationPartsAssemblyInfo.cs
+/home/tsgomes/mcad/services/identificacao-api/1-Services/Identificacao.API/bin/Debug/net8.0/Ecad.Audit.AspNetCore.dll
+/home/tsgomes/mcad/services/identificacao-api/1-Services/Identificacao.API/bin/Debug/net8.0/Ecad.Audit.Contract.dll
+/home/tsgomes/mcad/services/identificacao-api/1-Services/Identificacao.API/bin/Debug/net8.0/Ecad.Audit.Sdk.dll
+/home/tsgomes/mcad/services/identificacao-api/1-Services/Identificacao.API/bin/Debug/net8.0/Microsoft.Extensions.Diagnostics.dll
+/home/tsgomes/mcad/services/identificacao-api/1-Services/Identificacao.API/bin/Debug/net8.0/Microsoft.Extensions.Http.dll

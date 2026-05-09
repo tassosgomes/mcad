@@ -9,6 +9,7 @@
       "Identificacao.API/1.0.0": {
         "dependencies": {
           "DotNetEnv": "3.1.1",
+          "Ecad.Audit.AspNetCore": "0.1.0",
           "FluentValidation.DependencyInjectionExtensions": "11.11.0",
           "Identificacao.Application": "1.0.0",
           "Identificacao.Infra": "1.0.0",
@@ -60,6 +61,42 @@
           "lib/netstandard1.3/DotNetEnv.dll": {
             "assemblyVersion": "3.1.1.0",
             "fileVersion": "3.1.1.0"
+          }
+        }
+      },
+      "Ecad.Audit.AspNetCore/0.1.0": {
+        "dependencies": {
+          "Ecad.Audit.Sdk": "0.1.0",
+          "Microsoft.Extensions.Configuration.Abstractions": "10.0.5",
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "10.0.5",
+          "Microsoft.Extensions.Hosting.Abstractions": "10.0.5",
+          "Microsoft.Extensions.Http": "8.0.1",
+          "Microsoft.Extensions.Logging.Abstractions": "10.0.5",
+          "RabbitMQ.Client": "7.2.1"
+        },
+        "runtime": {
+          "lib/net8.0/Ecad.Audit.AspNetCore.dll": {
+            "assemblyVersion": "1.0.0.0",
+            "fileVersion": "1.0.0.0"
+          }
+        }
+      },
+      "Ecad.Audit.Contract/0.1.0": {
+        "runtime": {
+          "lib/net8.0/Ecad.Audit.Contract.dll": {
+            "assemblyVersion": "1.0.0.0",
+            "fileVersion": "1.0.0.0"
+          }
+        }
+      },
+      "Ecad.Audit.Sdk/0.1.0": {
+        "dependencies": {
+          "Ecad.Audit.Contract": "0.1.0"
+        },
+        "runtime": {
+          "lib/net8.0/Ecad.Audit.Sdk.dll": {
+            "assemblyVersion": "1.0.0.0",
+            "fileVersion": "1.0.0.0"
           }
         }
       },
@@ -533,6 +570,17 @@
           }
         }
       },
+      "Microsoft.Extensions.Diagnostics/8.0.1": {
+        "dependencies": {
+          "Microsoft.Extensions.Diagnostics.Abstractions": "10.0.5"
+        },
+        "runtime": {
+          "lib/net8.0/Microsoft.Extensions.Diagnostics.dll": {
+            "assemblyVersion": "8.0.0.0",
+            "fileVersion": "8.0.1024.46610"
+          }
+        }
+      },
       "Microsoft.Extensions.Diagnostics.Abstractions/10.0.5": {
         "dependencies": {
           "Microsoft.Extensions.DependencyInjection.Abstractions": "10.0.5",
@@ -572,8 +620,25 @@
           }
         }
       },
+      "Microsoft.Extensions.Http/8.0.1": {
+        "dependencies": {
+          "Microsoft.Extensions.Configuration.Abstractions": "10.0.5",
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "10.0.5",
+          "Microsoft.Extensions.Diagnostics": "8.0.1",
+          "Microsoft.Extensions.Logging": "9.0.4",
+          "Microsoft.Extensions.Logging.Abstractions": "10.0.5",
+          "Microsoft.Extensions.Options": "10.0.5"
+        },
+        "runtime": {
+          "lib/net8.0/Microsoft.Extensions.Http.dll": {
+            "assemblyVersion": "8.0.0.0",
+            "fileVersion": "8.0.1024.46610"
+          }
+        }
+      },
       "Microsoft.Extensions.Http.Polly/8.0.0": {
         "dependencies": {
+          "Microsoft.Extensions.Http": "8.0.1",
           "Polly": "7.2.4",
           "Polly.Extensions.Http": "3.0.0"
         },
@@ -820,14 +885,14 @@
           }
         }
       },
-      "RabbitMQ.Client/7.0.0": {
+      "RabbitMQ.Client/7.2.1": {
         "dependencies": {
           "System.IO.Pipelines": "9.0.4"
         },
         "runtime": {
           "lib/net8.0/RabbitMQ.Client.dll": {
             "assemblyVersion": "7.0.0.0",
-            "fileVersion": "7.0.0.0"
+            "fileVersion": "7.2.1.0"
           }
         }
       },
@@ -1042,6 +1107,7 @@
       },
       "Identificacao.Application/1.0.0": {
         "dependencies": {
+          "Ecad.Audit.Sdk": "0.1.0",
           "FluentValidation": "11.11.0",
           "Identificacao.Domain": "1.0.0",
           "MediatR": "12.2.0",
@@ -1069,12 +1135,14 @@
       "Identificacao.Infra/1.0.0": {
         "dependencies": {
           "CloudNative.CloudEvents.SystemTextJson": "2.8.0",
+          "Ecad.Audit.Sdk": "0.1.0",
+          "Identificacao.Application": "1.0.0",
           "Identificacao.Domain": "1.0.0",
           "Microsoft.EntityFrameworkCore": "9.0.4",
           "Microsoft.Extensions.Hosting.Abstractions": "10.0.5",
           "Minio": "7.0.0",
           "Npgsql.EntityFrameworkCore.PostgreSQL": "9.0.4",
-          "RabbitMQ.Client": "7.0.0"
+          "RabbitMQ.Client": "7.2.1"
         },
         "runtime": {
           "Identificacao.Infra.dll": {
@@ -1118,6 +1186,27 @@
       "sha512": "sha512-o4SqUVCq0pqHF/HYsZk6k22XGIVmvsDVo+Dy7l0ubq9uQ45JkXswrMRJmYvhGLXWFYF0M5OupMonytB+0zvpGQ==",
       "path": "dotnetenv/3.1.1",
       "hashPath": "dotnetenv.3.1.1.nupkg.sha512"
+    },
+    "Ecad.Audit.AspNetCore/0.1.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-x4wXP2WdPZRB1f1Cb8IXI3UfH8GfOuxxshjBbyd3GsTDw6EvJRcL5ux0edDhG7BifzFLZdggHUo6phGhqSUonw==",
+      "path": "ecad.audit.aspnetcore/0.1.0",
+      "hashPath": "ecad.audit.aspnetcore.0.1.0.nupkg.sha512"
+    },
+    "Ecad.Audit.Contract/0.1.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-YEpkTTOEcAveBD40tIJL5iTLDEUopDvevm20ZGmB9bX24nsRyYh49P8rUtNHyINq+/LJAAFp1Ay4tnuF0++Otw==",
+      "path": "ecad.audit.contract/0.1.0",
+      "hashPath": "ecad.audit.contract.0.1.0.nupkg.sha512"
+    },
+    "Ecad.Audit.Sdk/0.1.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-Q3t4RQET4QMkrioRg6pxQWfM+cLk1jAQYY9oFsgPYTPiCz5gY7S2YdvP6R8UQotD5AHSdiWqTmbtWQAWUkcGIA==",
+      "path": "ecad.audit.sdk/0.1.0",
+      "hashPath": "ecad.audit.sdk.0.1.0.nupkg.sha512"
     },
     "FluentValidation/11.11.0": {
       "type": "package",
@@ -1280,6 +1369,13 @@
       "path": "microsoft.extensions.dependencymodel/9.0.4",
       "hashPath": "microsoft.extensions.dependencymodel.9.0.4.nupkg.sha512"
     },
+    "Microsoft.Extensions.Diagnostics/8.0.1": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-doVPCUUCY7c6LhBsEfiy3W1bvS7Mi6LkfQMS8nlC22jZWNxBv8VO8bdfeyvpYFst6Kxqk7HBC6lytmEoBssvSQ==",
+      "path": "microsoft.extensions.diagnostics/8.0.1",
+      "hashPath": "microsoft.extensions.diagnostics.8.0.1.nupkg.sha512"
+    },
     "Microsoft.Extensions.Diagnostics.Abstractions/10.0.5": {
       "type": "package",
       "serviceable": true,
@@ -1300,6 +1396,13 @@
       "sha512": "sha512-+Wb7KAMVZTomwJkQrjuPTe5KBzGod7N8XeG+ScxRlkPOB4sZLG4ccVwjV4Phk5BCJt7uIMnGHVoN6ZMVploX+g==",
       "path": "microsoft.extensions.hosting.abstractions/10.0.5",
       "hashPath": "microsoft.extensions.hosting.abstractions.10.0.5.nupkg.sha512"
+    },
+    "Microsoft.Extensions.Http/8.0.1": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-kDYeKJUzh0qeg/AI+nSr3ffthmXYQTEb0nS9qRC7YhSbbuN4M4NPbaB77AJwtkTnCV9XZ7qYj3dkZaNcyl73EA==",
+      "path": "microsoft.extensions.http/8.0.1",
+      "hashPath": "microsoft.extensions.http.8.0.1.nupkg.sha512"
     },
     "Microsoft.Extensions.Http.Polly/8.0.0": {
       "type": "package",
@@ -1462,12 +1565,12 @@
       "path": "polly.extensions.http/3.0.0",
       "hashPath": "polly.extensions.http.3.0.0.nupkg.sha512"
     },
-    "RabbitMQ.Client/7.0.0": {
+    "RabbitMQ.Client/7.2.1": {
       "type": "package",
       "serviceable": true,
-      "sha512": "sha512-8YJz22mOSMtkbIVuVSz2HbJwbpKwRoXQ1uqbczDUt1w1Ds8dxFs6dkV/oZ8AlTmkErZjtQelHv+oBu52ud00WA==",
-      "path": "rabbitmq.client/7.0.0",
-      "hashPath": "rabbitmq.client.7.0.0.nupkg.sha512"
+      "sha512": "sha512-YKXEfg9fVQiTKgZlvIhAfPSFaamEgi8DsQmisCH0IAsU4FYLrtoguDrDj6JtJVGUt40QPnBLRH6fTQcAC4qsOg==",
+      "path": "rabbitmq.client/7.2.1",
+      "hashPath": "rabbitmq.client.7.2.1.nupkg.sha512"
     },
     "Saunter/0.13.0": {
       "type": "package",

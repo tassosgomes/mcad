@@ -1,0 +1,30 @@
+- generic [active]:
+  - main [ref=e3]:
+    - generic [ref=e4]:
+      - generic [ref=e6]: Sign in to your account
+      - generic [ref=e7]:
+        - generic [ref=e9]:
+          - generic [ref=e10]:
+            - button:
+              - generic: "+1"
+              - img
+            - textbox [ref=e11]: analista_arrecadacao
+          - generic:
+            - group
+            - generic: Email / Username
+        - generic [ref=e13]:
+          - textbox [ref=e15]: Analista123!
+          - generic:
+            - group
+            - generic: Password
+        - generic [ref=e16] [cursor=pointer]: Forgot your password?
+        - button [ref=e39] [cursor=pointer]:
+          - generic [ref=e18]: Sign in
+    - link [ref=e40] [cursor=pointer]:
+      - /url: https://logto.io/?utm_source=sign_in&utm_medium=powered_by
+      - generic [ref=e21]: Powered by
+      - img [ref=e22]
+  - generic [ref=e30]:
+    - img [ref=e32]
+    - text: You're in development mode
+  - generic [ref=e41]: Request timeout.
