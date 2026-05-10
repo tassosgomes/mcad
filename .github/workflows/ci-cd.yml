@@ -267,6 +267,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+      packages: read
     defaults:
       run:
         working-directory: services/distribuicao-api
@@ -281,7 +282,10 @@ jobs:
           cache: maven
 
       - name: Run unit tests (skip *IntegrationTest classes)
-        run: mvn -B -ntp test -Dtest='!*IntegrationTest' -Dsurefire.failIfNoSpecifiedTests=false
+        env:
+          GITHUB_ACTOR: ${{ github.actor }}
+          GITHUB_TOKEN: ${{ secrets.GH_PACKAGES_READ_TOKEN || github.token }}
+        run: mvn -B -ntp -s .mvn/settings.xml test -Dtest='!*IntegrationTest' -Dsurefire.failIfNoSpecifiedTests=false
 
       - name: Upload Surefire reports
         if: always()
@@ -301,6 +305,22 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
+      - name: Generate Maven settings for Docker build
+        run: |
+          mkdir -p .ci
+          cat > .ci/settings.xml <<'EOF'
+          <?xml version="1.0" encoding="UTF-8"?>
+          <settings xmlns="http://maven.apache.org/SETTINGS/1.0.0">
+            <servers>
+              <server>
+                <id>github</id>
+                <username>${{ github.actor }}</username>
+                <password>${{ secrets.GH_PACKAGES_READ_TOKEN || github.token }}</password>
+              </server>
+            </servers>
+          </settings>
+          EOF
+
       - name: Build and push image
         uses: docker/build-push-action@v6
         with:
@@ -312,6 +332,8 @@ jobs:
             ${{ env.DOCKERHUB_NAMESPACE }}/mcad-distribuicao-api:latest
           cache-from: type=gha,scope=distribuicao-api
           cache-to: type=gha,mode=max,scope=distribuicao-api
+          secret-files: |
+            maven_settings=services/distribuicao-api/.ci/settings.xml
 
   # ---------------------------------------------------------------------------
   # BFF (Node.js / Fastify)
