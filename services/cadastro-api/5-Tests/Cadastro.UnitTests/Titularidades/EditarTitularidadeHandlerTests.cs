@@ -22,7 +22,10 @@ public class EditarTitularidadeHandlerTests
     {
         _titularidadeRepoMock = new Mock<ITitularidadeRepository>();
         _obraRepoMock = new Mock<IObraRepository>();
-        _handler = new EditarTitularidadeCommandHandler(_titularidadeRepoMock.Object, _obraRepoMock.Object);
+        _handler = new EditarTitularidadeCommandHandler(
+            _titularidadeRepoMock.Object,
+            _obraRepoMock.Object,
+            Mock.Of<ITitularidadeAuditPublisher>());
     }
 
     [Fact]

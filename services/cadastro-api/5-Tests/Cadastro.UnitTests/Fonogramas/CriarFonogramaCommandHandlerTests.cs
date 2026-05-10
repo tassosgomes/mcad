@@ -18,7 +18,10 @@ public class CriarFonogramaCommandHandlerTests
     {
         _fonogramaRepoMock = new Mock<IFonogramaRepository>();
         _obraRepoMock = new Mock<IObraRepository>();
-        _handler = new CriarFonogramaCommandHandler(_fonogramaRepoMock.Object, _obraRepoMock.Object);
+        _handler = new CriarFonogramaCommandHandler(
+            _fonogramaRepoMock.Object,
+            _obraRepoMock.Object,
+            Mock.Of<IFonogramaAuditPublisher>());
     }
 
     [Fact]

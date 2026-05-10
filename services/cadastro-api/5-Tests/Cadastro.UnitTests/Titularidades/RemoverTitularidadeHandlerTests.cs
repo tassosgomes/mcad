@@ -21,7 +21,10 @@ public class RemoverTitularidadeHandlerTests
     {
         _titularidadeRepoMock = new Mock<ITitularidadeRepository>();
         _obraRepoMock = new Mock<IObraRepository>();
-        _handler = new RemoverTitularidadeCommandHandler(_titularidadeRepoMock.Object, _obraRepoMock.Object);
+        _handler = new RemoverTitularidadeCommandHandler(
+            _titularidadeRepoMock.Object,
+            _obraRepoMock.Object,
+            Mock.Of<ITitularidadeAuditPublisher>());
     }
 
     [Fact]

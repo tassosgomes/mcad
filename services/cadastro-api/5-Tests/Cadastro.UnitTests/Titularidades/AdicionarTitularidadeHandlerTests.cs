@@ -24,7 +24,11 @@ public class AdicionarTitularidadeHandlerTests
         _titularidadeRepoMock = new Mock<ITitularidadeRepository>();
         _obraRepoMock = new Mock<IObraRepository>();
         _titularRepoMock = new Mock<ITitularRepository>();
-        _handler = new AdicionarTitularidadeCommandHandler(_titularidadeRepoMock.Object, _obraRepoMock.Object, _titularRepoMock.Object);
+        _handler = new AdicionarTitularidadeCommandHandler(
+            _titularidadeRepoMock.Object,
+            _obraRepoMock.Object,
+            _titularRepoMock.Object,
+            Mock.Of<ITitularidadeAuditPublisher>());
     }
 
     [Fact]

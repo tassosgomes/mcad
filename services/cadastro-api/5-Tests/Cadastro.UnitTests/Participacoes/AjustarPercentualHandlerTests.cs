@@ -19,7 +19,10 @@ public class AjustarPercentualHandlerTests
 
     public AjustarPercentualHandlerTests()
     {
-        _handler = new AjustarPercentualCommandHandler(_participacaoRepo.Object, _fonogramaRepo.Object);
+        _handler = new AjustarPercentualCommandHandler(
+            _participacaoRepo.Object,
+            _fonogramaRepo.Object,
+            Mock.Of<IParticipacaoAuditPublisher>());
     }
 
     private Fonograma CriarFonograma(StatusFonograma status = StatusFonograma.PendenteValidacao)

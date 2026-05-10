@@ -34,7 +34,8 @@ public class CriarTitularCommandHandlerTests
             _mockTitularRepo.Object,
             _mockAssociacaoRepo.Object,
             _mockValidator.Object,
-            _mockOutbox.Object);
+            _mockOutbox.Object,
+            Mock.Of<ITitularAuditPublisher>());
     }
 
     [Fact]

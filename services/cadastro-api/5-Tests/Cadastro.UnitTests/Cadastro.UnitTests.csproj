@@ -24,6 +24,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Using Include="Cadastro.Application.Audit" />
     <Using Include="Xunit" />
   </ItemGroup>
 

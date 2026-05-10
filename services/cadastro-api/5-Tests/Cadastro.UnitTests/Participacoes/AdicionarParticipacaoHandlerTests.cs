@@ -24,7 +24,8 @@ public class AdicionarParticipacaoHandlerTests
         _handler = new AdicionarParticipacaoCommandHandler(
             _participacaoRepo.Object,
             _fonogramaRepo.Object,
-            _titularRepo.Object);
+            _titularRepo.Object,
+            Mock.Of<IParticipacaoAuditPublisher>());
     }
 
     private Fonograma CriarFonograma(StatusFonograma status = StatusFonograma.PendenteValidacao)

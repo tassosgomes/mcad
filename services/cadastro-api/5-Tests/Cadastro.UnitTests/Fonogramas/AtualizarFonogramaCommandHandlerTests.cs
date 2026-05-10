@@ -17,7 +17,7 @@ public class AtualizarFonogramaCommandHandlerTests
     public AtualizarFonogramaCommandHandlerTests()
     {
         _repoMock = new Mock<IFonogramaRepository>();
-        _handler = new AtualizarFonogramaCommandHandler(_repoMock.Object);
+        _handler = new AtualizarFonogramaCommandHandler(_repoMock.Object, Mock.Of<IFonogramaAuditPublisher>());
     }
 
     [Fact]

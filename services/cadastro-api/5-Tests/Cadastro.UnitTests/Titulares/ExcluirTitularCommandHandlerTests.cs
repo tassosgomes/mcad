@@ -16,7 +16,7 @@ public class ExcluirTitularCommandHandlerTests
     public ExcluirTitularCommandHandlerTests()
     {
         _mockRepo = new Mock<ITitularRepository>();
-        _handler = new ExcluirTitularCommandHandler(_mockRepo.Object);
+        _handler = new ExcluirTitularCommandHandler(_mockRepo.Object, Mock.Of<ITitularAuditPublisher>());
     }
 
     [Fact]

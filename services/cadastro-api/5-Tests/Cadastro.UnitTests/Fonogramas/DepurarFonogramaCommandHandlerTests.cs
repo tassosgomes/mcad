@@ -19,7 +19,10 @@ public class DepurarFonogramaCommandHandlerTests
     {
         _repoMock = new Mock<IFonogramaRepository>();
         _outboxMock = new Mock<IOutboxEventWriter>();
-        _handler = new DepurarFonogramaCommandHandler(_repoMock.Object, _outboxMock.Object);
+        _handler = new DepurarFonogramaCommandHandler(
+            _repoMock.Object,
+            _outboxMock.Object,
+            Mock.Of<IFonogramaAuditPublisher>());
     }
 
     [Fact]

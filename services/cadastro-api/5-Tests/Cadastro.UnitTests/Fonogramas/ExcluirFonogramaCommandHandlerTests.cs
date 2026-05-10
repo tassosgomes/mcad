@@ -17,7 +17,7 @@ public class ExcluirFonogramaCommandHandlerTests
     public ExcluirFonogramaCommandHandlerTests()
     {
         _repoMock = new Mock<IFonogramaRepository>();
-        _handler = new ExcluirFonogramaCommandHandler(_repoMock.Object);
+        _handler = new ExcluirFonogramaCommandHandler(_repoMock.Object, Mock.Of<IFonogramaAuditPublisher>());
     }
 
     [Fact]

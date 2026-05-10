@@ -29,7 +29,8 @@ public class AtualizarTitularCommandHandlerTests
         _handler = new AtualizarTitularCommandHandler(
             _mockTitularRepo.Object,
             _mockAssociacaoRepo.Object,
-            _mockValidator.Object);
+            _mockValidator.Object,
+            Mock.Of<ITitularAuditPublisher>());
     }
 
     [Fact]

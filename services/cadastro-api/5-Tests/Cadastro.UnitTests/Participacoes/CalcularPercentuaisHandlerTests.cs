@@ -20,7 +20,10 @@ public class CalcularPercentuaisHandlerTests
 
     public CalcularPercentuaisHandlerTests()
     {
-        _handler = new CalcularPercentuaisCommandHandler(_participacaoRepo.Object, _fonogramaRepo.Object);
+        _handler = new CalcularPercentuaisCommandHandler(
+            _participacaoRepo.Object,
+            _fonogramaRepo.Object,
+            Mock.Of<IParticipacaoAuditPublisher>());
     }
 
     private Fonograma CriarFonograma(StatusFonograma status = StatusFonograma.PendenteValidacao)
