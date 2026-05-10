@@ -177,7 +177,7 @@ describe('ProcessoCalculoPage', () => {
     expect(await screen.findByText('Titular Depois')).toBeInTheDocument();
     await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(3));
     expect(fetchMock.mock.calls[1][0]).toBe(
-      `http://localhost:5004/api/v1/processos/${processoId}/calcular`,
+      `/api/distribuicao/v1/processos/${processoId}/calcular`,
     );
   });
 

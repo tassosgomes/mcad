@@ -21,7 +21,7 @@ describe('processosCalculoApi', () => {
     await calcularProcesso('processo-1');
 
     expect(fetchMock).toHaveBeenCalledWith(
-      'http://localhost:5004/api/v1/processos/processo-1/calcular',
+      '/api/distribuicao/v1/processos/processo-1/calcular',
       expect.objectContaining({
         method: 'POST',
       }),
@@ -51,7 +51,7 @@ describe('processosCalculoApi', () => {
     });
 
     expect(fetchMock).toHaveBeenCalledWith(
-      'http://localhost:5004/api/v1/processos/processo-1/calculo?page=1&size=10&categoria=CONEXO&titularId=titular-1&obraId=obra-1',
+      '/api/distribuicao/v1/processos/processo-1/calculo?page=1&size=10&categoria=CONEXO&titularId=titular-1&obraId=obra-1',
       expect.objectContaining({
         headers: expect.any(Headers),
       }),
