@@ -1,0 +1,6 @@
+services:
+  cadastro-simulator:
+    build: .
+    container_name: cadastro-simulator
+    env_file: .env
+    restart: unless-stopped

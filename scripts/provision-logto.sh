@@ -47,6 +47,7 @@ client_id     = os.environ["LOGTO_M2M_CLIENT_ID"]
 client_secret = os.environ["LOGTO_M2M_CLIENT_SECRET"]
 
 FRONTEND_APP_NAME = "mcad-frontend"
+SIMULATOR_APP_NAME = "mcad-simulator"
 API_RESOURCE_NAME = "mcad-apis"
 API_RESOURCE_INDICATOR = "https://api.mcad.local"
 
@@ -223,6 +224,55 @@ def ensure_frontend_app(token: str) -> str:
     return created["id"]
 
 
+def ensure_simulator_app(token: str) -> tuple[str, str]:
+    """Cria ou atualiza a app Traditional Web do simulador (grant password habilitado).
+
+    Retorna (appId, appSecret). A app é confidencial (tem secret) e habilita o grant
+    'password' (ROPC) para que o simulador autentique como usuário real (analista_cadastro)
+    e gere audit events com actor.username preenchido.
+    """
+    desired_grant_types = ["authorization_code", "refresh_token", "password"]
+
+    apps = api("GET", "/applications", token) or []
+    existing = next((a for a in apps if a.get("name") == SIMULATOR_APP_NAME), None)
+
+    if existing:
+        app_id = existing["id"]
+        metadata = existing.get("oidcClientMetadata") or {}
+        current_grants = set(metadata.get("grantTypes") or [])
+        if current_grants != set(desired_grant_types):
+            api("PATCH", f"/applications/{app_id}", token, {
+                "oidcClientMetadata": {
+                    **metadata,
+                    "grantTypes": desired_grant_types,
+                },
+            })
+            print(f"  App Traditional atualizada (grants): {SIMULATOR_APP_NAME} (appId={app_id})")
+        else:
+            print(f"  App Traditional já existe: {SIMULATOR_APP_NAME} (appId={app_id})")
+    else:
+        created = api("POST", "/applications", token, {
+            "name": SIMULATOR_APP_NAME,
+            "type": "Traditional",
+            "description": "Simulador de uso contínuo do domínio Cadastro (gera audit events)",
+            "oidcClientMetadata": {
+                "redirectUris": [],
+                "postLogoutRedirectUris": [],
+                "grantTypes": desired_grant_types,
+            },
+        })
+        app_id = created["id"]
+        print(f"  App Traditional criada: {SIMULATOR_APP_NAME} (appId={app_id})")
+
+    # Recarrega para obter o secret (algumas versões do Logto não retornam secret no POST)
+    full = api("GET", f"/applications/{app_id}", token) or {}
+    secret = full.get("secret") or ""
+    if not secret:
+        print(f"  ⚠ Secret não retornado pela API. Copie manualmente do Console > {SIMULATOR_APP_NAME} > Settings.")
+
+    return app_id, secret
+
+
 def ensure_role(token: str, name: str, description: str, scope_ids_to_assign: list[str]) -> str:
     """Cria ou retorna uma role e garante os scopes atribuídos. Retorna o id."""
     roles = api("GET", f"/roles?search={urllib.parse.quote(name)}&limit=20", token) or []
@@ -371,20 +421,23 @@ resource_id, scope_ids = ensure_api_resource(token)
 # Roles de analista recebem access + write; consultores recebem apenas access
 ANALISTA_ROLE_NAMES = {"analista-cadastro", "analista-identificacao", "analista-arrecadacao", "analista-distribuicao"}
 
-print("\n[3/6] Garantindo aplicação SPA frontend...")
+print("\n[3/7] Garantindo aplicação SPA frontend...")
 frontend_app_id = ensure_frontend_app(token)
 
-print("\n[4/6] Garantindo roles...")
+print("\n[4/7] Garantindo aplicação Traditional do simulador (ROPC)...")
+simulator_app_id, simulator_app_secret = ensure_simulator_app(token)
+
+print("\n[5/7] Garantindo roles...")
 role_ids = {}
 for role_name, role_desc in ROLES:
     scopes = [scope_ids["access"], scope_ids["write"]] if role_name in ANALISTA_ROLE_NAMES else [scope_ids["access"]]
     role_ids[role_name] = ensure_role(token, role_name, role_desc, scopes)
 
-print("\n[5/6] Garantindo usuários de teste...")
+print("\n[6/7] Garantindo usuários de teste...")
 for user in USERS:
     ensure_user(token, user["username"], user["name"], user["password"], role_ids[user["role"]])
 
-print("\n[6/6] Garantindo JWT customizer do access token...")
+print("\n[7/7] Garantindo JWT customizer do access token...")
 ensure_access_token_roles_customizer(token)
 
 print("\n✓ Provisionamento concluído.")
@@ -392,6 +445,8 @@ print(json.dumps({
     "oidcAuthority": f"{base_url}/oidc",
     "apiResourceIndicator": API_RESOURCE_INDICATOR,
     "frontendAppId": frontend_app_id,
+    "simulatorAppId": simulator_app_id,
+    "simulatorAppSecret": simulator_app_secret or "(copiar do Console)",
     "accessTokenCustomizer": "jwt.accessToken.roles",
     "roles": list(role_ids.keys()),
     "users": [u["username"] for u in USERS],
