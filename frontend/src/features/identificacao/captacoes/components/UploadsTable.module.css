@@ -1,76 +1,93 @@
 .tableContainer {
   width: 100%;
   overflow-x: auto;
-  margin-top: 1rem;
-  border: 1px solid var(--border-color, #333);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
+  background: var(--color-bg-primary);
 }
 
 .table {
   width: 100%;
   border-collapse: collapse;
   text-align: left;
+  font-family: var(--font-body);
 }
 
-.table th, .table td {
-  padding: 0.75rem 1rem;
-  border-bottom: 1px solid var(--border-color, #333);
-  color: var(--text-color, #e0e0e0);
-}
-
-.table th {
-  background: var(--bg-hover, #1f1f2e);
+.table thead th {
+  padding: var(--space-3) 1.1rem;
+  background: var(--color-bg-elevated);
+  color: var(--color-text-secondary);
+  font-size: var(--text-sm);
   font-weight: 600;
-  font-size: 0.875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
-.table tbody tr:last-child td {
-  border-bottom: none;
+.table tbody td {
+  padding: 0.5rem 1.1rem;
+  color: var(--color-text-primary);
+  font-size: var(--text-sm);
+  background: var(--color-bg-primary);
+  transition: background var(--transition-fast);
 }
 
-.table tbody tr:hover {
-  background: var(--bg-hover, #1f1f2e);
+.table tbody tr:nth-child(even) td {
+  background: var(--color-bg-secondary);
 }
 
-.expandedRow {
-  background: var(--bg-hover, #1f1f2e) !important;
+.table tbody tr:hover td {
+  background: var(--color-bg-surface);
+}
+
+.expandedRow td {
+  background: var(--color-bg-surface) !important;
+}
+
+.table td:nth-child(4),
+.table td:nth-child(5),
+.table td:nth-child(6) {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
 }
 
 .emptyState {
-  padding: 3rem;
+  padding: var(--space-12);
   text-align: center;
-  color: #888;
-  background: var(--bg-card, #2c2c3e);
-  border-radius: 8px;
-  border: 1px dashed var(--border-color, #444);
+  color: var(--color-text-muted);
+  background: var(--color-bg-primary);
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
 }
 
 .errorLink {
   background: none;
   border: none;
-  color: #ff6b6b;
+  color: var(--color-error);
   text-decoration: underline;
   cursor: pointer;
   padding: 0;
   font: inherit;
+  font-family: var(--font-mono);
+  transition: color var(--transition-fast);
 }
 
 .errorLink:hover {
-  color: #ff8c8c;
+  color: var(--color-text-primary);
 }
 
 .spinner {
   display: inline-block;
-  width: 12px;
-  height: 12px;
-  margin-right: 6px;
-  border: 2px solid rgba(255, 255, 255, 0.3);
+  width: 10px;
+  height: 10px;
+  margin-right: var(--space-1);
+  border: 2px solid rgba(255, 255, 255, 0.25);
   border-radius: 50%;
-  border-top-color: #fff;
-  animation: spin 1s ease-in-out infinite;
+  border-top-color: var(--color-accent-light);
+  animation: spin 1s linear infinite;
   vertical-align: middle;
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }

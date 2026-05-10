@@ -1,31 +1,32 @@
 .section {
   display: flex;
   flex-direction: column;
-  background: var(--bg-card, #2c2c3e);
-  border-radius: 8px;
-  border: 1px solid var(--border-color, #333);
-  padding: 1.5rem;
-  margin-top: 2rem;
+  gap: var(--space-4);
+  background: var(--color-bg-elevated);
+  border-radius: var(--radius-lg);
+  padding: var(--space-6);
+  margin-top: var(--space-8);
 }
 
 .header {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
   flex-wrap: wrap;
-  gap: 1rem;
+  gap: var(--space-4);
 }
 
 .titleInfo h3 {
-  margin: 0 0 0.25rem 0;
-  color: var(--text-color, #e0e0e0);
-  font-size: 1.25rem;
+  margin: 0 0 var(--space-1) 0;
+  color: var(--color-text-primary);
+  font-family: var(--font-display);
+  font-size: var(--text-xl);
 }
 
 .titleInfo p {
   margin: 0;
-  color: #888;
-  font-size: 0.875rem;
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
 }
 
 .actions {
@@ -33,30 +34,30 @@
   justify-content: flex-end;
 }
 
-.loading, .error {
-  margin-top: 2rem;
-  text-align: center;
-  padding: 2rem;
-  border-radius: 8px;
-}
-
+.loading,
 .error {
-  background: rgba(255, 77, 79, 0.1);
-  color: #ff4d4f;
-  border: 1px solid rgba(255, 77, 79, 0.3);
+  padding: var(--space-8);
+  text-align: center;
+  border-radius: var(--radius-md);
+  background: var(--color-bg-primary);
+  font-size: var(--text-sm);
 }
 
 .loading {
-  color: #888;
-  border: 1px dashed var(--border-color, #444);
+  color: var(--color-text-muted);
+}
+
+.error {
+  background: var(--color-error-container);
+  color: var(--color-text-primary);
 }
 
 .panelContainer {
-  margin-top: 1.5rem;
+  margin-top: var(--space-2);
 }
 
 .pagination {
-  margin-top: 1.5rem;
+  margin-top: var(--space-4);
   display: flex;
   justify-content: flex-end;
 }

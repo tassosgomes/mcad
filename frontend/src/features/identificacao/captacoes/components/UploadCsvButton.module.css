@@ -1,3 +1,7 @@
 .container {
   display: inline-block;
 }
+
+.hiddenInput {
+  display: none;
+}

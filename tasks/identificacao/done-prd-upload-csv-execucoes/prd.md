@@ -3,8 +3,8 @@
 > **Domínio:** Identificação (D02)
 > **Feature:** F03 — Upload de Execuções via CSV
 > **Prioridade:** Must Have
-> **Status:** `planned`
-> **Última revisão:** 2026-04-03
+> **Status:** `done`
+> **Última revisão:** 2026-05-10
 
 ---
 

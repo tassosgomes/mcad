@@ -1,5 +1,6 @@
 import { useRef } from 'react';
 import { Button } from '@/shared/components/ui/button/Button';
+import { useToast } from '@components/ui/toast';
 import { useUploadCsv } from '../hooks/useUploadCsv';
 import styles from './UploadCsvButton.module.css';
 
@@ -12,13 +13,14 @@ interface UploadCsvButtonProps {
 export function UploadCsvButton({ captacaoId, onUploadStart, disabled }: UploadCsvButtonProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const uploadMutation = useUploadCsv();
+  const { showToast } = useToast();
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
     if (!file.name.endsWith('.csv')) {
-      alert('Por favor, selecione um arquivo .csv');
+      showToast('Formato inválido. Apenas arquivos .csv são aceitos.', 'error');
       if (inputRef.current) inputRef.current.value = '';
       return;
     }
@@ -26,8 +28,10 @@ export function UploadCsvButton({ captacaoId, onUploadStart, disabled }: UploadC
     try {
       const response = await uploadMutation.mutateAsync({ captacaoId, arquivo: file });
       onUploadStart(response.id);
-    } catch (err: any) {
-      alert(err.detail || 'Erro ao iniciar upload');
+      showToast('Upload iniciado. Acompanhe o status na tabela abaixo.', 'success');
+    } catch (err: unknown) {
+      const problem = err as { detail?: string };
+      showToast(problem.detail || 'Erro ao iniciar upload.', 'error');
     } finally {
       if (inputRef.current) inputRef.current.value = '';
     }
@@ -39,7 +43,7 @@ export function UploadCsvButton({ captacaoId, onUploadStart, disabled }: UploadC
         ref={inputRef}
         type="file"
         accept=".csv"
-        style={{ display: 'none' }}
+        className={styles.hiddenInput}
         onChange={handleFileChange}
       />
       <Button
