@@ -103,6 +103,28 @@ Operações implementadas:
 Cada CREATE e UPDATE gera 2 eventos no `audit_outbox` (`UserAction` + `DataChange`),
 mais 1 evento de domínio no `outbox_events` (CloudEvent).
 
+## Headers de auditoria
+
+Toda requisição inclui headers que o `HttpAuditContextProvider` da cadastro-api lê
+para enriquecer o `AuditContext`:
+
+| Header | Valor |
+|---|---|
+| `Authorization` | `Bearer <jwt>` |
+| `X-Request-Id` | UUID único por request |
+| `X-Correlation-Id` | mesmo UUID (correlação) |
+| `X-Audit-Session-Id` | UUID gerado no startup do container — todos os events da rodada compartilham |
+| `X-Audit-Route` | path da requisição |
+| `X-Audit-Screen-Id` | `CADASTRO_OBRAS` / `CADASTRO_TITULARES` / `CADASTRO_FONOGRAMAS` / `CADASTRO_ASSOCIACOES` |
+| `X-Audit-Screen-Name` | `Obras` / `Titulares` / `Fonogramas` / `Associações` |
+| `X-Audit-Screen-Access-Id` | mesmo `X-Audit-Session-Id` (1 acesso por sessão por tela) |
+| `X-Audit-Command-Id` | mesmo `X-Request-Id` (1 comando por request) |
+
+> Nota: o frontend real não envia `X-Audit-*` hoje, então os audit events do
+> simulador serão **mais ricos** (com screenId/sessionId preenchidos) que os do
+> frontend. Para filtrar uma rodada específica do simulador, use
+> `correlation.userSessionId = sim-<uuid>` ou `screen.screenId LIKE 'CADASTRO_%'`.
+
 ## Troubleshooting
 
 **`401 Unauthorized` em todas as chamadas:** o token foi obtido mas a app não tem

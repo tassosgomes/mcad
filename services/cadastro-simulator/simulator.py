@@ -10,6 +10,7 @@ import re
 import string
 import sys
 import time
+import uuid
 from datetime import datetime, timedelta, timezone
 
 import requests
@@ -33,6 +34,19 @@ CYCLE_INTERVAL = int(os.environ.get("CYCLE_INTERVAL_SECONDS", "300"))
 INTRA_DELAY = float(os.environ.get("INTRA_CYCLE_DELAY_SECONDS", "2"))
 
 POOL_MAX = 200
+
+# Sessão única por execução do container — entra em todas as requisições
+# como X-Audit-Session-Id e permite filtrar audit events de uma rodada.
+SESSION_ID = f"sim-{uuid.uuid4()}"
+
+# Mapeamento entidade -> (screenId, screenName) — espelha as constantes
+# das *AuditEventFactory na cadastro-api (ScreenId/ScreenName).
+SCREENS = {
+    "obra":       ("CADASTRO_OBRAS",       "Obras"),
+    "titular":    ("CADASTRO_TITULARES",   "Titulares"),
+    "fonograma":  ("CADASTRO_FONOGRAMAS",  "Fonogramas"),
+    "associacao": ("CADASTRO_ASSOCIACOES", "Associações"),
+}
 
 # ---------------------------------------------------------------------------
 # Dados para geração
@@ -198,9 +212,33 @@ class CadastroClient:
         self.token_mgr = token_mgr
         self.session = requests.Session()
 
-    def _request(self, method, path, **kwargs):
+    def _audit_headers(self, screen: str | None, path: str) -> dict:
+        """Monta headers de auditoria que o HttpAuditContextProvider lê.
+
+        Cada chamada gera um X-Request-Id novo. X-Audit-Session-Id é constante
+        por execução do container. Quando há entidade alvo (screen), seta
+        X-Audit-Screen-Id e X-Audit-Screen-Name conforme as constantes das
+        AuditEventFactory na cadastro-api.
+        """
+        request_id = str(uuid.uuid4())
+        headers = {
+            "X-Request-Id": request_id,
+            "X-Correlation-Id": request_id,
+            "X-Audit-Session-Id": SESSION_ID,
+            "X-Audit-Route": path,
+        }
+        if screen and screen in SCREENS:
+            screen_id, screen_name = SCREENS[screen]
+            headers["X-Audit-Screen-Id"] = screen_id
+            headers["X-Audit-Screen-Name"] = screen_name
+            headers["X-Audit-Screen-Access-Id"] = SESSION_ID  # 1 acesso por sessão por tela
+            headers["X-Audit-Command-Id"] = request_id  # 1 comando por request
+        return headers
+
+    def _request(self, method, path, screen=None, **kwargs):
         url = f"{API_BASE_URL}{path}" if path.startswith("/") else f"{API_BASE_URL}/{path}"
         headers = kwargs.pop("headers", {})
+        headers.update(self._audit_headers(screen, path))
         headers["Authorization"] = f"Bearer {self.token_mgr.get_token()}"
         if method != "GET":
             headers.setdefault("Content-Type", "application/json")
@@ -213,18 +251,18 @@ class CadastroClient:
             r = self.session.request(method, url, headers=headers, timeout=30, **kwargs)
         return r
 
-    def get(self, path, params=None):
-        r = self._request("GET", path, params=params)
+    def get(self, path, params=None, screen=None):
+        r = self._request("GET", path, screen=screen, params=params)
         r.raise_for_status()
         return r.json() if r.text else None
 
-    def post(self, path, json):
-        r = self._request("POST", path, json=json)
+    def post(self, path, json, screen=None):
+        r = self._request("POST", path, screen=screen, json=json)
         r.raise_for_status()
         return r.json() if r.text else None
 
-    def put(self, path, json):
-        r = self._request("PUT", path, json=json)
+    def put(self, path, json, screen=None):
+        r = self._request("PUT", path, screen=screen, json=json)
         r.raise_for_status()
         return r.json() if r.text else None
 
@@ -312,20 +350,20 @@ def do_read(client: CadastroClient, pool: Pool):
     op = random.choice(candidates)
 
     if op == "list_obras":
-        safe("READ list obras", lambda: client.get("/obras", params={"page": 1, "size": 20}))
+        safe("READ list obras", lambda: client.get("/obras", params={"page": 1, "size": 20}, screen="obra"))
     elif op == "list_titulares":
-        safe("READ list titulares", lambda: client.get("/titulares", params={"page": 1, "size": 20}))
+        safe("READ list titulares", lambda: client.get("/titulares", params={"page": 1, "size": 20}, screen="titular"))
     elif op == "list_fonogramas":
-        safe("READ list fonogramas", lambda: client.get("/fonogramas", params={"page": 1, "size": 20}))
+        safe("READ list fonogramas", lambda: client.get("/fonogramas", params={"page": 1, "size": 20}, screen="fonograma"))
     elif op == "get_obra":
         oid = pool.random_obra()
-        safe(f"READ obra {oid}", lambda: client.get(f"/obras/{oid}"))
+        safe(f"READ obra {oid}", lambda: client.get(f"/obras/{oid}", screen="obra"))
     elif op == "get_titular":
         tid = pool.random_titular()
-        safe(f"READ titular {tid}", lambda: client.get(f"/titulares/{tid}"))
+        safe(f"READ titular {tid}", lambda: client.get(f"/titulares/{tid}", screen="titular"))
     elif op == "get_fonograma":
         fid = pool.random_fonograma()
-        safe(f"READ fonograma {fid}", lambda: client.get(f"/fonogramas/{fid}"))
+        safe(f"READ fonograma {fid}", lambda: client.get(f"/fonogramas/{fid}", screen="fonograma"))
     logging.info("READ ok (%s)", op)
 
 
@@ -348,7 +386,7 @@ def do_write(client: CadastroClient, pool: Pool):
             "associacaoId": assoc,
             "caeIpi": None,
         }
-        res = safe("WRITE titular", lambda: client.post("/titulares", body))
+        res = safe("WRITE titular", lambda: client.post("/titulares", body, screen="titular"))
         if res and "id" in res:
             pool.add_titular(res["id"])
             logging.info("WRITE titular criado id=%s nome=%s", res["id"], body["nome"])
@@ -360,7 +398,7 @@ def do_write(client: CadastroClient, pool: Pool):
             "tipo": weighted_choice(TIPOS_OBRA_PESOS),
             "genero": random.choice(GENEROS),
         }
-        res = safe("WRITE obra", lambda: client.post("/obras", body))
+        res = safe("WRITE obra", lambda: client.post("/obras", body, screen="obra"))
         if res and "id" in res:
             pool.add_obra(res["id"])
             logging.info("WRITE obra criada id=%s titulo=%s", res["id"], body["titulo"])
@@ -374,7 +412,7 @@ def do_write(client: CadastroClient, pool: Pool):
             "dataGravacao": None,
             "dataLancamento": None,
         }
-        res = safe("WRITE fonograma", lambda: client.post("/fonogramas", body))
+        res = safe("WRITE fonograma", lambda: client.post("/fonogramas", body, screen="fonograma"))
         if res and "id" in res:
             pool.add_fonograma(res["id"])
             logging.info("WRITE fonograma criado id=%s isrc=%s", res["id"], body["isrc"])
@@ -394,7 +432,7 @@ def do_update(client: CadastroClient, pool: Pool):
 
     if op == "obra":
         oid = pool.random_obra()
-        atual = safe(f"UPDATE/get obra {oid}", lambda: client.get(f"/obras/{oid}"))
+        atual = safe(f"UPDATE/get obra {oid}", lambda: client.get(f"/obras/{oid}", screen="obra"))
         if not atual:
             return
         novo_titulo = re.sub(r" \[sim \d+\]$", "", atual.get("titulo", gerar_titulo()))
@@ -404,13 +442,13 @@ def do_update(client: CadastroClient, pool: Pool):
             "tipo": atual.get("tipo") or "LITEROMUSICAL",
             "genero": atual.get("genero") or random.choice(GENEROS),
         }
-        res = safe(f"UPDATE obra {oid}", lambda: client.put(f"/obras/{oid}", body))
+        res = safe(f"UPDATE obra {oid}", lambda: client.put(f"/obras/{oid}", body, screen="obra"))
         if res:
             logging.info("UPDATE obra id=%s", oid)
 
     elif op == "titular":
         tid = pool.random_titular()
-        atual = safe(f"UPDATE/get titular {tid}", lambda: client.get(f"/titulares/{tid}"))
+        atual = safe(f"UPDATE/get titular {tid}", lambda: client.get(f"/titulares/{tid}", screen="titular"))
         if not atual:
             return
         nome_base = re.sub(r" \[sim \d+\]$", "", atual.get("nome", gerar_nome_pessoa()))
@@ -426,7 +464,7 @@ def do_update(client: CadastroClient, pool: Pool):
             "status": (atual.get("status") or "ATIVO"),
             "caeIpi": atual.get("caeIpi"),
         }
-        res = safe(f"UPDATE titular {tid}", lambda: client.put(f"/titulares/{tid}", body))
+        res = safe(f"UPDATE titular {tid}", lambda: client.put(f"/titulares/{tid}", body, screen="titular"))
         if res:
             logging.info("UPDATE titular id=%s", tid)
 
@@ -436,20 +474,23 @@ def do_update(client: CadastroClient, pool: Pool):
 
 def warmup(client: CadastroClient, pool: Pool):
     logging.info("Warmup — carregando associações")
-    associacoes = safe("warmup associacoes", lambda: client.get("/associacoes"))
+    associacoes = safe("warmup associacoes", lambda: client.get("/associacoes", screen="associacao"))
     items = extract_items(associacoes)
     pool.associacoes = [a["id"] for a in items if "id" in a]
     if not pool.associacoes:
         raise RuntimeError("Nenhuma associação carregada — abortando")
     logging.info("Warmup — %d associações carregadas", len(pool.associacoes))
 
-    for path, add_fn in [
-        ("/obras", pool.add_obra),
-        ("/titulares", pool.add_titular),
-        ("/fonogramas", pool.add_fonograma),
+    for path, add_fn, screen in [
+        ("/obras", pool.add_obra, "obra"),
+        ("/titulares", pool.add_titular, "titular"),
+        ("/fonogramas", pool.add_fonograma, "fonograma"),
     ]:
         items = extract_items(
-            safe(f"warmup {path}", lambda p=path: client.get(p, params={"page": 1, "size": 50}))
+            safe(
+                f"warmup {path}",
+                lambda p=path, s=screen: client.get(p, params={"page": 1, "size": 50}, screen=s),
+            )
         )
         for it in items:
             if "id" in it:
@@ -480,8 +521,8 @@ def main():
         sys.exit(2)
 
     logging.info(
-        "Simulador iniciando | api=%s | auth=%s | reads=%d writes=%d updates=%d ciclo=%ds",
-        API_BASE_URL, AUTH_MODE, READS, WRITES, UPDATES, CYCLE_INTERVAL,
+        "Simulador iniciando | api=%s | auth=%s | session=%s | reads=%d writes=%d updates=%d ciclo=%ds",
+        API_BASE_URL, AUTH_MODE, SESSION_ID, READS, WRITES, UPDATES, CYCLE_INTERVAL,
     )
 
     token_mgr = TokenManager(AUTH_MODE, INITIAL_REFRESH_TOKEN)
