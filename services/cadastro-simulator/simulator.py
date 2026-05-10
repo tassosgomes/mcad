@@ -18,13 +18,13 @@ import requests
 # Config
 # ---------------------------------------------------------------------------
 
-API_BASE_URL = os.environ.get("API_BASE_URL", "https://mcad.tasso.dev.br/api/v1").rstrip("/")
+API_BASE_URL = os.environ.get("API_BASE_URL", "https://mcad-cadastro.tasso.dev.br/api/v1").rstrip("/")
 OIDC_AUTHORITY = os.environ.get("OIDC_AUTHORITY", "https://9lcinu.logto.app/oidc").rstrip("/")
 OIDC_RESOURCE = os.environ.get("OIDC_RESOURCE", "https://api.mcad.local")
 CLIENT_ID = os.environ.get("OIDC_CLIENT_ID", "").strip()
 CLIENT_SECRET = os.environ.get("OIDC_CLIENT_SECRET", "").strip()
-USERNAME = os.environ.get("SIM_USERNAME", "analista_cadastro")
-PASSWORD = os.environ.get("SIM_PASSWORD", "Analista123!")
+AUTH_MODE = os.environ.get("AUTH_MODE", "client_credentials").strip().lower()
+INITIAL_REFRESH_TOKEN = os.environ.get("INITIAL_REFRESH_TOKEN", "").strip()
 
 READS = int(os.environ.get("READS_PER_CYCLE", "3"))
 WRITES = int(os.environ.get("WRITES_PER_CYCLE", "1"))
@@ -112,9 +112,22 @@ def weighted_choice(items):
 # ---------------------------------------------------------------------------
 
 class TokenManager:
-    def __init__(self):
+    """Gerencia access_token via dois modos:
+
+    - client_credentials (M2M): a app Logto autentica como serviço; audit events
+      ficam com actor.username = "system" (Logto Cloud não suporta `password` ROPC).
+    - refresh_token: usa um refresh_token capturado manualmente do frontend para
+      preservar actor.username = analista_cadastro nos audit events.
+    """
+
+    VALID_MODES = ("client_credentials", "refresh_token")
+
+    def __init__(self, mode: str, initial_refresh_token: str = ""):
+        if mode not in self.VALID_MODES:
+            raise ValueError(f"AUTH_MODE inválido: {mode}. Use {self.VALID_MODES}")
+        self.mode = mode
         self.access_token = None
-        self.refresh_token = None
+        self.refresh_token = initial_refresh_token or None
         self.expires_at = datetime.now(timezone.utc)
 
     def get_token(self) -> str:
@@ -130,31 +143,32 @@ class TokenManager:
         self._renew()
 
     def _renew(self):
-        if self.refresh_token:
-            try:
-                self._do_refresh()
-                return
-            except Exception as exc:
-                logging.warning("Refresh falhou (%s); tentando login novamente", exc)
-        self._do_login()
+        if self.mode == "client_credentials":
+            self._do_client_credentials()
+        else:
+            if not self.refresh_token:
+                raise RuntimeError(
+                    "AUTH_MODE=refresh_token mas INITIAL_REFRESH_TOKEN não configurado. "
+                    "Capture do localStorage do browser após login no frontend."
+                )
+            self._do_refresh()
 
-    def _do_login(self):
-        logging.info("Login Logto via ROPC (user=%s)", USERNAME)
+    def _do_client_credentials(self):
+        logging.info("Auth: client_credentials (M2M)")
         data = {
-            "grant_type": "password",
+            "grant_type": "client_credentials",
             "client_id": CLIENT_ID,
             "client_secret": CLIENT_SECRET,
-            "username": USERNAME,
-            "password": PASSWORD,
             "resource": OIDC_RESOURCE,
-            "scope": "access write offline_access",
+            "scope": "access write",
         }
         r = requests.post(f"{OIDC_AUTHORITY}/token", data=data, timeout=30)
         if r.status_code >= 400:
-            raise RuntimeError(f"Login falhou {r.status_code}: {r.text}")
+            raise RuntimeError(f"client_credentials falhou {r.status_code}: {r.text}")
         self._consume_token(r.json())
 
     def _do_refresh(self):
+        logging.info("Auth: refresh_token")
         data = {
             "grant_type": "refresh_token",
             "client_id": CLIENT_ID,
@@ -165,7 +179,7 @@ class TokenManager:
         }
         r = requests.post(f"{OIDC_AUTHORITY}/token", data=data, timeout=30)
         if r.status_code >= 400:
-            raise RuntimeError(f"Refresh {r.status_code}: {r.text}")
+            raise RuntimeError(f"refresh_token falhou {r.status_code}: {r.text}")
         self._consume_token(r.json())
 
     def _consume_token(self, payload):
@@ -458,13 +472,19 @@ def main():
     if not CLIENT_ID or not CLIENT_SECRET:
         logging.error("OIDC_CLIENT_ID e OIDC_CLIENT_SECRET são obrigatórios")
         sys.exit(2)
+    if AUTH_MODE not in TokenManager.VALID_MODES:
+        logging.error("AUTH_MODE inválido: %s. Use client_credentials ou refresh_token", AUTH_MODE)
+        sys.exit(2)
+    if AUTH_MODE == "refresh_token" and not INITIAL_REFRESH_TOKEN:
+        logging.error("AUTH_MODE=refresh_token requer INITIAL_REFRESH_TOKEN no .env")
+        sys.exit(2)
 
     logging.info(
-        "Simulador iniciando | api=%s | reads=%d writes=%d updates=%d ciclo=%ds",
-        API_BASE_URL, READS, WRITES, UPDATES, CYCLE_INTERVAL,
+        "Simulador iniciando | api=%s | auth=%s | reads=%d writes=%d updates=%d ciclo=%ds",
+        API_BASE_URL, AUTH_MODE, READS, WRITES, UPDATES, CYCLE_INTERVAL,
     )
 
-    token_mgr = TokenManager()
+    token_mgr = TokenManager(AUTH_MODE, INITIAL_REFRESH_TOKEN)
     client = CadastroClient(token_mgr)
     pool = Pool()
     warmup(client, pool)

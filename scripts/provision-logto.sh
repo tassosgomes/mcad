@@ -224,51 +224,85 @@ def ensure_frontend_app(token: str) -> str:
     return created["id"]
 
 
-def ensure_simulator_app(token: str) -> tuple[str, str]:
-    """Cria ou atualiza a app Traditional Web do simulador (grant password habilitado).
+def ensure_simulator_app(token: str, scope_ids: dict) -> tuple[str, str]:
+    """Cria ou atualiza a app M2M do simulador.
 
-    Retorna (appId, appSecret). A app é confidencial (tem secret) e habilita o grant
-    'password' (ROPC) para que o simulador autentique como usuário real (analista_cadastro)
-    e gere audit events com actor.username preenchido.
+    Logto Cloud não suporta o grant `password` (ROPC), então o simulador autentica
+    via `client_credentials` (M2M). Os audit events gerados terão `actor.username`
+    como "system"/client_id em vez do usuário real, mas o fluxo de auditoria
+    permanece ativo (que é o objetivo da simulação contínua).
+
+    A app recebe os scopes `access` e `write` no API resource mcad-apis para poder
+    chamar todos os endpoints da cadastro-api.
+
+    Retorna (appId, appSecret).
     """
-    desired_grant_types = ["authorization_code", "refresh_token", "password"]
-
     apps = api("GET", "/applications", token) or []
     existing = next((a for a in apps if a.get("name") == SIMULATOR_APP_NAME), None)
 
     if existing:
         app_id = existing["id"]
-        metadata = existing.get("oidcClientMetadata") or {}
-        current_grants = set(metadata.get("grantTypes") or [])
-        if current_grants != set(desired_grant_types):
-            api("PATCH", f"/applications/{app_id}", token, {
-                "oidcClientMetadata": {
-                    **metadata,
-                    "grantTypes": desired_grant_types,
-                },
-            })
-            print(f"  App Traditional atualizada (grants): {SIMULATOR_APP_NAME} (appId={app_id})")
+        app_type = existing.get("type")
+        if app_type != "MachineToMachine":
+            print(f"  ⚠ App {SIMULATOR_APP_NAME} existe mas type={app_type} (esperado MachineToMachine).")
+            print(f"    Apague-a no Console e rode o script novamente.")
         else:
-            print(f"  App Traditional já existe: {SIMULATOR_APP_NAME} (appId={app_id})")
+            print(f"  App M2M já existe: {SIMULATOR_APP_NAME} (appId={app_id})")
     else:
         created = api("POST", "/applications", token, {
             "name": SIMULATOR_APP_NAME,
-            "type": "Traditional",
+            "type": "MachineToMachine",
             "description": "Simulador de uso contínuo do domínio Cadastro (gera audit events)",
-            "oidcClientMetadata": {
-                "redirectUris": [],
-                "postLogoutRedirectUris": [],
-                "grantTypes": desired_grant_types,
-            },
         })
         app_id = created["id"]
-        print(f"  App Traditional criada: {SIMULATOR_APP_NAME} (appId={app_id})")
+        print(f"  App M2M criada: {SIMULATOR_APP_NAME} (appId={app_id})")
 
-    # Recarrega para obter o secret (algumas versões do Logto não retornam secret no POST)
+    # Atribui scopes access + write do API resource mcad-apis à app M2M.
+    # Endpoint Logto: /applications/{id}/user-consent-scopes não se aplica a M2M;
+    # M2M usa /applications/{id}/roles ou /applications/{id}/scopes dependendo da
+    # versão. A forma documentada atual é via /resources/{rid}/scopes + atribuição
+    # direta usando o endpoint /m2m-apps/{id}/roles. Como Logto Cloud Free pode
+    # variar, atribuímos via API role-based: criamos role 'simulator-m2m' com os
+    # scopes e ligamos à app.
+    role_name = "simulator-m2m"
+    role_description = "Role M2M do simulador (access + write na API mcad)"
+    scope_ids_to_assign = [scope_ids["access"], scope_ids["write"]]
+
+    roles = api("GET", f"/roles?search={urllib.parse.quote(role_name)}&limit=20&type=MachineToMachine", token) or []
+    existing_role = next((r for r in roles if r.get("name") == role_name), None)
+    if existing_role:
+        role_id = existing_role["id"]
+        print(f"  Role M2M já existe: {role_name}")
+    else:
+        created = api("POST", "/roles", token, {
+            "name": role_name,
+            "description": role_description,
+            "type": "MachineToMachine",
+        })
+        role_id = created["id"]
+        print(f"  Role M2M criada: {role_name}")
+
+    current_scopes = api("GET", f"/roles/{role_id}/scopes", token) or []
+    current_scope_ids = {s["id"] for s in current_scopes}
+    missing = [sid for sid in scope_ids_to_assign if sid not in current_scope_ids]
+    if missing:
+        api("POST", f"/roles/{role_id}/scopes", token, {"scopeIds": missing})
+        print(f"    Scopes atribuídos à role {role_name}")
+
+    current_app_roles = api("GET", f"/applications/{app_id}/roles", token) or []
+    if not any(r.get("id") == role_id for r in current_app_roles):
+        api("POST", f"/applications/{app_id}/roles", token, {"roleIds": [role_id]})
+        print(f"    Role {role_name} atribuída à app {SIMULATOR_APP_NAME}")
+
     full = api("GET", f"/applications/{app_id}", token) or {}
     secret = full.get("secret") or ""
     if not secret:
-        print(f"  ⚠ Secret não retornado pela API. Copie manualmente do Console > {SIMULATOR_APP_NAME} > Settings.")
+        # Algumas versões guardam secret em /applications/{id}/secrets
+        secrets = api("GET", f"/applications/{app_id}/secrets", token) or []
+        if secrets and isinstance(secrets, list):
+            secret = secrets[0].get("value") or ""
+    if not secret:
+        print(f"  ⚠ Secret não retornado pela API. Copie manualmente do Console > {SIMULATOR_APP_NAME} > Settings > App Secrets.")
 
     return app_id, secret
 
@@ -424,8 +458,8 @@ ANALISTA_ROLE_NAMES = {"analista-cadastro", "analista-identificacao", "analista-
 print("\n[3/7] Garantindo aplicação SPA frontend...")
 frontend_app_id = ensure_frontend_app(token)
 
-print("\n[4/7] Garantindo aplicação Traditional do simulador (ROPC)...")
-simulator_app_id, simulator_app_secret = ensure_simulator_app(token)
+print("\n[4/7] Garantindo aplicação M2M do simulador...")
+simulator_app_id, simulator_app_secret = ensure_simulator_app(token, scope_ids)
 
 print("\n[5/7] Garantindo roles...")
 role_ids = {}
