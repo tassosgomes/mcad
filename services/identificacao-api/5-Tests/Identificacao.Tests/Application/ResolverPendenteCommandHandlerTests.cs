@@ -17,7 +17,10 @@ public class ResolverPendenteCommandHandlerTests
 
     public ResolverPendenteCommandHandlerTests()
     {
-        _handler = new ResolverPendenteCommandHandler(_execucaoRepoMock.Object, _cadastroClientMock.Object);
+        _handler = new ResolverPendenteCommandHandler(
+            _execucaoRepoMock.Object,
+            _cadastroClientMock.Object,
+            Mock.Of<IIdentificacaoAuditPublisher>());
     }
 
     private Captacao CriarCaptacao(StatusCaptacao status)

@@ -21,7 +21,8 @@ public class AtualizarExecucaoCommandHandlerTests
             _execucaoRepoMock.Object,
             _captacaoRepoMock.Object,
             _tipoUtilizacaoRepoMock.Object,
-            _cadastroClientMock.Object);
+            _cadastroClientMock.Object,
+            Mock.Of<IIdentificacaoAuditPublisher>());
     }
 
     private Captacao CriarCaptacaoAberta(Guid analistaId)

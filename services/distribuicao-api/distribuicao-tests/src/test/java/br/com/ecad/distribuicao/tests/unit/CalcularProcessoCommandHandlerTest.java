@@ -8,6 +8,8 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import br.com.ecad.distribuicao.application.audit.AuditContextProvider;
+import br.com.ecad.distribuicao.application.audit.GenericAuditEventFactory;
 import br.com.ecad.distribuicao.application.commands.CalcularProcessoCommand;
 import br.com.ecad.distribuicao.application.commands.handlers.CalcularProcessoCommandHandler;
 import br.com.ecad.distribuicao.application.dto.CalcularProcessoResponse;
@@ -34,6 +36,7 @@ import br.com.ecad.distribuicao.domain.interfaces.SnapshotRolRepository;
 import br.com.ecad.distribuicao.domain.interfaces.SnapshotVerbaRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
+import br.org.ecad.audit.sdk.AuditClient;
 import java.lang.reflect.Field;
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -84,6 +87,15 @@ class CalcularProcessoCommandHandlerTest {
     @Mock
     private OutboxEventRepository outboxEventRepository;
 
+    @Mock
+    private AuditClient auditClient;
+
+    @Mock
+    private GenericAuditEventFactory auditFactory;
+
+    @Mock
+    private AuditContextProvider auditContextProvider;
+
     private CalcularProcessoCommandHandler handler;
     private SimpleMeterRegistry meterRegistry;
 
@@ -100,7 +112,10 @@ class CalcularProcessoCommandHandlerTest {
                 outboxEventRepository,
                 new RolPayloadParser(objectMapper),
                 objectMapper,
-                meterRegistry);
+                meterRegistry,
+                auditClient,
+                auditFactory,
+                auditContextProvider);
     }
 
     @Test

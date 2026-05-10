@@ -74,7 +74,6 @@ jobs:
           if-no-files-found: ignore
 
       - name: Set up Docker Buildx
-        if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
         uses: docker/setup-buildx-action@v3
 
       - name: Login to Docker Hub
@@ -106,6 +105,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+      packages: read
     defaults:
       run:
         working-directory: services/identificacao-api
@@ -117,8 +117,30 @@ jobs:
         with:
           dotnet-version: '8.0.x'
 
+      - name: Generate NuGet config
+        env:
+          GITHUB_PACKAGES_TOKEN: ${{ secrets.GH_PACKAGES_READ_TOKEN || github.token }}
+        run: |
+          mkdir -p .ci
+          cat > .ci/NuGet.config <<EOF
+          <?xml version="1.0" encoding="utf-8"?>
+          <configuration>
+            <packageSources>
+              <clear />
+              <add key="nuget.org" value="https://api.nuget.org/v3/index.json" />
+              <add key="github" value="https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json" />
+            </packageSources>
+            <packageSourceCredentials>
+              <github>
+                <add key="Username" value="${{ github.actor }}" />
+                <add key="ClearTextPassword" value="${GITHUB_PACKAGES_TOKEN}" />
+              </github>
+            </packageSourceCredentials>
+          </configuration>
+          EOF
+
       - name: Restore dependencies
-        run: dotnet restore 5-Tests/Identificacao.Tests/Identificacao.Tests.csproj
+        run: dotnet restore 5-Tests/Identificacao.Tests/Identificacao.Tests.csproj --configfile .ci/NuGet.config
 
       - name: Run unit tests
         run: dotnet test 5-Tests/Identificacao.Tests/Identificacao.Tests.csproj --configuration Release --no-restore --logger "trx;LogFileName=identificacao-unit.trx"
@@ -132,7 +154,6 @@ jobs:
           if-no-files-found: ignore
 
       - name: Set up Docker Buildx
-        if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
         uses: docker/setup-buildx-action@v3
 
       - name: Login to Docker Hub
@@ -153,6 +174,8 @@ jobs:
             ${{ env.DOCKERHUB_NAMESPACE }}/mcad-identificacao-api:latest
           cache-from: type=gha,scope=identificacao-api
           cache-to: type=gha,mode=max,scope=identificacao-api
+          secret-files: |
+            nuget_config=services/identificacao-api/.ci/NuGet.config
 
   # ---------------------------------------------------------------------------
   # Arrecadacao API (Java 21 / Maven)
@@ -193,7 +216,6 @@ jobs:
           if-no-files-found: ignore
 
       - name: Set up Docker Buildx
-        if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
         uses: docker/setup-buildx-action@v3
 
       - name: Login to Docker Hub
@@ -270,7 +292,6 @@ jobs:
           if-no-files-found: ignore
 
       - name: Set up Docker Buildx
-        if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
         uses: docker/setup-buildx-action@v3
 
       - name: Login to Docker Hub
@@ -323,7 +344,6 @@ jobs:
         run: npm test
 
       - name: Set up Docker Buildx
-        if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
         uses: docker/setup-buildx-action@v3
 
       - name: Login to Docker Hub
@@ -376,7 +396,6 @@ jobs:
         run: npm test
 
       - name: Set up Docker Buildx
-        if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
         uses: docker/setup-buildx-action@v3
 
       - name: Login to Docker Hub

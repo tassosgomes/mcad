@@ -27,7 +27,11 @@ public class FecharRolCommandHandlerTests
         _preReqHandlerMock = new Mock<IQueryHandler<ValidarPreRequisitosQuery, PreRequisitosResponse>>();
 
         _handler = new FecharRolCommandHandler(
-            _captacaoRepoMock.Object, _execucaoRepoMock.Object, _outboxWriterMock.Object, _preReqHandlerMock.Object);
+            _captacaoRepoMock.Object,
+            _execucaoRepoMock.Object,
+            _outboxWriterMock.Object,
+            _preReqHandlerMock.Object,
+            Mock.Of<IIdentificacaoAuditPublisher>());
     }
 
     private Captacao CriarCaptacao(Guid analistaId, bool fechada = false, bool exigeClassificacao = false)

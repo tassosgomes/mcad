@@ -23,7 +23,11 @@ public class CriarUploadCommandHandlerTests
     private readonly Mock<IMinioService> _minioServiceMock = new();
     
     private CriarUploadCommandHandler CreateHandler() 
-        => new(_captacaoRepoMock.Object, _uploadRepoMock.Object, _minioServiceMock.Object);
+        => new(
+            _captacaoRepoMock.Object,
+            _uploadRepoMock.Object,
+            _minioServiceMock.Object,
+            Mock.Of<IIdentificacaoAuditPublisher>());
 
     private Stream CreateStream(string content) 
         => new MemoryStream(Encoding.UTF8.GetBytes(content));

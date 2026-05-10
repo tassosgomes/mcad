@@ -21,6 +21,7 @@ import br.com.ecad.distribuicao.domain.exceptions.PreRequisitosException;
 import br.com.ecad.distribuicao.domain.filters.CreditoFiltro;
 import br.com.ecad.distribuicao.domain.interfaces.CadastroOwnershipClient;
 import br.com.ecad.distribuicao.domain.interfaces.CreditoRepository;
+import br.org.ecad.audit.sdk.AuditClient;
 import jakarta.persistence.EntityManager;
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -46,6 +47,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
         webEnvironment = SpringBootTest.WebEnvironment.NONE,
         properties = {
             "app.security.auth-enabled=false",
+            "spring.autoconfigure.exclude=br.org.ecad.audit.starter.AuditAutoConfiguration",
             "spring.rabbitmq.listener.simple.auto-startup=false"
         })
 @Testcontainers
@@ -77,6 +79,9 @@ class CalcularProcessoCommandHandlerIntegrationTest {
 
     @MockBean
     private CadastroOwnershipClient cadastroOwnershipClient;
+
+    @MockBean
+    private AuditClient auditClient;
 
     @MockBean
     private JwtDecoder jwtDecoder;

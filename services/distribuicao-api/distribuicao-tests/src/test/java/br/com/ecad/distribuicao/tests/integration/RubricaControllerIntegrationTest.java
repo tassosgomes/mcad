@@ -9,6 +9,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import br.com.ecad.distribuicao.api.DistribuicaoApiApplication;
 import br.com.ecad.distribuicao.domain.entities.Rubrica;
 import br.com.ecad.distribuicao.infra.persistence.SpringDataRubricaRepository;
+import br.org.ecad.audit.sdk.AuditClient;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -30,6 +31,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
         webEnvironment = SpringBootTest.WebEnvironment.MOCK,
         properties = {
             "app.security.auth-enabled=true",
+            "spring.autoconfigure.exclude=br.org.ecad.audit.starter.AuditAutoConfiguration",
             "spring.rabbitmq.listener.simple.auto-startup=false"
         })
 @AutoConfigureMockMvc
@@ -48,6 +50,9 @@ class RubricaControllerIntegrationTest {
 
     @Autowired
     private SpringDataRubricaRepository springDataRubricaRepository;
+
+    @MockBean
+    private AuditClient auditClient;
 
     @MockBean
     private JwtDecoder jwtDecoder;

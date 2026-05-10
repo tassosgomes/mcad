@@ -18,7 +18,10 @@ public class AtualizarCaptacaoCommandHandlerTests
     {
         _captacaoRepoMock = new Mock<ICaptacaoRepository>();
         _rubricaRepoMock = new Mock<IRubricaRepository>();
-        _handler = new AtualizarCaptacaoCommandHandler(_captacaoRepoMock.Object, _rubricaRepoMock.Object);
+        _handler = new AtualizarCaptacaoCommandHandler(
+            _captacaoRepoMock.Object,
+            _rubricaRepoMock.Object,
+            Mock.Of<IIdentificacaoAuditPublisher>());
     }
 
     [Fact]

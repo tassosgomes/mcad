@@ -5,6 +5,7 @@ import static org.awaitility.Awaitility.await;
 
 import br.com.ecad.distribuicao.api.DistribuicaoApiApplication;
 import br.com.ecad.distribuicao.infra.persistence.SpringDataRubricaRepository;
+import br.org.ecad.audit.sdk.AuditClient;
 import java.time.Duration;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -27,6 +28,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
         webEnvironment = SpringBootTest.WebEnvironment.NONE,
         properties = {
             "app.security.auth-enabled=false",
+            "spring.autoconfigure.exclude=br.org.ecad.audit.starter.AuditAutoConfiguration",
             "spring.rabbitmq.listener.simple.missing-queues-fatal=false"
         })
 @Testcontainers
@@ -50,6 +52,9 @@ class RubricaEventListenerIntegrationTest {
 
     @Autowired
     private SpringDataRubricaRepository springDataRubricaRepository;
+
+    @MockBean
+    private AuditClient auditClient;
 
     @MockBean
     private JwtDecoder jwtDecoder;

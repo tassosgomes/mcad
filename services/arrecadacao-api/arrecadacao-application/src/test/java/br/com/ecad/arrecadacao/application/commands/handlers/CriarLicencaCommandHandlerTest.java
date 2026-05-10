@@ -1,5 +1,7 @@
 package br.com.ecad.arrecadacao.application.commands.handlers;
 
+import br.com.ecad.arrecadacao.application.audit.AuditContextProvider;
+import br.com.ecad.arrecadacao.application.audit.GenericAuditEventFactory;
 import br.com.ecad.arrecadacao.application.commands.CriarLicencaCommand;
 import br.com.ecad.arrecadacao.domain.entities.HistoricoStatusLicenca;
 import br.com.ecad.arrecadacao.domain.entities.Licenca;
@@ -17,6 +19,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import br.org.ecad.audit.sdk.AuditClient;
 
 import java.time.LocalDate;
 import java.util.Optional;
@@ -37,6 +40,12 @@ class CriarLicencaCommandHandlerTest {
     private UsuarioMusicaRepository usuarioMusicaRepository;
     @Mock
     private RubricaRepository rubricaRepository;
+    @Mock
+    private AuditClient auditClient;
+    @Mock
+    private GenericAuditEventFactory auditFactory;
+    @Mock
+    private AuditContextProvider auditContextProvider;
 
     @InjectMocks
     private CriarLicencaCommandHandler handler;

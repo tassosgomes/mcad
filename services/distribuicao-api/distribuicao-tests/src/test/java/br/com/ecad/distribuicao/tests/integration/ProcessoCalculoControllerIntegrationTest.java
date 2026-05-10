@@ -18,6 +18,7 @@ import br.com.ecad.distribuicao.domain.entities.SnapshotRol;
 import br.com.ecad.distribuicao.domain.entities.SnapshotVerba;
 import br.com.ecad.distribuicao.domain.enums.CategoriaCredito;
 import br.com.ecad.distribuicao.domain.interfaces.CadastroOwnershipClient;
+import br.org.ecad.audit.sdk.AuditClient;
 import jakarta.persistence.EntityManager;
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -47,6 +48,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
         webEnvironment = SpringBootTest.WebEnvironment.MOCK,
         properties = {
             "app.security.auth-enabled=true",
+            "spring.autoconfigure.exclude=br.org.ecad.audit.starter.AuditAutoConfiguration",
             "spring.rabbitmq.listener.simple.auto-startup=false"
         })
 @AutoConfigureMockMvc
@@ -78,6 +80,9 @@ class ProcessoCalculoControllerIntegrationTest {
 
     @MockBean
     private CadastroOwnershipClient cadastroOwnershipClient;
+
+    @MockBean
+    private AuditClient auditClient;
 
     @MockBean
     private JwtDecoder jwtDecoder;

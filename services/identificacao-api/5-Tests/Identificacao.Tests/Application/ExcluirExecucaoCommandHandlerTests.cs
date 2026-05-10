@@ -17,7 +17,10 @@ public class ExcluirExecucaoCommandHandlerTests
 
     public ExcluirExecucaoCommandHandlerTests()
     {
-        _handler = new ExcluirExecucaoCommandHandler(_execucaoRepoMock.Object, _captacaoRepoMock.Object);
+        _handler = new ExcluirExecucaoCommandHandler(
+            _execucaoRepoMock.Object,
+            _captacaoRepoMock.Object,
+            Mock.Of<IIdentificacaoAuditPublisher>());
     }
 
     private Captacao CriarCaptacaoAberta(Guid analistaId)

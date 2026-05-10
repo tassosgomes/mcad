@@ -1,5 +1,7 @@
 package br.com.ecad.arrecadacao.application.commands.handlers;
 
+import br.com.ecad.arrecadacao.application.audit.AuditContextProvider;
+import br.com.ecad.arrecadacao.application.audit.GenericAuditEventFactory;
 import br.com.ecad.arrecadacao.application.commands.AjustarUdaCommand;
 import br.com.ecad.arrecadacao.application.dto.UdaResponse;
 import br.com.ecad.arrecadacao.domain.entities.UdaValor;
@@ -9,6 +11,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import br.org.ecad.audit.sdk.AuditClient;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -22,6 +25,12 @@ class AjustarUdaCommandHandlerTest {
 
     @Mock
     private UdaValorRepository udaValorRepository;
+    @Mock
+    private AuditClient auditClient;
+    @Mock
+    private GenericAuditEventFactory auditFactory;
+    @Mock
+    private AuditContextProvider auditContextProvider;
 
     @InjectMocks
     private AjustarUdaCommandHandler handler;

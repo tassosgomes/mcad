@@ -1,5 +1,7 @@
 package br.com.ecad.arrecadacao.application.commands.handlers;
 
+import br.com.ecad.arrecadacao.application.audit.AuditContextProvider;
+import br.com.ecad.arrecadacao.application.audit.GenericAuditEventFactory;
 import br.com.ecad.arrecadacao.application.commands.ReativarLicencaCommand;
 import br.com.ecad.arrecadacao.domain.entities.HistoricoStatusLicenca;
 import br.com.ecad.arrecadacao.domain.entities.Licenca;
@@ -17,6 +19,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import br.org.ecad.audit.sdk.AuditClient;
 
 import java.util.Optional;
 import java.util.UUID;
@@ -36,6 +39,12 @@ class ReativarLicencaCommandHandlerTest {
     private UsuarioMusicaRepository usuarioMusicaRepository;
     @Mock
     private RubricaRepository rubricaRepository;
+    @Mock
+    private AuditClient auditClient;
+    @Mock
+    private GenericAuditEventFactory auditFactory;
+    @Mock
+    private AuditContextProvider auditContextProvider;
 
     @InjectMocks
     private ReativarLicencaCommandHandler handler;
@@ -53,6 +62,7 @@ class ReativarLicencaCommandHandlerTest {
         lenient().when(licenca.getId()).thenReturn(licencaId);
         lenient().when(licenca.getUsuarioMusicaId()).thenReturn(UUID.randomUUID());
         lenient().when(licenca.getRubricaId()).thenReturn(UUID.randomUUID());
+        lenient().when(licenca.getStatus()).thenReturn(StatusLicenca.SUSPENSA);
     }
 
     @Test

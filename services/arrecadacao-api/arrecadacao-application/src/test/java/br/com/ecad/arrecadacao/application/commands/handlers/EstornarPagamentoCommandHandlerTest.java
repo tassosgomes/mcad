@@ -1,5 +1,7 @@
 package br.com.ecad.arrecadacao.application.commands.handlers;
 
+import br.com.ecad.arrecadacao.application.audit.AuditContextProvider;
+import br.com.ecad.arrecadacao.application.audit.GenericAuditEventFactory;
 import br.com.ecad.arrecadacao.application.commands.EstornarPagamentoCommand;
 import br.com.ecad.arrecadacao.application.dto.PagamentoResponse;
 import br.com.ecad.arrecadacao.domain.entities.Licenca;
@@ -18,6 +20,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
+import br.org.ecad.audit.sdk.AuditClient;
 
 import java.math.BigDecimal;
 import java.util.Optional;
@@ -34,6 +37,9 @@ class EstornarPagamentoCommandHandlerTest {
     @Mock private PagamentoRepository pagamentoRepository;
     @Mock private VerbaService verbaService;
     @Mock private OutboxEventWriter outboxEventWriter;
+    @Mock private AuditClient auditClient;
+    @Mock private GenericAuditEventFactory auditFactory;
+    @Mock private AuditContextProvider auditContextProvider;
 
     @InjectMocks
     private EstornarPagamentoCommandHandler handler;

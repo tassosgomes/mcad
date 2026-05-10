@@ -17,7 +17,9 @@ public class ExcluirCaptacaoCommandHandlerTests
     public ExcluirCaptacaoCommandHandlerTests()
     {
         _captacaoRepoMock = new Mock<ICaptacaoRepository>();
-        _handler = new ExcluirCaptacaoCommandHandler(_captacaoRepoMock.Object);
+        _handler = new ExcluirCaptacaoCommandHandler(
+            _captacaoRepoMock.Object,
+            Mock.Of<IIdentificacaoAuditPublisher>());
     }
 
     [Fact]

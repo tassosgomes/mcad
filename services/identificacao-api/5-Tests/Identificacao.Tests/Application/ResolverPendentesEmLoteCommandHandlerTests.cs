@@ -16,7 +16,10 @@ public class ResolverPendentesEmLoteCommandHandlerTests
 
     public ResolverPendentesEmLoteCommandHandlerTests()
     {
-        _handler = new ResolverPendentesEmLoteCommandHandler(_execucaoRepoMock.Object, _cadastroClientMock.Object);
+        _handler = new ResolverPendentesEmLoteCommandHandler(
+            _execucaoRepoMock.Object,
+            _cadastroClientMock.Object,
+            Mock.Of<IIdentificacaoAuditPublisher>());
     }
 
     private Captacao CriarCaptacao(StatusCaptacao status)
