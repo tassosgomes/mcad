@@ -16,16 +16,18 @@ public class EditarTitularidadeHandlerTests
 {
     private readonly Mock<ITitularidadeRepository> _titularidadeRepoMock;
     private readonly Mock<IObraRepository> _obraRepoMock;
+    private readonly Mock<ITitularidadeAuditPublisher> _auditPublisherMock;
     private readonly EditarTitularidadeCommandHandler _handler;
 
     public EditarTitularidadeHandlerTests()
     {
         _titularidadeRepoMock = new Mock<ITitularidadeRepository>();
         _obraRepoMock = new Mock<IObraRepository>();
+        _auditPublisherMock = new Mock<ITitularidadeAuditPublisher>();
         _handler = new EditarTitularidadeCommandHandler(
             _titularidadeRepoMock.Object,
             _obraRepoMock.Object,
-            Mock.Of<ITitularidadeAuditPublisher>());
+            _auditPublisherMock.Object);
     }
 
     [Fact]
@@ -51,6 +53,12 @@ public class EditarTitularidadeHandlerTests
         var result = await act.Should().NotThrowAsync();
         result.Subject.Should().BeOfType<TitularidadesResponse>();
         _titularidadeRepoMock.Verify(r => r.Update(It.IsAny<TitularidadeAutoral>()), Times.Once);
+        _auditPublisherMock.Verify(a => a.Snapshot(titularidade), Times.Once);
+        _auditPublisherMock.Verify(a => a.PublishAsync(
+            titularidade,
+            TitularidadeAuditOperation.Edit,
+            It.IsAny<IReadOnlyDictionary<string, object?>>(),
+            It.IsAny<CancellationToken>()), Times.Once);
         _titularidadeRepoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 

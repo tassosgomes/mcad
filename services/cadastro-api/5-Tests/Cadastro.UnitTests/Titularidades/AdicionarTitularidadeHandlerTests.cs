@@ -17,6 +17,7 @@ public class AdicionarTitularidadeHandlerTests
     private readonly Mock<ITitularidadeRepository> _titularidadeRepoMock;
     private readonly Mock<IObraRepository> _obraRepoMock;
     private readonly Mock<ITitularRepository> _titularRepoMock;
+    private readonly Mock<ITitularidadeAuditPublisher> _auditPublisherMock;
     private readonly AdicionarTitularidadeCommandHandler _handler;
 
     public AdicionarTitularidadeHandlerTests()
@@ -24,11 +25,12 @@ public class AdicionarTitularidadeHandlerTests
         _titularidadeRepoMock = new Mock<ITitularidadeRepository>();
         _obraRepoMock = new Mock<IObraRepository>();
         _titularRepoMock = new Mock<ITitularRepository>();
+        _auditPublisherMock = new Mock<ITitularidadeAuditPublisher>();
         _handler = new AdicionarTitularidadeCommandHandler(
             _titularidadeRepoMock.Object,
             _obraRepoMock.Object,
             _titularRepoMock.Object,
-            Mock.Of<ITitularidadeAuditPublisher>());
+            _auditPublisherMock.Object);
     }
 
     [Fact]
@@ -56,6 +58,11 @@ public class AdicionarTitularidadeHandlerTests
         var result = await act.Should().NotThrowAsync();
         result.Subject.Should().BeOfType<TitularidadesResponse>();
         _titularidadeRepoMock.Verify(r => r.AddAsync(It.IsAny<TitularidadeAutoral>(), It.IsAny<CancellationToken>()), Times.Once);
+        _auditPublisherMock.Verify(a => a.PublishAsync(
+            It.Is<TitularidadeAutoral>(t => t.ObraId == obra.Id && t.TitularId == titular.Id),
+            TitularidadeAuditOperation.Add,
+            null,
+            It.IsAny<CancellationToken>()), Times.Once);
         _titularidadeRepoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
