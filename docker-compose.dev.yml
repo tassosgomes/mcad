@@ -39,6 +39,16 @@ services:
       timeout: 5s
       retries: 10
 
+  # ── Schema Registry ───────────────────────────────────────────────
+  mcad-schema-registry:
+    build:
+      context: ./infra/schemas
+      dockerfile: Dockerfile
+    container_name: mcad-schema-registry
+    restart: unless-stopped
+    ports:
+      - "5310:80"
+
   # ── MinIO ─────────────────────────────────────────────────────────
   mcad-minio:
     image: minio/minio:latest

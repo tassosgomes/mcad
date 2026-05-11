@@ -1,0 +1,951 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Schema Explorer - mcad</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='18' fill='%2307111f'/%3E%3Cpath d='M18 22h28M18 32h20M18 42h28' stroke='%2369d2b0' stroke-width='6' stroke-linecap='round'/%3E%3C/svg%3E" />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism-tomorrow.min.css"
+    />
+    <style>
+      :root {
+        --bg: #07111f;
+        --bg-elevated: rgba(12, 28, 47, 0.84);
+        --bg-panel: rgba(9, 21, 37, 0.92);
+        --surface-border: rgba(126, 167, 210, 0.18);
+        --surface-strong: rgba(148, 186, 228, 0.3);
+        --text: #eef4fb;
+        --muted: #9db1c7;
+        --accent: #69d2b0;
+        --accent-strong: #2fc291;
+        --accent-soft: rgba(105, 210, 176, 0.16);
+        --danger: #ff7c7c;
+        --danger-soft: rgba(255, 124, 124, 0.16);
+        --warning: #ffd38a;
+        --shadow: 0 26px 60px rgba(2, 6, 12, 0.42);
+        --radius-xl: 28px;
+        --radius-lg: 22px;
+        --radius-md: 16px;
+        --mono: "Consolas", "Monaco", "Courier New", monospace;
+        --sans: "Avenir Next", "Segoe UI", "Trebuchet MS", sans-serif;
+      }
+
+      * { box-sizing: border-box; }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        font-family: var(--sans);
+        color: var(--text);
+        background:
+          radial-gradient(circle at top left, rgba(85, 139, 214, 0.32), transparent 34%),
+          radial-gradient(circle at top right, rgba(105, 210, 176, 0.22), transparent 28%),
+          linear-gradient(160deg, #050b14 0%, #07111f 44%, #09172a 100%);
+      }
+
+      body::before,
+      body::after {
+        content: "";
+        position: fixed;
+        inset: auto;
+        width: 22rem;
+        height: 22rem;
+        border-radius: 999px;
+        filter: blur(42px);
+        pointer-events: none;
+        z-index: 0;
+      }
+      body::before { top: 2rem; right: -6rem; background: rgba(54, 126, 202, 0.2); }
+      body::after  { left: -5rem; bottom: -6rem; background: rgba(105, 210, 176, 0.16); }
+
+      .app-shell {
+        position: relative;
+        z-index: 1;
+        max-width: 1500px;
+        margin: 0 auto;
+        padding: 28px;
+      }
+
+      .hero {
+        display: grid;
+        grid-template-columns: 1.6fr 1fr;
+        gap: 20px;
+        margin-bottom: 22px;
+      }
+
+      .hero-card,
+      .hero-metrics,
+      .workspace,
+      .panel,
+      .status-card {
+        backdrop-filter: blur(18px);
+        background: var(--bg-elevated);
+        border: 1px solid var(--surface-border);
+        box-shadow: var(--shadow);
+      }
+
+      .hero-card,
+      .hero-metrics,
+      .workspace,
+      .status-card { border-radius: var(--radius-xl); }
+
+      .hero-card { padding: 28px; }
+
+      .eyebrow {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        padding: 8px 12px;
+        border-radius: 999px;
+        font-size: 0.82rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--muted);
+        background: rgba(255, 255, 255, 0.04);
+      }
+
+      .hero h1 {
+        margin: 18px 0 12px;
+        font-size: clamp(2rem, 4vw, 3.25rem);
+        line-height: 0.95;
+      }
+
+      .hero p {
+        margin: 0;
+        max-width: 56rem;
+        color: var(--muted);
+        line-height: 1.6;
+      }
+
+      .hero-metrics {
+        padding: 22px;
+        display: grid;
+        gap: 14px;
+      }
+
+      .metric {
+        padding: 16px 18px;
+        border-radius: var(--radius-lg);
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+      }
+
+      .metric-label {
+        display: block;
+        font-size: 0.76rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+
+      .metric-value {
+        display: block;
+        margin-top: 8px;
+        font-size: 1.35rem;
+        font-weight: 600;
+      }
+
+      .workspace {
+        display: grid;
+        grid-template-columns: 320px minmax(0, 1fr);
+        gap: 18px;
+        padding: 18px;
+      }
+
+      .sidebar {
+        padding: 20px;
+        border-radius: var(--radius-lg);
+        background: var(--bg-panel);
+        border: 1px solid var(--surface-border);
+        max-height: 80vh;
+        overflow-y: auto;
+      }
+
+      .sidebar h2,
+      .content-header h2,
+      .panel-header h3,
+      .status-card h3 { margin: 0; font-size: 1rem; }
+
+      .sidebar-copy {
+        margin: 8px 0 14px;
+        color: var(--muted);
+        font-size: 0.92rem;
+        line-height: 1.55;
+      }
+
+      .filter-input {
+        width: 100%;
+        padding: 10px 12px;
+        margin-bottom: 14px;
+        border-radius: 12px;
+        border: 1px solid var(--surface-border);
+        background: rgba(255, 255, 255, 0.04);
+        color: var(--text);
+        font: inherit;
+        outline: none;
+      }
+      .filter-input:focus { border-color: rgba(105, 210, 176, 0.45); }
+
+      .domain-group { margin-bottom: 14px; }
+
+      .domain-label {
+        display: block;
+        margin: 4px 0 8px;
+        font-size: 0.74rem;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+
+      .schema-list { display: grid; gap: 8px; }
+
+      .schema-item {
+        width: 100%;
+        border: 1px solid transparent;
+        border-radius: 14px;
+        background: rgba(255, 255, 255, 0.03);
+        color: inherit;
+        padding: 11px 14px;
+        text-align: left;
+        cursor: pointer;
+        transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease;
+        font: inherit;
+      }
+
+      .schema-item:hover {
+        transform: translateY(-1px);
+        border-color: rgba(255, 255, 255, 0.12);
+        background: rgba(255, 255, 255, 0.06);
+      }
+
+      .schema-item.active {
+        border-color: rgba(105, 210, 176, 0.45);
+        background: linear-gradient(135deg, rgba(105, 210, 176, 0.18), rgba(54, 126, 202, 0.18));
+      }
+
+      .schema-item strong,
+      .schema-item span { display: block; }
+
+      .schema-item strong { font-size: 0.94rem; }
+
+      .schema-item span {
+        margin-top: 4px;
+        color: var(--muted);
+        font-size: 0.78rem;
+        font-family: var(--mono);
+      }
+
+      .content { display: grid; gap: 18px; }
+
+      .content-header {
+        display: flex;
+        justify-content: space-between;
+        gap: 18px;
+        align-items: flex-start;
+        padding: 20px 22px;
+        border-radius: var(--radius-lg);
+        background: var(--bg-panel);
+        border: 1px solid var(--surface-border);
+      }
+
+      .content-copy { margin-top: 8px; color: var(--muted); }
+
+      .header-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 14px;
+      }
+
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 9px 12px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.05);
+        color: var(--muted);
+        font-size: 0.84rem;
+      }
+
+      .header-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+
+      .action {
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        background: rgba(255, 255, 255, 0.05);
+        color: var(--text);
+        padding: 11px 14px;
+        border-radius: 14px;
+        font: inherit;
+        cursor: pointer;
+      }
+      .action:hover {
+        border-color: rgba(105, 210, 176, 0.34);
+        background: rgba(105, 210, 176, 0.08);
+      }
+
+      .panels {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 18px;
+      }
+
+      .panel { border-radius: var(--radius-lg); overflow: hidden; }
+
+      .panel-header {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        align-items: center;
+        padding: 16px 18px;
+        background: rgba(255, 255, 255, 0.04);
+        border-bottom: 1px solid var(--surface-border);
+      }
+
+      .panel-copy { color: var(--muted); font-size: 0.9rem; }
+
+      .schema-view,
+      .editor-shell {
+        min-height: 540px;
+        height: 100%;
+        background: #07101d;
+      }
+
+      .schema-view { overflow: auto; }
+
+      pre[class*="language-"] {
+        margin: 0;
+        min-height: 540px;
+        padding: 22px;
+        font-family: var(--mono);
+        font-size: 0.92rem;
+        line-height: 1.6;
+        background: transparent;
+      }
+
+      .editor-shell {
+        position: relative;
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr);
+        border: 1px solid transparent;
+        transition: border-color 0.16s ease, box-shadow 0.16s ease;
+      }
+
+      .editor-shell.is-valid {
+        border-color: rgba(105, 210, 176, 0.7);
+        box-shadow: inset 0 0 0 1px rgba(105, 210, 176, 0.18);
+      }
+
+      .editor-shell.is-invalid {
+        border-color: rgba(255, 124, 124, 0.7);
+        box-shadow: inset 0 0 0 1px rgba(255, 124, 124, 0.16);
+      }
+
+      .line-numbers {
+        min-width: 56px;
+        padding: 22px 8px 22px 18px;
+        border-right: 1px solid rgba(255, 255, 255, 0.06);
+        color: rgba(157, 177, 199, 0.65);
+        font-family: var(--mono);
+        font-size: 0.9rem;
+        line-height: 1.6;
+        text-align: right;
+        user-select: none;
+        overflow: hidden;
+        white-space: pre;
+      }
+
+      .payload-editor {
+        width: 100%;
+        min-height: 540px;
+        padding: 22px;
+        border: 0;
+        resize: none;
+        outline: none;
+        color: var(--text);
+        background: transparent;
+        font-family: var(--mono);
+        font-size: 0.92rem;
+        line-height: 1.6;
+        tab-size: 2;
+      }
+
+      .status-card { padding: 20px 22px; }
+
+      .status-head {
+        display: flex;
+        justify-content: space-between;
+        gap: 18px;
+        align-items: center;
+      }
+
+      .status-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 14px;
+        border-radius: 999px;
+        font-weight: 600;
+      }
+      .status-pill.valid { color: var(--accent); background: var(--accent-soft); }
+      .status-pill.invalid { color: var(--danger); background: var(--danger-soft); }
+      .status-pill.idle { color: var(--warning); background: rgba(255, 211, 138, 0.12); }
+
+      .error-list {
+        margin: 16px 0 0;
+        padding-left: 18px;
+        color: var(--muted);
+      }
+      .error-list li + li { margin-top: 8px; }
+
+      .empty-state { padding: 26px; color: var(--muted); }
+
+      .visually-hidden {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
+      }
+
+      @media (max-width: 1120px) {
+        .hero,
+        .workspace,
+        .panels { grid-template-columns: 1fr; }
+        .content-header,
+        .status-head { flex-direction: column; align-items: flex-start; }
+        .sidebar { max-height: none; }
+      }
+
+      @media (max-width: 720px) {
+        .app-shell { padding: 16px; }
+        .hero-card,
+        .hero-metrics,
+        .workspace,
+        .status-card { border-radius: 24px; }
+        .workspace { padding: 12px; }
+        .sidebar,
+        .content-header,
+        .panel-header,
+        .status-card { padding-left: 16px; padding-right: 16px; }
+        pre[class*="language-"],
+        .payload-editor,
+        .line-numbers { padding-top: 18px; padding-bottom: 18px; }
+        .line-numbers { min-width: 46px; padding-left: 10px; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app-shell">
+      <section class="hero">
+        <article class="hero-card">
+          <span class="eyebrow">mcad event contracts</span>
+          <h1>Schema Explorer</h1>
+          <p>
+            Catalogo de eventos do mcad. Inspecione o envelope (CloudEvents 1.0 para dominios; flat JSON para identidade), abra cada contrato e valide payloads em tempo real no browser. A listagem e gerada automaticamente pelo autoindex JSON do nginx em <code>/v1/</code>.
+          </p>
+        </article>
+        <aside class="hero-metrics">
+          <div class="metric">
+            <span class="metric-label">Versao ativa</span>
+            <span class="metric-value">/v1/</span>
+          </div>
+          <div class="metric">
+            <span class="metric-label">Schemas carregados</span>
+            <span class="metric-value" id="schema-count">--</span>
+          </div>
+          <div class="metric">
+            <span class="metric-label">Validacao</span>
+            <span class="metric-value" id="hero-status">Aguardando selecao</span>
+          </div>
+        </aside>
+      </section>
+
+      <section class="workspace">
+        <aside class="sidebar">
+          <h2>Eventos</h2>
+          <p class="sidebar-copy">
+            Agrupados por dominio. Consulte o catalogo completo em <code>docs/events.md</code>.
+          </p>
+          <input type="search" id="filter-input" class="filter-input" placeholder="Filtrar (ex: rol, pagamento, identity)" autocomplete="off" />
+          <div id="schema-list-root">
+            <div class="empty-state">Carregando schemas disponiveis...</div>
+          </div>
+        </aside>
+
+        <div class="content">
+          <header class="content-header">
+            <div>
+              <h2 id="selected-title">Selecione um evento</h2>
+              <div class="content-copy" id="selected-copy">
+                O schema completo e o payload de exemplo aparecerao aqui.
+              </div>
+              <div class="header-meta">
+                <span class="badge" id="selected-file">Arquivo: --</span>
+                <span class="badge" id="selected-id">Schema ID: --</span>
+                <span class="badge" id="selected-type">Event type: --</span>
+              </div>
+            </div>
+            <div class="header-actions">
+              <button class="action" type="button" id="reload-button">Recarregar schema</button>
+              <button class="action" type="button" id="regenerate-button">Gerar payload de exemplo</button>
+            </div>
+          </header>
+
+          <div class="panels">
+            <section class="panel">
+              <div class="panel-header">
+                <div>
+                  <h3>JSON Schema</h3>
+                  <div class="panel-copy">Envelope + payload tipado com syntax highlighting.</div>
+                </div>
+              </div>
+              <div class="schema-view">
+                <pre class="language-json"><code class="language-json" id="schema-code">// selecione um evento para visualizar o schema</code></pre>
+              </div>
+            </section>
+
+            <section class="panel">
+              <div class="panel-header">
+                <div>
+                  <h3>Payload de exemplo</h3>
+                  <div class="panel-copy">Edite o JSON e acompanhe a validacao em tempo real.</div>
+                </div>
+              </div>
+              <div class="editor-shell" id="editor-shell">
+                <div class="line-numbers" id="line-numbers">1</div>
+                <label class="visually-hidden" for="payload-editor">Editor de payload JSON</label>
+                <textarea id="payload-editor" class="payload-editor" spellcheck="false"></textarea>
+              </div>
+            </section>
+          </div>
+
+          <section class="status-card">
+            <div class="status-head">
+              <div>
+                <h3>Status da validacao</h3>
+              </div>
+              <span class="status-pill idle" id="validation-status">Aguardando schema</span>
+            </div>
+            <ol class="error-list" id="error-list"></ol>
+          </section>
+        </div>
+      </section>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/prism.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-json.min.js"></script>
+    <script type="module">
+      import Ajv2020 from "https://esm.sh/ajv@8.17.1/dist/2020?bundle";
+      import addFormats from "https://esm.sh/ajv-formats@3.0.1?bundle";
+
+      (function () {
+        var state = {
+          schemas: [],
+          selectedSchemaName: null,
+          currentSchema: null,
+          validate: null,
+          filter: ""
+        };
+
+        var DOMAIN_LABELS = {
+          Cadastro: "Cadastro",
+          Identificacao: "Identificacao",
+          Arrecadacao: "Arrecadacao",
+          Distribuicao: "Distribuicao",
+          Identity: "Identidade"
+        };
+        var DOMAIN_ORDER = ["Cadastro", "Identificacao", "Arrecadacao", "Distribuicao", "Identity"];
+
+        var schemaListRoot = document.getElementById("schema-list-root");
+        var schemaCountElement = document.getElementById("schema-count");
+        var heroStatusElement = document.getElementById("hero-status");
+        var selectedTitleElement = document.getElementById("selected-title");
+        var selectedCopyElement = document.getElementById("selected-copy");
+        var selectedFileElement = document.getElementById("selected-file");
+        var selectedIdElement = document.getElementById("selected-id");
+        var selectedTypeElement = document.getElementById("selected-type");
+        var schemaCodeElement = document.getElementById("schema-code");
+        var payloadEditorElement = document.getElementById("payload-editor");
+        var lineNumbersElement = document.getElementById("line-numbers");
+        var editorShellElement = document.getElementById("editor-shell");
+        var validationStatusElement = document.getElementById("validation-status");
+        var errorListElement = document.getElementById("error-list");
+        var reloadButtonElement = document.getElementById("reload-button");
+        var regenerateButtonElement = document.getElementById("regenerate-button");
+        var filterInputElement = document.getElementById("filter-input");
+
+        function setStatus(kind, message, errors) {
+          validationStatusElement.textContent = message;
+          validationStatusElement.className = "status-pill " + kind;
+          heroStatusElement.textContent = message;
+          editorShellElement.classList.remove("is-valid", "is-invalid");
+          if (kind === "valid") editorShellElement.classList.add("is-valid");
+          if (kind === "invalid") editorShellElement.classList.add("is-invalid");
+
+          errorListElement.innerHTML = "";
+          (errors || []).forEach(function (error) {
+            var item = document.createElement("li");
+            item.textContent = error;
+            errorListElement.appendChild(item);
+          });
+        }
+
+        function escapeHtml(value) {
+          return String(value)
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#39;");
+        }
+
+        function updateLineNumbers() {
+          var lineCount = payloadEditorElement.value.split("\n").length;
+          var lines = [];
+          for (var index = 1; index <= lineCount; index += 1) lines.push(String(index));
+          lineNumbersElement.textContent = lines.join("\n");
+          lineNumbersElement.scrollTop = payloadEditorElement.scrollTop;
+        }
+
+        function renderSchemaCode(schema) {
+          var prettySchema = JSON.stringify(schema, null, 2);
+          if (window.Prism && window.Prism.languages && window.Prism.languages.json) {
+            schemaCodeElement.innerHTML = window.Prism.highlight(prettySchema, window.Prism.languages.json, "json");
+          } else {
+            schemaCodeElement.innerHTML = escapeHtml(prettySchema);
+          }
+        }
+
+        function buildValidator(schema) {
+          var ajv = new Ajv2020({ allErrors: true, strict: false, allowUnionTypes: true });
+          addFormats(ajv);
+          return ajv.compile(schema);
+        }
+
+        function resolvePointer(rootSchema, ref) {
+          if (!ref || ref.indexOf("#/") !== 0) return null;
+          return ref.slice(2).split("/").reduce(function (current, segment) {
+            if (!current) return null;
+            var key = segment.replace(/~1/g, "/").replace(/~0/g, "~");
+            return current[key];
+          }, rootSchema);
+        }
+
+        function resolveSchemaNode(node, rootSchema) {
+          if (!node || typeof node !== "object") return node;
+          if (node.$ref) {
+            var resolved = resolvePointer(rootSchema, node.$ref);
+            if (!resolved) return node;
+            var merged = {};
+            Object.keys(resolved).forEach(function (key) { merged[key] = resolved[key]; });
+            Object.keys(node).forEach(function (key) { if (key !== "$ref") merged[key] = node[key]; });
+            return resolveSchemaNode(merged, rootSchema);
+          }
+          if (Array.isArray(node.allOf) && node.allOf.length > 0) {
+            return node.allOf.reduce(function (acc, current) {
+              var resolvedCurrent = resolveSchemaNode(current, rootSchema) || {};
+              return mergeObjects(acc, resolvedCurrent);
+            }, {});
+          }
+          if (Array.isArray(node.anyOf) && node.anyOf.length > 0) return resolveSchemaNode(node.anyOf[0], rootSchema);
+          if (Array.isArray(node.oneOf) && node.oneOf.length > 0) return resolveSchemaNode(node.oneOf[0], rootSchema);
+          return node;
+        }
+
+        function mergeObjects(baseObject, extraObject) {
+          var result = {};
+          Object.keys(baseObject || {}).forEach(function (key) { result[key] = baseObject[key]; });
+          Object.keys(extraObject || {}).forEach(function (key) {
+            if (isPlainObject(result[key]) && isPlainObject(extraObject[key])) {
+              result[key] = mergeObjects(result[key], extraObject[key]);
+            } else {
+              result[key] = extraObject[key];
+            }
+          });
+          return result;
+        }
+
+        function isPlainObject(value) {
+          return value && typeof value === "object" && !Array.isArray(value);
+        }
+
+        function pickScalarPlaceholder(schema, propertyName) {
+          if (Object.prototype.hasOwnProperty.call(schema, "const")) return schema.const;
+          if (Array.isArray(schema.enum) && schema.enum.length > 0) return schema.enum[0];
+          if (schema.default !== undefined) return schema.default;
+          if (schema.example !== undefined) return schema.example;
+          if (Array.isArray(schema.type) && schema.type.indexOf("null") >= 0) return null;
+          if (schema.format === "uuid") return "00000000-0000-0000-0000-000000000000";
+          if (schema.format === "date-time") return "2026-01-01T00:00:00Z";
+          if (schema.format === "date") return "2026-01-01";
+          if (schema.format === "email") return "usuario@exemplo.com";
+          if (schema.pattern === "^\\d{4}-(0[1-9]|1[0-2])$") return "2026-01";
+          if (schema.pattern === "^([0-1][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$") return "12:00:00";
+          if (schema.pattern === "^-?\\d+(\\.\\d+)?$") return "0";
+          if (schema.type === "integer" || schema.type === "number") {
+            if (typeof schema.minimum === "number") return schema.minimum;
+            return 0;
+          }
+          if (schema.type === "boolean") return true;
+          if (schema.type === "string") {
+            var placeholders = {
+              titulo: "Exemplo de titulo",
+              nome: "Exemplo Nome",
+              rubrica: "RADIO",
+              rubricaSigla: "RADIO",
+              sigla: "RADIO",
+              isrc: "BRABC2400001",
+              documento: "000.000.000-00",
+              justificativa: "Justificativa de exemplo",
+              event: "User.Created",
+              displayName: "Usuario Exemplo",
+              username: "usuario.exemplo",
+              estornadoPor: "analista@ecad.org.br"
+            };
+            return placeholders[propertyName] || "exemplo";
+          }
+          if (schema.type === "object") return {};
+          return null;
+        }
+
+        function generateExample(schema, rootSchema, propertyName) {
+          var resolvedSchema = resolveSchemaNode(schema, rootSchema) || {};
+          if (Array.isArray(resolvedSchema.type) && resolvedSchema.type.indexOf("object") >= 0) {
+            resolvedSchema.type = "object";
+          }
+          if (resolvedSchema.type === "object" || resolvedSchema.properties) {
+            var objectValue = {};
+            var properties = resolvedSchema.properties || {};
+            Object.keys(properties).forEach(function (key) {
+              objectValue[key] = generateExample(properties[key], rootSchema, key);
+            });
+            return objectValue;
+          }
+          if (resolvedSchema.type === "array") {
+            return [generateExample(resolvedSchema.items || {}, rootSchema, propertyName)];
+          }
+          return pickScalarPlaceholder(resolvedSchema, propertyName);
+        }
+
+        function formatInstancePath(error) {
+          var path = error.instancePath || "";
+          if (error.keyword === "required" && error.params && error.params.missingProperty) {
+            path += "/" + error.params.missingProperty;
+          }
+          if (!path) return "root";
+          return "root" + path.replace(/\//g, ".");
+        }
+
+        function validateEditorValue() {
+          if (!state.validate) { setStatus("idle", "Aguardando schema", []); return; }
+          var parsed;
+          try {
+            parsed = JSON.parse(payloadEditorElement.value);
+          } catch (error) {
+            setStatus("invalid", "JSON invalido", [error.message]);
+            return;
+          }
+          var isValid = state.validate(parsed);
+          if (isValid) { setStatus("valid", "Payload valido", []); return; }
+          var messages = (state.validate.errors || []).map(function (error) {
+            return formatInstancePath(error) + ": " + error.message;
+          });
+          setStatus("invalid", "Payload invalido", messages);
+        }
+
+        function detectDomain(label) {
+          for (var i = 0; i < DOMAIN_ORDER.length; i += 1) {
+            var key = DOMAIN_ORDER[i];
+            if (label.indexOf(key) === 0) return key;
+          }
+          return "Outros";
+        }
+
+        function renderSchemaList() {
+          schemaCountElement.textContent = String(state.schemas.length);
+          schemaListRoot.innerHTML = "";
+
+          var filterText = state.filter.trim().toLowerCase();
+          var visible = state.schemas.filter(function (entry) {
+            if (!filterText) return true;
+            return entry.label.toLowerCase().indexOf(filterText) >= 0
+                || (entry.eventType || "").toLowerCase().indexOf(filterText) >= 0;
+          });
+
+          if (visible.length === 0) {
+            schemaListRoot.innerHTML = '<div class="empty-state">Nenhum schema corresponde ao filtro.</div>';
+            return;
+          }
+
+          var grouped = {};
+          visible.forEach(function (schemaMeta) {
+            var domain = detectDomain(schemaMeta.label);
+            if (!grouped[domain]) grouped[domain] = [];
+            grouped[domain].push(schemaMeta);
+          });
+
+          var orderedDomains = DOMAIN_ORDER.filter(function (d) { return grouped[d]; });
+          if (grouped.Outros) orderedDomains.push("Outros");
+
+          orderedDomains.forEach(function (domain) {
+            var group = document.createElement("div");
+            group.className = "domain-group";
+
+            var label = document.createElement("span");
+            label.className = "domain-label";
+            label.textContent = DOMAIN_LABELS[domain] || domain;
+            group.appendChild(label);
+
+            var list = document.createElement("div");
+            list.className = "schema-list";
+
+            grouped[domain].forEach(function (schemaMeta) {
+              var button = document.createElement("button");
+              button.type = "button";
+              button.className = "schema-item" + (schemaMeta.name === state.selectedSchemaName ? " active" : "");
+              button.innerHTML = "<strong>" + escapeHtml(schemaMeta.label) + "</strong>"
+                + "<span>" + escapeHtml(schemaMeta.eventType || schemaMeta.href) + "</span>";
+              button.addEventListener("click", function () { loadSchema(schemaMeta.name); });
+              list.appendChild(button);
+            });
+
+            group.appendChild(list);
+            schemaListRoot.appendChild(group);
+          });
+        }
+
+        function extractEventType(schema) {
+          if (!schema || !schema.properties) return null;
+          if (schema.properties.type && schema.properties.type.const) return schema.properties.type.const;
+          if (schema.properties.eventType && schema.properties.eventType.const) return schema.properties.eventType.const;
+          return null;
+        }
+
+        function updateHeader(schemaMeta, schema) {
+          selectedTitleElement.textContent = schema.title || schemaMeta.label;
+          var desc = schema.description || ("Contrato completo do evento " + schemaMeta.label + ".");
+          selectedCopyElement.textContent = desc;
+          selectedFileElement.textContent = "Arquivo: " + schemaMeta.href;
+          selectedIdElement.textContent = "Schema ID: " + (schema.$id || "--");
+          var et = extractEventType(schema);
+          selectedTypeElement.textContent = "Event type: " + (et || "--");
+        }
+
+        function normalizeListing(payload) {
+          if (!Array.isArray(payload)) return [];
+          return payload
+            .filter(function (entry) {
+              return entry && typeof entry.name === "string" && /\.json$/i.test(entry.name);
+            })
+            .map(function (entry) {
+              return {
+                name: entry.name,
+                label: entry.name.replace(/\.json$/i, ""),
+                href: entry.href || "/v1/" + entry.name,
+                eventType: null
+              };
+            })
+            .sort(function (left, right) {
+              return left.label.localeCompare(right.label, "pt-BR");
+            });
+        }
+
+        function fetchJson(pathname) {
+          return window.fetch(pathname, { cache: "no-store" }).then(function (response) {
+            if (!response.ok) throw new Error("Falha ao carregar " + pathname + " (HTTP " + response.status + ")");
+            return response.json();
+          });
+        }
+
+        function hydrateEventTypes() {
+          return Promise.all(state.schemas.map(function (entry) {
+            return fetchJson(entry.href).then(function (schema) {
+              entry.eventType = extractEventType(schema);
+            }).catch(function () { /* silencioso, listagem ja existe */ });
+          })).then(function () { renderSchemaList(); });
+        }
+
+        function loadSchemaList() {
+          setStatus("idle", "Carregando schemas", []);
+          return fetchJson("/v1/")
+            .then(function (listing) {
+              state.schemas = normalizeListing(listing);
+              renderSchemaList();
+              hydrateEventTypes();
+              if (state.schemas.length > 0) {
+                return loadSchema(state.schemas[0].name);
+              }
+              setStatus("idle", "Nenhum schema disponivel", []);
+              return null;
+            })
+            .catch(function (error) {
+              schemaListRoot.innerHTML = '<div class="empty-state">' + escapeHtml(error.message) + "</div>";
+              schemaCountElement.textContent = "0";
+              setStatus("invalid", "Falha ao carregar schemas", [error.message]);
+            });
+        }
+
+        function loadSchema(schemaName) {
+          var schemaMeta = state.schemas.find(function (entry) { return entry.name === schemaName; });
+          if (!schemaMeta) return Promise.resolve();
+          state.selectedSchemaName = schemaMeta.name;
+          renderSchemaList();
+          setStatus("idle", "Carregando schema", []);
+          return fetchJson(schemaMeta.href)
+            .then(function (schema) {
+              state.currentSchema = schema;
+              state.validate = buildValidator(schema);
+              schemaMeta.eventType = extractEventType(schema);
+              updateHeader(schemaMeta, schema);
+              renderSchemaCode(schema);
+              var example = generateExample(schema, schema, schemaMeta.label);
+              payloadEditorElement.value = JSON.stringify(example, null, 2);
+              updateLineNumbers();
+              validateEditorValue();
+            })
+            .catch(function (error) {
+              state.currentSchema = null;
+              state.validate = null;
+              setStatus("invalid", "Falha ao carregar schema", [error.message]);
+            });
+        }
+
+        payloadEditorElement.addEventListener("input", function () {
+          updateLineNumbers();
+          validateEditorValue();
+        });
+
+        payloadEditorElement.addEventListener("scroll", function () {
+          lineNumbersElement.scrollTop = payloadEditorElement.scrollTop;
+        });
+
+        filterInputElement.addEventListener("input", function (event) {
+          state.filter = event.target.value;
+          renderSchemaList();
+        });
+
+        reloadButtonElement.addEventListener("click", function () {
+          if (state.selectedSchemaName) loadSchema(state.selectedSchemaName);
+        });
+
+        regenerateButtonElement.addEventListener("click", function () {
+          if (!state.currentSchema) return;
+          var example = generateExample(state.currentSchema, state.currentSchema, state.selectedSchemaName);
+          payloadEditorElement.value = JSON.stringify(example, null, 2);
+          updateLineNumbers();
+          validateEditorValue();
+        });
+
+        updateLineNumbers();
+        loadSchemaList();
+      })();
+    </script>
+  </body>
+</html>

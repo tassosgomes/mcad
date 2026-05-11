@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "http://schema-registry/v1/ArrecadacaoRubricaCriada.json",
+  "title": "ArrecadacaoRubricaCriada",
+  "description": "Publicado no startup pelo OutboxSeedService para cada rubrica existente que ainda nao tenha evento registrado. Permite que outros dominios mantenham uma copia local das rubricas.",
+  "type": "object",
+  "required": ["specversion", "id", "source", "type", "subject", "time", "datacontenttype", "data"],
+  "properties": {
+    "specversion": { "const": "1.0" },
+    "id": { "type": "string", "format": "uuid" },
+    "source": { "const": "urn:arrecadacao-api" },
+    "type": { "const": "arrecadacao.rubrica.criada" },
+    "subject": { "type": "string", "format": "uuid" },
+    "time": { "type": "string", "format": "date-time" },
+    "datacontenttype": { "const": "application/json" },
+    "data": { "$ref": "#/$defs/data" }
+  },
+  "additionalProperties": true,
+  "$defs": {
+    "data": {
+      "type": "object",
+      "required": ["sigla", "nome", "exigeClassificacao"],
+      "properties": {
+        "sigla": { "type": "string", "minLength": 1 },
+        "nome": { "type": "string", "minLength": 1 },
+        "exigeClassificacao": { "type": "boolean" }
+      },
+      "additionalProperties": false
+    }
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "http://schema-registry/v1/CadastroObraDepurada.json",
+  "title": "CadastroObraDepurada",
+  "description": "Publicado apos depuracao de obra duplicada. A obra original e depurada e uma nova obra canonica e criada.",
+  "type": "object",
+  "required": ["specversion", "id", "source", "type", "subject", "time", "datacontenttype", "data"],
+  "properties": {
+    "specversion": { "const": "1.0" },
+    "id": { "type": "string", "format": "uuid" },
+    "source": { "const": "urn:cadastro-api" },
+    "type": { "const": "cadastro.obra.depurada" },
+    "subject": { "type": "string", "format": "uuid" },
+    "time": { "type": "string", "format": "date-time" },
+    "datacontenttype": { "const": "application/json" },
+    "data": { "$ref": "#/$defs/data" }
+  },
+  "additionalProperties": true,
+  "$defs": {
+    "data": {
+      "type": "object",
+      "required": ["obraId", "titulo", "novaObraId"],
+      "properties": {
+        "obraId": { "type": "string", "format": "uuid" },
+        "titulo": { "type": "string" },
+        "iswcOriginal": { "type": ["string", "null"] },
+        "novaObraId": { "type": "string", "format": "uuid" }
+      },
+      "additionalProperties": false
+    }
+  }
+}

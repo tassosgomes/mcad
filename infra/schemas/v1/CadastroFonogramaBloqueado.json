@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "http://schema-registry/v1/CadastroFonogramaBloqueado.json",
+  "title": "CadastroFonogramaBloqueado",
+  "description": "Publicado quando um fonograma e bloqueado com justificativa.",
+  "type": "object",
+  "required": ["specversion", "id", "source", "type", "subject", "time", "datacontenttype", "data"],
+  "properties": {
+    "specversion": { "const": "1.0" },
+    "id": { "type": "string", "format": "uuid" },
+    "source": { "const": "urn:cadastro-api" },
+    "type": { "const": "cadastro.fonograma.bloqueado" },
+    "subject": { "type": "string", "format": "uuid" },
+    "time": { "type": "string", "format": "date-time" },
+    "datacontenttype": { "const": "application/json" },
+    "data": { "$ref": "#/$defs/data" }
+  },
+  "additionalProperties": true,
+  "$defs": {
+    "data": {
+      "type": "object",
+      "required": ["fonogramaId", "isrc", "justificativa"],
+      "properties": {
+        "fonogramaId": { "type": "string", "format": "uuid" },
+        "isrc": { "type": "string" },
+        "justificativa": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": false
+    }
+  }
+}

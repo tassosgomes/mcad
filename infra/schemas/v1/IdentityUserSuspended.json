@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "http://schema-registry/v1/IdentityUserSuspended.json",
+  "title": "IdentityUserSuspended",
+  "description": "Publicado pelo identity-sync-api quando o Logto emite User.SuspensionStatus.Updated com isSuspended=true. Envelope flat (NAO usa CloudEvents estruturado).",
+  "type": "object",
+  "required": ["eventId", "eventType", "occurredAt", "source", "user", "metadata"],
+  "properties": {
+    "eventId": { "type": "string" },
+    "eventType": { "const": "identity.user.suspended" },
+    "occurredAt": { "type": "string", "format": "date-time" },
+    "source": { "$ref": "#/$defs/source" },
+    "user": { "$ref": "#/$defs/user" },
+    "metadata": { "$ref": "#/$defs/metadata" }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "source": {
+      "type": "object",
+      "required": ["provider", "event"],
+      "properties": {
+        "provider": { "const": "logto" },
+        "event": { "type": "string" },
+        "hookId": { "type": ["string", "null"] }
+      },
+      "additionalProperties": false
+    },
+    "user": {
+      "type": "object",
+      "required": ["logtoUserId", "username", "displayName", "email", "avatarUrl", "roles", "isSuspended", "raw"],
+      "properties": {
+        "logtoUserId": { "type": "string", "minLength": 1 },
+        "username": { "type": ["string", "null"] },
+        "displayName": { "type": ["string", "null"] },
+        "email": { "type": ["string", "null"], "format": "email" },
+        "avatarUrl": { "type": ["string", "null"] },
+        "roles": { "type": "array", "items": { "type": "string" } },
+        "isSuspended": { "const": true },
+        "raw": { "type": "object" }
+      },
+      "additionalProperties": false
+    },
+    "metadata": {
+      "type": "object",
+      "required": ["payloadHash"],
+      "properties": {
+        "payloadHash": { "type": "string" }
+      },
+      "additionalProperties": false
+    }
+  }
+}

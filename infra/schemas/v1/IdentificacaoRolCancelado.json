@@ -1,0 +1,34 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "http://schema-registry/v1/IdentificacaoRolCancelado.json",
+  "title": "IdentificacaoRolCancelado",
+  "description": "Publicado quando uma captacao e cancelada pelo analista responsavel.",
+  "type": "object",
+  "required": ["specversion", "id", "source", "type", "subject", "time", "datacontenttype", "data"],
+  "properties": {
+    "specversion": { "const": "1.0" },
+    "id": { "type": "string", "format": "uuid" },
+    "source": { "const": "urn:identificacao-api" },
+    "type": { "const": "identificacao.rol.cancelado" },
+    "subject": { "type": "string", "format": "uuid" },
+    "time": { "type": "string", "format": "date-time" },
+    "datacontenttype": { "const": "application/json" },
+    "data": { "$ref": "#/$defs/data" }
+  },
+  "additionalProperties": true,
+  "$defs": {
+    "data": {
+      "type": "object",
+      "required": ["captacaoId", "rubrica", "periodo", "canceladoEm", "analistaId", "justificativa"],
+      "properties": {
+        "captacaoId": { "type": "string", "format": "uuid" },
+        "rubrica": { "type": "string" },
+        "periodo": { "type": "string", "format": "date" },
+        "canceladoEm": { "type": "string", "format": "date-time" },
+        "analistaId": { "type": "string", "format": "uuid" },
+        "justificativa": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": false
+    }
+  }
+}

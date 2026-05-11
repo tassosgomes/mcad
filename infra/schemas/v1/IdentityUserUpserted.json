@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "http://schema-registry/v1/IdentityUserUpserted.json",
+  "title": "IdentityUserUpserted",
+  "description": "Publicado pelo identity-sync-api a partir de webhooks do Logto (User.Created, User.Updated, etc). Envelope flat (NAO usa CloudEvents estruturado).",
+  "type": "object",
+  "required": ["eventId", "eventType", "occurredAt", "source", "user", "metadata"],
+  "properties": {
+    "eventId": { "type": "string", "description": "SHA-256 de event + occurredAt + logtoUserId + payloadHash" },
+    "eventType": { "const": "identity.user.upserted" },
+    "occurredAt": { "type": "string", "format": "date-time" },
+    "source": { "$ref": "#/$defs/source" },
+    "user": { "$ref": "#/$defs/user" },
+    "metadata": { "$ref": "#/$defs/metadata" }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "source": {
+      "type": "object",
+      "required": ["provider", "event"],
+      "properties": {
+        "provider": { "const": "logto" },
+        "event": { "type": "string", "description": "Nome original do webhook Logto (User.Created, User.Updated, etc)" },
+        "hookId": { "type": ["string", "null"] }
+      },
+      "additionalProperties": false
+    },
+    "user": {
+      "type": "object",
+      "required": ["logtoUserId", "username", "displayName", "email", "avatarUrl", "roles", "isSuspended", "raw"],
+      "properties": {
+        "logtoUserId": { "type": "string", "minLength": 1 },
+        "username": { "type": ["string", "null"] },
+        "displayName": { "type": ["string", "null"] },
+        "email": { "type": ["string", "null"], "format": "email" },
+        "avatarUrl": { "type": ["string", "null"] },
+        "roles": { "type": "array", "items": { "type": "string" } },
+        "isSuspended": { "type": "boolean" },
+        "raw": { "type": "object", "description": "Objeto user completo do Logto, opaco" }
+      },
+      "additionalProperties": false
+    },
+    "metadata": {
+      "type": "object",
+      "required": ["payloadHash"],
+      "properties": {
+        "payloadHash": { "type": "string", "description": "SHA-256 do body original do webhook" }
+      },
+      "additionalProperties": false
+    }
+  }
+}

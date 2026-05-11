@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "http://schema-registry/v1/CadastroFonogramaLiberado.json",
+  "title": "CadastroFonogramaLiberado",
+  "description": "Publicado quando um fonograma tem seu status alterado para LIBERADO, ficando disponivel para identificacao e distribuicao.",
+  "type": "object",
+  "required": ["specversion", "id", "source", "type", "subject", "time", "datacontenttype", "data"],
+  "properties": {
+    "specversion": { "const": "1.0" },
+    "id": { "type": "string", "format": "uuid" },
+    "source": { "const": "urn:cadastro-api" },
+    "type": { "const": "cadastro.fonograma.liberado" },
+    "subject": { "type": "string", "format": "uuid" },
+    "time": { "type": "string", "format": "date-time" },
+    "datacontenttype": { "const": "application/json" },
+    "data": { "$ref": "#/$defs/data" }
+  },
+  "additionalProperties": true,
+  "$defs": {
+    "data": {
+      "type": "object",
+      "required": ["fonogramaId", "isrc", "obraId"],
+      "properties": {
+        "fonogramaId": { "type": "string", "format": "uuid" },
+        "isrc": { "type": "string" },
+        "obraId": { "type": "string", "format": "uuid" }
+      },
+      "additionalProperties": false
+    }
+  }
+}

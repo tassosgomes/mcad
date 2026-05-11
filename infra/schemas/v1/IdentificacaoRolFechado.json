@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "http://schema-registry/v1/IdentificacaoRolFechado.json",
+  "title": "IdentificacaoRolFechado",
+  "description": "Publicado quando um Rol de Execucoes e fechado pelo analista. Contem todas as execucoes musicais da captacao no periodo informado. Consumido por Distribuicao para iniciar o calculo de creditos.",
+  "type": "object",
+  "required": ["specversion", "id", "source", "type", "subject", "time", "datacontenttype", "data"],
+  "properties": {
+    "specversion": { "const": "1.0" },
+    "id": { "type": "string", "format": "uuid" },
+    "source": { "const": "urn:identificacao-api" },
+    "type": { "const": "identificacao.rol.fechado" },
+    "subject": { "type": "string", "format": "uuid" },
+    "time": { "type": "string", "format": "date-time" },
+    "datacontenttype": { "const": "application/json" },
+    "data": { "$ref": "#/$defs/data" }
+  },
+  "additionalProperties": true,
+  "$defs": {
+    "data": {
+      "type": "object",
+      "required": ["captacaoId", "rubrica", "periodo", "fechadoEm", "analistaId", "execucoes"],
+      "properties": {
+        "captacaoId": { "type": "string", "format": "uuid" },
+        "rubrica": { "type": "string" },
+        "periodo": { "type": "string", "format": "date" },
+        "fechadoEm": { "type": "string", "format": "date-time" },
+        "analistaId": { "type": "string", "format": "uuid" },
+        "execucoes": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/execucao" }
+        }
+      },
+      "additionalProperties": false
+    },
+    "execucao": {
+      "type": "object",
+      "required": ["obraId", "quantidade"],
+      "properties": {
+        "obraId": { "type": "string", "format": "uuid" },
+        "fonogramaId": { "type": ["string", "null"], "format": "uuid" },
+        "quantidade": { "type": "integer", "minimum": 0 },
+        "tipoUtilizacao": { "type": ["string", "null"] },
+        "peso": { "type": ["number", "null"] },
+        "inicio": { "type": ["string", "null"], "pattern": "^([0-1][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$" },
+        "fim": { "type": ["string", "null"], "pattern": "^([0-1][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$" },
+        "duracaoSegundos": { "type": ["integer", "null"], "minimum": 0 }
+      },
+      "additionalProperties": false
+    }
+  }
+}

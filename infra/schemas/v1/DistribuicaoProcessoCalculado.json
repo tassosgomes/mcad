@@ -1,0 +1,37 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "http://schema-registry/v1/DistribuicaoProcessoCalculado.json",
+  "title": "DistribuicaoProcessoCalculado",
+  "description": "Publicado quando um processo de distribuicao e calculado com sucesso (creditos gerados a partir do rol fechado + verba liquida).",
+  "type": "object",
+  "required": ["specversion", "id", "source", "type", "subject", "time", "datacontenttype", "data"],
+  "properties": {
+    "specversion": { "const": "1.0" },
+    "id": { "type": "string", "format": "uuid" },
+    "source": { "const": "urn:distribuicao-api" },
+    "type": { "const": "distribuicao.processo.calculado" },
+    "subject": { "type": "string", "format": "uuid" },
+    "time": { "type": "string", "format": "date-time" },
+    "datacontenttype": { "const": "application/json" },
+    "data": { "$ref": "#/$defs/data" }
+  },
+  "additionalProperties": true,
+  "$defs": {
+    "data": {
+      "type": "object",
+      "required": ["processoId", "rubricaSigla", "periodo", "status", "totalExecucoes", "totalObras", "totalCreditos", "valorTotalCalculado", "calculadoEm"],
+      "properties": {
+        "processoId": { "type": "string", "format": "uuid" },
+        "rubricaSigla": { "type": "string", "minLength": 1 },
+        "periodo": { "type": "string", "pattern": "^\\d{4}-(0[1-9]|1[0-2])$" },
+        "status": { "const": "CALCULADO" },
+        "totalExecucoes": { "type": "integer", "minimum": 0 },
+        "totalObras": { "type": "integer", "minimum": 0 },
+        "totalCreditos": { "type": "integer", "minimum": 0 },
+        "valorTotalCalculado": { "type": "string", "pattern": "^-?\\d+(\\.\\d+)?$" },
+        "calculadoEm": { "type": "string", "format": "date-time" }
+      },
+      "additionalProperties": false
+    }
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "http://schema-registry/v1/CadastroTitularCriado.json",
+  "title": "CadastroTitularCriado",
+  "description": "Publicado quando um novo titular de direitos (PF ou PJ) e criado. Permite que outros dominios mantenham copia local.",
+  "type": "object",
+  "required": ["specversion", "id", "source", "type", "subject", "time", "datacontenttype", "data"],
+  "properties": {
+    "specversion": { "const": "1.0" },
+    "id": { "type": "string", "format": "uuid" },
+    "source": { "const": "urn:cadastro-api" },
+    "type": { "const": "cadastro.titular.criado" },
+    "subject": { "type": "string", "format": "uuid" },
+    "time": { "type": "string", "format": "date-time" },
+    "datacontenttype": { "const": "application/json" },
+    "data": { "$ref": "#/$defs/data" }
+  },
+  "additionalProperties": true,
+  "$defs": {
+    "data": {
+      "type": "object",
+      "required": ["titularId", "nome", "tipo", "documento"],
+      "properties": {
+        "titularId": { "type": "string", "format": "uuid" },
+        "nome": { "type": "string" },
+        "tipo": { "type": "string", "enum": ["PF", "PJ"] },
+        "documento": { "type": "string", "description": "CPF formatado (PF) ou CNPJ alfanumerico (PJ)" }
+      },
+      "additionalProperties": false
+    }
+  }
+}

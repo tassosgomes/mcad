@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "http://schema-registry/v1/CadastroObraBloqueada.json",
+  "title": "CadastroObraBloqueada",
+  "description": "Publicado quando uma obra e bloqueada por irregularidade ou pendencia, impedindo seu uso ate nova liberacao.",
+  "type": "object",
+  "required": ["specversion", "id", "source", "type", "subject", "time", "datacontenttype", "data"],
+  "properties": {
+    "specversion": { "const": "1.0" },
+    "id": { "type": "string", "format": "uuid" },
+    "source": { "const": "urn:cadastro-api" },
+    "type": { "const": "cadastro.obra.bloqueada" },
+    "subject": { "type": "string", "format": "uuid" },
+    "time": { "type": "string", "format": "date-time" },
+    "datacontenttype": { "const": "application/json" },
+    "data": { "$ref": "#/$defs/data" }
+  },
+  "additionalProperties": true,
+  "$defs": {
+    "data": {
+      "type": "object",
+      "required": ["obraId", "titulo", "justificativa"],
+      "properties": {
+        "obraId": { "type": "string", "format": "uuid" },
+        "titulo": { "type": "string" },
+        "justificativa": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": false
+    }
+  }
+}
