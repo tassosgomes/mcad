@@ -58,6 +58,10 @@ app:
     routing-keys:
       rubrica-criada: arrecadacao.rubrica.criada
       rubrica-atualizada: arrecadacao.rubrica.atualizada
+  identity-events:
+    exchange: ${IDENTITY_EVENTS_EXCHANGE:identity.events}
+    queue: ${IDENTITY_EVENTS_QUEUE:distribuicao.identity.users}
+    routing-key: ${IDENTITY_EVENTS_ROUTING_KEY:identity.user.*}
   security:
     auth-enabled: ${AUTH_ENABLED:false}
   integrations:

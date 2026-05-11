@@ -99,6 +99,7 @@ builder.Services.AddSingleton<IRabbitMqPublisher>(sp =>
         sp.GetRequiredService<Microsoft.Extensions.Configuration.IConfiguration>(),
         sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<RabbitMqPublisher>>()));
 builder.Services.AddHostedService<OutboxPublisherWorker>();
+builder.Services.AddHostedService<IdentityUserEventConsumer>();
 
 // ─── CQRS — Dispatcher + Handlers (via Scrutor) ───────────────────────
 builder.Services.AddScoped<IDispatcher, Dispatcher>();

@@ -88,6 +88,7 @@ builder.Services.AddSingleton<Identificacao.Domain.Interfaces.IRabbitMqPublisher
         sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<Identificacao.Infra.Events.RabbitMqPublisher>>()));
 builder.Services.AddHostedService<Identificacao.Infra.Events.OutboxPublisherWorker>();
 builder.Services.AddHostedService<Identificacao.Infra.Events.DistribuicaoEventConsumer>();
+builder.Services.AddHostedService<Identificacao.Infra.Events.IdentityUserEventConsumer>();
 
 // HttpClient para Cadastro
 var cadastroBaseUrl = Environment.GetEnvironmentVariable("CADASTRO_API_BASE_URL")

@@ -52,6 +52,10 @@ app:
   outbox:
     publisher:
       poll-interval-ms: ${OUTBOX_POLL_INTERVAL_MS:5000}
+  identity-events:
+    exchange: ${IDENTITY_EVENTS_EXCHANGE:identity.events}
+    queue: ${IDENTITY_EVENTS_QUEUE:arrecadacao.identity.users}
+    routing-key: ${IDENTITY_EVENTS_ROUTING_KEY:identity.user.*}
 
 audit:
   enabled: ${AUDIT_ENABLED:true}
