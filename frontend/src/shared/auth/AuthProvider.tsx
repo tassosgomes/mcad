@@ -4,6 +4,7 @@ import type { User } from 'oidc-client-ts';
 import { Loading } from '@components/ui/loading';
 import { setArrecadacaoAuthTokenProvider } from '@services/apiArrecadacaoClient';
 import { setAuditoriaAuthTokenProvider } from '@services/apiAuditoriaClient';
+import { setAuthzAuthTokenProvider } from '@services/apiAuthzClient';
 import { setAuthTokenProvider } from '@services/apiClient';
 import { setDistribuicaoAuthTokenProvider } from '@services/apiDistribuicaoClient';
 import { setIdentificacaoAuthTokenProvider } from '@services/apiIdentificacaoClient';
@@ -121,6 +122,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   useEffect(() => {
     setArrecadacaoAuthTokenProvider(() => user?.access_token ?? null);
     setAuditoriaAuthTokenProvider(() => user?.access_token ?? null);
+    setAuthzAuthTokenProvider(() => user?.access_token ?? null);
     setAuthTokenProvider(() => user?.access_token ?? null);
     setDistribuicaoAuthTokenProvider(() => user?.access_token ?? null);
     setIdentificacaoAuthTokenProvider(() => user?.access_token ?? null);
@@ -128,6 +130,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     return () => {
       setArrecadacaoAuthTokenProvider(null);
       setAuditoriaAuthTokenProvider(null);
+      setAuthzAuthTokenProvider(null);
       setAuthTokenProvider(null);
       setDistribuicaoAuthTokenProvider(null);
       setIdentificacaoAuthTokenProvider(null);

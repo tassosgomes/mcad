@@ -11,6 +11,7 @@ const IdentificacaoRoutes = lazy(() => import('@features/identificacao'));
 const ArrecadacaoRoutes = lazy(() => import('@features/arrecadacao'));
 const DistribuicaoRoutes = lazy(() => import('@features/distribuicao'));
 const AuditoriaRoutes = lazy(() => import('@features/auditoria'));
+const AuthzRoutes = lazy(() => import('@features/authz'));
 
 const AUDIT_ROLES = [
   'analista-cadastro',
@@ -111,6 +112,16 @@ export const router = createBrowserRouter([
           <RequireRole roles={AUDIT_ROLES}>
             <Suspense fallback={<Loading />}>
               <AuditoriaRoutes />
+            </Suspense>
+          </RequireRole>
+        )
+      },
+      {
+        path: 'autorizacao/*',
+        element: (
+          <RequireRole roles={AUDIT_ROLES}>
+            <Suspense fallback={<Loading />}>
+              <AuthzRoutes />
             </Suspense>
           </RequireRole>
         )

@@ -4,6 +4,7 @@ type RuntimeEnv = {
   ARRECADACAO_API_BASE_URL?: string;
   DISTRIBUICAO_API_BASE_URL?: string;
   AUDITORIA_API_BASE_URL?: string;
+  AUTHZ_API_BASE_URL?: string;
   OIDC_AUTHORITY?: string;
   OIDC_CLIENT_ID?: string;
   OIDC_AUDIENCE?: string;
@@ -42,6 +43,10 @@ export const runtimeConfig = {
   auditoriaApiBaseUrl: getRuntimeValue(
     'AUDITORIA_API_BASE_URL',
     '/api/auditoria/v1',
+  ),
+  authzApiBaseUrl: getRuntimeValue(
+    'AUTHZ_API_BASE_URL',
+    'https://mcad-authz.tasso.dev.br/v1',
   ),
   oidcAuthority: getRuntimeValue('OIDC_AUTHORITY'),
   oidcClientId: getRuntimeValue('OIDC_CLIENT_ID'),
