@@ -13,17 +13,23 @@ public sealed class LogtoClaimsTransformation : IClaimsTransformation
 {
     public Task<ClaimsPrincipal> TransformAsync(ClaimsPrincipal principal)
     {
-        if (principal.Identity is not ClaimsIdentity identity || !identity.IsAuthenticated)
+        if (principal.Identity is not ClaimsIdentity sourceIdentity || !sourceIdentity.IsAuthenticated)
         {
             return Task.FromResult(principal);
         }
 
-        // 1. Roles do ID token (claim "roles")
-        var existingRoles = new HashSet<string>(
-            principal.FindAll(identity.RoleClaimType).Select(c => c.Value),
-            StringComparer.OrdinalIgnoreCase);
+        // Clonar antes de mutar: TransformAsync pode ser invocado concorrentemente sobre o
+        // mesmo ClaimsPrincipal cacheado pelo middleware de autenticação, e mutar o identity
+        // compartilhado enquanto outra thread enumera causa "Collection was modified".
+        var clone = principal.Clone();
+        var identity = (ClaimsIdentity)clone.Identity!;
 
-        foreach (var roleClaim in principal.FindAll("roles").ToList())
+        // 1. Roles do ID token (claim "roles")
+        var existingRoles = identity.FindAll(identity.RoleClaimType)
+            .Select(c => c.Value)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var roleClaim in identity.FindAll("roles").ToList())
         {
             var role = roleClaim.Value;
             if (!string.IsNullOrWhiteSpace(role) && existingRoles.Add(role))
@@ -33,12 +39,12 @@ public sealed class LogtoClaimsTransformation : IClaimsTransformation
         }
 
         // 2. Scopes da API resource (claim "scope" espaço-separada)
-        var scopeString = principal.FindFirst("scope")?.Value;
+        var scopeString = identity.FindFirst("scope")?.Value;
         if (!string.IsNullOrWhiteSpace(scopeString))
         {
-            var existingScopes = new HashSet<string>(
-                principal.FindAll("scope").Select(c => c.Value),
-                StringComparer.Ordinal);
+            var existingScopes = identity.FindAll("scope")
+                .Select(c => c.Value)
+                .ToHashSet(StringComparer.Ordinal);
 
             foreach (var scope in scopeString.Split(' ', StringSplitOptions.RemoveEmptyEntries))
             {
@@ -49,6 +55,6 @@ public sealed class LogtoClaimsTransformation : IClaimsTransformation
             }
         }
 
-        return Task.FromResult(principal);
+        return Task.FromResult(clone);
     }
 }
