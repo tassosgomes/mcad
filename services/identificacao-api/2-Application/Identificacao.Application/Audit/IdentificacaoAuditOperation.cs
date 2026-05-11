@@ -17,6 +17,8 @@ public sealed record IdentificacaoAuditOperation(
         "EXCLUIR_CAPTACAO", "Excluir captação", "Captação excluída", DataAction.DELETE);
     public static readonly IdentificacaoAuditOperation CaptacaoFechar = new(
         "FECHAR_ROL_CAPTACAO", "Fechar rol da captação", "Rol da captação fechado", DataAction.UPDATE);
+    public static readonly IdentificacaoAuditOperation CaptacaoCancelar = new(
+        "CANCELAR_ROL_CAPTACAO", "Cancelar rol da captação", "Rol da captação cancelado", DataAction.UPDATE);
 
     // Upload
     public static readonly IdentificacaoAuditOperation UploadCreate = new(

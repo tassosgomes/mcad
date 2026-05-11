@@ -14,6 +14,10 @@ public class Captacao
     public StatusCaptacao Status { get; private set; }
     public Guid AnalistaResponsavelId { get; private set; }
     public string AnalistaResponsavelNome { get; private set; } = string.Empty;
+    public bool DistribuicaoProcessada { get; private set; }
+    public DateTime? DistribuicaoProcessadaEm { get; private set; }
+    public string? JustificativaCancelamento { get; private set; }
+    public DateTime? CanceladoEm { get; private set; }
     public DateTime CriadoEm { get; private set; }
     public DateTime AtualizadoEm { get; private set; }
 
@@ -58,6 +62,29 @@ public class Captacao
     {
         ValidarAberta();
         Status = StatusCaptacao.Fechada;
+        AtualizadoEm = DateTime.UtcNow;
+    }
+
+    public void Cancelar(string justificativa)
+    {
+        if (string.IsNullOrWhiteSpace(justificativa))
+            throw new DomainException("Justificativa é obrigatória para cancelar uma captação.");
+        if (Status != StatusCaptacao.Fechada)
+            throw new DomainException("Apenas captações FECHADAS podem ser canceladas.");
+        if (DistribuicaoProcessada)
+            throw new DomainException("Este Rol já foi processado pela Distribuição e não pode ser cancelado.");
+
+        Status = StatusCaptacao.Cancelada;
+        JustificativaCancelamento = justificativa;
+        CanceladoEm = DateTime.UtcNow;
+        AtualizadoEm = DateTime.UtcNow;
+    }
+
+    public void MarcarDistribuicaoProcessada(DateTime processadoEm)
+    {
+        if (DistribuicaoProcessada) return;
+        DistribuicaoProcessada = true;
+        DistribuicaoProcessadaEm = processadoEm;
         AtualizadoEm = DateTime.UtcNow;
     }
 }

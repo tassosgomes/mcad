@@ -36,6 +36,17 @@ public class CaptacaoConfiguration : IEntityTypeConfiguration<Captacao>
             .IsRequired()
             .HasMaxLength(200);
 
+        builder.Property(c => c.DistribuicaoProcessada)
+            .IsRequired()
+            .HasDefaultValue(false);
+
+        builder.Property(c => c.DistribuicaoProcessadaEm);
+
+        builder.Property(c => c.JustificativaCancelamento)
+            .HasMaxLength(1000);
+
+        builder.Property(c => c.CanceladoEm);
+
         builder.HasIndex(c => new { c.RubricaId, c.Periodo })
             .IsUnique()
             .HasFilter("\"Status\" != 'Cancelada'")

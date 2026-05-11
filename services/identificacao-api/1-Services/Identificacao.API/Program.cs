@@ -87,6 +87,7 @@ builder.Services.AddSingleton<Identificacao.Domain.Interfaces.IRabbitMqPublisher
         sp.GetRequiredService<Microsoft.Extensions.Configuration.IConfiguration>(),
         sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<Identificacao.Infra.Events.RabbitMqPublisher>>()));
 builder.Services.AddHostedService<Identificacao.Infra.Events.OutboxPublisherWorker>();
+builder.Services.AddHostedService<Identificacao.Infra.Events.DistribuicaoEventConsumer>();
 
 // HttpClient para Cadastro
 var cadastroBaseUrl = Environment.GetEnvironmentVariable("CADASTRO_API_BASE_URL")
@@ -224,6 +225,7 @@ app.MapAsyncApiDocs();
 // Map Endpoints
 app.MapHealthChecks("/health").AllowAnonymous();
 app.MapFechamentoEndpoints();
+app.MapCancelamentoEndpoints();
 app.MapRubricaEndpoints();
 app.MapCaptacaoEndpoints();
 app.MapExecucaoEndpoints();

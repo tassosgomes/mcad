@@ -42,7 +42,7 @@ O mini-ECAD (mcad) é uma aplicação de demonstração multi-contexto que usa o
 | # | Domínio (Domain) | Responsabilidade Principal | Status | Domain Doc |
 |---|---|---|---|---|
 | D01 | Cadastro | Fonte de verdade de Obras Musicais, Fonogramas e Titulares. Valida percentuais de titularidade autoral (soma = 100%) e conexa, controla ciclo de vida de status (LIBERADO/BLOQUEADO/PENDENTE) e publica eventos de mudança. | `done` | `domains/cadastro/domain.md` |
-| D02 | Identificação | Recebe execuções musicais de diversas origens (planilhas, plataformas de streaming, gravações), identifica obras e fonogramas via ISRC/ISWC, atribui tipo de utilização com peso correspondente e fecha o Rol de Execuções do período. | `in-progress` | `domains/identificacao/domain.md` |
+| D02 | Identificação | Recebe execuções musicais de diversas origens (planilhas, plataformas de streaming, gravações), identifica obras e fonogramas via ISRC/ISWC, atribui tipo de utilização com peso correspondente e fecha o Rol de Execuções do período. | `done` | `domains/identificacao/domain.md` |
 | D03 | Arrecadação | Registra usuários de música licenciados, controla pagamentos de licença por rubrica e período, calcula verba líquida (dedução administrativa de 15% sobre o bruto) e disponibiliza a verba para distribuição. | `in-progress` | `domains/arrecadacao/domain.md` |
 | D04 | Distribuição | Cruza verba líquida da Arrecadação com Rol de Execuções da Identificação, calcula créditos por titular aplicando split autoral (66,67%) / conexo (33,33%), gerencia retenções por pendências cadastrais e gera demonstrativos. | `in-progress` | `domains/distribuicao/domain.md` |
 
@@ -60,7 +60,9 @@ O mini-ECAD (mcad) é uma aplicação de demonstração multi-contexto que usa o
 | D02 Identificação | gestao-captacoes | `done` |
 | D02 Identificação | registro-manual-execucoes | `done` |
 | D02 Identificação | upload-csv-execucoes (MinIO + worker + telas alinhadas ao DESIGN.md) | `done` |
-| D02 Identificação | identificacao-execucoes, fechamento-rol, cancelamento-recriacao | `planned` |
+| D02 Identificação | identificacao-execucoes (pendentes + worker de re-verificação) | `done` |
+| D02 Identificação | fechamento-rol (validação + Outbox `identificacao.rol.fechado`) | `done` |
+| D02 Identificação | cancelamento-recriacao (3 opções + consumer `distribuicao.rol.processado`) | `done` |
 | D03 Arrecadação | seed-rubricas | `done` |
 | D03 Arrecadação | registro-pagamentos (QA validado) | `done` |
 | D03 Arrecadação | gestao-usuarios-musica, gestao-licencas | `in-progress` (PRD/techspec prontos; scaffold de domínio presente) |
@@ -223,6 +225,7 @@ Analytics     ──consome de──→ Todos os domínios (eventos de todos os 
 | 1.1 | 2026-03-30 | Decisão arquitetural | Auth adicionada: Keycloak externo, JWT, OIDC PKCE. Removido non-goal de "sem autenticação". Plano em `docs/architecture/auth-plan.md` |
 | 1.2 | 2026-04-01 | Fase 1 concluída | Domínio Cadastro (D01) 100% implementado: 8 features (F01-F08), 8 tabelas, 8 eventos CloudEvents, Outbox Pattern. Auth em finalização. |
 | 1.3 | 2026-05-10 | Auditoria de implementação | Status atualizado por evidência de código: D02/D03/D04 promovidos para `in-progress`. D02: gestao-captacoes e registro-manual-execucoes concluídos. D03: seed-rubricas e registro-pagamentos concluídos (QA validado). D04: sync-rubricas em progresso, scaffold de domínio (Processo/Credito/Snapshots) presente. Adicionado snapshot de status por PRD na Seção 2. |
+| 1.4 | 2026-05-10 | Conclusão do D02 | Backend de F06 (cancelamento-recriacao) implementado — `Captacao.Cancelar/MarcarDistribuicaoProcessada`, migration `AddCancelamentoFields`, `DistribuicaoEventConsumer` (primeiro consumer RabbitMQ do serviço), `CancelarRolCommand/PodeCancelarQuery` com 3 opções de recriação, endpoints e auditoria. F04 e F05 já estavam implementados — vision sincronizado: D02 promovido para `done`, três features (`identificacao-execucoes`, `fechamento-rol`, `cancelamento-recriacao`) movidas de `planned` para `done`. |
 
 ---
 
