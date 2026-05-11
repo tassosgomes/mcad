@@ -1,46 +1,44 @@
-using System.IO;
-using System.Threading;
-using System.Threading.Tasks;
+using Amazon.S3;
+using Amazon.S3.Model;
 using Identificacao.Domain.Interfaces;
-using Minio;
-using Minio.DataModel.Args;
 
 namespace Identificacao.Infra.ExternalServices;
 
 public class MinioService : IMinioService
 {
-    private readonly IMinioClient _client;
-    private const string BucketName = "identificacao-uploads";
+    private readonly IAmazonS3 _client;
+    private readonly string _bucket;
 
-    public MinioService(IMinioClient client) => _client = client;
+    public MinioService(IAmazonS3 client)
+    {
+        _client = client;
+        _bucket = Environment.GetEnvironmentVariable("R2_BUCKET") ?? "identificacao-uploads";
+    }
 
     public async Task<string> UploadAsync(string key, Stream stream, string contentType, CancellationToken ct)
     {
-        await EnsureBucketExistsAsync(ct);
-        await _client.PutObjectAsync(new PutObjectArgs()
-            .WithBucket(BucketName)
-            .WithObject(key)
-            .WithStreamData(stream)
-            .WithObjectSize(stream.Length)
-            .WithContentType(contentType), ct);
+        await _client.PutObjectAsync(new PutObjectRequest
+        {
+            BucketName = _bucket,
+            Key = key,
+            InputStream = stream,
+            ContentType = contentType,
+            DisablePayloadSigning = true,
+        }, ct);
         return key;
     }
 
     public async Task<Stream> DownloadAsync(string key, CancellationToken ct)
     {
+        using var response = await _client.GetObjectAsync(new GetObjectRequest
+        {
+            BucketName = _bucket,
+            Key = key,
+        }, ct);
+
         var ms = new MemoryStream();
-        await _client.GetObjectAsync(new GetObjectArgs()
-            .WithBucket(BucketName)
-            .WithObject(key)
-            .WithCallbackStream(s => s.CopyTo(ms)), ct);
+        await response.ResponseStream.CopyToAsync(ms, ct);
         ms.Position = 0;
         return ms;
-    }
-
-    private async Task EnsureBucketExistsAsync(CancellationToken ct)
-    {
-        var exists = await _client.BucketExistsAsync(new BucketExistsArgs().WithBucket(BucketName), ct);
-        if (!exists)
-            await _client.MakeBucketAsync(new MakeBucketArgs().WithBucket(BucketName), ct);
     }
 }

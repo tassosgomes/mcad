@@ -23,7 +23,8 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using Polly;
 using Microsoft.IdentityModel.Tokens;
-using Minio;
+using Amazon.S3;
+using Amazon.Runtime;
 // Busca o .env na raiz do serviço (../../.. relativo ao dir do projeto)
 var envPath = Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", ".env");
 var fullEnvPath = Path.GetFullPath(envPath);
@@ -99,16 +100,45 @@ builder.Services.AddHttpClient<ICadastroHttpClient, CadastroHttpClient>(client =
     client.Timeout = TimeSpan.FromSeconds(10);
 }).AddTransientHttpErrorPolicy(p => p.RetryAsync(2));
 
-// MinIO Configurações
-var minioEndpoint = Environment.GetEnvironmentVariable("MINIO_ENDPOINT") ?? "localhost:9000";
-var minioAccessKey = Environment.GetEnvironmentVariable("MINIO_ACCESS_KEY") ?? "mcadadmin";
-var minioSecretKey = Environment.GetEnvironmentVariable("MINIO_SECRET_KEY") ?? "mcadadmin123";
+// Object Storage (Cloudflare R2 em prod; MinIO local em dev — ambos S3-compatíveis)
+var r2S3Api = Environment.GetEnvironmentVariable("R2_S3_API");
+var r2AccountId = Environment.GetEnvironmentVariable("R2_ACCOUNT_ID");
+var useR2 = !string.IsNullOrWhiteSpace(r2S3Api) || !string.IsNullOrWhiteSpace(r2AccountId);
 
-builder.Services.AddSingleton<IMinioClient>(_ =>
-    new MinioClient()
-        .WithEndpoint(minioEndpoint)
-        .WithCredentials(minioAccessKey, minioSecretKey)
-        .Build());
+string storageServiceUrl;
+string storageAccessKey;
+string storageSecretKey;
+
+if (useR2)
+{
+    storageServiceUrl = !string.IsNullOrWhiteSpace(r2S3Api)
+        ? r2S3Api!
+        : $"https://{r2AccountId}.r2.cloudflarestorage.com";
+    storageAccessKey = Environment.GetEnvironmentVariable("R2_ACCESS_KEY_ID")
+        ?? throw new InvalidOperationException("R2_ACCESS_KEY_ID é obrigatório quando R2 está habilitado.");
+    storageSecretKey = Environment.GetEnvironmentVariable("R2_SECRET_ACCESS_KEY")
+        ?? throw new InvalidOperationException("R2_SECRET_ACCESS_KEY é obrigatório quando R2 está habilitado.");
+}
+else
+{
+    var minioEndpoint = Environment.GetEnvironmentVariable("MINIO_ENDPOINT") ?? "http://localhost:9000";
+    storageServiceUrl = minioEndpoint.StartsWith("http", StringComparison.OrdinalIgnoreCase)
+        ? minioEndpoint
+        : $"http://{minioEndpoint}";
+    storageAccessKey = Environment.GetEnvironmentVariable("MINIO_ACCESS_KEY") ?? "mcadadmin";
+    storageSecretKey = Environment.GetEnvironmentVariable("MINIO_SECRET_KEY") ?? "mcadadmin123";
+}
+
+builder.Services.AddSingleton<IAmazonS3>(_ =>
+{
+    var config = new AmazonS3Config
+    {
+        ServiceURL = storageServiceUrl,
+        ForcePathStyle = true,
+        AuthenticationRegion = "auto",
+    };
+    return new AmazonS3Client(new BasicAWSCredentials(storageAccessKey, storageSecretKey), config);
+});
 
 builder.Services.AddScoped<IMinioService, MinioService>();
 
