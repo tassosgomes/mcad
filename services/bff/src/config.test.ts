@@ -22,7 +22,7 @@ test('loadConfig returns proxy defaults', () => {
     'http://localhost:5173',
     'https://mcad.tasso.dev.br',
   ]);
-  assert.equal(config.upstreams.length, 6);
+  assert.equal(config.upstreams.length, 7);
   assert.deepEqual(
     config.upstreams.map((upstream) => upstream.prefix),
     [
@@ -32,6 +32,7 @@ test('loadConfig returns proxy defaults', () => {
       '/api/distribuicao/v1',
       '/api/auditoria/v1',
       '/api/authz/v1',
+      '/v1',
     ],
   );
 });
@@ -46,10 +47,12 @@ test('loadConfig reads environment overrides', () => {
   const config = loadConfig();
   const cadastro = config.upstreams.find((upstream) => upstream.name === 'cadastro');
   const authz = config.upstreams.find((upstream) => upstream.name === 'authz');
+  const authzLegacy = config.upstreams.find((upstream) => upstream.name === 'authz-legacy');
 
   assert.equal(config.port, 5300);
   assert.equal(config.enableLegacyCadastroRoute, false);
   assert.deepEqual(config.corsAllowedOrigins, ['https://mcad.example', 'http://localhost:5173']);
   assert.equal(cadastro?.baseUrl, 'http://cadastro:5001/api/v1');
   assert.equal(authz?.baseUrl, 'https://authz.example/v1');
+  assert.equal(authzLegacy?.baseUrl, 'https://authz.example/v1');
 });

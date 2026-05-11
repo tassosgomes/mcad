@@ -141,3 +141,73 @@ test('cors preflight is handled by the bff before proxying', async () => {
     await server.close();
   }
 });
+
+test('authz legacy v1 route forwards to authz upstream', async (t) => {
+  let receivedUrl = '';
+  let receivedHeaders: IncomingHttpHeaders = {};
+
+  const upstreamServer = createServer((request, response) => {
+    receivedUrl = request.url ?? '';
+    receivedHeaders = request.headers;
+
+    response.setHeader('content-type', 'application/json');
+    response.end(JSON.stringify({ content: [] }));
+  });
+
+  try {
+    await new Promise<void>((resolve, reject) => {
+      upstreamServer.once('error', reject);
+      upstreamServer.listen(0, '127.0.0.1', resolve);
+    });
+  } catch (error) {
+    upstreamServer.close();
+
+    if ((error as NodeJS.ErrnoException).code === 'EPERM') {
+      t.skip('sandbox does not allow opening a local upstream socket');
+      return;
+    }
+
+    throw error;
+  }
+
+  const { port } = upstreamServer.address() as AddressInfo;
+  const server = await buildServer({
+    host: '127.0.0.1',
+    port: 0,
+    requestBodyLimitBytes: 1024,
+    corsAllowedOrigins: ['https://mcad.tasso.dev.br'],
+    enableLegacyCadastroRoute: false,
+    upstreams: [
+      {
+        name: 'authz-legacy',
+        prefix: '/v1',
+        baseUrl: `http://127.0.0.1:${port}/v1`,
+      },
+    ],
+  });
+
+  try {
+    const response = await server.inject({
+      method: 'GET',
+      url: '/v1/permissions?page=0&size=20',
+      headers: {
+        authorization: 'Bearer test-token',
+        origin: 'https://mcad.tasso.dev.br',
+      },
+    });
+
+    assert.equal(response.statusCode, 200);
+    assert.equal(receivedUrl, '/v1/permissions?page=0&size=20');
+    assert.equal(receivedHeaders.authorization, 'Bearer test-token');
+    assert.equal(receivedHeaders['x-mcad-bff-upstream'], 'authz-legacy');
+    assert.equal(response.headers['x-mcad-bff-upstream'], 'authz-legacy');
+  } finally {
+    await server.close();
+    await new Promise<void>((resolve, reject) => {
+      upstreamServer.close((error) => {
+        if (error) reject(error);
+        else resolve();
+      });
+    });
+  }
+});

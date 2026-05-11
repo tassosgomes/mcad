@@ -101,6 +101,11 @@ export function loadConfig(): BffConfig {
         prefix: '/api/authz/v1',
         baseUrl: getEnv('AUTHZ_UPSTREAM_BASE_URL', 'https://mcad-authz.tasso.dev.br/v1'),
       },
+      {
+        name: 'authz-legacy',
+        prefix: '/v1',
+        baseUrl: getEnv('AUTHZ_UPSTREAM_BASE_URL', 'https://mcad-authz.tasso.dev.br/v1'),
+      },
     ],
   };
 }

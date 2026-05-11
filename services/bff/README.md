@@ -12,6 +12,7 @@ Node.js proxy BFF for the MCAD frontend.
 - `/api/distribuicao/v1/*` -> `DISTRIBUICAO_API_BASE_URL`
 - `/api/auditoria/v1/*` -> `AUDITORIA_API_BASE_URL`
 - `/api/authz/v1/*` -> `AUTHZ_UPSTREAM_BASE_URL`
+- `/v1/*` -> `AUTHZ_UPSTREAM_BASE_URL` legacy alias
 - `/api/v1/*` -> cadastro legacy alias, controlled by `BFF_ENABLE_LEGACY_CADASTRO_ROUTE`
 
 ## Local
