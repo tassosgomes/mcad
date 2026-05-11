@@ -8,6 +8,7 @@ export interface BffConfig {
   host: string;
   port: number;
   requestBodyLimitBytes: number;
+  corsAllowedOrigins: string[];
   upstreams: UpstreamConfig[];
   enableLegacyCadastroRoute: boolean;
 }
@@ -46,11 +47,28 @@ function getBooleanEnv(name: string, fallback: boolean): boolean {
   return ['1', 'true', 'yes', 'on'].includes(value.toLowerCase());
 }
 
+function getListEnv(name: string, fallback: string[]): string[] {
+  const value = process.env[name];
+
+  if (!value) {
+    return fallback;
+  }
+
+  return value
+    .split(',')
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
 export function loadConfig(): BffConfig {
   return {
     host: getEnv('BFF_HOST', '0.0.0.0'),
     port: getNumberEnv('BFF_PORT', 5200),
     requestBodyLimitBytes: getNumberEnv('BFF_BODY_LIMIT_BYTES', DEFAULT_REQUEST_BODY_LIMIT_BYTES),
+    corsAllowedOrigins: getListEnv('BFF_CORS_ALLOWED_ORIGINS', [
+      'http://localhost:5173',
+      'https://mcad.tasso.dev.br',
+    ]),
     enableLegacyCadastroRoute: getBooleanEnv('BFF_ENABLE_LEGACY_CADASTRO_ROUTE', true),
     upstreams: [
       {
@@ -77,6 +95,11 @@ export function loadConfig(): BffConfig {
         name: 'auditoria',
         prefix: '/api/auditoria/v1',
         baseUrl: getEnv('AUDITORIA_API_BASE_URL', 'https://api-audit.tasso.dev.br/api/v1'),
+      },
+      {
+        name: 'authz',
+        prefix: '/api/authz/v1',
+        baseUrl: getEnv('AUTHZ_UPSTREAM_BASE_URL', 'https://mcad-authz.tasso.dev.br/v1'),
       },
     ],
   };

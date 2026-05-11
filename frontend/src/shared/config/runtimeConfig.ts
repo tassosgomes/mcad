@@ -46,7 +46,7 @@ export const runtimeConfig = {
   ),
   authzApiBaseUrl: getRuntimeValue(
     'AUTHZ_API_BASE_URL',
-    'https://mcad-authz.tasso.dev.br/v1',
+    '/api/authz/v1',
   ),
   oidcAuthority: getRuntimeValue('OIDC_AUTHORITY'),
   oidcClientId: getRuntimeValue('OIDC_CLIENT_ID'),

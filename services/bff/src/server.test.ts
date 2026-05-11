@@ -9,6 +9,7 @@ test('health endpoints return bff status', async () => {
     host: '127.0.0.1',
     port: 0,
     requestBodyLimitBytes: 1024,
+    corsAllowedOrigins: ['https://mcad.tasso.dev.br'],
     enableLegacyCadastroRoute: false,
     upstreams: [],
   });
@@ -65,6 +66,7 @@ test('proxy rewrites route prefix and forwards query string and auth header', as
     host: '127.0.0.1',
     port: 0,
     requestBodyLimitBytes: 1024,
+    corsAllowedOrigins: ['https://mcad.tasso.dev.br'],
     enableLegacyCadastroRoute: false,
     upstreams: [
       {
@@ -92,6 +94,7 @@ test('proxy rewrites route prefix and forwards query string and auth header', as
     assert.equal(receivedHeaders['x-mcad-original-url'], '/api/identificacao/v1/captacoes?page=1&size=20&sort=-periodo');
     assert.equal(response.headers['x-mcad-bff-upstream'], 'identificacao');
     assert.equal(typeof response.headers['x-mcad-request-id'], 'string');
+    assert.equal(response.headers['access-control-allow-origin'], 'https://mcad.tasso.dev.br');
   } finally {
     await server.close();
     await new Promise<void>((resolve, reject) => {
@@ -100,5 +103,41 @@ test('proxy rewrites route prefix and forwards query string and auth header', as
         else resolve();
       });
     });
+  }
+});
+
+test('cors preflight is handled by the bff before proxying', async () => {
+  const server = await buildServer({
+    host: '127.0.0.1',
+    port: 0,
+    requestBodyLimitBytes: 1024,
+    corsAllowedOrigins: ['https://mcad.tasso.dev.br'],
+    enableLegacyCadastroRoute: false,
+    upstreams: [
+      {
+        name: 'authz',
+        prefix: '/api/authz/v1',
+        baseUrl: 'https://mcad-authz.tasso.dev.br/v1',
+      },
+    ],
+  });
+
+  try {
+    const response = await server.inject({
+      method: 'OPTIONS',
+      url: '/api/authz/v1/permissions',
+      headers: {
+        origin: 'https://mcad.tasso.dev.br',
+        'access-control-request-method': 'GET',
+        'access-control-request-headers': 'authorization,content-type',
+      },
+    });
+
+    assert.equal(response.statusCode, 204);
+    assert.equal(response.headers['access-control-allow-origin'], 'https://mcad.tasso.dev.br');
+    assert.equal(response.headers['access-control-allow-methods'], 'GET,POST,PUT,PATCH,DELETE,OPTIONS');
+    assert.equal(response.headers['access-control-allow-headers'], 'authorization,content-type');
+  } finally {
+    await server.close();
   }
 });
