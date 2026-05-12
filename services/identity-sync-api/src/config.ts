@@ -2,6 +2,10 @@ export interface IdentitySyncConfig {
   host: string;
   port: number;
   webhookSigningKey: string;
+  syncAdminToken: string | null;
+  logtoM2mClientId: string | null;
+  logtoM2mClientSecret: string | null;
+  logtoManagementApi: string | null;
   rabbitMqUrl: string;
   exchangeName: string;
   requestBodyLimitBytes: number;
@@ -44,6 +48,10 @@ export function loadConfig(): IdentitySyncConfig {
     host: process.env.IDENTITY_SYNC_HOST ?? process.env.HOST ?? '0.0.0.0',
     port: readNumber('IDENTITY_SYNC_PORT', readNumber('PORT', 5300)),
     webhookSigningKey: readRequired('LOGTO_WEBHOOK_SYNC_KEY'),
+    syncAdminToken: process.env.IDENTITY_SYNC_ADMIN_TOKEN ?? null,
+    logtoM2mClientId: process.env.LOGTO_M2M_CLIENT_ID ?? null,
+    logtoM2mClientSecret: process.env.LOGTO_M2M_CLIENT_SECRET ?? null,
+    logtoManagementApi: process.env.LOGTO_MANAGEMENT_API ?? null,
     rabbitMqUrl: buildRabbitMqUrl(),
     exchangeName: process.env.IDENTITY_EVENTS_EXCHANGE ?? 'identity.events',
     requestBodyLimitBytes: readNumber('REQUEST_BODY_LIMIT_BYTES', 1024 * 1024),

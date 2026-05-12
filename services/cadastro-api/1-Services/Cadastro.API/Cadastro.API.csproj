@@ -1,6 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
 
   <ItemGroup>
+    <ProjectReference Include="..\..\..\..\libs\dotnet\Ecad.Authz.AspNetCore\Ecad.Authz.AspNetCore.csproj" />
     <ProjectReference Include="..\..\2-Application\Cadastro.Application\Cadastro.Application.csproj" />
     <ProjectReference Include="..\..\4-Infra\Cadastro.Infra\Cadastro.Infra.csproj" />
   </ItemGroup>

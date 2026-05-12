@@ -3,6 +3,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import type { IdentitySyncConfig } from './config.js';
 import type { IdentityUserEvent } from './events.js';
+import type { LogtoUser, LogtoUserImporter } from './logto.js';
 import type { IdentityEventPublisher } from './publisher.js';
 import { buildServer } from './server.js';
 
@@ -10,6 +11,10 @@ const config: IdentitySyncConfig = {
   host: '127.0.0.1',
   port: 0,
   webhookSigningKey: 'test-signing-key',
+  syncAdminToken: 'sync-token',
+  logtoM2mClientId: null,
+  logtoM2mClientSecret: null,
+  logtoManagementApi: null,
   rabbitMqUrl: 'amqp://guest:guest@localhost:5672/',
   exchangeName: 'identity.events',
   requestBodyLimitBytes: 1024 * 1024,
@@ -27,6 +32,14 @@ class MemoryPublisher implements IdentityEventPublisher {
   }
 
   async close(): Promise<void> {}
+}
+
+class MemoryLogtoImporter implements LogtoUserImporter {
+  constructor(private readonly users: LogtoUser[]) {}
+
+  async listUsers(): Promise<LogtoUser[]> {
+    return this.users;
+  }
 }
 
 test('accepts signed Logto webhook and publishes identity event', async () => {
@@ -112,6 +125,51 @@ test('maps suspended and deleted Logto events to dedicated identity events', asy
     'identity.user.suspended',
     'identity.user.deleted',
   ]);
+
+  await server.close();
+});
+
+test('syncs current Logto users and publishes identity events', async () => {
+  const publisher = new MemoryPublisher();
+  const importer = new MemoryLogtoImporter([
+    {
+      id: 'logto-user-1',
+      username: 'analista_arrecadacao',
+      name: 'Analista Arrecadacao',
+      primaryEmail: 'analista_arrecadacao@mcad.dev',
+      roles: [{ name: 'analista-arrecadacao' }],
+      isSuspended: false,
+    },
+  ]);
+  const server = await buildServer(config, publisher, importer);
+
+  const response = await server.inject({
+    method: 'POST',
+    url: '/sync/logto/users',
+    headers: {
+      'x-sync-admin-token': 'sync-token',
+    },
+  });
+
+  assert.equal(response.statusCode, 202);
+  assert.equal(response.json().published, 1);
+  assert.equal(publisher.events[0]?.eventType, 'identity.user.upserted');
+  assert.deepEqual(publisher.events[0]?.user.roles, ['analista-arrecadacao']);
+
+  await server.close();
+});
+
+test('rejects Logto user sync without admin token', async () => {
+  const publisher = new MemoryPublisher();
+  const server = await buildServer(config, publisher, new MemoryLogtoImporter([]));
+
+  const response = await server.inject({
+    method: 'POST',
+    url: '/sync/logto/users',
+  });
+
+  assert.equal(response.statusCode, 401);
+  assert.equal(publisher.events.length, 0);
 
   await server.close();
 });

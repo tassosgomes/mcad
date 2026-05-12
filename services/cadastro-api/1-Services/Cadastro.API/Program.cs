@@ -14,6 +14,7 @@ using Cadastro.Infra.Events;
 using Cadastro.Infra.Repositories;
 using Ecad.Audit.AspNetCore;
 using Ecad.Audit.Sdk;
+using Ecad.Authz.AspNetCore;
 using FluentValidation;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Authentication;
@@ -184,6 +185,7 @@ builder.Services.AddAuthorization(options =>
     options.AddPolicy("read", policy => policy.RequireAssertion(_ => true));
     options.AddPolicy("write", policy => policy.RequireAssertion(_ => true));
 });
+builder.Services.AddEcadAuthz(builder.Configuration);
 
 // ─── Logging estruturado ───────────────────────────────────────────────
 builder.Logging.AddConsole();

@@ -1,6 +1,7 @@
 import Fastify, { type FastifyInstance } from 'fastify';
 import type { IdentitySyncConfig } from './config.js';
 import { normalizeLogtoWebhook } from './events.js';
+import type { LogtoUser, LogtoUserImporter } from './logto.js';
 import type { IdentityEventPublisher } from './publisher.js';
 import { verifyLogtoSignature } from './signature.js';
 
@@ -13,6 +14,7 @@ declare module 'fastify' {
 export async function buildServer(
   config: IdentitySyncConfig,
   publisher: IdentityEventPublisher,
+  logtoUsers: LogtoUserImporter | null = null,
 ): Promise<FastifyInstance> {
   const server = Fastify({
     logger: true,
@@ -69,6 +71,30 @@ export async function buildServer(
     });
   });
 
+  server.post('/sync/logto/users', async (request, reply) => {
+    if (!config.syncAdminToken || headerValue(request.headers['x-sync-admin-token']) !== config.syncAdminToken) {
+      return reply.code(401).send({ error: 'Unauthorized' });
+    }
+    if (!logtoUsers) {
+      return reply.code(503).send({ error: 'Logto importer is not configured' });
+    }
+
+    const users = await logtoUsers.listUsers();
+    let published = 0;
+    for (const user of users) {
+      const payload = buildBackfillPayload(user);
+      const body = Buffer.from(JSON.stringify(payload));
+      const event = normalizeLogtoWebhook(payload, body);
+      if (!event) {
+        continue;
+      }
+      await publisher.publish(event);
+      published++;
+    }
+
+    return reply.code(202).send({ received: true, published });
+  });
+
   server.addHook('onClose', async () => {
     await publisher.close();
   });
@@ -78,4 +104,12 @@ export async function buildServer(
 
 function headerValue(value: string | string[] | undefined): string | undefined {
   return Array.isArray(value) ? value[0] : value;
+}
+
+function buildBackfillPayload(user: LogtoUser): Record<string, unknown> {
+  return {
+    event: 'User.Data.Updated',
+    createdAt: new Date().toISOString(),
+    user,
+  };
 }
