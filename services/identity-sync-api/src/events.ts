@@ -44,12 +44,16 @@ export function normalizeLogtoWebhook(payload: unknown, rawBody: Buffer): Identi
   }
 
   const extractedUser = extractUser(payload);
+  const dataRecord = readRecord(payload.data);
   const logtoUserId =
-    readString(extractedUser?.id) ?? readString(payload.userId) ?? readString(readRecord(payload.data)?.userId);
+    readString(extractedUser?.id) ??
+    readString(payload.userId) ??
+    readString(dataRecord?.userId) ??
+    readString(dataRecord?.id);
   if (!logtoUserId) {
     return null;
   }
-  const user = extractedUser ?? { id: logtoUserId };
+  const user = extractedUser ?? (dataRecord && readString(dataRecord.id) ? dataRecord : { id: logtoUserId });
 
   const payloadHash = createHash('sha256').update(rawBody).digest('hex');
   const eventType = resolveIdentityEventType(event, user);

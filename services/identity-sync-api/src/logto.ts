@@ -10,6 +10,7 @@ export interface LogtoUser {
 
 export interface LogtoUserImporter {
   listUsers(): Promise<LogtoUser[]>;
+  getUser?(userId: string): Promise<LogtoUser | null>;
 }
 
 export class LogtoManagementClient implements LogtoUserImporter {
@@ -32,6 +33,22 @@ export class LogtoManagementClient implements LogtoUserImporter {
         ),
       })),
     );
+  }
+
+  async getUser(userId: string): Promise<LogtoUser | null> {
+    const token = await this.getToken();
+    try {
+      const user = await this.api<LogtoUser>(`/users/${encodeURIComponent(userId)}`, token);
+      const roles = await this.api<Array<{ name?: string | null }>>(
+        `/users/${encodeURIComponent(userId)}/roles`,
+        token,
+      );
+      return { ...user, roles };
+    } catch (error) {
+      const message = (error as Error).message ?? '';
+      if (message.includes('status 404')) return null;
+      throw error;
+    }
   }
 
   private async getToken(): Promise<string> {

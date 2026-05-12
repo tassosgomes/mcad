@@ -56,9 +56,27 @@ export async function buildServer(
       return reply.code(401).send({ error: 'Invalid signature' });
     }
 
-    const event = normalizeLogtoWebhook(request.body, rawBody);
+    let event = normalizeLogtoWebhook(request.body, rawBody);
+
+    if (!event && logtoUsers?.getUser) {
+      const fetchedUserId = extractWebhookUserId(request.body);
+      if (fetchedUserId) {
+        try {
+          const fetchedUser = await logtoUsers.getUser(fetchedUserId);
+          if (fetchedUser) {
+            const enriched = enrichPayloadWithUser(request.body, fetchedUser);
+            const enrichedBody = Buffer.from(JSON.stringify(enriched));
+            event = normalizeLogtoWebhook(enriched, enrichedBody);
+          }
+        } catch (error) {
+          request.log.error({ err: error, userId: fetchedUserId }, 'Failed to fetch Logto user for webhook');
+        }
+      }
+    }
+
     if (!event) {
-      request.log.info('Ignoring Logto webhook without user payload');
+      const bodyPreview = rawBody.toString('utf8').slice(0, 2048);
+      request.log.warn({ bodyPreview }, 'Ignoring Logto webhook without user payload');
       return reply.code(202).send({ received: true, ignored: true });
     }
 
@@ -112,4 +130,22 @@ function buildBackfillPayload(user: LogtoUser): Record<string, unknown> {
     createdAt: new Date().toISOString(),
     user,
   };
+}
+
+function extractWebhookUserId(payload: unknown): string | null {
+  if (!payload || typeof payload !== 'object') return null;
+  const record = payload as Record<string, unknown>;
+  const params = record.params;
+  if (params && typeof params === 'object') {
+    const userId = (params as Record<string, unknown>).userId;
+    if (typeof userId === 'string' && userId.trim()) return userId;
+  }
+  if (typeof record.userId === 'string' && record.userId.trim()) return record.userId;
+  return null;
+}
+
+function enrichPayloadWithUser(payload: unknown, user: LogtoUser): Record<string, unknown> {
+  const base = payload && typeof payload === 'object' ? { ...(payload as Record<string, unknown>) } : {};
+  base.user = user;
+  return base;
 }
