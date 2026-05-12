@@ -7,21 +7,26 @@ import br.com.ecad.arrecadacao.application.commands.RegistrarPagamentoCommand;
 import br.com.ecad.arrecadacao.application.dto.PagamentoResponse;
 import br.com.ecad.arrecadacao.domain.entities.Licenca;
 import br.com.ecad.arrecadacao.domain.entities.Pagamento;
+import br.com.ecad.arrecadacao.domain.entities.Rubrica;
 import br.com.ecad.arrecadacao.domain.entities.UdaValor;
 import br.com.ecad.arrecadacao.domain.enums.StatusLicenca;
 import br.com.ecad.arrecadacao.domain.exceptions.EntidadeNaoEncontradaException;
 import br.com.ecad.arrecadacao.domain.exceptions.PagamentoDuplicadoException;
 import br.com.ecad.arrecadacao.domain.exceptions.UdaVigenteNaoEncontradaException;
+import br.com.ecad.arrecadacao.domain.exceptions.VerbaEmDistribuicaoException;
 import br.com.ecad.arrecadacao.domain.interfaces.LicencaRepository;
 import br.com.ecad.arrecadacao.domain.interfaces.OutboxEventWriter;
 import br.com.ecad.arrecadacao.domain.interfaces.PagamentoRepository;
 import br.com.ecad.arrecadacao.domain.interfaces.UdaValorRepository;
+import br.com.ecad.arrecadacao.domain.interfaces.VerbaService;
 import br.org.ecad.audit.sdk.AuditClient;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -31,14 +36,15 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
-import static org.mockito.Mockito.mock;
 
 @ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 class RegistrarPagamentoCommandHandlerTest {
 
     @Mock private LicencaRepository licencaRepository;
     @Mock private UdaValorRepository udaValorRepository;
     @Mock private PagamentoRepository pagamentoRepository;
+    @Mock private VerbaService verbaService;
     @Mock private OutboxEventWriter outboxEventWriter;
     @Mock private AuditClient auditClient;
     @Mock private PagamentoAuditEventFactory auditEventFactory;
@@ -48,15 +54,33 @@ class RegistrarPagamentoCommandHandlerTest {
     private RegistrarPagamentoCommandHandler handler;
 
     private static final UUID LICENCA_ID = UUID.randomUUID();
+    private static final UUID RUBRICA_ID = UUID.randomUUID();
     private static final BigDecimal QUANTIDADE_UDAS = new BigDecimal("2.5");
     private static final BigDecimal VALOR_UDA = new BigDecimal("107.31");
+
+    /**
+     * Cria licenca mockada com rubrica e rubricaId configurados.
+     * Necessario porque o handler acessa licenca.getRubrica().getSigla() para MDC
+     * e licenca.getRubricaId() para as chamadas ao VerbaService.
+     */
+    private Licenca criarLicencaMock(StatusLicenca status) {
+        Rubrica rubricaMock = mock(Rubrica.class);
+        when(rubricaMock.getSigla()).thenReturn("RADIO");
+
+        Licenca licencaMock = mock(Licenca.class);
+        when(licencaMock.getStatus()).thenReturn(status);
+        when(licencaMock.getId()).thenReturn(LICENCA_ID);
+        when(licencaMock.getRubricaId()).thenReturn(RUBRICA_ID);
+        when(licencaMock.getRubrica()).thenReturn(rubricaMock);
+        when(licencaMock.getUsuarioMusica()).thenReturn(null);
+
+        return licencaMock;
+    }
 
     @Test
     void handle_ComLicencaAtivaEUdaVigente_DeveRegistrarCalcularEPublicarEvento() {
         // Arrange
-        Licenca licencaMock = mock(Licenca.class);
-        when(licencaMock.getStatus()).thenReturn(StatusLicenca.ATIVA);
-        when(licencaMock.getId()).thenReturn(LICENCA_ID);
+        Licenca licencaMock = criarLicencaMock(StatusLicenca.ATIVA);
 
         UdaValor udaMock = UdaValor.criar(VALOR_UDA, LocalDate.of(2026, 1, 1), null);
 
@@ -79,6 +103,10 @@ class RegistrarPagamentoCommandHandlerTest {
         assertThat(response.valorBruto()).isEqualTo(new BigDecimal("268.275000").toPlainString());
         assertThat(response.status()).isEqualTo("CONFIRMADO");
 
+        // Verify: VerbaService chamado com argumentos corretos
+        verify(verbaService).validarLockParaAlteracao(eq(RUBRICA_ID), anyString());
+        verify(verbaService).recalcularVerba(eq(RUBRICA_ID), anyString());
+
         // Verify: evento Outbox publicado
         verify(outboxEventWriter).addEvent(
             eq("arrecadacao.pagamento.registrado"),
@@ -91,9 +119,7 @@ class RegistrarPagamentoCommandHandlerTest {
     @Test
     void handle_ComLicencaSuspensa_DevePermitirRegistro() {
         // Arrange — licenca SUSPENSA tambem pode receber pagamento (RN-P01)
-        Licenca licencaMock = mock(Licenca.class);
-        when(licencaMock.getStatus()).thenReturn(StatusLicenca.SUSPENSA);
-        when(licencaMock.getId()).thenReturn(LICENCA_ID);
+        Licenca licencaMock = criarLicencaMock(StatusLicenca.SUSPENSA);
 
         UdaValor udaMock = UdaValor.criar(VALOR_UDA, LocalDate.of(2026, 1, 1), null);
         Pagamento pagamentoSalvo = Pagamento.registrar(LICENCA_ID, QUANTIDADE_UDAS, VALOR_UDA);
@@ -186,5 +212,31 @@ class RegistrarPagamentoCommandHandlerTest {
         verify(pagamentoRepository, never()).save(any());
         verify(outboxEventWriter, never()).addEvent(any(), any(), any());
         verify(auditClient, never()).publish(any());
+    }
+
+    @Test
+    void handle_VerbaEmDistribuicao_DeveRejeitar() {
+        // Arrange — VerbaService lanca VerbaEmDistribuicaoException ao validar lock
+        Licenca licencaMock = criarLicencaMock(StatusLicenca.ATIVA);
+
+        UdaValor udaMock = UdaValor.criar(VALOR_UDA, LocalDate.of(2026, 1, 1), null);
+
+        when(licencaRepository.findById(LICENCA_ID)).thenReturn(Optional.of(licencaMock));
+        when(udaValorRepository.findVigente(any(LocalDate.class))).thenReturn(Optional.of(udaMock));
+        when(pagamentoRepository.existsConfirmadoByLicencaIdAndPeriodo(eq(LICENCA_ID), anyString()))
+                .thenReturn(false);
+        doThrow(new VerbaEmDistribuicaoException("Verba em distribuicao para o periodo"))
+                .when(verbaService).validarLockParaAlteracao(any(), any());
+
+        RegistrarPagamentoCommand cmd = new RegistrarPagamentoCommand(LICENCA_ID, QUANTIDADE_UDAS, "analista");
+
+        // Act & Assert
+        assertThatThrownBy(() -> handler.handle(cmd))
+                .isInstanceOf(VerbaEmDistribuicaoException.class)
+                .hasMessageContaining("distribuicao");
+
+        // Verify: pagamento NAO foi salvo e evento NAO foi emitido
+        verify(pagamentoRepository, never()).save(any());
+        verify(outboxEventWriter, never()).addEvent(any(), any(), any());
     }
 }

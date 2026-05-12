@@ -56,6 +56,10 @@ app:
     exchange: ${IDENTITY_EVENTS_EXCHANGE:identity.events}
     queue: ${IDENTITY_EVENTS_QUEUE:arrecadacao.identity.users}
     routing-key: ${IDENTITY_EVENTS_ROUTING_KEY:identity.user.*}
+  distribuicao-events:
+    exchange: ${DISTRIBUICAO_EVENTS_EXCHANGE:distribuicao.events}
+    queue: ${DISTRIBUICAO_EVENTS_QUEUE:arrecadacao.distribuicao.processos}
+    routing-key: ${DISTRIBUICAO_EVENTS_ROUTING_KEY:distribuicao.processo.*}
 
 audit:
   enabled: ${AUDIT_ENABLED:true}

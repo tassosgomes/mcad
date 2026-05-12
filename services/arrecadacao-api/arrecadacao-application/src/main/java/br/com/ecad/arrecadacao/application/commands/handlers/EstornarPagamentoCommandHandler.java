@@ -23,6 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 @Component
 public class EstornarPagamentoCommandHandler
@@ -64,7 +65,8 @@ public class EstornarPagamentoCommandHandler
                 "Pagamento nao encontrado: " + cmd.pagamentoId()));
 
         // 2. Validar lock de verba — 422 VerbaEmDistribuicaoException se EM_DISTRIBUICAO/DISTRIBUIDA
-        verbaService.validarLockParaEstorno(pagamento.getLicencaId(), pagamento.getPeriodo());
+        UUID rubricaId = pagamento.getLicenca().getRubricaId();
+        verbaService.validarLockParaAlteracao(rubricaId, pagamento.getPeriodo());
 
         // 3. Estornar via domain method — valida status + preenche campos atomicamente
         pagamento.estornar(cmd.justificativa(), cmd.autor());
@@ -73,8 +75,10 @@ public class EstornarPagamentoCommandHandler
         pagamento = pagamentoRepository.save(pagamento);
 
         // 5. Recalcular verba líquida do rubrica+período
+        verbaService.recalcularVerba(rubricaId, pagamento.getPeriodo());
+
+        // rubricaSigla mantido apenas para o payload do evento (compatibilidade pública)
         String rubricaSigla = pagamento.getLicenca().getRubrica().getSigla();
-        verbaService.recalcularVerba(rubricaSigla, pagamento.getPeriodo());
 
         // 6. Publicar evento Outbox na mesma transação (at-least-once)
         outboxEventWriter.addEvent(

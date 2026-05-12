@@ -51,7 +51,7 @@ O mini-ECAD (mcad) é uma aplicação de demonstração multi-contexto que usa o
 
 **Status possíveis:** `planned` · `in-progress` · `done` · `out-of-scope`
 
-### Status por feature (PRD) — snapshot 2026-05-10
+### Status por feature (PRD) — snapshot 2026-05-11
 
 | Domínio | PRD | Status |
 |---|---|---|
@@ -65,8 +65,9 @@ O mini-ECAD (mcad) é uma aplicação de demonstração multi-contexto que usa o
 | D02 Identificação | cancelamento-recriacao (3 opções + consumer `distribuicao.rol.processado`) | `done` |
 | D03 Arrecadação | seed-rubricas | `done` |
 | D03 Arrecadação | registro-pagamentos (QA validado) | `done` |
-| D03 Arrecadação | gestao-usuarios-musica, gestao-licencas | `in-progress` (PRD/techspec prontos; scaffold de domínio presente) |
-| D03 Arrecadação | calculo-verba-liquida, estorno-pagamento | `planned` |
+| D03 Arrecadação | gestao-usuarios-musica, gestao-licencas | `done` (backend + frontend + rotas + sidebar implementados; tasks 100% concluídas) |
+| D03 Arrecadação | calculo-verba-liquida | `planned` (apenas PRD; techspec e tasks pendentes) |
+| D03 Arrecadação | estorno-pagamento | `planned` (PRD + techspec + tasks prontos; implementação pendente) |
 | D04 Distribuição | sync-rubricas (consumer + snapshot) | `in-progress` (testes unitários verdes; integração bloqueada por Testcontainers) |
 | D04 Distribuição | gestao-processos | `planned` (scaffold de entidades existe; controller/handler pendente) |
 
@@ -226,6 +227,7 @@ Analytics     ──consome de──→ Todos os domínios (eventos de todos os 
 | 1.2 | 2026-04-01 | Fase 1 concluída | Domínio Cadastro (D01) 100% implementado: 8 features (F01-F08), 8 tabelas, 8 eventos CloudEvents, Outbox Pattern. Auth em finalização. |
 | 1.3 | 2026-05-10 | Auditoria de implementação | Status atualizado por evidência de código: D02/D03/D04 promovidos para `in-progress`. D02: gestao-captacoes e registro-manual-execucoes concluídos. D03: seed-rubricas e registro-pagamentos concluídos (QA validado). D04: sync-rubricas em progresso, scaffold de domínio (Processo/Credito/Snapshots) presente. Adicionado snapshot de status por PRD na Seção 2. |
 | 1.4 | 2026-05-10 | Conclusão do D02 | Backend de F06 (cancelamento-recriacao) implementado — `Captacao.Cancelar/MarcarDistribuicaoProcessada`, migration `AddCancelamentoFields`, `DistribuicaoEventConsumer` (primeiro consumer RabbitMQ do serviço), `CancelarRolCommand/PodeCancelarQuery` com 3 opções de recriação, endpoints e auditoria. F04 e F05 já estavam implementados — vision sincronizado: D02 promovido para `done`, três features (`identificacao-execucoes`, `fechamento-rol`, `cancelamento-recriacao`) movidas de `planned` para `done`. |
+| 1.5 | 2026-05-11 | Sincronização do D03 | Auditoria confirmou que `gestao-usuarios-musica` e `gestao-licencas` estão 100% implementados (backend Java + frontend React + rotas + sidebar; tasks 11/11 com `[x]`). Vision estava desatualizado — features promovidas de `in-progress` para `done`. `estorno-pagamento` já possui PRD/techspec/tasks (5 tasks), mas implementação ainda pendente — classificação mantida em `planned`. Próximo bloqueio no D03 é `calculo-verba-liquida`, que possui apenas PRD (techspec e tasks a gerar). |
 
 ---
 

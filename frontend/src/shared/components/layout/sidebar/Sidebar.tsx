@@ -39,6 +39,7 @@ const navigation = [
       { label: 'Usuários de Música', path: '/arrecadacao/usuarios-musica' },
       { label: 'Licenças', path: '/arrecadacao/licencas' },
       { label: 'Pagamentos', path: '/arrecadacao/pagamentos' },
+      { label: 'Verbas', path: '/arrecadacao/verbas' },
       { label: 'UDA', path: '/arrecadacao/uda' },
     ],
   },

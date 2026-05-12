@@ -31,16 +31,16 @@ public class VerbaServiceTestConfig {
         }
 
         @Override
-        public void validarLockParaEstorno(UUID licencaId, String periodo) {
+        public void validarLockParaAlteracao(UUID rubricaId, String periodo) {
             if (throwLockException) {
                 throw new VerbaEmDistribuicaoException(
-                    "Nao e possivel estornar pagamento com verba em distribuicao");
+                    "Nao e possivel alterar pagamento com verba em distribuicao");
             }
         }
 
         @Override
-        public void recalcularVerba(String rubricaSigla, String periodo) {
-            // no-op: recálculo ignorado nos testes
+        public void recalcularVerba(UUID rubricaId, String periodo) {
+            // no-op: recálculo ignorado nos testes de integração
         }
     }
 

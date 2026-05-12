@@ -10,6 +10,7 @@ import { UdaPage } from './uda/pages/UdaPage';
 import { PagamentosPage } from './pagamentos/pages/PagamentosPage';
 import { PagamentoCreatePage } from './pagamentos/pages/PagamentoCreatePage';
 import { PagamentoDetailPage } from './pagamentos/pages/PagamentoDetailPage';
+import { VerbasPage } from './verbas/pages/VerbasPage';
 
 export default function ArrecadacaoRoutes() {
   return (
@@ -25,6 +26,7 @@ export default function ArrecadacaoRoutes() {
       <Route path="pagamentos" element={<PagamentosPage />} />
       <Route path="pagamentos/novo" element={<PagamentoCreatePage />} />
       <Route path="pagamentos/:id" element={<PagamentoDetailPage />} />
+      <Route path="verbas" element={<VerbasPage />} />
     </Routes>
   );
 }

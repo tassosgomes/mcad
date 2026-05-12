@@ -62,6 +62,11 @@
                         <goals>
                             <goal>repackage</goal>
                         </goals>
+                        <configuration>
+                            <!-- classifier 'exec' faz o repackage gerar arrecadacao-api-exec.jar  -->
+                            <!-- preservando o JAR original (thin) como dependência dos outros módulos -->
+                            <classifier>exec</classifier>
+                        </configuration>
                     </execution>
                 </executions>
             </plugin>

@@ -19,9 +19,11 @@ import br.com.ecad.arrecadacao.domain.interfaces.LicencaRepository;
 import br.com.ecad.arrecadacao.domain.interfaces.OutboxEventWriter;
 import br.com.ecad.arrecadacao.domain.interfaces.PagamentoRepository;
 import br.com.ecad.arrecadacao.domain.interfaces.UdaValorRepository;
+import br.com.ecad.arrecadacao.domain.interfaces.VerbaService;
 import br.org.ecad.audit.sdk.AuditClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -39,6 +41,7 @@ public class RegistrarPagamentoCommandHandler
     private final LicencaRepository licencaRepository;
     private final UdaValorRepository udaValorRepository;
     private final PagamentoRepository pagamentoRepository;
+    private final VerbaService verbaService;
     private final OutboxEventWriter outboxEventWriter;
     private final AuditClient auditClient;
     private final PagamentoAuditEventFactory auditEventFactory;
@@ -47,6 +50,7 @@ public class RegistrarPagamentoCommandHandler
     public RegistrarPagamentoCommandHandler(LicencaRepository licencaRepository,
                                             UdaValorRepository udaValorRepository,
                                             PagamentoRepository pagamentoRepository,
+                                            VerbaService verbaService,
                                             OutboxEventWriter outboxEventWriter,
                                             AuditClient auditClient,
                                             PagamentoAuditEventFactory auditEventFactory,
@@ -54,6 +58,7 @@ public class RegistrarPagamentoCommandHandler
         this.licencaRepository = licencaRepository;
         this.udaValorRepository = udaValorRepository;
         this.pagamentoRepository = pagamentoRepository;
+        this.verbaService = verbaService;
         this.outboxEventWriter = outboxEventWriter;
         this.auditClient = auditClient;
         this.auditEventFactory = auditEventFactory;
@@ -86,29 +91,44 @@ public class RegistrarPagamentoCommandHandler
                 "Ja existe pagamento confirmado para a licenca no periodo " + periodo);
         }
 
-        // 5. Registrar pagamento via factory (calcula valorBruto)
-        Pagamento pagamento = Pagamento.registrar(
-            cmd.licencaId(), cmd.quantidadeUdas(), udaVigente.getValor());
+        // MDC para correlacao de logs com VerbaServiceImpl
+        String rubricaSigla = licenca.getRubrica() != null ? licenca.getRubrica().getSigla() : "";
+        MDC.put("rubrica", rubricaSigla);
+        MDC.put("periodo", periodo);
+        try {
+            // 4.5. Validar lock de verba — 422 VerbaEmDistribuicaoException se EM_DISTRIBUICAO/DISTRIBUIDA
+            verbaService.validarLockParaAlteracao(licenca.getRubricaId(), periodo);
 
-        // 6. Salvar pagamento
-        pagamento = pagamentoRepository.save(pagamento);
+            // 5. Registrar pagamento via factory (calcula valorBruto)
+            Pagamento pagamento = Pagamento.registrar(
+                cmd.licencaId(), cmd.quantidadeUdas(), udaVigente.getValor());
 
-        LOGGER.info("Pagamento registrado: id={}, licencaId={}, periodo={}, valorBruto={}, autor={}",
-            pagamento.getId(), pagamento.getLicencaId(), pagamento.getPeriodo(),
-            pagamento.getValorBruto(), cmd.autor());
+            // 6. Salvar pagamento
+            pagamento = pagamentoRepository.save(pagamento);
 
-        // 7. Publicar evento Outbox (CloudEvents 1.0) na mesma transacao
-        outboxEventWriter.addEvent(
-            "arrecadacao.pagamento.registrado",
-            pagamento.getId().toString(),
-            buildEventPayload(pagamento));
+            // 6.5. Recalcular verba liquida do rubrica+periodo
+            verbaService.recalcularVerba(licenca.getRubricaId(), periodo);
 
-        var auditContext = auditContextProvider.current(cmd.autor());
-        auditClient.publish(auditEventFactory.userAction(pagamento, auditContext));
-        auditClient.publish(auditEventFactory.dataChange(pagamento, auditContext));
+            LOGGER.info("Pagamento registrado: id={}, licencaId={}, periodo={}, valorBruto={}, autor={}",
+                pagamento.getId(), pagamento.getLicencaId(), pagamento.getPeriodo(),
+                pagamento.getValorBruto(), cmd.autor());
 
-        // 8. Mapear para response com licenca expandida
-        return toResponse(pagamento, licenca);
+            // 7. Publicar evento Outbox (CloudEvents 1.0) na mesma transacao
+            outboxEventWriter.addEvent(
+                "arrecadacao.pagamento.registrado",
+                pagamento.getId().toString(),
+                buildEventPayload(pagamento));
+
+            var auditContext = auditContextProvider.current(cmd.autor());
+            auditClient.publish(auditEventFactory.userAction(pagamento, auditContext));
+            auditClient.publish(auditEventFactory.dataChange(pagamento, auditContext));
+
+            // 8. Mapear para response com licenca expandida
+            return toResponse(pagamento, licenca);
+        } finally {
+            MDC.remove("rubrica");
+            MDC.remove("periodo");
+        }
     }
 
     private Map<String, Object> buildEventPayload(Pagamento pagamento) {

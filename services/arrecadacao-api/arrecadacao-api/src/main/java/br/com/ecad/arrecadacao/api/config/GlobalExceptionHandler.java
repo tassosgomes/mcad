@@ -98,4 +98,15 @@ public class GlobalExceptionHandler {
         pd.setTitle("Verba In Distribution");
         return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(pd);
     }
+
+    @ExceptionHandler(jakarta.validation.ConstraintViolationException.class)
+    ProblemDetail handleConstraintViolation(jakarta.validation.ConstraintViolationException ex) {
+        ProblemDetail pd = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, "Um ou mais parametros sao invalidos");
+        pd.setTitle("Validation Error");
+        java.util.List<String> errors = ex.getConstraintViolations().stream()
+                .map(v -> v.getPropertyPath() + ": " + v.getMessage())
+                .toList();
+        pd.setProperty("errors", errors);
+        return pd;
+    }
 }

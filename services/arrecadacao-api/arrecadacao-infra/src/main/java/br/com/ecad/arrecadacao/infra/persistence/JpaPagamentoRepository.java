@@ -1,5 +1,6 @@
 package br.com.ecad.arrecadacao.infra.persistence;
 
+import br.com.ecad.arrecadacao.domain.aggregates.PagamentoAgregado;
 import br.com.ecad.arrecadacao.domain.entities.Pagamento;
 import br.com.ecad.arrecadacao.domain.interfaces.PagamentoRepository;
 import org.springframework.data.domain.Page;
@@ -38,5 +39,10 @@ public class JpaPagamentoRepository implements PagamentoRepository {
     @Override
     public boolean existsConfirmadoByLicencaIdAndPeriodo(UUID licencaId, String periodo) {
         return springData.existsConfirmadoByLicencaIdAndPeriodo(licencaId, periodo);
+    }
+
+    @Override
+    public PagamentoAgregado sumAndCountConfirmados(UUID rubricaId, String periodo) {
+        return springData.sumAndCountConfirmados(rubricaId, periodo);
     }
 }

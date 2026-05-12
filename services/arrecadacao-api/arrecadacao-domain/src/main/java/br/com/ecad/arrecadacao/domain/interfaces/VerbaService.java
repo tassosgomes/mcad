@@ -4,26 +4,33 @@ import java.util.UUID;
 
 /**
  * Contrato de integração com o serviço de verba (F05).
- * Implementação real fornecida pelo módulo de Verba.
- * Nos testes de F06, usa-se um mock.
+ * Chamado por RegistrarPagamento (F04) e EstornarPagamento (F06) para validar
+ * o lock de distribuição e disparar o recálculo da verba líquida.
+ *
+ * <p>Lança {@code VerbaEmDistribuicaoException} (HTTP 422) quando a verba do
+ * período está {@code EM_DISTRIBUICAO} ou {@code DISTRIBUIDA}.</p>
+ *
+ * <p>Implementação real fornecida por {@code VerbaServiceImpl} (tarefa 5.0).
+ * Nos testes unitários de F04/F06, usa-se mock ou stub configurável.</p>
  */
 public interface VerbaService {
 
     /**
-     * Valida se a verba do período permite alterações (status ABERTA).
-     * Lança VerbaEmDistribuicaoException se EM_DISTRIBUICAO ou DISTRIBUIDA.
+     * Bloqueia alteração quando verba está EM_DISTRIBUICAO ou DISTRIBUIDA.
+     * Chamado por RegistrarPagamento (F04) e EstornarPagamento (F06).
+     * Lança VerbaEmDistribuicaoException (HTTP 422).
      *
-     * @param licencaId ID da licença do pagamento
+     * @param rubricaId ID da rubrica (chave de partição da verba)
      * @param periodo   período no formato YYYY-MM
      */
-    void validarLockParaEstorno(UUID licencaId, String periodo);
+    void validarLockParaAlteracao(UUID rubricaId, String periodo);
 
     /**
-     * Recalcula verba líquida somando apenas pagamentos CONFIRMADOS.
-     * Publica evento arrecadacao.verba.disponivel com valor atualizado.
+     * Recalcula valor bruto, deduções e líquida; publica
+     * arrecadacao.verba.disponivel via Outbox. Idempotente em retry.
      *
-     * @param rubricaSigla sigla da rubrica
-     * @param periodo      período no formato YYYY-MM
+     * @param rubricaId ID da rubrica (chave de partição da verba)
+     * @param periodo   período no formato YYYY-MM
      */
-    void recalcularVerba(String rubricaSigla, String periodo);
+    void recalcularVerba(UUID rubricaId, String periodo);
 }

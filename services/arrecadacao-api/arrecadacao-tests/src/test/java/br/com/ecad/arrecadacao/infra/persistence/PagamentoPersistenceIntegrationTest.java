@@ -3,6 +3,7 @@ package br.com.ecad.arrecadacao.infra.persistence;
 import br.com.ecad.arrecadacao.application.specification.PagamentoSpecification;
 import br.com.ecad.arrecadacao.config.TestSecurityConfig;
 import br.com.ecad.arrecadacao.config.VerbaServiceTestConfig;
+import br.com.ecad.arrecadacao.domain.aggregates.PagamentoAgregado;
 import br.com.ecad.arrecadacao.domain.entities.Licenca;
 import br.com.ecad.arrecadacao.domain.entities.Pagamento;
 import br.com.ecad.arrecadacao.domain.entities.Rubrica;
@@ -74,9 +75,9 @@ class PagamentoPersistenceIntegrationTest {
     // ── tests ──────────────────────────────────────────────────────────────────
 
     @Test
-    void deveExecutarDezMigrations() {
+    void deveExecutarTrezeMigrations() {
         var applied = flyway.info().applied();
-        assertThat(applied).hasSize(10);
+        assertThat(applied).hasSize(13);
     }
 
     @Test
@@ -230,5 +231,87 @@ class PagamentoPersistenceIntegrationTest {
 
         // Assert — não deve lançar exceção de unicidade
         assertThat(pagamentoRepository.findById(pag2.getId())).isPresent();
+    }
+
+    // ── Testes F05 — sumAndCountConfirmados ────────────────────────────────────
+
+    @Test
+    void deveSomarApenasConfirmadosIgnorandoEstornados() {
+        // Arrange — seed: usuário A com rubrica X, 3 pagamentos CONFIRMADOS + 1 ESTORNADO
+        // para mesma rubrica+período, mais 1 pagamento CONFIRMADO em outra rubrica (Y)
+        var periodo = "2026-05";
+
+        var usuario = criarUsuario("Empresa Soma", "84190440000170");
+        var rubricaX = criarRubrica("RX5");
+        var rubricaY = criarRubrica("RY5");
+
+        // Licença para rubricaX (3 pagamentos confirmados entram na soma)
+        // Usamos 3 usuários/licenças distintos para contornar a constraint unique (licenca+periodo+CONFIRMADO)
+        var usuarioA1 = criarUsuario("Empresa Soma A1", "52597530000195");
+        var usuarioA2 = criarUsuario("Empresa Soma A2", "65396215000190");
+        var usuarioA3 = criarUsuario("Empresa Soma A3", "34960727000190");
+        var usuarioA4 = criarUsuario("Empresa Soma A4", "59244547000140");
+
+        var licA1 = criarLicenca(usuarioA1.getId(), rubricaX.getId());
+        var licA2 = criarLicenca(usuarioA2.getId(), rubricaX.getId());
+        var licA3 = criarLicenca(usuarioA3.getId(), rubricaX.getId());
+        var licA4 = criarLicenca(usuarioA4.getId(), rubricaX.getId());
+
+        // 3 pagamentos CONFIRMADOS para rubricaX — valores 5, 3, 2 UDAs × R$10
+        var pag1 = criarPagamentoComPeriodo(licA1.getId(), new BigDecimal("5.0"), new BigDecimal("10.00"), periodo);
+        var pag2 = criarPagamentoComPeriodo(licA2.getId(), new BigDecimal("3.0"), new BigDecimal("10.00"), periodo);
+        var pag3 = criarPagamentoComPeriodo(licA3.getId(), new BigDecimal("2.0"), new BigDecimal("10.00"), periodo);
+
+        // 1 pagamento ESTORNADO para rubricaX — não deve entrar na soma
+        var pag4 = criarPagamentoComPeriodo(licA4.getId(), new BigDecimal("1.0"), new BigDecimal("10.00"), periodo);
+        pag4.estornar("Estorno para teste de agregado.", "analista@ecad.org.br");
+        pagamentoRepository.save(pag4);
+
+        // 1 pagamento CONFIRMADO para rubricaY — não deve entrar na soma de rubricaX
+        var usuarioB = criarUsuario("Empresa Soma B", "92834699000190");
+        var licB = criarLicenca(usuarioB.getId(), rubricaY.getId());
+        criarPagamentoComPeriodo(licB.getId(), new BigDecimal("99.0"), new BigDecimal("10.00"), periodo);
+
+        entityManager.flush();
+        entityManager.clear();
+
+        // Act
+        PagamentoAgregado agregado = pagamentoRepository.sumAndCountConfirmados(rubricaX.getId(), periodo);
+
+        // Assert — totalBruto = (5 + 3 + 2) × 10 = 100; quantidade = 3
+        assertThat(agregado).isNotNull();
+        assertThat(agregado.totalBruto()).isEqualByComparingTo(new BigDecimal("100.000000"));
+        assertThat(agregado.quantidade()).isEqualTo(3L);
+    }
+
+    @Test
+    void deveRetornarZeroQuandoNaoHaPagamentosConfirmados() {
+        // Arrange — rubrica sem nenhum pagamento
+        var rubricaSemPagamentos = criarRubrica("RZR");
+        entityManager.flush();
+        entityManager.clear();
+
+        // Act
+        PagamentoAgregado agregado = pagamentoRepository.sumAndCountConfirmados(
+                rubricaSemPagamentos.getId(), "2026-05");
+
+        // Assert — COALESCE garante totalBruto = 0 e quantidade = 0 (não null)
+        assertThat(agregado).isNotNull();
+        assertThat(agregado.totalBruto()).isEqualByComparingTo(BigDecimal.ZERO);
+        assertThat(agregado.quantidade()).isEqualTo(0L);
+    }
+
+    // helper para criar pagamento com período explícito (via reflexão para contornar YearMonth.now())
+    private Pagamento criarPagamentoComPeriodo(UUID licencaId, BigDecimal udas, BigDecimal valorUda, String periodo) {
+        var pag = Pagamento.registrar(licencaId, udas, valorUda);
+        // Substitui o período via reflection para permitir período fixo nos testes
+        try {
+            var field = Pagamento.class.getDeclaredField("periodo");
+            field.setAccessible(true);
+            field.set(pag, periodo);
+        } catch (NoSuchFieldException | IllegalAccessException e) {
+            throw new RuntimeException("Falha ao definir periodo via reflexao no teste", e);
+        }
+        return pagamentoRepository.save(pag);
     }
 }

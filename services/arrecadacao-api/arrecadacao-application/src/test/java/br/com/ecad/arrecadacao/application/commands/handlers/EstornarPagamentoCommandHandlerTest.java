@@ -49,9 +49,12 @@ class EstornarPagamentoCommandHandlerTest {
     private static final String JUSTIFICATIVA = "Pagamento registrado em duplicidade com valor incorreto.";
     private static final String AUTOR = "analista@ecad.org.br";
 
+    private static final UUID RUBRICA_ID = UUID.randomUUID();
+
     /**
      * Cria um Pagamento real com Licenca mockada (join @ManyToOne lazy).
-     * Necessário porque getLicenca().getRubrica().getSigla() é chamado no handler.
+     * Necessário porque getLicenca().getRubricaId() e getLicenca().getRubrica().getSigla()
+     * são chamados no handler.
      */
     private Pagamento criarPagamentoComLicencaMock() {
         Rubrica rubricaMock = mock(Rubrica.class);
@@ -59,6 +62,7 @@ class EstornarPagamentoCommandHandlerTest {
 
         Licenca licencaMock = mock(Licenca.class);
         when(licencaMock.getRubrica()).thenReturn(rubricaMock);
+        when(licencaMock.getRubricaId()).thenReturn(RUBRICA_ID);
         when(licencaMock.getUsuarioMusica()).thenReturn(null);
         when(licencaMock.getStatus()).thenReturn(br.com.ecad.arrecadacao.domain.enums.StatusLicenca.ATIVA);
         when(licencaMock.getId()).thenReturn(LICENCA_ID);
@@ -96,8 +100,8 @@ class EstornarPagamentoCommandHandlerTest {
         verify(outboxEventWriter).addEvent(
             eq("arrecadacao.pagamento.estornado"), anyString(), any());
 
-        // Verify — VerbaService.recalcularVerba chamado
-        verify(verbaService).recalcularVerba(eq("RADIO"), anyString());
+        // Verify — VerbaService.recalcularVerba chamado com rubricaId (UUID)
+        verify(verbaService).recalcularVerba(eq(RUBRICA_ID), anyString());
     }
 
     @Test
@@ -139,7 +143,7 @@ class EstornarPagamentoCommandHandlerTest {
         Pagamento pagamento = criarPagamentoComLicencaMock();
         when(pagamentoRepository.findById(PAGAMENTO_ID)).thenReturn(Optional.of(pagamento));
         doThrow(new VerbaEmDistribuicaoException("Verba em distribuicao para o periodo"))
-            .when(verbaService).validarLockParaEstorno(any(), any());
+            .when(verbaService).validarLockParaAlteracao(any(), any());
 
         EstornarPagamentoCommand cmd = new EstornarPagamentoCommand(PAGAMENTO_ID, JUSTIFICATIVA, AUTOR);
 
@@ -166,7 +170,7 @@ class EstornarPagamentoCommandHandlerTest {
 
         // Assert — verificar ordem: validarLock ANTES de save
         InOrder inOrder = inOrder(verbaService, pagamentoRepository);
-        inOrder.verify(verbaService).validarLockParaEstorno(any(), any());
+        inOrder.verify(verbaService).validarLockParaAlteracao(any(), any());
         inOrder.verify(pagamentoRepository).save(any());
     }
 }

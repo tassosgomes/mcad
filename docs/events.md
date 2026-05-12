@@ -2,7 +2,7 @@
 
 Catálogo exaustivo de todos os eventos de domínio publicados e consumidos pelos microsserviços do projeto **mcad**. Serve como fonte da verdade para integrações entre os contextos delimitados (bounded contexts) e como base para o futuro schema-registry.
 
-> **Atualizado em:** 2026-05-10  
+> **Atualizado em:** 2026-05-11  
 > **Padrão de envelope:** CloudEvents 1.0 (`application/cloudevents+json`)  
 > **Padrão de entrega:** at-least-once via Transactional Outbox  
 > **Broker:** RabbitMQ (topic exchanges)
@@ -40,12 +40,12 @@ Catálogo exaustivo de todos os eventos de domínio publicados e consumidos pelo
 |---|---|---|---|
 | `cadastro-api` | .NET 8 | 8 | `identity.user.*` |
 | `identificacao-api` | .NET 8 | 2 | `distribuicao.rol.processado`, `identity.user.*` |
-| `arrecadacao-api` | Java Spring Boot 3.3 | 3 | `identity.user.*` |
-| `distribuicao-api` | Java Spring Boot 3.3 | 1 | `arrecadacao.rubrica.*`, `identity.user.*` |
+| `arrecadacao-api` | Java Spring Boot 3.3 | 4 | `distribuicao.processo.iniciado`, `distribuicao.processo.finalizado` (F05), `identity.user.*` |
+| `distribuicao-api` | Java Spring Boot 3.3 | 1 (+2 planejados) | `arrecadacao.rubrica.*`, `arrecadacao.verba.disponivel` (F05), `identity.user.*` |
 | `identity-sync-api` | Node.js / TS | 3 | — |
 | `bff` | Node.js | — | — |
 
-**Total: 17 tipos de eventos distintos.**
+**Total: 18 tipos de eventos distintos (mais 2 planejados em `distribuicao-api`).**
 
 ---
 
@@ -55,8 +55,8 @@ Catálogo exaustivo de todos os eventos de domínio publicados e consumidos pelo
 |---|---|---|---|---|---|
 | `cadastro.events` | topic | true | mcad | cadastro-api | — |
 | `identificacao.events` | topic | true | mcad | identificacao-api | — |
-| `arrecadacao.events` | topic | true | mcad | arrecadacao-api | distribuicao-api (`${app.rabbitmq.queues.rubricas}` → `arrecadacao.rubrica.*`) |
-| `distribuicao.events` | topic | true | mcad | distribuicao-api | identificacao-api (`identificacao.distribuicao.rol.processado` → `distribuicao.rol.processado`) |
+| `arrecadacao.events` | topic | true | mcad | arrecadacao-api | distribuicao-api (`${app.rabbitmq.queues.rubricas}` → `arrecadacao.rubrica.*`); distribuicao-api (`${app.rabbitmq.queues.verba}` → `arrecadacao.verba.disponivel`) |
+| `distribuicao.events` | topic | true | mcad | distribuicao-api | identificacao-api (`identificacao.distribuicao.rol.processado` → `distribuicao.rol.processado`); arrecadacao-api (`${app.distribuicao-events.queue}` → `distribuicao.processo.*`) |
 | `identity.events` | topic | true | mcad | identity-sync-api | cadastro-api (`cadastro.identity.users` → `identity.user.*`); identificacao-api (`identificacao.identity.users` → `identity.user.*`); arrecadacao-api (`${app.identity-events.queue}` → `identity.user.*`); distribuicao-api (`${app.identity-events.queue}` → `identity.user.*`) |
 
 ---
@@ -264,6 +264,7 @@ Publicado quando uma captação é cancelada pelo analista responsável.
 | `arrecadacao.rubrica.criada` | `rubricaId` | `OutboxSeedService` (boot) |
 | `arrecadacao.pagamento.registrado` | `pagamentoId` | `RegistrarPagamentoCommandHandler` |
 | `arrecadacao.pagamento.estornado` | `pagamentoId` | `EstornarPagamentoCommandHandler` |
+| `arrecadacao.verba.disponivel` | `{rubricaSigla}:{periodo}` | `VerbaServiceImpl.recalcularVerba` (F05) |
 
 ### Payloads (`data`)
 
@@ -311,7 +312,31 @@ Publicado quando um pagamento confirmado é estornado, com recalcule da verba.
 }
 ```
 
+#### `arrecadacao.verba.disponivel`
+Publicado a cada recálculo de verba (decorrente de pagamento confirmado ou estorno) por `VerbaServiceImpl.recalcularVerba`. Consumido pela Distribuição para materializar `snapshots_verba`. Emitido mesmo quando a verba zera após estorno total — Distribuição precisa observar a zeragem.
+
+```json
+{
+  "rubricaSigla": "string",
+  "rubricaNome": "string",
+  "periodo": "string (YYYY-MM)",
+  "valorBrutoTotal": "decimal (plain string)",
+  "deducaoEcad": "decimal (plain string)",
+  "deducaoAssociacoes": "decimal (plain string)",
+  "verbaLiquida": "decimal (plain string)",
+  "quantidadePagamentos": "integer",
+  "status": "ABERTA | EM_DISTRIBUICAO | DISTRIBUIDA"
+}
+```
+
 ### Eventos consumidos
+
+- `distribuicao.processo.iniciado` e `distribuicao.processo.finalizado` (exchange `distribuicao.events`, queue `${app.distribuicao-events.queue}`) — consumido por `DistribuicaoProcessoEventListener` (F05) para alternar o status da Verba entre `ABERTA → EM_DISTRIBUICAO → DISTRIBUIDA`, aplicando lock contra alterações de pagamentos/estornos. Idempotente: re-processamento mantém o status alvo. Ver seção 4 (planejado em distribuicao-api).
+
+  ```json
+  { "processoId": "uuid", "rubricaSigla": "string", "periodo": "string (YYYY-MM)" }
+  ```
+
 - `identity.user.*` (ver seção 5).
 
 ---
@@ -327,6 +352,8 @@ Publicado quando um pagamento confirmado é estornado, com recalcule da verba.
 | Event type | Subject | Trigger |
 |---|---|---|
 | `distribuicao.processo.calculado` | `processoId` | `CalcularProcessoCommandHandler` |
+| `distribuicao.processo.iniciado` | `processoId` | _Planejado_ — emitido ao criar/iniciar processo (PRD `gestao-processos`). Consumido por Arrecadação (F05) para travar a verba. |
+| `distribuicao.processo.finalizado` | `processoId` | _Planejado_ — emitido ao finalizar processo. Consumido por Arrecadação (F05) para marcar verba como `DISTRIBUIDA`. |
 
 ### Payloads (`data`)
 
@@ -347,6 +374,30 @@ Publicado quando um processo de distribuição é calculado com sucesso (crédit
 }
 ```
 
+#### `distribuicao.processo.iniciado` _(planejado — não implementado)_
+Será publicado pelo handler responsável por iniciar um processo de distribuição (PRD `gestao-processos`). Faz com que Arrecadação marque a verba como `EM_DISTRIBUICAO`, bloqueando alterações.
+
+```json
+{
+  "processoId": "uuid",
+  "rubricaSigla": "string",
+  "periodo": "string (YYYY-MM)",
+  "iniciadoEm": "datetime (ISO-8601)"
+}
+```
+
+#### `distribuicao.processo.finalizado` _(planejado — não implementado)_
+Será publicado ao finalizar um processo de distribuição. Faz com que Arrecadação marque a verba como `DISTRIBUIDA`. Estado irreversível: a verba não retorna a `ABERTA`.
+
+```json
+{
+  "processoId": "uuid",
+  "rubricaSigla": "string",
+  "periodo": "string (YYYY-MM)",
+  "finalizadoEm": "datetime (ISO-8601)"
+}
+```
+
 ### Eventos consumidos
 
 - `arrecadacao.rubrica.criada` (exchange `arrecadacao.events`, queue `${app.rabbitmq.queues.rubricas}`) — upsert da rúbrica na base local de distribuição. Manipulado por `RubricaEventListener` → `RubricaEventHandler`.
@@ -354,6 +405,8 @@ Publicado quando um processo de distribuição é calculado com sucesso (crédit
   ```json
   { "sigla": "string", "nome": "string", "exigeClassificacao": "boolean" }
   ```
+
+- `arrecadacao.verba.disponivel` (exchange `arrecadacao.events`, queue `${app.rabbitmq.queues.verba}`) — _planejado no PRD `gestao-processos`_ — materializa em `distribuicao.snapshots_verba` para uso no cálculo de créditos.
 
 - `identity.user.*` (ver seção 5).
 
@@ -417,8 +470,9 @@ Todos os quatro microsserviços de domínio assinam `identity.user.*` e mantêm 
 ├────────────────────┼───────────────────────────────────────────────────────────┤
 │ cadastro-api       │ — (nenhum assinante interno declarado)                    │
 │ identificacao-api  │ — (nenhum assinante interno declarado)                    │
-│ arrecadacao-api    │ distribuicao-api (rubrica.criada)                         │
-│ distribuicao-api   │ identificacao-api (rol.processado — ver pendências)       │
+│ arrecadacao-api    │ distribuicao-api (rubrica.criada, verba.disponivel*)      │
+│ distribuicao-api   │ identificacao-api (rol.processado — ver pendências);      │
+│                    │ arrecadacao-api (processo.iniciado/finalizado*)           │
 │ identity-sync-api  │ cadastro-api, identificacao-api,                          │
 │                    │ arrecadacao-api, distribuicao-api                         │
 └────────────────────┴───────────────────────────────────────────────────────────┘
@@ -442,7 +496,10 @@ Todos os quatro microsserviços de domínio assinam `identity.user.*` e mantêm 
    Em paralelo aos eventos de domínio existe um canal independente de auditoria (`audit.contract` / `audit.sdk`) com `USER_ACTION` e `DATA_CHANGE`, mas ele não trafega via os exchanges de domínio acima e está fora do escopo deste catálogo.
 
 5. **Domain Cancelamento e ciclo de F06 (estorno).**  
-   Os eventos `identificacao.rol.cancelado` e `arrecadacao.pagamento.estornado` são complementares: cancelar uma captação invalida fluxos de distribuição associados, e estornar pagamento exige que a verba não esteja "em distribuição" (lock via `VerbaService.validarLockParaEstorno`). Esses dois eventos representam reversões de etapas anteriores e merecem destaque em integrações de compensação.
+   Os eventos `identificacao.rol.cancelado` e `arrecadacao.pagamento.estornado` são complementares: cancelar uma captação invalida fluxos de distribuição associados, e estornar pagamento exige que a verba não esteja "em distribuição" (lock via `VerbaService.validarLockParaAlteracao` após refatoração do F05). Esses dois eventos representam reversões de etapas anteriores e merecem destaque em integrações de compensação.
+
+6. **`distribuicao.processo.iniciado` / `distribuicao.processo.finalizado` — eventos planejados.**  
+   F05 implementa o consumer destes eventos em `arrecadacao-api` (`DistribuicaoProcessoEventListener`) para travar/destravar a verba durante o ciclo de distribuição. A publicação correspondente em `distribuicao-api` será entregue pelo PRD `gestao-processos`. Até lá, todas as verbas permanecem `ABERTA` e o lock está inerte — pagamentos e estornos não são bloqueados. Asterisco (*) na matriz de consumo sinaliza dependência ainda não publicada.
 
 ---
 

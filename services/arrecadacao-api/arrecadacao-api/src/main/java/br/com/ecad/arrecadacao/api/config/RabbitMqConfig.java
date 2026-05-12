@@ -39,4 +39,24 @@ public class RabbitMqConfig {
             @Value("${app.identity-events.routing-key:identity.user.*}") String routingKey) {
         return BindingBuilder.bind(identityUsersQueue).to(identityEventsExchange).with(routingKey);
     }
+
+    @Bean
+    TopicExchange distribuicaoEventsExchange(
+            @Value("${app.distribuicao-events.exchange:distribuicao.events}") String exchangeName) {
+        return new TopicExchange(exchangeName, true, false);
+    }
+
+    @Bean
+    Queue distribuicaoProcessosQueue(
+            @Value("${app.distribuicao-events.queue:arrecadacao.distribuicao.processos}") String queueName) {
+        return QueueBuilder.durable(queueName).build();
+    }
+
+    @Bean
+    Binding distribuicaoProcessosBinding(
+            @Qualifier("distribuicaoProcessosQueue") Queue distribuicaoProcessosQueue,
+            @Qualifier("distribuicaoEventsExchange") TopicExchange distribuicaoEventsExchange,
+            @Value("${app.distribuicao-events.routing-key:distribuicao.processo.*}") String routingKey) {
+        return BindingBuilder.bind(distribuicaoProcessosQueue).to(distribuicaoEventsExchange).with(routingKey);
+    }
 }
