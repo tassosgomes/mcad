@@ -3,20 +3,23 @@ FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
 
 # Copy project files first for better layer caching.
-COPY Cadastro.sln global.json ./
-COPY 1-Services/Cadastro.API/Cadastro.API.csproj 1-Services/Cadastro.API/
-COPY 2-Application/Cadastro.Application/Cadastro.Application.csproj 2-Application/Cadastro.Application/
-COPY 3-Domain/Cadastro.Domain/Cadastro.Domain.csproj 3-Domain/Cadastro.Domain/
-COPY 4-Infra/Cadastro.Infra/Cadastro.Infra.csproj 4-Infra/Cadastro.Infra/
+COPY services/cadastro-api/Cadastro.sln services/cadastro-api/global.json services/cadastro-api/
+COPY services/cadastro-api/1-Services/Cadastro.API/Cadastro.API.csproj services/cadastro-api/1-Services/Cadastro.API/
+COPY services/cadastro-api/2-Application/Cadastro.Application/Cadastro.Application.csproj services/cadastro-api/2-Application/Cadastro.Application/
+COPY services/cadastro-api/3-Domain/Cadastro.Domain/Cadastro.Domain.csproj services/cadastro-api/3-Domain/Cadastro.Domain/
+COPY services/cadastro-api/4-Infra/Cadastro.Infra/Cadastro.Infra.csproj services/cadastro-api/4-Infra/Cadastro.Infra/
+COPY libs/dotnet/Ecad.Authz.Sdk/Ecad.Authz.Sdk.csproj libs/dotnet/Ecad.Authz.Sdk/
+COPY libs/dotnet/Ecad.Authz.AspNetCore/Ecad.Authz.AspNetCore.csproj libs/dotnet/Ecad.Authz.AspNetCore/
 
+WORKDIR /src/services/cadastro-api
 RUN --mount=type=secret,id=nuget_config,dst=/root/.nuget/NuGet/NuGet.Config,required=false \
     dotnet restore 1-Services/Cadastro.API/Cadastro.API.csproj
 
-COPY 1-Services/ 1-Services/
-COPY 2-Application/ 2-Application/
-COPY 3-Domain/ 3-Domain/
-COPY 4-Infra/ 4-Infra/
+WORKDIR /src
+COPY services/cadastro-api/ services/cadastro-api/
+COPY libs/dotnet/ libs/dotnet/
 
+WORKDIR /src/services/cadastro-api
 RUN dotnet publish 1-Services/Cadastro.API/Cadastro.API.csproj \
     -c Release -o /app/publish --no-restore
 
