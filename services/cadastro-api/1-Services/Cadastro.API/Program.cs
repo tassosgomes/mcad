@@ -15,6 +15,7 @@ using Cadastro.Infra.Repositories;
 using Ecad.Audit.AspNetCore;
 using Ecad.Audit.Sdk;
 using Ecad.Authz.AspNetCore;
+using Ecad.Authz.Sdk;
 using FluentValidation;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Authentication;
@@ -174,18 +175,11 @@ builder.Services.AddAuthorization(options =>
         options.FallbackPolicy = new AuthorizationPolicyBuilder()
             .RequireAuthenticatedUser()
             .Build();
-        // Logto emite scopes de API resource no access_token (claim "scope" espaço-separada).
-        // Roles não estão no access_token — a distinção read/write usa scopes:
-        //   access → todos os papéis  |  write → somente analistas
-        options.AddPolicy("read", policy => policy.RequireClaim("scope", "access"));
-        options.AddPolicy("write", policy => policy.RequireClaim("scope", "write"));
         return;
     }
-
-    options.AddPolicy("read", policy => policy.RequireAssertion(_ => true));
-    options.AddPolicy("write", policy => policy.RequireAssertion(_ => true));
 });
 builder.Services.AddEcadAuthz(builder.Configuration);
+builder.Services.Configure<EcadAuthzOptions>(options => options.Enabled = authEnabled && options.Enabled);
 
 // ─── Logging estruturado ───────────────────────────────────────────────
 builder.Logging.AddConsole();
@@ -220,14 +214,14 @@ using (var scope = app.Services.CreateScope())
 }
 
 // ─── Endpoints ────────────────────────────────────────────────────────
-app.MapAssociacaoEndpoints();
-app.MapTitularEndpoints();
-app.MapObraEndpoints();
-app.MapTitularidadeEndpoints();
-app.MapFonogramaEndpoints();
-app.MapParticipacaoEndpoints();
-app.MapBuscaEndpoints();
-app.MapDistribuicaoEndpoints();
+app.MapAssociacaoEndpoints(authEnabled);
+app.MapTitularEndpoints(authEnabled);
+app.MapObraEndpoints(authEnabled);
+app.MapTitularidadeEndpoints(authEnabled);
+app.MapFonogramaEndpoints(authEnabled);
+app.MapParticipacaoEndpoints(authEnabled);
+app.MapBuscaEndpoints(authEnabled);
+app.MapDistribuicaoEndpoints(authEnabled);
 
 // ─── AsyncAPI (documentação de eventos — pública) ─────────────────────
 app.MapAsyncApiDocs();

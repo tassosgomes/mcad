@@ -8,7 +8,7 @@ namespace Cadastro.API.Infrastructure;
 //   - scopes da API resource como string espaço-separada na claim "scope" do access token
 // Esta transformação:
 //   1. Expande "roles" → role claims no ClaimsPrincipal
-//   2. Expande "scope" → individual scope claims (para uso em RequireClaim("scope", "access"))
+//   2. Expande "scope" → individual scope claims para compatibilidade de autenticação
 public sealed class LogtoClaimsTransformation : IClaimsTransformation
 {
     public Task<ClaimsPrincipal> TransformAsync(ClaimsPrincipal principal)

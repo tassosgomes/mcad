@@ -1,6 +1,7 @@
 using Ecad.Authz.Sdk;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Options;
 
 namespace Ecad.Authz.AspNetCore;
 
@@ -8,19 +9,28 @@ public sealed class PermissionAuthorizationHandler : AuthorizationHandler<Permis
 {
     private readonly IEcadAuthzClient _authzClient;
     private readonly IHttpContextAccessor _httpContextAccessor;
+    private readonly IOptionsMonitor<EcadAuthzOptions> _options;
 
     public PermissionAuthorizationHandler(
         IEcadAuthzClient authzClient,
-        IHttpContextAccessor httpContextAccessor)
+        IHttpContextAccessor httpContextAccessor,
+        IOptionsMonitor<EcadAuthzOptions> options)
     {
         _authzClient = authzClient;
         _httpContextAccessor = httpContextAccessor;
+        _options = options;
     }
 
     protected override async Task HandleRequirementAsync(
         AuthorizationHandlerContext context,
         PermissionRequirement requirement)
     {
+        if (!_options.CurrentValue.Enabled)
+        {
+            context.Succeed(requirement);
+            return;
+        }
+
         if (context.User.Identity?.IsAuthenticated != true)
         {
             return;

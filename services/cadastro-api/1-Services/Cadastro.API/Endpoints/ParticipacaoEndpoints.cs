@@ -1,3 +1,4 @@
+using Cadastro.API.Authorization;
 using Cadastro.Application.Common.CQRS;
 using Cadastro.Application.Participacoes.Commands;
 using Cadastro.Application.Participacoes.Queries;
@@ -7,7 +8,7 @@ namespace Cadastro.API.Endpoints;
 
 public static class ParticipacaoEndpoints
 {
-    public static void MapParticipacaoEndpoints(this IEndpointRouteBuilder app)
+    public static void MapParticipacaoEndpoints(this IEndpointRouteBuilder app, bool authEnabled)
     {
         var group = app
             .MapGroup("/api/v1/fonogramas/{fonogramaId:guid}/participacoes")
@@ -19,7 +20,7 @@ public static class ParticipacaoEndpoints
             var result = await dispatcher.QueryAsync(new ListarParticipacoesQuery(fonogramaId), ct);
             return Results.Ok(result);
         })
-        .RequireAuthorization("read");
+        .RequireCadastroPermission(CadastroPermissions.ParticipacaoListar, authEnabled);
 
         // POST /api/v1/fonogramas/{fonogramaId}/participacoes
         group.MapPost("/", async (Guid fonogramaId, [FromBody] AdicionarParticipacaoRequest request, IDispatcher dispatcher, CancellationToken ct) =>
@@ -28,7 +29,7 @@ public static class ParticipacaoEndpoints
             var result = await dispatcher.SendAsync(command, ct);
             return Results.Created($"/api/v1/fonogramas/{fonogramaId}/participacoes", result);
         })
-        .RequireAuthorization("write");
+        .RequireCadastroPermission(CadastroPermissions.ParticipacaoAdicionar, authEnabled);
 
         // PUT /api/v1/fonogramas/{fonogramaId}/participacoes/{id}
         group.MapPut("/{id:guid}", async (Guid fonogramaId, Guid id, [FromBody] AjustarPercentualRequest request, IDispatcher dispatcher, CancellationToken ct) =>
@@ -37,7 +38,7 @@ public static class ParticipacaoEndpoints
             var result = await dispatcher.SendAsync(command, ct);
             return Results.Ok(result);
         })
-        .RequireAuthorization("write");
+        .RequireCadastroPermission(CadastroPermissions.ParticipacaoAjustar, authEnabled);
 
         // DELETE /api/v1/fonogramas/{fonogramaId}/participacoes/{id}
         group.MapDelete("/{id:guid}", async (Guid fonogramaId, Guid id, IDispatcher dispatcher, CancellationToken ct) =>
@@ -46,7 +47,7 @@ public static class ParticipacaoEndpoints
             var result = await dispatcher.SendAsync(command, ct);
             return Results.Ok(result);
         })
-        .RequireAuthorization("write");
+        .RequireCadastroPermission(CadastroPermissions.ParticipacaoRemover, authEnabled);
 
         // POST /api/v1/fonogramas/{fonogramaId}/participacoes/calcular
         group.MapPost("/calcular", async (Guid fonogramaId, IDispatcher dispatcher, CancellationToken ct) =>
@@ -55,7 +56,7 @@ public static class ParticipacaoEndpoints
             var result = await dispatcher.SendAsync(command, ct);
             return Results.Ok(result);
         })
-        .RequireAuthorization("write");
+        .RequireCadastroPermission(CadastroPermissions.ParticipacaoCalcular, authEnabled);
     }
 }
 

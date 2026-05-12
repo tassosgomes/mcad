@@ -1,3 +1,4 @@
+using Cadastro.API.Authorization;
 using Cadastro.Application.Common.CQRS;
 using Cadastro.Application.Fonogramas.Commands;
 using Cadastro.Application.Fonogramas.Queries;
@@ -7,7 +8,7 @@ namespace Cadastro.API.Endpoints;
 
 public static class FonogramaEndpoints
 {
-    public static void MapFonogramaEndpoints(this IEndpointRouteBuilder app)
+    public static void MapFonogramaEndpoints(this IEndpointRouteBuilder app, bool authEnabled)
     {
         var group = app.MapGroup("/api/v1/fonogramas").WithTags("Fonogramas");
 
@@ -16,21 +17,21 @@ public static class FonogramaEndpoints
             var result = await dispatcher.QueryAsync(query, ct);
             return Results.Ok(result);
         })
-        .RequireAuthorization("read");
+        .RequireCadastroPermission(CadastroPermissions.FonogramaListar, authEnabled);
 
         group.MapPost("/", async ([FromBody] CriarFonogramaCommand command, IDispatcher dispatcher, CancellationToken ct) =>
         {
             var result = await dispatcher.SendAsync(command, ct);
             return Results.Created($"/api/v1/fonogramas/{result.Id}", result);
         })
-        .RequireAuthorization("write");
+        .RequireCadastroPermission(CadastroPermissions.FonogramaCriar, authEnabled);
 
         group.MapGet("/{id:guid}", async (Guid id, IDispatcher dispatcher, CancellationToken ct) =>
         {
             var result = await dispatcher.QueryAsync(new GetFonogramaByIdQuery(id), ct);
             return Results.Ok(result);
         })
-        .RequireAuthorization("read");
+        .RequireCadastroPermission(CadastroPermissions.FonogramaVisualizar, authEnabled);
 
         group.MapPut("/{id:guid}", async (Guid id, [FromBody] AtualizarFonogramaRequest request, IDispatcher dispatcher, CancellationToken ct) =>
         {
@@ -38,14 +39,14 @@ public static class FonogramaEndpoints
             var result = await dispatcher.SendAsync(command, ct);
             return Results.Ok(result);
         })
-        .RequireAuthorization("write");
+        .RequireCadastroPermission(CadastroPermissions.FonogramaEditar, authEnabled);
 
         group.MapDelete("/{id:guid}", async (Guid id, IDispatcher dispatcher, CancellationToken ct) =>
         {
             await dispatcher.SendAsync(new ExcluirFonogramaCommand(id), ct);
             return Results.NoContent();
         })
-        .RequireAuthorization("write");
+        .RequireCadastroPermission(CadastroPermissions.FonogramaExcluir, authEnabled);
 
         group.MapPost("/{id:guid}/depurar", async (Guid id, [FromBody] DepurarFonogramaRequest request, IDispatcher dispatcher, CancellationToken ct) =>
         {
@@ -53,7 +54,7 @@ public static class FonogramaEndpoints
             var result = await dispatcher.SendAsync(command, ct);
             return Results.Created($"/api/v1/fonogramas/{result.NovoFonograma.Id}", result);
         })
-        .RequireAuthorization("write");
+        .RequireCadastroPermission(CadastroPermissions.FonogramaDepurar, authEnabled);
 
         var obraGroup = app.MapGroup("/api/v1/obras/{obraId:guid}/fonogramas").WithTags("Fonogramas");
         
@@ -62,7 +63,7 @@ public static class FonogramaEndpoints
             var result = await dispatcher.QueryAsync(new ListarFonogramasPorObraQuery(obraId), ct);
             return Results.Ok(result);
         })
-        .RequireAuthorization("read");
+        .RequireCadastroPermission(CadastroPermissions.FonogramaListarPorObra, authEnabled);
 
         group.MapPost("/{id:guid}/liberar", async (Guid id, IDispatcher dispatcher, CancellationToken ct) =>
         {
@@ -70,7 +71,7 @@ public static class FonogramaEndpoints
             var result = await dispatcher.SendAsync(command, ct);
             return Results.Ok(result);
         })
-        .RequireAuthorization("write");
+        .RequireCadastroPermission(CadastroPermissions.StatusLiberarFonograma, authEnabled);
 
         group.MapPost("/{id:guid}/bloquear", async (Guid id, [FromBody] BloquearFonogramaRequest? request, IDispatcher dispatcher, CancellationToken ct) =>
         {
@@ -86,7 +87,7 @@ public static class FonogramaEndpoints
             var result = await dispatcher.SendAsync(command, ct);
             return Results.Ok(result);
         })
-        .RequireAuthorization("write");
+        .RequireCadastroPermission(CadastroPermissions.StatusBloquearFonograma, authEnabled);
 
         group.MapPost("/{id:guid}/desbloquear", async (Guid id, IDispatcher dispatcher, CancellationToken ct) =>
         {
@@ -94,7 +95,7 @@ public static class FonogramaEndpoints
             var result = await dispatcher.SendAsync(command, ct);
             return Results.Ok(result);
         })
-        .RequireAuthorization("write");
+        .RequireCadastroPermission(CadastroPermissions.StatusDesbloquearFonograma, authEnabled);
 
         group.MapGet("/{id:guid}/historico-bloqueios", async (Guid id, IDispatcher dispatcher, CancellationToken ct) =>
         {
@@ -102,7 +103,7 @@ public static class FonogramaEndpoints
             var result = await dispatcher.QueryAsync(query, ct);
             return Results.Ok(result);
         })
-        .RequireAuthorization("read");
+        .RequireCadastroPermission(CadastroPermissions.StatusVisualizarHistoricoFonograma, authEnabled);
 
         group.MapPatch("/{id:guid}/url-audio", async (Guid id, [FromBody] Cadastro.Application.Status.Commands.DefinirUrlAudioCommand commandArgs, IDispatcher dispatcher, CancellationToken ct) =>
         {
@@ -110,7 +111,7 @@ public static class FonogramaEndpoints
             var result = await dispatcher.SendAsync(command, ct);
             return Results.Ok(result);
         })
-        .RequireAuthorization("write");
+        .RequireCadastroPermission(CadastroPermissions.FonogramaEditar, authEnabled);
     }
 }
 

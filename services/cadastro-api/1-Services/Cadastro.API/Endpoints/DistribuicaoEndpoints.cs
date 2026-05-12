@@ -1,3 +1,4 @@
+using Cadastro.API.Authorization;
 using Cadastro.Application.Common.CQRS;
 using Cadastro.Application.Distribuicao.Queries;
 using Microsoft.AspNetCore.Mvc;
@@ -6,7 +7,7 @@ namespace Cadastro.API.Endpoints;
 
 public static class DistribuicaoEndpoints
 {
-    public static void MapDistribuicaoEndpoints(this IEndpointRouteBuilder app)
+    public static void MapDistribuicaoEndpoints(this IEndpointRouteBuilder app, bool authEnabled)
     {
         var group = app
             .MapGroup("/api/v1/distribuicao")
@@ -21,7 +22,7 @@ public static class DistribuicaoEndpoints
             var result = await dispatcher.QueryAsync(query, ct);
             return Results.Ok(result);
         })
-        .RequireAuthorization("read");
+        .RequireCadastroPermission(CadastroPermissions.TitularidadeListar, authEnabled);
     }
 }
 
