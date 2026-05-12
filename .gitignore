@@ -10,6 +10,7 @@
 build.log
 .tmp/
 .playwright-cli/
+.playwright-mcp/
 
 # Node / Vite / TypeScript
 **/node_modules/
