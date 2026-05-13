@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Archive, RefreshCw, Search, ShieldCheck } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@components/ui/button';
 import { Loading } from '@components/ui/loading';
 import { PageHeader } from '@components/ui/page-header';
@@ -144,6 +145,7 @@ function PermissionDetail({
 }
 
 export function PermissionsPage() {
+  const navigate = useNavigate();
   const [filters, setFilters] = useState<PermissionFilters>(emptyFilters);
   const [submittedFilters, setSubmittedFilters] = useState<PermissionFilters>(emptyFilters);
   const [page, setPage] = useState(0);
@@ -239,15 +241,21 @@ export function PermissionsPage() {
         title="Permissões"
         description="Catálogo técnico de autorização fina consumido pelas APIs do MCAD."
         action={(
-          <Button
-            variant="secondary"
-            type="button"
-            onClick={() => permissionsQuery.refetch()}
-            disabled={permissionsQuery.isFetching}
-          >
-            <RefreshCw size={16} />
-            Atualizar
-          </Button>
+          <>
+            <Button variant="ghost" type="button" onClick={() => navigate('/autorizacao/papeis')}>
+              <ShieldCheck size={16} />
+              Gerenciar papéis
+            </Button>
+            <Button
+              variant="secondary"
+              type="button"
+              onClick={() => permissionsQuery.refetch()}
+              disabled={permissionsQuery.isFetching}
+            >
+              <RefreshCw size={16} />
+              Atualizar
+            </Button>
+          </>
         )}
       />
 

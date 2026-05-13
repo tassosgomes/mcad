@@ -83,6 +83,7 @@ const navigation = [
     ],
     children: [
       { label: 'Permissões', path: '/autorizacao/permissoes' },
+      { label: 'Papéis', path: '/autorizacao/papeis' },
     ],
   },
 ];

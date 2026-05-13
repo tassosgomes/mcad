@@ -28,6 +28,17 @@ export async function authzGet<T>(path: string): Promise<T> {
   return response.json() as Promise<T>;
 }
 
+export async function authzPost<T>(path: string, body?: unknown): Promise<T> {
+  const response = await authenticatedClient.fetchWithAuth(`${BASE_URL}${path}`, {
+    method: 'POST',
+    headers: body === undefined ? undefined : { 'Content-Type': 'application/json' },
+    body: body === undefined ? undefined : JSON.stringify(body),
+  });
+
+  if (!response.ok) return handleError(response, path);
+  return response.json() as Promise<T>;
+}
+
 export async function authzPatch<T>(path: string, body?: unknown): Promise<T> {
   const response = await authenticatedClient.fetchWithAuth(`${BASE_URL}${path}`, {
     method: 'PATCH',
