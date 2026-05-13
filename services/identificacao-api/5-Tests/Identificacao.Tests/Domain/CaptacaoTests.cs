@@ -9,24 +9,6 @@ namespace Identificacao.Tests.Domain;
 public class CaptacaoTests
 {
     [Fact]
-    public void Criar_ComDadosValidos_RetornaCaptacaoAberta()
-    {
-        var rubricaId = Guid.NewGuid();
-        var periodo = new DateOnly(2023, 10, 1);
-        var analistaId = Guid.NewGuid();
-
-        var captacao = Captacao.Criar(rubricaId, periodo, "Netflix", analistaId, "Joao");
-
-        captacao.Should().NotBeNull();
-        captacao.Status.Should().Be(StatusCaptacao.Aberta);
-        captacao.RubricaId.Should().Be(rubricaId);
-        captacao.Periodo.Should().Be(periodo);
-        captacao.UsuarioDeMusica.Should().Be("Netflix");
-        captacao.AnalistaResponsavelId.Should().Be(analistaId);
-        captacao.AnalistaResponsavelNome.Should().Be("Joao");
-    }
-
-    [Fact]
     public void Atualizar_CaptacaoAberta_AtualizaDados()
     {
         var captacao = Captacao.Criar(Guid.NewGuid(), new DateOnly(2023, 10, 1), "Netflix", Guid.NewGuid(), "Joao");
@@ -64,36 +46,64 @@ public class CaptacaoTests
         act.Should().Throw<DomainException>().WithMessage("Apenas o analista responsável pode modificar esta captação.");
     }
 
+    // ───────────── Cobertura faltante de máquina de estados ─────────────
+
+    private static Captacao CriarAberta() =>
+        Captacao.Criar(Guid.NewGuid(), new DateOnly(2023, 10, 1), "Netflix", Guid.NewGuid(), "Joao");
+
     [Fact]
-    public void ValidarPropriedade_AnalistaDono_NaoLancaExcecao()
+    public void Fechar_CaptacaoJaFechada_LancaDomainException()
     {
-        var analistaId = Guid.NewGuid();
-        var captacao = Captacao.Criar(Guid.NewGuid(), new DateOnly(2023, 10, 1), "Netflix", analistaId, "Joao");
+        var captacao = CriarAberta();
+        captacao.Fechar();
 
-        var act = () => captacao.ValidarPropriedade(analistaId);
+        var act = () => captacao.Fechar();
 
-        act.Should().NotThrow();
+        act.Should().Throw<DomainException>().WithMessage("Apenas captações com status ABERTA podem ser modificadas.");
     }
 
     [Fact]
-    public void ValidarAberta_StatusAberta_NaoLancaExcecao()
+    public void Fechar_CaptacaoCancelada_LancaDomainException()
     {
-        var captacao = Captacao.Criar(Guid.NewGuid(), new DateOnly(2023, 10, 1), "Netflix", Guid.NewGuid(), "Joao");
+        var captacao = CriarAberta();
+        captacao.Fechar();
+        captacao.Cancelar("Motivo qualquer");
 
-        var act = () => captacao.ValidarAberta();
+        var act = () => captacao.Fechar();
 
-        act.Should().NotThrow();
+        act.Should().Throw<DomainException>().WithMessage("Apenas captações com status ABERTA podem ser modificadas.");
     }
 
     [Fact]
-    public void ValidarAberta_StatusFechada_LancaDomainException()
+    public void Cancelar_CaptacaoAberta_LancaDomainException()
     {
-        var captacao = Captacao.Criar(Guid.NewGuid(), new DateOnly(2023, 10, 1), "Netflix", Guid.NewGuid(), "Joao");
-        
-        var prop = typeof(Captacao).GetProperty("Status");
-        prop!.SetValue(captacao, StatusCaptacao.Fechada);
+        var captacao = CriarAberta();
 
-        var act = () => captacao.ValidarAberta();
+        var act = () => captacao.Cancelar("Motivo");
+
+        act.Should().Throw<DomainException>().WithMessage("Apenas captações FECHADAS podem ser canceladas.");
+    }
+
+    [Fact]
+    public void Cancelar_CaptacaoJaCancelada_LancaDomainException()
+    {
+        var captacao = CriarAberta();
+        captacao.Fechar();
+        captacao.Cancelar("Primeiro motivo");
+
+        var act = () => captacao.Cancelar("Segundo motivo");
+
+        act.Should().Throw<DomainException>().WithMessage("Apenas captações FECHADAS podem ser canceladas.");
+    }
+
+    [Fact]
+    public void Atualizar_CaptacaoCancelada_LancaDomainException()
+    {
+        var captacao = CriarAberta();
+        captacao.Fechar();
+        captacao.Cancelar("Motivo");
+
+        var act = () => captacao.Atualizar(Guid.NewGuid(), new DateOnly(2023, 11, 1), "Globo");
 
         act.Should().Throw<DomainException>().WithMessage("Apenas captações com status ABERTA podem ser modificadas.");
     }

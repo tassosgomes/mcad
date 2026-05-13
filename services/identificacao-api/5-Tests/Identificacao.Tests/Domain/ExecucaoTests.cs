@@ -120,4 +120,60 @@ public class ExecucaoTests
         action.Should().Throw<DomainException>()
             .WithMessage("Execução já está identificada.");
     }
+
+    // ───────────── Cobertura faltante ─────────────
+
+    private static Execucao CriarPendente() => Execucao.Criar(
+        Guid.NewGuid(), Guid.NewGuid(), null,
+        "Tit Original", null, null, "",
+        new TimeOnly(12, 0), new TimeOnly(12, 5),
+        1, null, null, StatusExecucao.Pendente);
+
+    [Fact]
+    public void Criar_ObraTituloNull_LancaArgumentNullException()
+    {
+        var act = () => Execucao.Criar(
+            Guid.NewGuid(), Guid.NewGuid(), null,
+            null!, null, null, "",
+            new TimeOnly(12, 0), new TimeOnly(12, 5),
+            1, null, null, StatusExecucao.Pendente);
+
+        act.Should().Throw<ArgumentNullException>().And.ParamName.Should().Be("obraTitulo");
+    }
+
+    [Fact]
+    public void Atualizar_ObraTituloNull_LancaArgumentNullException()
+    {
+        var execucao = CriarPendente();
+
+        var act = () => execucao.Atualizar(
+            Guid.NewGuid(), null, null!, null, null, "",
+            new TimeOnly(13, 0), new TimeOnly(13, 5),
+            1, null, null, StatusExecucao.Pendente);
+
+        act.Should().Throw<ArgumentNullException>().And.ParamName.Should().Be("obraTitulo");
+    }
+
+    [Fact]
+    public void Atualizar_FimMenorOuIgualInicio_LancaDomainException()
+    {
+        var execucao = CriarPendente();
+
+        var act = () => execucao.Atualizar(
+            Guid.NewGuid(), null, "Tit", null, null, "",
+            new TimeOnly(13, 0), new TimeOnly(13, 0), // fim == inicio
+            1, null, null, StatusExecucao.Pendente);
+
+        act.Should().Throw<DomainException>().WithMessage("O horário de fim deve ser posterior ao início.");
+    }
+
+    [Fact]
+    public void Resolver_ObraTituloNull_LancaArgumentNullException()
+    {
+        var execucao = CriarPendente();
+
+        var act = () => execucao.Resolver(Guid.NewGuid(), null, null!, null, null, "");
+
+        act.Should().Throw<ArgumentNullException>().And.ParamName.Should().Be("obraTitulo");
+    }
 }

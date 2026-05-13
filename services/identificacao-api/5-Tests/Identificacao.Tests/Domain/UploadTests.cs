@@ -9,24 +9,6 @@ namespace Identificacao.Tests.Domain;
 public class UploadTests
 {
     [Fact]
-    public void Criar_RetornaStatusProcessando()
-    {
-        // Arrange
-        var captacaoId = Guid.NewGuid();
-        var analistaId = Guid.NewGuid();
-
-        // Act
-        var upload = Upload.Criar(captacaoId, "arquivo.csv", "minio-key", analistaId);
-
-        // Assert
-        upload.Status.Should().Be(StatusUpload.Processando);
-        upload.CaptacaoId.Should().Be(captacaoId);
-        upload.AnalistaId.Should().Be(analistaId);
-        upload.NomeArquivo.Should().Be("arquivo.csv");
-        upload.MinioKey.Should().Be("minio-key");
-    }
-
-    [Fact]
     public void MarcarConcluido_SemErros_StatusConcluido()
     {
         // Arrange

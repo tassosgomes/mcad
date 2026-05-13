@@ -168,4 +168,70 @@ public class FecharRolCommandHandlerTests
         _outboxWriterMock.Verify(w => w.AddEvent("identificacao.rol.fechado", captacao.Id.ToString(), 
             It.Is<object>(o => ((Identificacao.Application.Fechamento.Payloads.RolFechadoPayload)o).Execucoes.ElementAt(0).Peso == null)), Times.Once);
     }
+
+    // ───────────── Cobertura faltante ─────────────
+
+    [Fact]
+    public async Task Handle_CaptacaoInexistente_LancaNotFoundException()
+    {
+        var captacaoId = Guid.NewGuid();
+        _captacaoRepoMock.Setup(r => r.GetByIdAsync(captacaoId, It.IsAny<CancellationToken>())).ReturnsAsync((Captacao?)null);
+
+        var cmd = new FecharRolCommand(captacaoId, Guid.NewGuid());
+
+        Func<Task> act = () => _handler.HandleAsync(cmd, CancellationToken.None);
+        await act.Should().ThrowAsync<NotFoundException>();
+    }
+
+    [Fact]
+    public async Task Handle_FechamentoResponse_ContemTotalExecucoes()
+    {
+        var analistaId = Guid.NewGuid();
+        var captacao = CriarCaptacao(analistaId);
+        _captacaoRepoMock.Setup(r => r.GetByIdAsync(captacao.Id, It.IsAny<CancellationToken>())).ReturnsAsync(captacao);
+
+        var okResponse = new PreRequisitosResponse(captacao.Id, true, new List<PreRequisitoItem>(), null!);
+        _preReqHandlerMock.Setup(h => h.HandleAsync(It.IsAny<ValidarPreRequisitosQuery>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(okResponse);
+
+        var execucoes = Enumerable.Range(0, 3).Select(i => Execucao.Criar(
+            captacao.Id, Guid.NewGuid(), null, $"Obra {i}", null, null, "",
+            new TimeOnly(i + 1, 0), new TimeOnly(i + 1, 30), 1, null, null,
+            Identificacao.Domain.Enums.StatusExecucao.Identificada)).ToList();
+
+        _execucaoRepoMock.Setup(r => r.ListarTodasDaCaptacaoAsync(captacao.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(execucoes);
+
+        var cmd = new FecharRolCommand(captacao.Id, analistaId);
+        var result = await _handler.HandleAsync(cmd, CancellationToken.None);
+
+        result.TotalExecucoes.Should().Be(3);
+    }
+
+    [Fact]
+    public async Task Handle_OutboxGravadoAntesDeSaveChanges()
+    {
+        var analistaId = Guid.NewGuid();
+        var captacao = CriarCaptacao(analistaId);
+        _captacaoRepoMock.Setup(r => r.GetByIdAsync(captacao.Id, It.IsAny<CancellationToken>())).ReturnsAsync(captacao);
+
+        var okResponse = new PreRequisitosResponse(captacao.Id, true, new List<PreRequisitoItem>(), null!);
+        _preReqHandlerMock.Setup(h => h.HandleAsync(It.IsAny<ValidarPreRequisitosQuery>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(okResponse);
+
+        _execucaoRepoMock.Setup(r => r.ListarTodasDaCaptacaoAsync(captacao.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<Execucao>());
+
+        var sequence = new List<string>();
+        _outboxWriterMock.Setup(w => w.AddEvent(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<object>()))
+            .Callback(() => sequence.Add("outbox"));
+        _captacaoRepoMock.Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
+            .Callback(() => sequence.Add("save"))
+            .Returns(Task.CompletedTask);
+
+        var cmd = new FecharRolCommand(captacao.Id, analistaId);
+        await _handler.HandleAsync(cmd, CancellationToken.None);
+
+        sequence.Should().Equal("outbox", "save");
+    }
 }

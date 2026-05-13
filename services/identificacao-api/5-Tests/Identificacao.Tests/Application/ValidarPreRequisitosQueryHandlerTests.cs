@@ -157,4 +157,85 @@ public class ValidarPreRequisitosQueryHandlerTests
         result.TodosAtendidos.Should().BeFalse();
         result.Itens.Should().ContainSingle(i => i.Id == "obras_liberadas" && !i.Atendido);
     }
+
+    // ───────────── Cobertura faltante ─────────────
+
+    [Fact]
+    public async Task Handle_CaptacaoInexistente_LancaNotFoundException()
+    {
+        var captacaoId = Guid.NewGuid();
+        _captacaoRepoMock.Setup(r => r.GetByIdAsync(captacaoId, It.IsAny<CancellationToken>())).ReturnsAsync((Captacao?)null);
+
+        var query = new ValidarPreRequisitosQuery(captacaoId);
+
+        Func<Task> act = () => _handler.HandleAsync(query, CancellationToken.None);
+        await act.Should().ThrowAsync<NotFoundException>();
+    }
+
+    [Fact]
+    public async Task Handle_FonogramaNaoLiberado_ObrasLiberadasFalha()
+    {
+        var captacao = CriarCaptacao(exigeClassificacao: false);
+        _captacaoRepoMock.Setup(r => r.GetByIdAsync(captacao.Id, It.IsAny<CancellationToken>())).ReturnsAsync(captacao);
+        _execucaoRepoMock.Setup(r => r.ContarPorCaptacaoAsync(captacao.Id, It.IsAny<CancellationToken>())).ReturnsAsync(1);
+
+        var fonogramaId = Guid.NewGuid();
+        var execucao = Execucao.Criar(captacao.Id, Guid.NewGuid(), fonogramaId, "Obra", "BR-1", null, "Int", new TimeOnly(1, 0), new TimeOnly(2, 0), 1, null, null, Identificacao.Domain.Enums.StatusExecucao.Identificada);
+        _execucaoRepoMock.Setup(r => r.ListarTodasDaCaptacaoAsync(captacao.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<Execucao> { execucao });
+
+        _cadastroClientMock.Setup(c => c.GetObraByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new ObraResumoDto(execucao.ObraId, "Obra", "Iswc", "LIBERADO"));
+        _cadastroClientMock.Setup(c => c.GetFonogramaByIdAsync(fonogramaId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new FonogramaResumoDto(fonogramaId, execucao.ObraId, "Fono", "BR-1", null, "PENDENTE"));
+
+        var query = new ValidarPreRequisitosQuery(captacao.Id);
+        var result = await _handler.HandleAsync(query, CancellationToken.None);
+
+        result.TodosAtendidos.Should().BeFalse();
+        result.Itens.Should().ContainSingle(i => i.Id == "obras_liberadas" && !i.Atendido);
+    }
+
+    [Fact]
+    public async Task Handle_CadastroHttpFalha_ObraContaComoNaoLiberada()
+    {
+        var captacao = CriarCaptacao(exigeClassificacao: false);
+        _captacaoRepoMock.Setup(r => r.GetByIdAsync(captacao.Id, It.IsAny<CancellationToken>())).ReturnsAsync(captacao);
+        _execucaoRepoMock.Setup(r => r.ContarPorCaptacaoAsync(captacao.Id, It.IsAny<CancellationToken>())).ReturnsAsync(1);
+
+        var execucao = Execucao.Criar(captacao.Id, Guid.NewGuid(), null, "Obra", null, null, "Int", new TimeOnly(1, 0), new TimeOnly(2, 0), 1, null, null, Identificacao.Domain.Enums.StatusExecucao.Identificada);
+        _execucaoRepoMock.Setup(r => r.ListarTodasDaCaptacaoAsync(captacao.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<Execucao> { execucao });
+
+        _cadastroClientMock.Setup(c => c.GetObraByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new HttpRequestException("Cadastro indisponível"));
+
+        var query = new ValidarPreRequisitosQuery(captacao.Id);
+        var result = await _handler.HandleAsync(query, CancellationToken.None);
+
+        result.TodosAtendidos.Should().BeFalse();
+        result.Itens.Should().ContainSingle(i => i.Id == "obras_liberadas" && !i.Atendido);
+    }
+
+    [Fact]
+    public async Task Handle_ResumoFechamento_CalculaIdentificadasERetornaContratoCompleto()
+    {
+        var captacao = CriarCaptacao(exigeClassificacao: true);
+        _captacaoRepoMock.Setup(r => r.GetByIdAsync(captacao.Id, It.IsAny<CancellationToken>())).ReturnsAsync(captacao);
+
+        _execucaoRepoMock.Setup(r => r.ContarPorCaptacaoAsync(captacao.Id, It.IsAny<CancellationToken>())).ReturnsAsync(10);
+        _execucaoRepoMock.Setup(r => r.ContarPendentesAsync(captacao.Id, It.IsAny<CancellationToken>())).ReturnsAsync(2);
+        _execucaoRepoMock.Setup(r => r.ListarTodasDaCaptacaoAsync(captacao.Id, It.IsAny<CancellationToken>())).ReturnsAsync(new List<Execucao>());
+
+        var query = new ValidarPreRequisitosQuery(captacao.Id);
+        var result = await _handler.HandleAsync(query, CancellationToken.None);
+
+        result.Resumo.Should().NotBeNull();
+        result.Resumo.TotalExecucoes.Should().Be(10);
+        result.Resumo.Identificadas.Should().Be(8);
+        result.Resumo.Pendentes.Should().Be(2);
+        result.Resumo.RubricaNome.Should().Be("Geral");
+        result.Resumo.Periodo.Should().Be(captacao.Periodo);
+        result.Resumo.ExigeClassificacao.Should().BeTrue();
+    }
 }

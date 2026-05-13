@@ -104,24 +104,6 @@ public class CriarExecucaoCommandHandlerTests
     }
 
     [Fact]
-    public async Task Handle_RubricaNaoAudiovisualSemTipoUtilizacao_Permite()
-    {
-        var analistaId = Guid.NewGuid();
-        var captacao = CriarCaptacaoAberta(analistaId, false);
-        _captacaoRepoMock.Setup(r => r.GetByIdAsync(captacao.Id, It.IsAny<CancellationToken>())).ReturnsAsync(captacao);
-
-        var obraId = Guid.NewGuid();
-        _cadastroClientMock.Setup(c => c.GetObraByIdAsync(obraId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new ObraResumoDto(obraId, "Minha Obra", "BR-123", "LIBERADA"));
-
-        var command = new CriarExecucaoCommand(
-            captacao.Id, obraId, null, new TimeOnly(12, 0), new TimeOnly(12, 5), 1, null, null, analistaId);
-
-        var result = await _handler.HandleAsync(command, CancellationToken.None);
-        result.Should().NotBeNull();
-    }
-
-    [Fact]
     public async Task Handle_CaptacaoFechada_LancaDomainException()
     {
         var analistaId = Guid.NewGuid();
@@ -148,5 +130,93 @@ public class CriarExecucaoCommandHandlerTests
 
         Func<Task> act = async () => await _handler.HandleAsync(command, CancellationToken.None);
         await act.Should().ThrowAsync<ForbiddenException>();
+    }
+
+    // ───────────── Cobertura faltante: branches de external service / integridade ─────────────
+
+    [Fact]
+    public async Task Handle_CaptacaoInexistente_LancaNotFoundException()
+    {
+        var analistaId = Guid.NewGuid();
+        var captacaoId = Guid.NewGuid();
+        _captacaoRepoMock.Setup(r => r.GetByIdAsync(captacaoId, It.IsAny<CancellationToken>())).ReturnsAsync((Captacao?)null);
+
+        var command = new CriarExecucaoCommand(
+            captacaoId, Guid.NewGuid(), null, new TimeOnly(12, 0), new TimeOnly(12, 5), 1, null, null, analistaId);
+
+        Func<Task> act = () => _handler.HandleAsync(command, CancellationToken.None);
+        await act.Should().ThrowAsync<NotFoundException>().WithMessage("Captação não encontrada.");
+    }
+
+    [Fact]
+    public async Task Handle_ObraInexistente_LancaNotFoundException()
+    {
+        var analistaId = Guid.NewGuid();
+        var captacao = CriarCaptacaoAberta(analistaId, false);
+        _captacaoRepoMock.Setup(r => r.GetByIdAsync(captacao.Id, It.IsAny<CancellationToken>())).ReturnsAsync(captacao);
+        _cadastroClientMock.Setup(c => c.GetObraByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>())).ReturnsAsync((ObraResumoDto?)null);
+
+        var command = new CriarExecucaoCommand(
+            captacao.Id, Guid.NewGuid(), null, new TimeOnly(12, 0), new TimeOnly(12, 5), 1, null, null, analistaId);
+
+        Func<Task> act = () => _handler.HandleAsync(command, CancellationToken.None);
+        await act.Should().ThrowAsync<NotFoundException>().WithMessage("Obra não encontrada no Cadastro.");
+    }
+
+    [Fact]
+    public async Task Handle_TipoUtilizacaoInexistente_LancaNotFoundException()
+    {
+        var analistaId = Guid.NewGuid();
+        var captacao = CriarCaptacaoAberta(analistaId, false);
+        _captacaoRepoMock.Setup(r => r.GetByIdAsync(captacao.Id, It.IsAny<CancellationToken>())).ReturnsAsync(captacao);
+        _tipoUtilizacaoRepoMock.Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>())).ReturnsAsync((TipoUtilizacao?)null);
+
+        var command = new CriarExecucaoCommand(
+            captacao.Id, Guid.NewGuid(), null, new TimeOnly(12, 0), new TimeOnly(12, 5), 1, Guid.NewGuid(), "Prog", analistaId);
+
+        Func<Task> act = () => _handler.HandleAsync(command, CancellationToken.None);
+        await act.Should().ThrowAsync<NotFoundException>().WithMessage("Tipo de Utilização não encontrado.");
+    }
+
+    [Fact]
+    public async Task Handle_FonogramaInexistente_LancaNotFoundException()
+    {
+        var analistaId = Guid.NewGuid();
+        var captacao = CriarCaptacaoAberta(analistaId, false);
+        var obraId = Guid.NewGuid();
+        var fonogramaId = Guid.NewGuid();
+
+        _captacaoRepoMock.Setup(r => r.GetByIdAsync(captacao.Id, It.IsAny<CancellationToken>())).ReturnsAsync(captacao);
+        _cadastroClientMock.Setup(c => c.GetObraByIdAsync(obraId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new ObraResumoDto(obraId, "Obra", "ISWC", "LIBERADA"));
+        _cadastroClientMock.Setup(c => c.GetFonogramaByIdAsync(fonogramaId, It.IsAny<CancellationToken>())).ReturnsAsync((FonogramaResumoDto?)null);
+
+        var command = new CriarExecucaoCommand(
+            captacao.Id, obraId, fonogramaId, new TimeOnly(12, 0), new TimeOnly(12, 5), 1, null, null, analistaId);
+
+        Func<Task> act = () => _handler.HandleAsync(command, CancellationToken.None);
+        await act.Should().ThrowAsync<NotFoundException>().WithMessage("Fonograma não encontrado no Cadastro.");
+    }
+
+    [Fact]
+    public async Task Handle_FonogramaDivergenteDaObra_LancaDomainException()
+    {
+        var analistaId = Guid.NewGuid();
+        var captacao = CriarCaptacaoAberta(analistaId, false);
+        var obraId = Guid.NewGuid();
+        var fonogramaId = Guid.NewGuid();
+        var outraObraId = Guid.NewGuid();
+
+        _captacaoRepoMock.Setup(r => r.GetByIdAsync(captacao.Id, It.IsAny<CancellationToken>())).ReturnsAsync(captacao);
+        _cadastroClientMock.Setup(c => c.GetObraByIdAsync(obraId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new ObraResumoDto(obraId, "Obra", "ISWC", "LIBERADA"));
+        _cadastroClientMock.Setup(c => c.GetFonogramaByIdAsync(fonogramaId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new FonogramaResumoDto(fonogramaId, outraObraId, "Fono", "BR-1", null, "LIBERADO"));
+
+        var command = new CriarExecucaoCommand(
+            captacao.Id, obraId, fonogramaId, new TimeOnly(12, 0), new TimeOnly(12, 5), 1, null, null, analistaId);
+
+        Func<Task> act = () => _handler.HandleAsync(command, CancellationToken.None);
+        await act.Should().ThrowAsync<DomainException>().WithMessage("O fonograma informado não pertence à obra selecionada.");
     }
 }

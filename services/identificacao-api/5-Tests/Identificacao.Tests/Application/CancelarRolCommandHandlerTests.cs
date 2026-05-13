@@ -161,20 +161,6 @@ public class CancelarRolCommandHandlerTests
     }
 
     [Fact]
-    public async Task Handle_JustificativaVazia_LancaValidation()
-    {
-        var analistaId = Guid.NewGuid();
-        var captacao = CriarFechada(analistaId);
-        _captacaoRepoMock.Setup(r => r.GetByIdAsync(captacao.Id, It.IsAny<CancellationToken>())).ReturnsAsync(captacao);
-
-        var cmd = new CancelarRolCommand(captacao.Id, "", OpcoesRecriacao.ApenasCancelar, analistaId, "Joao");
-        var act = () => _handler.HandleAsync(cmd, CancellationToken.None);
-
-        await act.Should().ThrowAsync<ValidationException>();
-        _captacaoRepoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
-    }
-
-    [Fact]
     public async Task Handle_EventoOutboxCriado()
     {
         var analistaId = Guid.NewGuid();

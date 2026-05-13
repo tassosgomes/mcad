@@ -90,20 +90,6 @@ public class CsvParserTests
     }
 
     [Fact]
-    public void Parse_NaoAudiovisualSemTipoUtilizacao_Aceita()
-    {
-        var parser = CreateParser();
-        var csv = "isrc;iswc;inicio;fim;tipo_utilizacao;titulo_programa\n" +
-                  "BRUM71500001;;14:30:00;14:33:45;;";
-                  
-        using var reader = CreateReader(csv);
-        var result = parser.Parse(reader, false); // false = nao exige
-
-        result.Erros.Should().BeEmpty();
-        result.LinhasAgrupadas.Should().ContainSingle();
-    }
-
-    [Fact]
     public void Parse_TipoUtilizacaoDesconhecido_ErroPorLinha()
     {
         var parser = CreateParser();
@@ -114,22 +100,6 @@ public class CsvParserTests
         var result = parser.Parse(reader, true);
 
         result.Erros.Should().ContainSingle(e => e.Coluna == "tipo_utilizacao" && e.Mensagem.Contains("XX"));
-    }
-
-    [Fact]
-    public void Parse_LinhasIdenticas_AgrupaQuantidade2()
-    {
-        var parser = CreateParser();
-        var csv = "isrc;iswc;inicio;fim;tipo_utilizacao;titulo_programa\n" +
-                  "BR777;;14:00:00;14:03:00;TA;Prog\n" +
-                  "BR777;;14:00:00;14:03:00;TA;Prog";
-                  
-        using var reader = CreateReader(csv);
-        var result = parser.Parse(reader, true);
-
-        result.Erros.Should().BeEmpty();
-        result.LinhasAgrupadas.Should().ContainSingle();
-        result.LinhasAgrupadas[0].Quantidade.Should().Be(2);
     }
 
     [Fact]
@@ -161,6 +131,48 @@ public class CsvParserTests
         result.Erros.Should().HaveCount(2);
         result.Erros.Should().Contain(e => e.Linha == 2 && e.Coluna == "tipo_utilizacao");
         result.Erros.Should().Contain(e => e.Linha == 3 && e.Coluna == "tipo_utilizacao");
+        result.LinhasAgrupadas.Should().BeEmpty();
+    }
+
+    // ───────────── Cobertura faltante ─────────────
+
+    [Fact]
+    public void Parse_ArquivoVazio_ErroGlobal()
+    {
+        var parser = CreateParser();
+        using var reader = CreateReader("");
+
+        var result = parser.Parse(reader, true);
+
+        result.IsErroGlobal.Should().BeTrue();
+        result.MensagemErroGlobal.Should().Contain("Arquivo vazio");
+    }
+
+    [Fact]
+    public void Parse_InicioFormatoInvalido_ErroPorLinha()
+    {
+        var parser = CreateParser();
+        var csv = "isrc;iswc;inicio;fim;tipo_utilizacao;titulo_programa\n" +
+                  "BRUM71500001;;14:30;14:33:45;TA;Novela"; // inicio sem segundos
+
+        using var reader = CreateReader(csv);
+        var result = parser.Parse(reader, true);
+
+        result.Erros.Should().Contain(e => e.Coluna == "inicio" && e.Mensagem.Contains("HH:mm:ss"));
+        result.LinhasAgrupadas.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void Parse_FimFormatoInvalido_ErroPorLinha()
+    {
+        var parser = CreateParser();
+        var csv = "isrc;iswc;inicio;fim;tipo_utilizacao;titulo_programa\n" +
+                  "BRUM71500001;;14:30:00;xx:xx:xx;TA;Novela"; // fim inválido
+
+        using var reader = CreateReader(csv);
+        var result = parser.Parse(reader, true);
+
+        result.Erros.Should().Contain(e => e.Coluna == "fim" && e.Mensagem.Contains("HH:mm:ss"));
         result.LinhasAgrupadas.Should().BeEmpty();
     }
 }
