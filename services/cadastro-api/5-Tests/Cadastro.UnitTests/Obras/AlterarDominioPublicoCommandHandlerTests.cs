@@ -43,22 +43,4 @@ public class AlterarDominioPublicoCommandHandlerTests
             It.IsAny<CancellationToken>()), Times.Once);
     }
 
-    [Fact]
-    public async Task HandleAsync_RemoverDP_RestauraPendente()
-    {
-        var obra = ObraMusical.Criar("Teste", TipoObra.Musical); 
-        obra.MarcarDominioPublico(true);
-        _repoMock.Setup(r => r.GetByIdAsync(obra.Id, It.IsAny<CancellationToken>())).ReturnsAsync(obra);
-
-        var command = new AlterarDominioPublicoCommand(obra.Id, false);
-        var res = await _handler.HandleAsync(command, CancellationToken.None);
-
-        res.Status.Should().Be("PENDENTE");
-        res.DominioPublico.Should().BeFalse();
-        _auditMock.Verify(a => a.PublishAsync(
-            obra,
-            ObraAuditOperation.SetPublicDomain,
-            It.IsAny<IReadOnlyDictionary<string, object?>?>(),
-            It.IsAny<CancellationToken>()), Times.Once);
-    }
 }

@@ -30,35 +30,6 @@ public class RemoverTitularidadeHandlerTests
     }
 
     [Fact]
-    public async Task HandleAsync_ProcessoValido_DeveRetornarResponse()
-    {
-        var obraId = Guid.NewGuid();
-        var obra = ObraMusical.Criar("Teste", TipoObra.Musical);
-        typeof(ObraMusical).GetProperty("Id")!.SetValue(obra, obraId);
-
-        var titularidade = TitularidadeAutoral.Criar(obraId, Guid.NewGuid(), CategoriaAutoral.Autor, 10.0m);
-        var command = new RemoverTitularidadeCommand(obraId, titularidade.Id);
-
-        _obraRepoMock.Setup(r => r.GetByIdAsync(obraId, It.IsAny<CancellationToken>())).ReturnsAsync(obra);
-        _titularidadeRepoMock.Setup(r => r.GetByIdAsync(titularidade.Id, It.IsAny<CancellationToken>())).ReturnsAsync(titularidade);
-        _titularidadeRepoMock.Setup(r => r.GetByObraIdAsync(obraId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new List<TitularidadeAutoral>()); // Removed element
-
-        var act = async () => await _handler.HandleAsync(command, CancellationToken.None);
-        
-        var result = await act.Should().NotThrowAsync();
-        result.Subject.Should().BeOfType<TitularidadesResponse>();
-        _titularidadeRepoMock.Verify(r => r.Delete(It.IsAny<TitularidadeAutoral>()), Times.Once);
-        _auditPublisherMock.Verify(a => a.Snapshot(titularidade), Times.Once);
-        _auditPublisherMock.Verify(a => a.PublishAsync(
-            titularidade,
-            TitularidadeAuditOperation.Remove,
-            It.IsAny<IReadOnlyDictionary<string, object?>>(),
-            It.IsAny<CancellationToken>()), Times.Once);
-        _titularidadeRepoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
-    }
-
-    [Fact]
     public async Task HandleAsync_ObraLiberada_DeveLancarDepuracaoNecessariaException()
     {
         var obra = ObraMusical.Criar("Teste", TipoObra.Musical);

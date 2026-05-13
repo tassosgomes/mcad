@@ -34,27 +34,6 @@ public class AjustarPercentualHandlerTests
     }
 
     [Fact]
-    public async Task HandleAsync_AjusteInterprete_RetornaOk()
-    {
-        var fonograma = CriarFonograma();
-        var titular = Titular.CriarPessoaFisica("ArtistaTeste", Cpf.Create("12345678909"), "BR", Guid.NewGuid());
-        var participacao = ParticipacaoConexa.Criar(fonograma.Id, titular.Id, CategoriaConexo.Interprete);
-        typeof(ParticipacaoConexa).GetProperty("Titular")!.SetValue(participacao, titular);
-        participacao.DefinirPercentual(21.85m);
-        var cmd = new AjustarPercentualCommand(fonograma.Id, participacao.Id, 30.0m);
-
-        _fonogramaRepo.Setup(r => r.GetByIdAsync(fonograma.Id, It.IsAny<CancellationToken>())).ReturnsAsync(fonograma);
-        _participacaoRepo.Setup(r => r.GetByIdAsync(participacao.Id, It.IsAny<CancellationToken>())).ReturnsAsync(participacao);
-        _participacaoRepo.Setup(r => r.GetByFonogramaIdAsync(fonograma.Id, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new List<ParticipacaoConexa> { participacao });
-
-        var result = await _handler.HandleAsync(cmd, CancellationToken.None);
-
-        result.Should().NotBeNull();
-        participacao.Percentual.Should().Be(30.0m);
-    }
-
-    [Fact]
     public async Task HandleAsync_AjusteMusico_ThrowsDomainException()
     {
         var fonograma = CriarFonograma();

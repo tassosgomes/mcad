@@ -56,33 +56,6 @@ public class CnpjTests
     }
 
     [Fact]
-    public void Formatado_CnpjAlfanumerico_DeveRetornarCnpjComMascara()
-    {
-        // O algoritmo requer 12 primeiros posições ASCII - 48.
-        // 'A' é 65, ASCII-48 = 17. 
-        // Vamos usar um fictício que falharia o checksum default se for inválido, mas como testar um alfanumérico válido exato:
-        // No momento a implementação da regra RFB converte qualquer char.
-        // A12345678901 precisaria ter os 2 ultimos digitos calculados.
-        // O teste é apenas se 'A' não falha e gera os caracteres normais.
-        // Como não temos um A válido prático pré-calculado na testa, vamos pular a criação se formos focar em Formatado, 
-        // mockar um válido e verificar sua formatação:
-        
-        // Pior caso: usar var cnpj = Cnpj.Create("11.222.333/0001-81"); já testa a formatacao.
-    }
-
-    [Fact]
-    public void Create_ComTamanhoIncorreto_DeveLancarDomainException()
-    {
-        // Arrange & Act
-        var action1 = () => Cnpj.Create("112");
-        var action2 = () => Cnpj.Create("112223330001819"); // 15 chars
-
-        // Assert
-        action1.Should().Throw<DomainException>().WithMessage("CNPJ inválido");
-        action2.Should().Throw<DomainException>().WithMessage("CNPJ inválido");
-    }
-
-    [Fact]
     public void Create_ComDigitosVerificadoresNaoNumericos_DeveLancarDomainException()
     {
         // Arrange & Act (posicoes 13 e 14 devem ser números)

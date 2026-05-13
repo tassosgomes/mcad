@@ -1,8 +1,10 @@
 using System.Net;
 using System.Net.Http.Json;
+using Cadastro.Application.Audit;
 using Cadastro.Application.Obras.Commands;
 using Cadastro.Application.Obras.Responses;
 using Cadastro.Application.Titulares.Responses;
+using Cadastro.Domain.Entities;
 using Cadastro.Domain.Interfaces;
 using Cadastro.Infra.Data;
 using Cadastro.Infra.Events;
@@ -162,6 +164,109 @@ public class OutboxEventosIntegrationTests : IClassFixture<CadastroApiFactory>
         var eventos = GetOutboxEvents(obra.Id.ToString(), "cadastro.obra.dominio-publico");
         Assert.NotEmpty(eventos);
         Assert.Contains("dominioPublico", eventos.First().Payload);
+    }
+
+    // ── RF-17 (rollback path): falha antes de SaveChanges não persiste nada ───
+
+    /// <summary>
+    /// RF-17 — atomicidade no caminho de falha.
+    ///
+    /// O handler ObterIswcCommandHandler executa na ordem:
+    ///   1. IIswcService.ObterIswcAsync  — retorna ISWC com sucesso
+    ///   2. obra.AtribuirIswc(iswc)      — muta o agregado em memória
+    ///   3. _repository.Update(obra)
+    ///   4. _outbox.AddEvent(...)        — enfileira OutboxEvent no DbContext (não salvo)
+    ///   5. _auditPublisher.PublishAsync — ← lança aqui (mock configurado para throw)
+    ///   6. SaveChangesAsync             — NUNCA executado
+    ///
+    /// Portanto, nem o agregado (status PENDENTE → LIBERADO) nem o OutboxEvent
+    /// devem existir no banco após a falha.
+    /// </summary>
+    [Fact]
+    [Trait("Category", "Integration")]
+    public async Task RF17_QuandoHandlerFalhaAposEscreverOutbox_NadaDeveSerPersistido()
+    {
+        // ── Arrange: criar obra + titular usando cliente sem falha injetada ──
+        // Precisamos de uma obra em status PENDENTE com pelo menos um titular,
+        // mas sem chamar /iswc ainda. Reusamos partes do helper sem a etapa final.
+
+        var assocJson = await _client.GetStringAsync("/api/v1/associacoes");
+        var assocArr = System.Text.Json.JsonDocument.Parse(assocJson).RootElement;
+        var assocId = Guid.Parse(assocArr[0].GetProperty("id").GetString()!);
+
+        // 1. Criar obra
+        var postRes = await _client.PostAsJsonAsync("/api/v1/obras",
+            new CriarObraCommand("Obra RF17 Rollback", null, "MUSICAL", "Rock"));
+        postRes.EnsureSuccessStatusCode();
+        var obra = await postRes.Content.ReadFromJsonAsync<ObraResponse>();
+
+        // 2. Criar titular e titularidade
+        var cpf = GerarCpfValido();
+        var resTitular = await _client.PostAsJsonAsync("/api/v1/titulares",
+            new Cadastro.Application.Titulares.Commands.CriarTitularCommand(
+                $"Titular RF17 {cpf}", "PF", cpf, "BR", assocId, null));
+        resTitular.EnsureSuccessStatusCode();
+        var titular = await resTitular.Content.ReadFromJsonAsync<TitularResponse>();
+
+        await _client.PostAsJsonAsync($"/api/v1/obras/{obra!.Id}/titularidades",
+            new Cadastro.API.Endpoints.AdicionarTitularidadeRequest(titular!.Id, "AUTOR", 100.0m));
+
+        // ── Mock: IIswcService retorna ISWC válido; IObraAuditPublisher lança ──
+        var mockIswcFailing = new Mock<IIswcService>();
+        mockIswcFailing
+            .Setup(s => s.ObterIswcAsync(
+                It.IsAny<string>(), It.IsAny<IEnumerable<string>>(),
+                It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync($"T-{Guid.NewGuid().ToString()[..8]}");
+
+        var mockAuditFailing = new Mock<IObraAuditPublisher>();
+        mockAuditFailing
+            .Setup(a => a.Snapshot(It.IsAny<ObraMusical>()))
+            .Returns(new Dictionary<string, object?>());
+        mockAuditFailing
+            .Setup(a => a.PublishAsync(
+                It.IsAny<ObraMusical>(),
+                It.IsAny<ObraAuditOperation>(),
+                It.IsAny<IReadOnlyDictionary<string, object?>>(),
+                It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new InvalidOperationException("Falha simulada de auditoria para testar rollback RF-17"));
+
+        // Cliente com os dois mocks sobrepostos
+        var failingClient = _factory.CreateAuthenticatedClient(builder =>
+        {
+            builder.ConfigureTestServices(services =>
+            {
+                var iswcDesc = services.SingleOrDefault(d => d.ServiceType == typeof(IIswcService));
+                if (iswcDesc != null) services.Remove(iswcDesc);
+                services.AddScoped<IIswcService>(_ => mockIswcFailing.Object);
+
+                var auditDesc = services.SingleOrDefault(d => d.ServiceType == typeof(IObraAuditPublisher));
+                if (auditDesc != null) services.Remove(auditDesc);
+                services.AddScoped<IObraAuditPublisher>(_ => mockAuditFailing.Object);
+            });
+        });
+
+        // ── Act: chamar o endpoint /iswc que deve falhar ──
+        var iswcRes = await failingClient.PostAsync($"/api/v1/obras/{obra.Id}/iswc", null);
+
+        // ── Assert: a API deve retornar erro 5xx ──
+        Assert.True(
+            (int)iswcRes.StatusCode >= 500,
+            $"Esperado 5xx mas foi {(int)iswcRes.StatusCode}");
+
+        // ── Assert: nenhum OutboxEvent para esta obra deve existir ──
+        var outboxEventos = GetOutboxEvents(obra.Id.ToString(), "cadastro.obra.liberada");
+        Assert.Empty(outboxEventos);
+
+        // ── Assert: o agregado não deve ter sido mutado no banco ──
+        var optionsBuilder = new Microsoft.EntityFrameworkCore.DbContextOptionsBuilder<CadastroDbContext>()
+            .UseNpgsql(_factory.ConnectionString)
+            .Options;
+        using var ctx = new CadastroDbContext(optionsBuilder);
+        var obraNoDb = await ctx.ObrasMusicais.FindAsync(obra.Id);
+        Assert.NotNull(obraNoDb);
+        Assert.Equal("PENDENTE", obraNoDb.Status.ToString().ToUpperInvariant());
+        Assert.Null(obraNoDb.Iswc);
     }
 
     // ── RF-19: API responde OK independente do RabbitMQ ────────────────────────

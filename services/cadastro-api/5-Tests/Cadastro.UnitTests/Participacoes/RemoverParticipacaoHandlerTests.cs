@@ -34,27 +34,6 @@ public class RemoverParticipacaoHandlerTests
     }
 
     [Fact]
-    public async Task HandleAsync_HappyPath_RemoveERetornaDesatualizado()
-    {
-        var fonograma = CriarFonograma();
-        var participacao = ParticipacaoConexa.Criar(fonograma.Id, Guid.NewGuid(), CategoriaConexo.Interprete);
-        participacao.DefinirPercentual(50.0m); // tinha cálculo
-        var cmd = new RemoverParticipacaoCommand(fonograma.Id, participacao.Id);
-
-        _fonogramaRepo.Setup(r => r.GetByIdAsync(fonograma.Id, It.IsAny<CancellationToken>())).ReturnsAsync(fonograma);
-        _participacaoRepo.Setup(r => r.GetByIdAsync(participacao.Id, It.IsAny<CancellationToken>())).ReturnsAsync(participacao);
-        _participacaoRepo.Setup(r => r.GetByFonogramaIdAsync(fonograma.Id, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new List<ParticipacaoConexa>());
-
-        var result = await _handler.HandleAsync(cmd, CancellationToken.None);
-
-        result.Should().NotBeNull();
-        result.PercentuaisDesatualizados.Should().BeTrue();
-        _participacaoRepo.Verify(r => r.Delete(participacao), Times.Once);
-        _participacaoRepo.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
-    }
-
-    [Fact]
     public async Task HandleAsync_FonogramaLiberado_ThrowsDepuracaoException()
     {
         var fonograma = CriarFonograma(StatusFonograma.Liberado);

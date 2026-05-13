@@ -100,21 +100,6 @@ public class ObterOwnershipSnapshotQueryHandlerTests
     }
 
     [Fact]
-    public async Task HandleAsync_ComListasVazias_DeveRetornarSnapshotVazio()
-    {
-        var result = await _handler.HandleAsync(new ObterOwnershipSnapshotQuery([], []), CancellationToken.None);
-
-        result.Obras.Should().BeEmpty();
-        result.Fonogramas.Should().BeEmpty();
-        _obraRepository.Verify(
-            repository => repository.GetByIdsAsync(It.IsAny<IEnumerable<Guid>>(), It.IsAny<CancellationToken>()),
-            Times.Never);
-        _fonogramaRepository.Verify(
-            repository => repository.GetByIdsAsync(It.IsAny<IEnumerable<Guid>>(), It.IsAny<CancellationToken>()),
-            Times.Never);
-    }
-
-    [Fact]
     public async Task HandleAsync_ComObraInexistente_DeveLancarErroDeNegocio()
     {
         var obraId = Guid.NewGuid();

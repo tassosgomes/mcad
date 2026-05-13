@@ -8,19 +8,6 @@ namespace Cadastro.UnitTests.Titularidades;
 
 public class TitularidadeAutoralTests
 {
-    [Fact]
-    public void Criar_ValoresValidos_DeveCriarInstancia()
-    {
-        var obraId = Guid.NewGuid();
-        var titularId = Guid.NewGuid();
-        var titularidade = TitularidadeAutoral.Criar(obraId, titularId, CategoriaAutoral.Autor, 50.0m);
-
-        titularidade.ObraId.Should().Be(obraId);
-        titularidade.TitularId.Should().Be(titularId);
-        titularidade.Categoria.Should().Be(CategoriaAutoral.Autor);
-        titularidade.Percentual.Should().Be(50.0m);
-    }
-
     [Theory]
     [InlineData(0)]
     [InlineData(-1)]

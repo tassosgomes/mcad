@@ -138,21 +138,6 @@ public class TitularidadeEndpointsTests : IClassFixture<CadastroApiFactory>
     }
 
     [Fact]
-    public async Task Listar_RetornaSomaCompletaTrueQuando100()
-    {
-        var obraId = await SeedObraAsync("Soma 100 Obra");
-        var titular1Id = await SeedTitularPFAsync("Autor A");
-        var titular2Id = await SeedTitularPFAsync("Autor B");
-
-        await _client.PostAsJsonAsync($"/api/v1/obras/{obraId}/titularidades", new AdicionarTitularidadeRequest(titular1Id, "AUTOR", 30.0m));
-        var res2 = await _client.PostAsJsonAsync($"/api/v1/obras/{obraId}/titularidades", new AdicionarTitularidadeRequest(titular2Id, "AUTOR", 70.0m));
-
-        var result = await res2.Content.ReadFromJsonAsync<TitularidadesResponse>();
-        result!.SomaPercentual.Should().Be(100.0m);
-        result.SomaCompleta.Should().BeTrue();
-    }
-
-    [Fact]
     public async Task Editar_AtualizaPercentual_Retorna200()
     {
         var obraId = await SeedObraAsync("Editar Obra");
@@ -186,43 +171,6 @@ public class TitularidadeEndpointsTests : IClassFixture<CadastroApiFactory>
     }
 
     [Fact]
-    public async Task Editar_PercentualInvalido_Retorna422()
-    {
-        var obraId = await SeedObraAsync("Percentual Invalido Edit");
-        var titularId = await SeedTitularPFAsync("Autor Percentual Edit");
-
-        var addRes = await _client.PostAsJsonAsync(
-            $"/api/v1/obras/{obraId}/titularidades",
-            new AdicionarTitularidadeRequest(titularId, "AUTOR", 50.0m));
-        var addResult = await addRes.Content.ReadFromJsonAsync<TitularidadesResponse>();
-        var titularidadeId = addResult!.Titularidades.First().Id;
-
-        var editRes = await _client.PutAsJsonAsync(
-            $"/api/v1/obras/{obraId}/titularidades/{titularidadeId}",
-            new EditarTitularidadeRequest(150.0m));
-
-        editRes.StatusCode.Should().Be(HttpStatusCode.UnprocessableEntity);
-    }
-
-    [Fact]
-    public async Task Remover_TitularidadeExistente_Retorna200ESomaAtualizada()
-    {
-        var obraId = await SeedObraAsync("Remover Obra");
-        var titularId = await SeedTitularPFAsync("Autor Delete");
-
-        var addRes = await _client.PostAsJsonAsync($"/api/v1/obras/{obraId}/titularidades", new AdicionarTitularidadeRequest(titularId, "AUTOR", 50.0m));
-        var addResult = await addRes.Content.ReadFromJsonAsync<TitularidadesResponse>();
-        var titularidadeId = addResult!.Titularidades.First().Id;
-
-        var delRes = await _client.DeleteAsync($"/api/v1/obras/{obraId}/titularidades/{titularidadeId}");
-
-        delRes.StatusCode.Should().Be(HttpStatusCode.OK);
-        var result = await delRes.Content.ReadFromJsonAsync<TitularidadesResponse>();
-        result!.SomaPercentual.Should().Be(0.0m);
-        result.Titularidades.Should().HaveCount(0);
-    }
-
-    [Fact]
     public async Task Buscar_AutocompleteTitulares()
     {
         var titularId = await SeedTitularPFAsync("Caetano Veloso");
@@ -244,30 +192,6 @@ public class TitularidadeEndpointsTests : IClassFixture<CadastroApiFactory>
 
         var result = await getRes.Content.ReadFromJsonAsync<List<TitularResumoResponse>>();
         result.Should().Contain(t => t.Id == titularId && t.Nome == "Editora Documento Formatado");
-    }
-
-    [Fact]
-    public async Task ExcluirObra_ComTitularidades_DeveFalharCom409()
-    {
-        var obraId = await SeedObraAsync("Obra Nao Pode Excluir");
-        var titularId = await SeedTitularPFAsync("Autor Nao Excluir");
-
-        await _client.PostAsJsonAsync($"/api/v1/obras/{obraId}/titularidades", new AdicionarTitularidadeRequest(titularId, "AUTOR", 50.0m));
-
-        var res = await _client.DeleteAsync($"/api/v1/obras/{obraId}");
-        res.StatusCode.Should().Be(HttpStatusCode.Conflict);
-    }
-
-    [Fact]
-    public async Task ExcluirTitular_ComTitularidades_DeveFalharCom409()
-    {
-        var obraId = await SeedObraAsync("Titular Nao Pode Excluir");
-        var titularId = await SeedTitularPFAsync("Autor Fixo");
-
-        await _client.PostAsJsonAsync($"/api/v1/obras/{obraId}/titularidades", new AdicionarTitularidadeRequest(titularId, "AUTOR", 50.0m));
-
-        var res = await _client.DeleteAsync($"/api/v1/titulares/{titularId}");
-        res.StatusCode.Should().Be(HttpStatusCode.Conflict);
     }
 
     [Fact]

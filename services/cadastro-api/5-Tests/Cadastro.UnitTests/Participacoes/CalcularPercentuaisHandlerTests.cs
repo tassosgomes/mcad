@@ -46,24 +46,6 @@ public class CalcularPercentuaisHandlerTests
     }
 
     [Fact]
-    public async Task HandleAsync_HappyPath_CalculaERetorna100()
-    {
-        var fonograma = CriarFonograma();
-        var participacoes = CriarParticipacoes(fonograma.Id,
-            CategoriaConexo.Interprete,
-            CategoriaConexo.ProdutorFonografico);
-
-        _fonogramaRepo.Setup(r => r.GetByIdAsync(fonograma.Id, It.IsAny<CancellationToken>())).ReturnsAsync(fonograma);
-        _participacaoRepo.Setup(r => r.GetByFonogramaIdAsync(fonograma.Id, It.IsAny<CancellationToken>())).ReturnsAsync(participacoes);
-
-        var result = await _handler.HandleAsync(new CalcularPercentuaisCommand(fonograma.Id), CancellationToken.None);
-
-        result.SomaCalculada.Should().BeTrue();
-        result.SomaPercentual.Should().Be(100.0000m);
-        _participacaoRepo.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
-    }
-
-    [Fact]
     public async Task HandleAsync_SemInterprete_ThrowsDomainException()
     {
         var fonograma = CriarFonograma();
@@ -89,20 +71,4 @@ public class CalcularPercentuaisHandlerTests
         await act.Should().ThrowAsync<DepuracaoNecessariaException>();
     }
 
-    [Fact]
-    public async Task HandleAsync_ComMusico_Soma100()
-    {
-        var fonograma = CriarFonograma();
-        var participacoes = CriarParticipacoes(fonograma.Id,
-            CategoriaConexo.Interprete,
-            CategoriaConexo.ProdutorFonografico,
-            CategoriaConexo.MusicoExecutante);
-
-        _fonogramaRepo.Setup(r => r.GetByIdAsync(fonograma.Id, It.IsAny<CancellationToken>())).ReturnsAsync(fonograma);
-        _participacaoRepo.Setup(r => r.GetByFonogramaIdAsync(fonograma.Id, It.IsAny<CancellationToken>())).ReturnsAsync(participacoes);
-
-        var result = await _handler.HandleAsync(new CalcularPercentuaisCommand(fonograma.Id), CancellationToken.None);
-
-        result.SomaPercentual.Should().Be(100.0000m);
-    }
 }

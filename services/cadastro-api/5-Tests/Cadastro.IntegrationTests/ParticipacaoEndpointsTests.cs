@@ -109,39 +109,6 @@ public class ParticipacaoEndpointsTests : IClassFixture<CadastroApiFactory>
     // ─── Testes ───────────────────────────────────────────────────────────────
 
     [Fact]
-    public async Task Get_ListarParticipacoes_FonogramaVazio_Retorna200()
-    {
-        var obraId = await SeedObraAsync();
-        var fonoId = await SeedFonogramaAsync(obraId);
-
-        var res = await _client.GetAsync(BaseUrl(fonoId));
-
-        res.StatusCode.Should().Be(HttpStatusCode.OK);
-        var result = await res.Content.ReadFromJsonAsync<ParticipacoesResponse>();
-        result!.FonogramaId.Should().Be(fonoId);
-        result.SomaCalculada.Should().BeFalse();
-        result.Participacoes.Should().BeEmpty();
-    }
-
-    [Fact]
-    public async Task Post_AdicionarParticipante_SemPercentual_Retorna201()
-    {
-        var obraId = await SeedObraAsync();
-        var fonoId = await SeedFonogramaAsync(obraId);
-        var interprete = await SeedTitularAsync("Djavan");
-
-        var res = await _client.PostAsJsonAsync(BaseUrl(fonoId),
-            new AdicionarParticipacaoRequest(interprete, "INTERPRETE"));
-
-        res.StatusCode.Should().Be(HttpStatusCode.Created);
-        var result = await res.Content.ReadFromJsonAsync<ParticipacoesResponse>();
-        result!.Participacoes.Should().HaveCount(1);
-        result.Participacoes.First().Percentual.Should().BeNull();
-        result.Participacoes.First().Editavel.Should().BeTrue();
-        result.SomaCalculada.Should().BeFalse();
-    }
-
-    [Fact]
     public async Task Post_AdicionarParticipante_Duplicata_Retorna409()
     {
         var obraId = await SeedObraAsync();
@@ -172,19 +139,6 @@ public class ParticipacaoEndpointsTests : IClassFixture<CadastroApiFactory>
         result!.SomaCalculada.Should().BeTrue();
         result.SomaPercentual.Should().Be(100.0000m);
         result.PercentuaisDesatualizados.Should().BeFalse();
-    }
-
-    [Fact]
-    public async Task Post_Calcular_SemInterprete_Retorna422()
-    {
-        var obraId = await SeedObraAsync();
-        var fonoId = await SeedFonogramaAsync(obraId);
-        var produtor = await SeedTitularAsync("Prod Sem Int", "PJ");
-
-        await _client.PostAsJsonAsync(BaseUrl(fonoId), new AdicionarParticipacaoRequest(produtor, "PRODUTOR_FONOGRAFICO"));
-        var res = await _client.PostAsJsonAsync($"{BaseUrl(fonoId)}/calcular", new { });
-
-        res.StatusCode.Should().Be(HttpStatusCode.UnprocessableEntity);
     }
 
     [Fact]

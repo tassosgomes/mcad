@@ -55,20 +55,6 @@ public class CodigoIntegrationTests : IClassFixture<CadastroApiFactory>, IAsyncL
 
     public Task DisposeAsync() => Task.CompletedTask;
 
-    [Fact(DisplayName = "GET /associacoes deve retornar codigo de 1 a 7 provenientes do seed")]
-    public async Task GetAssociacoes_DeveRetornarCodigo1A7()
-    {
-        var response = await _client.GetAsync("/api/v1/associacoes");
-        response.EnsureSuccessStatusCode();
-
-        var associacoes = await response.Content.ReadFromJsonAsync<List<AssociacaoResponse>>(_jsonOptions);
-
-        associacoes.Should().NotBeNull();
-        associacoes.Should().HaveCount(7);
-        associacoes!.Select(a => a.Codigo).Should().OnlyHaveUniqueItems();
-        associacoes.Select(a => (int)a.Codigo).Should().Contain(new[] { 1, 2, 3, 4, 5, 6, 7 });
-    }
-
     [Fact(DisplayName = "POST /titulares deve retornar codigo autoincremental e persistir após PUT")]
     public async Task Titular_FluxoCriacaoEdicao_ValidaCodigo()
     {

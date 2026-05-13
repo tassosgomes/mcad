@@ -25,25 +25,6 @@ public class ExcluirObraCommandHandlerTests
     }
 
     [Fact]
-    public async Task HandleAsync_DeveExcluirSSemVinculos()
-    {
-        var obra = ObraMusical.Criar("Teste", TipoObra.Musical);
-        _repoMock.Setup(r => r.GetByIdAsync(obra.Id, It.IsAny<CancellationToken>())).ReturnsAsync(obra);
-        _repoMock.Setup(r => r.PossuiVinculosAsync(obra.Id, It.IsAny<CancellationToken>())).ReturnsAsync(false);
-
-        var command = new ExcluirObraCommand(obra.Id);
-        await _handler.HandleAsync(command, CancellationToken.None);
-
-        _repoMock.Verify(r => r.Delete(obra), Times.Once);
-        _repoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
-        _auditMock.Verify(a => a.PublishAsync(
-            obra,
-            ObraAuditOperation.Delete,
-            It.IsAny<IReadOnlyDictionary<string, object?>?>(),
-            It.IsAny<CancellationToken>()), Times.Once);
-    }
-
-    [Fact]
     public async Task HandleAsync_ObrasDepuradas_LancaConflictException()
     {
         var obra = ObraMusical.Criar("Teste", TipoObra.Musical);

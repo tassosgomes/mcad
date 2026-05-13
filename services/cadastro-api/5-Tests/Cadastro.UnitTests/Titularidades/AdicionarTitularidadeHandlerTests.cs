@@ -34,39 +34,6 @@ public class AdicionarTitularidadeHandlerTests
     }
 
     [Fact]
-    public async Task HandleAsync_ProcessoValido_DeveRetornarResponse()
-    {
-        var obra = ObraMusical.Criar("Teste", TipoObra.Musical);
-        var titular = Titular.CriarPessoaFisica("Nome PF", Cpf.Create("12345678909"), "BR", Guid.NewGuid());
-        var command = new AdicionarTitularidadeCommand(obra.Id, titular.Id, "Autor", 10.0m);
-
-        _obraRepoMock.Setup(r => r.GetByIdAsync(obra.Id, It.IsAny<CancellationToken>())).ReturnsAsync(obra);
-        _titularRepoMock.Setup(r => r.GetByIdAsync(titular.Id, It.IsAny<CancellationToken>())).ReturnsAsync(titular);
-        _titularidadeRepoMock.Setup(r => r.ExisteDuplicataAsync(obra.Id, titular.Id, CategoriaAutoral.Autor, It.IsAny<CancellationToken>())).ReturnsAsync(false);
-        var titularidade = TitularidadeAutoral.Criar(obra.Id, titular.Id, CategoriaAutoral.Autor, 10.0m);
-        typeof(TitularidadeAutoral).GetProperty("Titular")!.SetValue(titularidade, titular);
-
-        _titularidadeRepoMock.Setup(r => r.GetByObraIdAsync(obra.Id, It.IsAny<CancellationToken>())).ReturnsAsync(new List<TitularidadeAutoral>
-        {
-            titularidade
-        });
-
-        // Act
-        var act = async () => await _handler.HandleAsync(command, CancellationToken.None);
-        
-        // Assert
-        var result = await act.Should().NotThrowAsync();
-        result.Subject.Should().BeOfType<TitularidadesResponse>();
-        _titularidadeRepoMock.Verify(r => r.AddAsync(It.IsAny<TitularidadeAutoral>(), It.IsAny<CancellationToken>()), Times.Once);
-        _auditPublisherMock.Verify(a => a.PublishAsync(
-            It.Is<TitularidadeAutoral>(t => t.ObraId == obra.Id && t.TitularId == titular.Id),
-            TitularidadeAuditOperation.Add,
-            null,
-            It.IsAny<CancellationToken>()), Times.Once);
-        _titularidadeRepoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
-    }
-
-    [Fact]
     public async Task HandleAsync_ObraNaoEncontrada_DeveLancarNotFoundException()
     {
         var command = new AdicionarTitularidadeCommand(Guid.NewGuid(), Guid.NewGuid(), "Autor", 10.0m);

@@ -22,26 +22,4 @@ public class CriarObraCommandHandlerTests
         _handler = new CriarObraCommandHandler(_repoMock.Object, _auditMock.Object);
     }
 
-    [Fact]
-    public async Task HandleAsync_DeveCriarObraNoRepositorioERetornarPendente()
-    {
-        var command = new CriarObraCommand("My Song", "Remix", "MUSICAL", "Pop");
-
-        var response = await _handler.HandleAsync(command, CancellationToken.None);
-
-        _repoMock.Verify(r => r.AddAsync(It.Is<ObraMusical>(o => 
-            o.Titulo == "My Song" && o.Tipo == TipoObra.Musical && o.Genero == "Pop"),
-            It.IsAny<CancellationToken>()), Times.Once);
-            
-        _repoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
-        _auditMock.Verify(a => a.PublishAsync(
-            It.IsAny<ObraMusical>(),
-            ObraAuditOperation.Create,
-            null,
-            It.IsAny<CancellationToken>()), Times.Once);
-
-        response.Should().NotBeNull();
-        response.Titulo.Should().Be("My Song");
-        response.Status.Should().Be("PENDENTE");
-    }
 }

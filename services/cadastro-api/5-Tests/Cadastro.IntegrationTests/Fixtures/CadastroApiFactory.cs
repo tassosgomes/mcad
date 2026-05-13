@@ -3,6 +3,7 @@ using System.Security.Claims;
 using System.Text.Encodings.Web;
 using Cadastro.Infra.Data;
 using Cadastro.Infra.Events;
+using Ecad.Authz.Sdk;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Hosting.Server;
 using Microsoft.AspNetCore.Hosting;
@@ -77,6 +78,24 @@ public class CadastroApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
                 .Setup(p => p.PublishAsync(It.IsAny<string>(), It.IsAny<CloudNative.CloudEvents.CloudEvent>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
             services.AddSingleton(RabbitMqPublisherMock.Object);
+
+            // ── Substituir IEcadAuthzClient por Mock que aprova tudo ────────
+            // Nos testes de integração a identidade já é controlada pelo TestAuthHandler;
+            // a chamada ao serviço de autorização externo deve ser suprimida para que
+            // as permissões sejam sempre concedidas sem dependência de infraestrutura.
+            var authzDescriptors = services
+                .Where(d => d.ServiceType == typeof(IEcadAuthzClient))
+                .ToList();
+            foreach (var d in authzDescriptors) services.Remove(d);
+
+            var authzMock = new Mock<IEcadAuthzClient>();
+            authzMock
+                .Setup(c => c.CheckAsync(
+                    It.IsAny<AuthzCheckRequest>(),
+                    It.IsAny<string?>(),
+                    It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new AuthzDecision(true, "ALLOWED_TEST", 0));
+            services.AddSingleton(authzMock.Object);
 
             services.AddAuthentication(options =>
                 {

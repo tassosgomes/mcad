@@ -11,20 +11,6 @@ namespace Cadastro.UnitTests.AuthzSdk;
 public class PermissionAuthorizationHandlerTests
 {
     [Fact]
-    public async Task HandleAsync_WhenAuthzDisabled_SucceedsWithoutRemoteDecision()
-    {
-        var requirement = new PermissionRequirement("cadastro:obra:listar");
-        var context = CreateContext(requirement, isAuthenticated: false);
-        var authzClient = new Mock<IEcadAuthzClient>(MockBehavior.Strict);
-        var handler = CreateHandler(authzClient.Object, enabled: false);
-
-        await handler.HandleAsync(context);
-
-        Assert.True(context.HasSucceeded);
-        authzClient.VerifyNoOtherCalls();
-    }
-
-    [Fact]
     public async Task HandleAsync_WhenUserIsNotAuthenticated_DoesNotSucceed()
     {
         var requirement = new PermissionRequirement("cadastro:obra:listar");

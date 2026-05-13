@@ -14,6 +14,24 @@ public class CalculadoraConexosTests
     }
 
     [Fact]
+    public void Calcular_UmMusico_DeveDistribuirPercentualCompleto()
+    {
+        // Com 1 músico: Intérprete=43.7, Produtor=41.7, Músico=14.6 (FatiaMusicoCom / 1 = 14.6, sem resto)
+        var participacoes = new List<ParticipacaoConexa>
+        {
+            CriarParticipante(CategoriaConexo.Interprete),
+            CriarParticipante(CategoriaConexo.ProdutorFonografico),
+            CriarParticipante(CategoriaConexo.MusicoExecutante)
+        };
+
+        CalculadoraConexos.Calcular(participacoes);
+
+        participacoes.Single(p => p.Categoria == CategoriaConexo.MusicoExecutante)
+            .Percentual.Should().Be(14.6m);
+        participacoes.Sum(p => p.Percentual).Should().Be(100.0000m);
+    }
+
+    [Fact]
     public void Calcular_ComMusico_DeveDistribuir_43_7__41_7__14_6()
     {
         var participacoes = new List<ParticipacaoConexa>

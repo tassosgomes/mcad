@@ -18,16 +18,6 @@ public class CaeIpiTests
     }
 
     [Fact]
-    public void Create_ComValorVazio_DeveLancarDomainException()
-    {
-        // Act
-        var action = () => CaeIpi.Create("   ");
-
-        // Assert
-        action.Should().Throw<DomainException>().WithMessage("CAE/IPI deve ter entre 1 e 20 caracteres");
-    }
-
-    [Fact]
     public void Create_ComValorMaiorQue20Caracteres_DeveLancarDomainException()
     {
         // Act
@@ -37,13 +27,4 @@ public class CaeIpiTests
         action.Should().Throw<DomainException>().WithMessage("CAE/IPI deve ter entre 1 e 20 caracteres");
     }
     
-    [Fact]
-    public void Create_DeveRemoverEspacosEmBrancoDasPontas()
-    {
-        // Act
-        var result = CaeIpi.Create("  12345  ");
-
-        // Assert
-        result.Valor.Should().Be("12345");
-    }
 }

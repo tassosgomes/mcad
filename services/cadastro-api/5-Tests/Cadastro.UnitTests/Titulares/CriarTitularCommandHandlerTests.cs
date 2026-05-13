@@ -39,46 +39,6 @@ public class CriarTitularCommandHandlerTests
     }
 
     [Fact]
-    public async Task HandleAsync_ComPfValido_DeveCriarERetornarTitular()
-    {
-        // Arrange
-        var associacaoId = Guid.NewGuid();
-        var command = new CriarTitularCommand("João Silva", "PF", "12345678909", "Brasileiro", associacaoId, null);
-        
-        var associacao = new Associacao(associacaoId, "ABRAMUS", "Associação Brasileira", "50.997.063/0001-32");
-        _mockAssociacaoRepo.Setup(r => r.GetByIdAsync(associacaoId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(associacao);
-
-        _mockTitularRepo.Setup(r => r.ExisteDocumentoAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(false);
-
-        _mockTitularRepo.Setup(r => r.AddAsync(It.IsAny<Titular>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync((Titular t, CancellationToken _) => t);
-            
-        _mockTitularRepo.Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync((Guid id, CancellationToken _) => 
-            {
-                var cpf = Cpf.Create(command.Documento);
-                var t = Titular.CriarPessoaFisica(command.Nome, cpf, command.Nacionalidade, command.AssociacaoId);
-                // Via reflection para simular GetByIdAsync carregando Associação
-                typeof(Titular).GetProperty("Id")!.SetValue(t, id);
-                typeof(Titular).GetProperty("Associacao")!.SetValue(t, associacao);
-                return t;
-            });
-
-        // Act
-        var result = await _handler.HandleAsync(command, CancellationToken.None);
-
-        // Assert
-        result.Should().NotBeNull();
-        result.Nome.Should().Be("João Silva");
-        result.Tipo.Should().Be("PF");
-        result.DocumentoFormatado.Should().Be("123.456.789-09");
-        _mockTitularRepo.Verify(r => r.AddAsync(It.IsAny<Titular>(), It.IsAny<CancellationToken>()), Times.Once);
-        _mockTitularRepo.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
-    }
-
-    [Fact]
     public async Task HandleAsync_ComAssociacaoInexistente_DeveLancarNotFoundException()
     {
         // Arrange

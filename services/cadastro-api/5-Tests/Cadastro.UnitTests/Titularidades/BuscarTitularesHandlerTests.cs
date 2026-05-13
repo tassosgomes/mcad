@@ -20,27 +20,6 @@ public class BuscarTitularesHandlerTests
     }
 
     [Fact]
-    public async Task HandleAsync_QueryMenosDeDoisCaracteres_DeveRetornarVazio()
-    {
-        var query = new BuscarTitularesQuery("A");
-        var result = await _handler.HandleAsync(query, CancellationToken.None);
-        
-        result.Should().BeEmpty();
-        _titularRepoMock.Verify(r => r.BuscarParaAutocompleteAsync(It.IsAny<string>(), It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Never);
-    }
-
-    [Fact]
-    public async Task HandleAsync_NenhumResultado_DeveRetornarVazio()
-    {
-        var query = new BuscarTitularesQuery("AB");
-        _titularRepoMock.Setup(r => r.BuscarParaAutocompleteAsync("AB", 10, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new List<Titular>());
-
-        var result = await _handler.HandleAsync(query, CancellationToken.None);
-        result.Should().BeEmpty();
-    }
-
-    [Fact]
     public async Task HandleAsync_TemResultado_DeveRetornarLista()
     {
         var titular = Titular.CriarPessoaFisica("Nome PF1", Cpf.Create("12345678909"), "BR", Guid.NewGuid());

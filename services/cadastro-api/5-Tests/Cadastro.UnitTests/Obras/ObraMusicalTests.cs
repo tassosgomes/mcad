@@ -34,6 +34,28 @@ public class ObraMusicalTests
     }
 
     [Fact]
+    public void Atualizar_ComStatusDominioPublico_DeveLancarStatusConflictException()
+    {
+        var obra = ObraMusical.Criar("Teste", TipoObra.Musical);
+        obra.MarcarDominioPublico(true); // Status -> DominioPublico
+
+        var act = () => obra.Atualizar("Novo", null, TipoObra.Versao, null);
+        act.Should().Throw<StatusConflictException>()
+            .WithMessage("Obras em Domínio Público não podem ser editadas");
+    }
+
+    [Fact]
+    public void Atualizar_ComStatusBloqueado_DeveLancarStatusConflictException()
+    {
+        var obra = ObraMusical.Criar("Teste", TipoObra.Musical);
+        obra.Bloquear("Motivo de bloqueio"); // Status -> Bloqueado
+
+        var act = () => obra.Atualizar("Novo", null, TipoObra.Versao, null);
+        act.Should().Throw<StatusConflictException>()
+            .WithMessage("Obras bloqueadas não podem ser editadas");
+    }
+
+    [Fact]
     public void Atualizar_DeveAtualizarPropriedades()
     {
         var obra = ObraMusical.Criar("Teste", TipoObra.Musical);

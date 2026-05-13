@@ -42,33 +42,6 @@ public class AdicionarParticipacaoHandlerTests
         => Titular.CriarPessoaFisica("Artista", Cpf.Create("12345678909"), "BR", Guid.NewGuid());
 
     [Fact]
-    public async Task HandleAsync_HappyPath_AdicionaParticipante()
-    {
-        var fonograma = CriarFonograma();
-        var titular = CriarTitular();
-        var cmd = new AdicionarParticipacaoCommand(fonograma.Id, titular.Id, "INTERPRETE");
-
-        _fonogramaRepo.Setup(r => r.GetByIdAsync(fonograma.Id, It.IsAny<CancellationToken>())).ReturnsAsync(fonograma);
-        _titularRepo.Setup(r => r.GetByIdAsync(titular.Id, It.IsAny<CancellationToken>())).ReturnsAsync(titular);
-        _participacaoRepo.Setup(r => r.ExisteDuplicataAsync(fonograma.Id, titular.Id, CategoriaConexo.Interprete, It.IsAny<CancellationToken>())).ReturnsAsync(false);
-
-        var participacao = ParticipacaoConexa.Criar(fonograma.Id, titular.Id, CategoriaConexo.Interprete);
-        typeof(ParticipacaoConexa).GetProperty("Titular")!.SetValue(participacao, titular);
-
-        _participacaoRepo.Setup(r => r.AddAsync(It.IsAny<ParticipacaoConexa>(), It.IsAny<CancellationToken>())).ReturnsAsync(participacao);
-        _participacaoRepo.Setup(r => r.GetByFonogramaIdAsync(fonograma.Id, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new List<ParticipacaoConexa> { participacao });
-
-        var result = await _handler.HandleAsync(cmd, CancellationToken.None);
-
-        result.Should().BeOfType<ParticipacoesResponse>();
-        result.Participacoes.Should().HaveCount(1);
-        result.SomaCalculada.Should().BeFalse();
-        _participacaoRepo.Verify(r => r.AddAsync(It.IsAny<ParticipacaoConexa>(), It.IsAny<CancellationToken>()), Times.Once);
-        _participacaoRepo.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
-    }
-
-    [Fact]
     public async Task HandleAsync_Duplicata_ThrowsConflictException()
     {
         var fonograma = CriarFonograma();

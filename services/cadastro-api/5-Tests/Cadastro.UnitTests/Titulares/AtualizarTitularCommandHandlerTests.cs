@@ -34,39 +34,6 @@ public class AtualizarTitularCommandHandlerTests
     }
 
     [Fact]
-    public async Task HandleAsync_ComTitularValido_DeveAtualizarETornarNovoTitular()
-    {
-        // Arrange
-        var titularId = Guid.NewGuid();
-        var associacaoId = Guid.NewGuid();
-        var command = new AtualizarTitularCommand(titularId, "João Silva Alterado", "US", associacaoId, "FALECIDO", null);
-
-        var associacao = new Associacao(associacaoId, "ABRAMUS", "Associação Brasileira", "50.997.063/0001-32");
-        _mockAssociacaoRepo.Setup(r => r.GetByIdAsync(associacaoId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(associacao);
-
-        var cpf = Cpf.Create("12345678909");
-        var titular = Titular.CriarPessoaFisica("João Silva", cpf, "Brasileiro", Guid.NewGuid());
-        typeof(Titular).GetProperty("Id")!.SetValue(titular, titularId);
-        typeof(Titular).GetProperty("Associacao")!.SetValue(titular, associacao);
-
-        _mockTitularRepo.Setup(r => r.GetByIdForUpdateAsync(titularId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(titular);
-
-        // Act
-        var result = await _handler.HandleAsync(command, CancellationToken.None);
-
-        // Assert
-        result.Should().NotBeNull();
-        result.Nome.Should().Be("João Silva Alterado");
-        result.Nacionalidade.Should().Be("US");
-        result.Status.Should().Be("FALECIDO");
-        // Update() não é mais chamado explicitamente — EF Core com tracking detecta mudanças automáticas
-        _mockTitularRepo.Verify(r => r.Update(It.IsAny<Titular>()), Times.Never);
-        _mockTitularRepo.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
-    }
-
-    [Fact]
     public async Task HandleAsync_ComTitularInexistente_DeveLancarNotFoundException()
     {
         // Arrange

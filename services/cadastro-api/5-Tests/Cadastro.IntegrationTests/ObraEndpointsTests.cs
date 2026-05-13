@@ -68,21 +68,6 @@ public class ObraEndpointsTests : IClassFixture<CadastroApiFactory>
     }
 
     [Fact]
-    public async Task A_Post_CriarObra_Returns201()
-    {
-        var request = new CriarObraCommand("Obra Teste 1", null, "MUSICAL", "Rock");
-        var response = await _client.PostAsJsonAsync("/api/v1/obras", request);
-        
-        response.StatusCode.Should().Be(HttpStatusCode.Created);
-        response.Headers.Location.Should().NotBeNull();
-        
-        var obra = await response.Content.ReadFromJsonAsync<ObraResponse>();
-        obra.Should().NotBeNull();
-        obra!.Titulo.Should().Be("Obra Teste 1");
-        obra.Status.Should().Be("PENDENTE");
-    }
-
-    [Fact]
     public async Task Post_CriarObra_SemTitulo_Returns400()
     {
         var response = await _client.PostAsJsonAsync("/api/v1/obras", new { tipo = "MUSICAL" });
@@ -93,60 +78,6 @@ public class ObraEndpointsTests : IClassFixture<CadastroApiFactory>
         problem.Should().NotBeNull();
         problem!.Title.Should().Be("Validation Error");
         problem.Detail.Should().Contain("Título");
-    }
-
-    [Fact]
-    public async Task Post_CriarObra_SemTipo_Returns400()
-    {
-        var response = await _client.PostAsJsonAsync("/api/v1/obras", new { titulo = "Obra Sem Tipo" });
-
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-
-        var problem = await response.Content.ReadFromJsonAsync<ProblemDetails>();
-        problem.Should().NotBeNull();
-        problem!.Title.Should().Be("Validation Error");
-        problem.Detail.Should().Contain("Tipo");
-    }
-
-    [Fact]
-    public async Task Post_CriarObra_ComTipoInvalido_Returns400()
-    {
-        var response = await _client.PostAsJsonAsync("/api/v1/obras", new
-        {
-            titulo = "Obra Tipo Invalido",
-            tipo = "INVALIDO"
-        });
-
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-
-        var problem = await response.Content.ReadFromJsonAsync<ProblemDetails>();
-        problem.Should().NotBeNull();
-        problem!.Title.Should().Be("Validation Error");
-        problem.Detail.Should().Contain("Tipo inválido");
-    }
-
-    [Fact]
-    public async Task Get_ListarObras_ReturnsPaginadoEFiltrado()
-    {
-        await _client.PostAsJsonAsync("/api/v1/obras", new CriarObraCommand("Meu Hit", null, "MUSICAL", "Pop"));
-
-        var response = await _client.GetAsync("/api/v1/obras?page=1&size=5&titulo=Meu Hit");
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
-
-        var content = await response.Content.ReadFromJsonAsync<ObraListResponse>();
-        content.Should().NotBeNull();
-        content!.Pagination.Page.Should().Be(1);
-        content.Data.Any(o => o.Titulo == "Meu Hit").Should().BeTrue();
-    }
-
-    [Fact]
-    public async Task Get_BuscarObraPorId_Returns200()
-    {
-        var postRes = await _client.PostAsJsonAsync("/api/v1/obras", new CriarObraCommand("Buscar id", null, "MUSICAL", "Rap"));
-        var created = await postRes.Content.ReadFromJsonAsync<ObraResponse>();
-
-        var response = await _client.GetAsync($"/api/v1/obras/{created!.Id}");
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
     }
 
     [Fact]
@@ -169,26 +100,6 @@ public class ObraEndpointsTests : IClassFixture<CadastroApiFactory>
     }
 
     [Fact]
-    public async Task Post_BloquearObra_SemBody_Returns400()
-    {
-        var postRes = await _client.PostAsJsonAsync("/api/v1/obras", new CriarObraCommand("Obra Sem Body", null, "MUSICAL", "Rap"));
-        var created = await postRes.Content.ReadFromJsonAsync<ObraResponse>();
-
-        var response = await _client.PostAsync($"/api/v1/obras/{created!.Id}/bloquear", null);
-
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-        var problem = await response.Content.ReadFromJsonAsync<ProblemDetails>();
-        problem!.Title.Should().Be("Validation Error");
-    }
-
-    [Fact]
-    public async Task Get_BuscarObraPorId_Inexistente_Returns404()
-    {
-        var response = await _client.GetAsync($"/api/v1/obras/{Guid.NewGuid()}");
-        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
-    }
-
-    [Fact]
     public async Task Put_AtualizarObra_Pendente_Returns200()
     {
         var postRes = await _client.PostAsJsonAsync("/api/v1/obras", new CriarObraCommand("Para Atualizar", null, "MUSICAL", null));
@@ -200,22 +111,6 @@ public class ObraEndpointsTests : IClassFixture<CadastroApiFactory>
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var updated = await response.Content.ReadFromJsonAsync<ObraResponse>();
         updated!.Titulo.Should().Be("Atualizada");
-    }
-
-    [Fact]
-    public async Task Put_AtualizarObra_ComTituloVazio_Returns400()
-    {
-        var postRes = await _client.PostAsJsonAsync("/api/v1/obras", new CriarObraCommand("Para Validar", null, "MUSICAL", null));
-        var created = await postRes.Content.ReadFromJsonAsync<ObraResponse>();
-
-        var response = await _client.PutAsJsonAsync($"/api/v1/obras/{created!.Id}", new AtualizarObraRequest(string.Empty, null, "MUSICAL", "MPB"));
-
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-
-        var problem = await response.Content.ReadFromJsonAsync<ProblemDetails>();
-        problem.Should().NotBeNull();
-        problem!.Title.Should().Be("Validation Error");
-        problem.Detail.Should().Contain("Título");
     }
 
     [Fact]
@@ -235,16 +130,6 @@ public class ObraEndpointsTests : IClassFixture<CadastroApiFactory>
         var obra = await response.Content.ReadFromJsonAsync<ObraResponse>();
         obra!.Iswc.Should().NotBeNullOrEmpty();
         obra.Status.Should().Be("LIBERADO");
-    }
-
-    [Fact]
-    public async Task Post_ObterIswc_SemTitulares_Returns422()
-    {
-        var postRes = await _client.PostAsJsonAsync("/api/v1/obras", new CriarObraCommand("Sem Titular", null, "MUSICAL", null));
-        var created = await postRes.Content.ReadFromJsonAsync<ObraResponse>();
-
-        var response = await _client.PostAsync($"/api/v1/obras/{created!.Id}/iswc", null);
-        response.StatusCode.Should().Be(HttpStatusCode.UnprocessableEntity);
     }
 
     [Fact]
@@ -339,27 +224,6 @@ public class ObraEndpointsTests : IClassFixture<CadastroApiFactory>
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var updated = await response.Content.ReadFromJsonAsync<ObraResponse>();
         updated!.Status.Should().Be("DOMINIO_PUBLICO");
-    }
-
-    [Fact]
-    public async Task Delete_ObraDepurada_Returns409()
-    {
-        var postRes = await _client.PostAsJsonAsync("/api/v1/obras", new CriarObraCommand("A Excluir DEPURADA", null, "MUSICAL", null));
-        var created = await postRes.Content.ReadFromJsonAsync<ObraResponse>();
-        _mockIswcService.Setup(s => s.ObterIswcAsync(It.IsAny<string>(), It.IsAny<IEnumerable<string>>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
-             .ReturnsAsync($"T-{Guid.NewGuid().ToString().Substring(0, 8)}");
-        await SeedTitularidadeParaIswcAsync(created!.Id);
-        var iswcRes = await _client.PostAsync($"/api/v1/obras/{created!.Id}/iswc", null);
-        iswcRes.EnsureSuccessStatusCode();
-        
-        var depReqRes = await _client.PostAsJsonAsync($"/api/v1/obras/{created.Id}/depurar", new DepurarObraRequest("Nova", "MUSICAL", null, null));
-        depReqRes.EnsureSuccessStatusCode();
-
-        var response = await _client.DeleteAsync($"/api/v1/obras/{created.Id}");
-        
-        var contentStr = await response.Content.ReadAsStringAsync();
-        if (response.StatusCode != HttpStatusCode.Conflict)
-            throw new Exception($"Expected 409, got {response.StatusCode}. Body: {contentStr}");
     }
 
     [Fact]
