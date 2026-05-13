@@ -12,12 +12,26 @@ const ArrecadacaoRoutes = lazy(() => import('@features/arrecadacao'));
 const DistribuicaoRoutes = lazy(() => import('@features/distribuicao'));
 const AuditoriaRoutes = lazy(() => import('@features/auditoria'));
 const AuthzRoutes = lazy(() => import('@features/authz'));
+const CopilotoPage = lazy(() =>
+  import('@features/copiloto').then((module) => ({ default: module.CopilotoPage })),
+);
 
 const AUDIT_ROLES = [
   'analista-cadastro',
   'analista-identificacao',
   'analista-arrecadacao',
   'analista-distribuicao',
+];
+
+const COPILOTO_ROLES = [
+  'analista-cadastro',
+  'consultor',
+  'analista-identificacao',
+  'consultor-identificacao',
+  'analista-arrecadacao',
+  'consultor-arrecadacao',
+  'analista-distribuicao',
+  'consultor-distribuicao',
 ];
 
 function HomeRedirect() {
@@ -122,6 +136,16 @@ export const router = createBrowserRouter([
           <RequireRole roles={AUDIT_ROLES}>
             <Suspense fallback={<Loading />}>
               <AuthzRoutes />
+            </Suspense>
+          </RequireRole>
+        )
+      },
+      {
+        path: 'copiloto',
+        element: (
+          <RequireRole roles={COPILOTO_ROLES}>
+            <Suspense fallback={<Loading />}>
+              <CopilotoPage />
             </Suspense>
           </RequireRole>
         )

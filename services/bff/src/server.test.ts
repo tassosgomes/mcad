@@ -106,6 +106,97 @@ test('proxy rewrites route prefix and forwards query string and auth header', as
   }
 });
 
+test('ai proxy rewrites chat route and forwards auth and mcad headers', async (t) => {
+  let receivedMethod = '';
+  let receivedUrl = '';
+  let receivedBody = '';
+  let receivedHeaders: IncomingHttpHeaders = {};
+
+  const upstreamServer = createServer((request, response) => {
+    receivedMethod = request.method ?? '';
+    receivedUrl = request.url ?? '';
+    receivedHeaders = request.headers;
+
+    request.setEncoding('utf8');
+    request.on('data', (chunk) => {
+      receivedBody += chunk;
+    });
+    request.on('end', () => {
+      response.setHeader('content-type', 'application/json');
+      response.end(JSON.stringify({ answer: 'ok' }));
+    });
+  });
+
+  try {
+    await new Promise<void>((resolve, reject) => {
+      upstreamServer.once('error', reject);
+      upstreamServer.listen(0, '127.0.0.1', resolve);
+    });
+  } catch (error) {
+    upstreamServer.close();
+
+    if ((error as NodeJS.ErrnoException).code === 'EPERM') {
+      t.skip('sandbox does not allow opening a local upstream socket');
+      return;
+    }
+
+    throw error;
+  }
+
+  const { port } = upstreamServer.address() as AddressInfo;
+  const server = await buildServer({
+    host: '127.0.0.1',
+    port: 0,
+    requestBodyLimitBytes: 1024,
+    corsAllowedOrigins: ['https://mcad.tasso.dev.br'],
+    enableLegacyCadastroRoute: false,
+    upstreams: [
+      {
+        name: 'ai',
+        prefix: '/api/ai/v1',
+        baseUrl: `http://127.0.0.1:${port}/v1`,
+      },
+    ],
+  });
+
+  try {
+    const response = await server.inject({
+      method: 'POST',
+      url: '/api/ai/v1/chat',
+      headers: {
+        authorization: 'Bearer ai-token',
+        'content-type': 'application/json',
+        origin: 'https://mcad.tasso.dev.br',
+      },
+      payload: {
+        message: 'Explique a obra 123',
+      },
+    });
+
+    assert.equal(response.statusCode, 200);
+    assert.equal(receivedMethod, 'POST');
+    assert.equal(receivedUrl, '/v1/chat');
+    assert.deepEqual(JSON.parse(receivedBody), {
+      message: 'Explique a obra 123',
+    });
+    assert.equal(receivedHeaders.authorization, 'Bearer ai-token');
+    assert.equal(receivedHeaders['x-mcad-bff-upstream'], 'ai');
+    assert.equal(receivedHeaders['x-mcad-original-url'], '/api/ai/v1/chat');
+    assert.equal(typeof receivedHeaders['x-mcad-request-id'], 'string');
+    assert.equal(response.headers['x-mcad-bff-upstream'], 'ai');
+    assert.equal(typeof response.headers['x-mcad-request-id'], 'string');
+    assert.equal(response.headers['access-control-allow-origin'], 'https://mcad.tasso.dev.br');
+  } finally {
+    await server.close();
+    await new Promise<void>((resolve, reject) => {
+      upstreamServer.close((error) => {
+        if (error) reject(error);
+        else resolve();
+      });
+    });
+  }
+});
+
 test('cors preflight is handled by the bff before proxying', async () => {
   const server = await buildServer({
     host: '127.0.0.1',

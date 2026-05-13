@@ -12,6 +12,7 @@ Node.js proxy BFF for the MCAD frontend.
 - `/api/distribuicao/v1/*` -> `DISTRIBUICAO_API_BASE_URL`
 - `/api/auditoria/v1/*` -> `AUDITORIA_API_BASE_URL`
 - `/api/authz/v1/*` -> `AUTHZ_UPSTREAM_BASE_URL`
+- `/api/ai/v1/*` -> `AI_ORCHESTRATOR_BASE_URL`
 - `/v1/*` -> `AUTHZ_UPSTREAM_BASE_URL` legacy alias
 - `/api/v1/*` -> cadastro legacy alias, controlled by `BFF_ENABLE_LEGACY_CADASTRO_ROUTE`
 
@@ -38,4 +39,5 @@ ARRECADACAO_API_BASE_URL=http://localhost:5003/api/v1
 DISTRIBUICAO_API_BASE_URL=http://localhost:5004/api/v1
 AUDITORIA_API_BASE_URL=https://api-audit.tasso.dev.br/api/v1
 AUTHZ_UPSTREAM_BASE_URL=https://mcad-authz.tasso.dev.br/v1
+AI_ORCHESTRATOR_BASE_URL=http://localhost:5300/v1
 ```

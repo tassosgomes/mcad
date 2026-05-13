@@ -1,0 +1,32 @@
+services:
+  uptime-kuma:
+    image: louislam/uptime-kuma:1
+    volumes:
+      - uptime_kuma_data:/app/data
+    networks:
+      - traefik-public
+    healthcheck:
+      test: ["CMD", "extra/healthcheck"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    deploy:
+      replicas: ${UPTIME_KUMA_REPLICAS:-1}
+      restart_policy:
+        condition: on-failure
+      labels:
+        - traefik.enable=true
+        - traefik.docker.network=traefik-public
+        - traefik.http.routers.uptime-kuma.rule=Host(`${UPTIME_KUMA_HOST:-uptime.tasso.dev.br}`)
+        - traefik.http.routers.uptime-kuma.entrypoints=websecure
+        - traefik.http.routers.uptime-kuma.tls=true
+        - traefik.http.routers.uptime-kuma.tls.certresolver=cloudflare-resolver
+        - traefik.http.services.uptime-kuma.loadbalancer.server.port=3001
+
+networks:
+  traefik-public:
+    external: true
+
+volumes:
+  uptime_kuma_data:

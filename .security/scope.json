@@ -1,0 +1,97 @@
+{
+  "mode": "scoped",
+  "source_docs": ["tasks/cadastro/done-prd-gestao-obras/prd.md"],
+  "rationale": "PRD F03 fornecido pelo usuario. Escopo derivado dos endpoints de obras (CRUD + ISWC + depuracao + dominio publico + status), integracao com API externa de ISWC, listagem com filtros e camadas (Endpoint -> Handler -> Repository -> Domain).",
+  "critical_assets": [
+    {
+      "id": "ASSET-001",
+      "name": "Obras Musicais (catalogo)",
+      "classification": "Internal (negocio-critico)",
+      "rationale": "Ativo central do dominio Cadastro. Toda a cadeia de distribuicao de direitos depende da integridade do catalogo.",
+      "asset_multiplier": 1.0
+    },
+    {
+      "id": "ASSET-002",
+      "name": "ISWC (codigo internacional)",
+      "classification": "Internal + Unique",
+      "rationale": "Codigo unico global. Duplicidade ou alteracao manual quebra rastreabilidade legal (RN-02, RF-21).",
+      "asset_multiplier": 1.0
+    },
+    {
+      "id": "ASSET-003",
+      "name": "Status/imutabilidade DEPURADA",
+      "classification": "Internal + Compliance",
+      "rationale": "Obras DEPURADAS devem ser imutaveis (auditoria + integridade historica). Bypass abre fraude.",
+      "asset_multiplier": 1.0
+    },
+    {
+      "id": "ASSET-004",
+      "name": "Cadeia de autorizacao (RBAC analista vs consultor)",
+      "classification": "Internal (auth)",
+      "rationale": "Permissoes finas via Ecad.Authz. Consultor nao deve criar/editar/depurar/excluir.",
+      "asset_multiplier": 1.5
+    },
+    {
+      "id": "ASSET-005",
+      "name": "Token JWT / sessao do usuario",
+      "classification": "Credentials",
+      "rationale": "Bearer JWT via Keycloak/Logto. Comprometimento = impersonacao.",
+      "asset_multiplier": 1.5
+    }
+  ],
+  "sensitive_flows": [
+    {
+      "id": "FLOW-001",
+      "name": "Obter ISWC (RF-17, RF-19, RF-21)",
+      "components": [
+        "1-Services/Cadastro.API/Endpoints/ObraEndpoints.cs",
+        "2-Application/Cadastro.Application/Obras/Commands/ObterIswcCommand.cs",
+        "4-Infra/Cadastro.Infra/ExternalServices/IswcService.cs"
+      ],
+      "owasp_focus": ["A07", "A03", "A10", "A02", "A09"]
+    },
+    {
+      "id": "FLOW-002",
+      "name": "Depuracao (RF-06 a RF-10)",
+      "components": [
+        "2-Application/Cadastro.Application/Obras/Commands/DepurarObraCommand.cs",
+        "2-Application/Cadastro.Application/Obras/Commands/AtualizarObraCommand.cs"
+      ],
+      "owasp_focus": ["A01", "A04", "A09"]
+    },
+    {
+      "id": "FLOW-003",
+      "name": "Listagem com filtros (RF-13)",
+      "components": [
+        "2-Application/Cadastro.Application/Obras/Queries/ListarObrasQueryHandler.cs",
+        "4-Infra/Cadastro.Infra/Repositories/ObraRepository.cs"
+      ],
+      "owasp_focus": ["A03", "A04", "A01"]
+    },
+    {
+      "id": "FLOW-004",
+      "name": "Exclusao e dominio publico (RF-23 a RF-32)",
+      "components": [
+        "2-Application/Cadastro.Application/Obras/Commands/ExcluirObraCommand.cs",
+        "2-Application/Cadastro.Application/Obras/Commands/AlterarDominioPublicoCommand.cs"
+      ],
+      "owasp_focus": ["A01", "A04"]
+    }
+  ],
+  "endpoints_in_scope": "ver security_profile.json -> f03_endpoints_in_scope",
+  "scan_paths": [
+    "services/cadastro-api/1-Services",
+    "services/cadastro-api/2-Application",
+    "services/cadastro-api/3-Domain",
+    "services/cadastro-api/4-Infra",
+    "services/cadastro-api/Dockerfile",
+    "libs/dotnet/Ecad.Authz.Sdk",
+    "libs/dotnet/Ecad.Authz.AspNetCore"
+  ],
+  "exclusions": [
+    "services/cadastro-api/5-Tests",
+    "**/bin/**",
+    "**/obj/**",
+    "**/TestResults/**"
+  ]
+}

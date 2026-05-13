@@ -97,8 +97,6 @@ services:
         condition: service_healthy
       mcad-rabbitmq:
         condition: service_healthy
-      mcad-keycloak:
-        condition: service_healthy
 
   bff:
     build:
@@ -115,9 +113,40 @@ services:
       DISTRIBUICAO_API_BASE_URL: http://distribuicao-api:5004/api/v1
       AUDITORIA_API_BASE_URL: https://api-audit.tasso.dev.br/api/v1
       AUTHZ_UPSTREAM_BASE_URL: https://mcad-authz.tasso.dev.br/v1
+      AI_ORCHESTRATOR_BASE_URL: http://ai-orchestrator:5300/v1
       BFF_CORS_ALLOWED_ORIGINS: http://localhost:5173
     ports:
       - "5200:5200"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      - ai-orchestrator
+      - distribuicao-api
+
+  ai-orchestrator:
+    build:
+      context: ./services/ai-orchestrator
+      dockerfile: Dockerfile
+    container_name: mcad-ai-orchestrator
+    restart: unless-stopped
+    environment:
+      AI_PORT: 5300
+      AI_HOST: 0.0.0.0
+      AI_ENVIRONMENT: local
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4.1-mini}
+      AI_STORAGE_URL: ${AI_STORAGE_URL:-}
+      AI_TOOL_TIMEOUT_MS: 10000
+      AI_MAX_MESSAGE_CHARS: 4000
+      AI_TRACE_PROMPTS: "false"
+      CADASTRO_API_BASE_URL: http://host.docker.internal:5001/api/v1
+      IDENTIFICACAO_API_BASE_URL: http://host.docker.internal:5100/api/v1
+      ARRECADACAO_API_BASE_URL: http://host.docker.internal:5003/api/v1
+      DISTRIBUICAO_API_BASE_URL: http://distribuicao-api:5004/api/v1
+      AUDITORIA_API_BASE_URL: https://api-audit.tasso.dev.br/api/v1
+      AUTHZ_UPSTREAM_BASE_URL: https://mcad-authz.tasso.dev.br/v1
+    ports:
+      - "5300:5300"
     extra_hosts:
       - "host.docker.internal:host-gateway"
     depends_on:

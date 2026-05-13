@@ -1,0 +1,78 @@
+{
+  "scan_id": "F03-obras-2026-05-12",
+  "generated_at": "2026-05-12",
+  "target_repo": "/home/tsgomes/mcad",
+  "target_service": "services/cadastro-api",
+  "docs": {
+    "prd": "tasks/cadastro/done-prd-gestao-obras/prd.md",
+    "techspec": null,
+    "openapi": null
+  },
+  "stacks": [
+    {
+      "language": "C# / .NET 8",
+      "framework": "ASP.NET Core Minimal API",
+      "build": "dotnet sdk 8.0.125",
+      "test": "xUnit + Testcontainers"
+    },
+    {
+      "language": "Docker",
+      "framework": "mcr.microsoft.com/dotnet/aspnet:8.0",
+      "build": "Dockerfile multi-stage",
+      "notes": "USER app (non-root) ok; FORWARDEDHEADERS_ENABLED=true"
+    }
+  ],
+  "dependencies_notable": {
+    "Microsoft.AspNetCore.Authentication.JwtBearer": "8.0.16",
+    "Npgsql.EntityFrameworkCore.PostgreSQL": "9.0.4",
+    "Microsoft.EntityFrameworkCore.Design": "9.0.4",
+    "Microsoft.Extensions.Http.Polly": "10.0.5",
+    "FluentValidation.DependencyInjectionExtensions": "12.1.1",
+    "Swashbuckle.AspNetCore": "6.9.0",
+    "Saunter": "0.13.0",
+    "Scrutor": "5.1.1",
+    "Ecad.Audit.AspNetCore": "0.1.0 (local lib)"
+  },
+  "attack_surface": {
+    "http_public_api": true,
+    "auth_protocol": "OIDC JWT Bearer (Keycloak/Logto)",
+    "auth_toggleable": true,
+    "auth_toggle_env": "AUTH_ENABLED=false disables JWT enforcement",
+    "persistence": "PostgreSQL via EF Core (no raw SQL detected in F03 paths)",
+    "manual_crypto": false,
+    "outbound_http": [
+      {
+        "name": "ISWC API",
+        "url_default": "https://iswc.tasso.dev.br/",
+        "env_override": "ISWC_BASE_URL",
+        "timeout_s": 10,
+        "retry_policy": "Polly transient errors x2"
+      }
+    ],
+    "message_broker": "RabbitMQ (Outbox Pattern, internal events)",
+    "swagger_exposed": true,
+    "asyncapi_exposed": true,
+    "health_endpoint_anonymous": true,
+    "cors": {
+      "configured": true,
+      "default": "http://localhost:5173",
+      "env": "CORS_ALLOWED_ORIGINS",
+      "policy": "AllowAnyHeader + AllowAnyMethod (origins restricted)"
+    },
+    "db_ssl_mode_default": "Disable"
+  },
+  "f03_endpoints_in_scope": [
+    {"method":"GET","path":"/api/v1/obras","perm":"cadastro:obra:listar"},
+    {"method":"POST","path":"/api/v1/obras","perm":"cadastro:obra:criar"},
+    {"method":"GET","path":"/api/v1/obras/{id}","perm":"cadastro:obra:visualizar"},
+    {"method":"PUT","path":"/api/v1/obras/{id}","perm":"cadastro:obra:editar"},
+    {"method":"DELETE","path":"/api/v1/obras/{id}","perm":"cadastro:obra:excluir"},
+    {"method":"POST","path":"/api/v1/obras/{id}/iswc","perm":"cadastro:obra:gerar-iswc"},
+    {"method":"POST","path":"/api/v1/obras/{id}/depurar","perm":"cadastro:obra:depurar"},
+    {"method":"PUT","path":"/api/v1/obras/{id}/dominio-publico","perm":"cadastro:obra:dp"},
+    {"method":"POST","path":"/api/v1/obras/{id}/liberar","perm":"cadastro:status:liberar-obra"},
+    {"method":"POST","path":"/api/v1/obras/{id}/bloquear","perm":"cadastro:status:bloquear-obra"},
+    {"method":"POST","path":"/api/v1/obras/{id}/desbloquear","perm":"cadastro:status:desbloquear-obra"},
+    {"method":"GET","path":"/api/v1/obras/{id}/historico-bloqueios","perm":"cadastro:status:visualizar-historico-obra"}
+  ]
+}
