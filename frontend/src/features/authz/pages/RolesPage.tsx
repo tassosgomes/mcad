@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import type { FormEvent } from 'react';
 import { Pencil, Plus, RefreshCw, Search, ShieldCheck } from 'lucide-react';
 import { Button } from '@components/ui/button';
@@ -14,6 +14,8 @@ import styles from './RolesPage.module.css';
 
 const PAGE_SIZE = 20;
 const PERMISSION_PAGE_SIZE = 100;
+
+type PanelMode = 'create' | 'edit';
 
 const emptyFilters: RoleFilters = {
   domain: '',
@@ -168,6 +170,7 @@ export function RolesPage() {
   const [permissionSearch, setPermissionSearch] = useState('');
   const [selectedPermissionKeys, setSelectedPermissionKeys] = useState<string[]>([]);
   const [selectedRoleId, setSelectedRoleId] = useState<string | null>(null);
+  const [panelMode, setPanelMode] = useState<PanelMode>('create');
   const [feedback, setFeedback] = useState<{ tone: 'success' | 'error'; message: string } | null>(null);
 
   const rolesQuery = useRolesCatalog(submittedFilters, page, PAGE_SIZE);
@@ -191,16 +194,12 @@ export function RolesPage() {
   );
   const submitting = createRoleMutation.isPending || addPermissionMutation.isPending;
 
-  useEffect(() => {
-    if (!selectedRoleId && roles.length > 0) {
-      setSelectedRoleId(roles[0].id);
-    }
-  }, [roles, selectedRoleId]);
-
   const handleFilterSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setPage(0);
     setSelectedRoleId(null);
+    setPanelMode('create');
+    setFeedback(null);
     setSubmittedFilters(filters);
   };
 
@@ -209,6 +208,20 @@ export function RolesPage() {
     setSubmittedFilters(emptyFilters);
     setPage(0);
     setSelectedRoleId(null);
+    setPanelMode('create');
+    setFeedback(null);
+  };
+
+  const handleSelectRole = (roleId: string) => {
+    setSelectedRoleId(roleId);
+    setPanelMode('edit');
+    setFeedback(null);
+  };
+
+  const handleCreateNew = () => {
+    setSelectedRoleId(null);
+    setPanelMode('create');
+    setFeedback(null);
   };
 
   const togglePermission = (permissionKey: string) => {
@@ -253,6 +266,7 @@ export function RolesPage() {
       setPermissionSearch('');
       setSelectedPermissionKeys([]);
       setSelectedRoleId(createdRole.id);
+      setPanelMode('edit');
     } catch {
       setFeedback({
         tone: 'error',
@@ -362,8 +376,8 @@ export function RolesPage() {
                       <RoleRow
                         key={role.id}
                         role={role}
-                        selected={selectedRoleId === role.id}
-                        onSelect={setSelectedRoleId}
+                        selected={panelMode === 'edit' && selectedRoleId === role.id}
+                        onSelect={handleSelectRole}
                       />
                     ))}
                   </tbody>
@@ -379,6 +393,8 @@ export function RolesPage() {
                 onPageChange={(nextPage) => {
                   setPage(Math.max(nextPage - 1, 0));
                   setSelectedRoleId(null);
+                  setPanelMode('create');
+                  setFeedback(null);
                 }}
               />
               <div className={styles.empty}>
@@ -388,148 +404,150 @@ export function RolesPage() {
           )}
         </section>
 
-        <aside className={styles.createPanel}>
-          <div>
-            <h2 className={styles.panelTitle}>Novo papel</h2>
-            <p className={styles.panelDescription}>
-              Crie o papel e selecione as permissões iniciais que serão vinculadas a ele.
-            </p>
-          </div>
-
-          {feedback && (
-            <div className={feedback.tone === 'success' ? styles.success : styles.error}>
-              {feedback.message}
-            </div>
-          )}
-
-          <form className={styles.form} onSubmit={handleCreateRole}>
-            <div className={styles.formGrid}>
-              <div className={styles.field}>
-                <label className={styles.label} htmlFor="new-role-domain">Domínio</label>
-                <input
-                  id="new-role-domain"
-                  className={`${styles.input} ${styles.mono}`}
-                  value={form.domain}
-                  onChange={(event) => setForm((prev) => ({ ...prev, domain: event.target.value }))}
-                  placeholder="cadastro"
-                />
-              </div>
-              <div className={styles.field}>
-                <label className={styles.label} htmlFor="new-role-area">Área</label>
-                <input
-                  id="new-role-area"
-                  className={`${styles.input} ${styles.mono}`}
-                  value={form.area}
-                  onChange={(event) => setForm((prev) => ({ ...prev, area: event.target.value }))}
-                  placeholder="gestao"
-                />
-              </div>
-              <div className={styles.field}>
-                <label className={styles.label} htmlFor="new-role-slug">Identificador</label>
-                <input
-                  id="new-role-slug"
-                  className={`${styles.input} ${styles.mono}`}
-                  value={form.slug}
-                  onChange={(event) => setForm((prev) => ({ ...prev, slug: event.target.value }))}
-                  placeholder="analista"
-                />
-              </div>
-              <div className={styles.field}>
-                <label className={styles.label} htmlFor="new-role-name">Nome</label>
-                <input
-                  id="new-role-name"
-                  className={styles.input}
-                  value={form.displayName}
-                  onChange={(event) => setForm((prev) => ({ ...prev, displayName: event.target.value }))}
-                  placeholder="Analista de Cadastro"
-                />
-              </div>
-              <div className={`${styles.field} ${styles.fullWidth}`}>
-                <label className={styles.label} htmlFor="new-role-description">Descrição</label>
-                <textarea
-                  id="new-role-description"
-                  className={styles.textarea}
-                  value={form.description}
-                  onChange={(event) => setForm((prev) => ({ ...prev, description: event.target.value }))}
-                  placeholder="Responsabilidades e escopo operacional do papel"
-                />
-              </div>
+        {panelMode === 'create' ? (
+          <aside className={styles.createPanel}>
+            <div>
+              <h2 className={styles.panelTitle}>Novo papel</h2>
+              <p className={styles.panelDescription}>
+                Crie o papel e selecione as permissões iniciais que serão vinculadas a ele.
+              </p>
             </div>
 
-            <div className={styles.keyPreview}>
-              <span className={styles.label}>Chave gerada</span>
-              <span className={`${styles.primaryText} ${styles.mono}`}>{roleKey || '-'}</span>
-            </div>
+            {feedback && (
+              <div className={feedback.tone === 'success' ? styles.success : styles.error}>
+                {feedback.message}
+              </div>
+            )}
 
-            <div className={styles.permissionPicker}>
-              <div className={styles.pickerHeader}>
-                <div>
-                  <h3 className={styles.panelTitle}>Permissões iniciais</h3>
-                  <p className={styles.panelDescription}>
-                    A busca considera permissões ativas do domínio informado no papel.
-                  </p>
+            <form className={styles.form} onSubmit={handleCreateRole}>
+              <div className={styles.formGrid}>
+                <div className={styles.field}>
+                  <label className={styles.label} htmlFor="new-role-domain">Domínio</label>
+                  <input
+                    id="new-role-domain"
+                    className={`${styles.input} ${styles.mono}`}
+                    value={form.domain}
+                    onChange={(event) => setForm((prev) => ({ ...prev, domain: event.target.value }))}
+                    placeholder="cadastro"
+                  />
                 </div>
-                <span className={styles.counter}>{selectedPermissionKeys.length} selecionadas</span>
-              </div>
-
-              <div className={styles.field}>
-                <label className={styles.label} htmlFor="permission-search">Buscar permissão</label>
-                <input
-                  id="permission-search"
-                  className={styles.input}
-                  value={permissionSearch}
-                  onChange={(event) => setPermissionSearch(event.target.value)}
-                  placeholder="Nome, chave ou descrição"
-                />
-              </div>
-
-              {permissionsQuery.isLoading && <Loading />}
-              {permissionsQuery.isError && (
-                <div className={styles.error}>Não foi possível consultar as permissões disponíveis.</div>
-              )}
-              {permissionsQuery.data && permissionsQuery.data.content.length === 0 && (
-                <div className={styles.empty}>Nenhuma permissão ativa encontrada para esse domínio.</div>
-              )}
-              {permissionsQuery.data && permissionsQuery.data.content.length > 0 && (
-                <div className={styles.permissionList}>
-                  {permissionsQuery.data.content.map((permission) => (
-                    <PermissionOption
-                      key={permission.id}
-                      permission={permission}
-                      checked={selectedPermissionKeys.includes(permission.key)}
-                      disabled={submitting}
-                      onToggle={togglePermission}
-                    />
-                  ))}
+                <div className={styles.field}>
+                  <label className={styles.label} htmlFor="new-role-area">Área</label>
+                  <input
+                    id="new-role-area"
+                    className={`${styles.input} ${styles.mono}`}
+                    value={form.area}
+                    onChange={(event) => setForm((prev) => ({ ...prev, area: event.target.value }))}
+                    placeholder="gestao"
+                  />
                 </div>
-              )}
-            </div>
+                <div className={styles.field}>
+                  <label className={styles.label} htmlFor="new-role-slug">Identificador</label>
+                  <input
+                    id="new-role-slug"
+                    className={`${styles.input} ${styles.mono}`}
+                    value={form.slug}
+                    onChange={(event) => setForm((prev) => ({ ...prev, slug: event.target.value }))}
+                    placeholder="analista"
+                  />
+                </div>
+                <div className={styles.field}>
+                  <label className={styles.label} htmlFor="new-role-name">Nome</label>
+                  <input
+                    id="new-role-name"
+                    className={styles.input}
+                    value={form.displayName}
+                    onChange={(event) => setForm((prev) => ({ ...prev, displayName: event.target.value }))}
+                    placeholder="Analista de Cadastro"
+                  />
+                </div>
+                <div className={`${styles.field} ${styles.fullWidth}`}>
+                  <label className={styles.label} htmlFor="new-role-description">Descrição</label>
+                  <textarea
+                    id="new-role-description"
+                    className={styles.textarea}
+                    value={form.description}
+                    onChange={(event) => setForm((prev) => ({ ...prev, description: event.target.value }))}
+                    placeholder="Responsabilidades e escopo operacional do papel"
+                  />
+                </div>
+              </div>
 
-            <div className={styles.actions}>
-              <Button type="submit" disabled={submitting}>
-                <Plus size={16} />
-                Cadastrar papel
-              </Button>
-              <Button
-                variant="ghost"
-                type="button"
-                disabled={submitting}
-                onClick={() => {
-                  setForm(emptyForm);
-                  setPermissionSearch('');
-                  setSelectedPermissionKeys([]);
-                  setFeedback(null);
-                }}
-              >
-                <ShieldCheck size={16} />
-                Limpar
-              </Button>
-            </div>
-          </form>
-        </aside>
+              <div className={styles.keyPreview}>
+                <span className={styles.label}>Chave gerada</span>
+                <span className={`${styles.primaryText} ${styles.mono}`}>{roleKey || '-'}</span>
+              </div>
+
+              <div className={styles.permissionPicker}>
+                <div className={styles.pickerHeader}>
+                  <div>
+                    <h3 className={styles.panelTitle}>Permissões iniciais</h3>
+                    <p className={styles.panelDescription}>
+                      A busca considera permissões ativas do domínio informado no papel.
+                    </p>
+                  </div>
+                  <span className={styles.counter}>{selectedPermissionKeys.length} selecionadas</span>
+                </div>
+
+                <div className={styles.field}>
+                  <label className={styles.label} htmlFor="permission-search">Buscar permissão</label>
+                  <input
+                    id="permission-search"
+                    className={styles.input}
+                    value={permissionSearch}
+                    onChange={(event) => setPermissionSearch(event.target.value)}
+                    placeholder="Nome, chave ou descrição"
+                  />
+                </div>
+
+                {permissionsQuery.isLoading && <Loading />}
+                {permissionsQuery.isError && (
+                  <div className={styles.error}>Não foi possível consultar as permissões disponíveis.</div>
+                )}
+                {permissionsQuery.data && permissionsQuery.data.content.length === 0 && (
+                  <div className={styles.empty}>Nenhuma permissão ativa encontrada para esse domínio.</div>
+                )}
+                {permissionsQuery.data && permissionsQuery.data.content.length > 0 && (
+                  <div className={styles.permissionList}>
+                    {permissionsQuery.data.content.map((permission) => (
+                      <PermissionOption
+                        key={permission.id}
+                        permission={permission}
+                        checked={selectedPermissionKeys.includes(permission.key)}
+                        disabled={submitting}
+                        onToggle={togglePermission}
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div className={styles.actions}>
+                <Button type="submit" disabled={submitting}>
+                  <Plus size={16} />
+                  Cadastrar papel
+                </Button>
+                <Button
+                  variant="ghost"
+                  type="button"
+                  disabled={submitting}
+                  onClick={() => {
+                    setForm(emptyForm);
+                    setPermissionSearch('');
+                    setSelectedPermissionKeys([]);
+                    setFeedback(null);
+                  }}
+                >
+                  <ShieldCheck size={16} />
+                  Limpar
+                </Button>
+              </div>
+            </form>
+          </aside>
+        ) : (
+          <RoleDetailPanel roleId={selectedRoleId} onCreateNew={handleCreateNew} />
+        )}
       </div>
-
-      <RoleDetailPanel roleId={selectedRoleId} />
 
       <Button variant="ghost" type="button" onClick={handleResetFilters}>
         <ShieldCheck size={16} />

@@ -20,6 +20,7 @@ const PERMISSION_PAGE_SIZE = 100;
 
 interface RoleDetailPanelProps {
   roleId: string | null;
+  onCreateNew?: () => void;
 }
 
 interface EditFormState {
@@ -74,7 +75,7 @@ function PermissionLine({
   );
 }
 
-export function RoleDetailPanel({ roleId }: RoleDetailPanelProps) {
+export function RoleDetailPanel({ roleId, onCreateNew }: RoleDetailPanelProps) {
   const [form, setForm] = useState<EditFormState>({ displayName: '', description: '' });
   const [permissionSearch, setPermissionSearch] = useState('');
   const [feedback, setFeedback] = useState<{ tone: 'success' | 'error'; message: string } | null>(null);
@@ -125,10 +126,20 @@ export function RoleDetailPanel({ roleId }: RoleDetailPanelProps) {
   if (!roleId) {
     return (
       <aside className={styles.detailPanel}>
-        <h2 className={styles.panelTitle}>Selecione um papel</h2>
-        <p className={styles.panelDescription}>
-          Escolha uma linha para editar metadados, revisar permissões e desativar o papel.
-        </p>
+        <div className={styles.detailHeader}>
+          <div>
+            <h2 className={styles.panelTitle}>Editar papel</h2>
+            <p className={styles.panelDescription}>
+              Escolha uma linha para editar metadados, revisar permissões e desativar o papel.
+            </p>
+          </div>
+          {onCreateNew && (
+            <Button variant="ghost" type="button" onClick={onCreateNew}>
+              <Plus size={16} />
+              Novo papel
+            </Button>
+          )}
+        </div>
       </aside>
     );
   }
@@ -211,12 +222,21 @@ export function RoleDetailPanel({ roleId }: RoleDetailPanelProps) {
     <aside className={styles.detailPanel}>
       <div className={styles.detailHeader}>
         <div>
-          <h2 className={styles.panelTitle}>{role.displayName}</h2>
+          <h2 className={styles.panelTitle}>Editar papel</h2>
+          <p className={styles.panelDescription}>{role.displayName}</p>
           <p className={`${styles.panelDescription} ${styles.mono}`}>{role.key}</p>
         </div>
-        <span className={`${styles.status} ${role.status === 'ACTIVE' ? styles.active : styles.inactive}`}>
-          {role.status === 'ACTIVE' ? 'Ativo' : 'Inativo'}
-        </span>
+        <div className={styles.headerActions}>
+          <span className={`${styles.status} ${role.status === 'ACTIVE' ? styles.active : styles.inactive}`}>
+            {role.status === 'ACTIVE' ? 'Ativo' : 'Inativo'}
+          </span>
+          {onCreateNew && (
+            <Button variant="ghost" type="button" onClick={onCreateNew}>
+              <Plus size={16} />
+              Novo papel
+            </Button>
+          )}
+        </div>
       </div>
 
       {feedback && (
