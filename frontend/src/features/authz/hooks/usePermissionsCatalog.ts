@@ -4,10 +4,16 @@ import type { PermissionFilters } from '../types/permission';
 
 export const permissionsQueryKey = ['authz', 'permissions'] as const;
 
-export function usePermissionsCatalog(filters: PermissionFilters, page: number, size: number) {
+export function usePermissionsCatalog(
+  filters: PermissionFilters,
+  page: number,
+  size: number,
+  enabled = true,
+) {
   return useQuery({
     queryKey: [...permissionsQueryKey, filters, page, size],
     queryFn: () => listPermissions({ ...filters, page, size }),
+    enabled,
   });
 }
 

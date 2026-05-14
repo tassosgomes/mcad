@@ -37,3 +37,8 @@ export interface RoleCreateRequest {
   domain: string;
   area?: string | null;
 }
+
+export interface RoleUpdateRequest {
+  displayName: string;
+  description?: string | null;
+}

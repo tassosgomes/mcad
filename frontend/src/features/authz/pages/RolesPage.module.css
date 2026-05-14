@@ -100,6 +100,15 @@
   vertical-align: top;
 }
 
+.row {
+  cursor: pointer;
+}
+
+.row:hover .td,
+.selected .td {
+  background: var(--color-bg-surface);
+}
+
 .primaryText {
   display: block;
   color: var(--color-text-primary);
@@ -160,6 +169,21 @@
   padding: var(--space-4);
   background: var(--color-bg-surface);
   border-radius: var(--radius-lg);
+}
+
+.detailPanel {
+  display: grid;
+  gap: var(--space-4);
+  padding: var(--space-4);
+  background: var(--color-bg-surface);
+  border-radius: var(--radius-lg);
+}
+
+.detailHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
 }
 
 .panelTitle {
@@ -239,6 +263,35 @@
   background: var(--color-bg-elevated);
 }
 
+.permissionLine {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--space-3);
+  align-items: center;
+  padding: var(--space-3);
+  background: var(--color-bg-floor);
+  border-radius: var(--radius-md);
+}
+
+.permissionLine:hover {
+  background: var(--color-bg-elevated);
+}
+
+.searchField {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: var(--space-2);
+  align-items: center;
+  padding-left: var(--space-3);
+  background: var(--color-bg-floor);
+  border-radius: var(--radius-md);
+  color: var(--color-text-muted);
+}
+
+.searchField .input {
+  background: transparent;
+}
+
 .checkbox {
   margin-top: 2px;
   accent-color: var(--color-accent);
@@ -274,7 +327,8 @@
   }
 
   .tablePanel,
-  .createPanel {
+  .createPanel,
+  .detailPanel {
     grid-column: 1 / -1;
   }
 

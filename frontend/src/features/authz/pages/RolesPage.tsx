@@ -1,10 +1,11 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { FormEvent } from 'react';
-import { Plus, RefreshCw, Search, ShieldCheck } from 'lucide-react';
+import { Pencil, Plus, RefreshCw, Search, ShieldCheck } from 'lucide-react';
 import { Button } from '@components/ui/button';
 import { Loading } from '@components/ui/loading';
 import { PageHeader } from '@components/ui/page-header';
 import { Pagination } from '@components/ui/pagination';
+import { RoleDetailPanel } from '../components/RoleDetailPanel';
 import { usePermissionsCatalog } from '../hooks/usePermissionsCatalog';
 import { useAddPermissionToRole, useCreateRole, useRolesCatalog } from '../hooks/useRolesCatalog';
 import type { PermissionFilters, PermissionSummary } from '../types/permission';
@@ -73,9 +74,18 @@ function StatusBadge({ status }: { status: RoleStatus }) {
   );
 }
 
-function RoleRow({ role }: { role: RoleSummary }) {
+interface RoleRowProps {
+  role: RoleSummary;
+  selected: boolean;
+  onSelect: (roleId: string) => void;
+}
+
+function RoleRow({ role, selected, onSelect }: RoleRowProps) {
   return (
-    <tr>
+    <tr
+      className={`${styles.row} ${selected ? styles.selected : ''}`}
+      onClick={() => onSelect(role.id)}
+    >
       <td className={styles.td}>
         <span className={styles.primaryText}>{role.displayName}</span>
         <span className={`${styles.secondaryText} ${styles.mono}`}>{role.key}</span>
@@ -88,6 +98,22 @@ function RoleRow({ role }: { role: RoleSummary }) {
       </td>
       <td className={styles.td}>
         <StatusBadge status={role.status} />
+      </td>
+      <td className={styles.td}>
+        <div className={styles.actions}>
+          <Button
+            variant="ghost"
+            size="sm"
+            type="button"
+            onClick={(event) => {
+              event.stopPropagation();
+              onSelect(role.id);
+            }}
+          >
+            <Pencil size={14} />
+            Editar
+          </Button>
+        </div>
       </td>
     </tr>
   );
@@ -141,6 +167,7 @@ export function RolesPage() {
   const [form, setForm] = useState<RoleFormState>(emptyForm);
   const [permissionSearch, setPermissionSearch] = useState('');
   const [selectedPermissionKeys, setSelectedPermissionKeys] = useState<string[]>([]);
+  const [selectedRoleId, setSelectedRoleId] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<{ tone: 'success' | 'error'; message: string } | null>(null);
 
   const rolesQuery = useRolesCatalog(submittedFilters, page, PAGE_SIZE);
@@ -164,9 +191,16 @@ export function RolesPage() {
   );
   const submitting = createRoleMutation.isPending || addPermissionMutation.isPending;
 
+  useEffect(() => {
+    if (!selectedRoleId && roles.length > 0) {
+      setSelectedRoleId(roles[0].id);
+    }
+  }, [roles, selectedRoleId]);
+
   const handleFilterSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setPage(0);
+    setSelectedRoleId(null);
     setSubmittedFilters(filters);
   };
 
@@ -174,6 +208,7 @@ export function RolesPage() {
     setFilters(emptyFilters);
     setSubmittedFilters(emptyFilters);
     setPage(0);
+    setSelectedRoleId(null);
   };
 
   const togglePermission = (permissionKey: string) => {
@@ -217,6 +252,7 @@ export function RolesPage() {
       setForm(emptyForm);
       setPermissionSearch('');
       setSelectedPermissionKeys([]);
+      setSelectedRoleId(createdRole.id);
     } catch {
       setFeedback({
         tone: 'error',
@@ -318,9 +354,19 @@ export function RolesPage() {
                       <th className={styles.th}>Domínio</th>
                       <th className={styles.th}>Área</th>
                       <th className={styles.th}>Status</th>
+                      <th className={styles.th} aria-label="Ações">Ações</th>
                     </tr>
                   </thead>
-                  <tbody>{roles.map((role) => <RoleRow key={role.id} role={role} />)}</tbody>
+                  <tbody>
+                    {roles.map((role) => (
+                      <RoleRow
+                        key={role.id}
+                        role={role}
+                        selected={selectedRoleId === role.id}
+                        onSelect={setSelectedRoleId}
+                      />
+                    ))}
+                  </tbody>
                 </table>
               </div>
               <Pagination
@@ -330,7 +376,10 @@ export function RolesPage() {
                   total: rolesQuery.data.totalElements,
                   totalPages: Math.max(rolesQuery.data.totalPages, 1),
                 }}
-                onPageChange={(nextPage) => setPage(Math.max(nextPage - 1, 0))}
+                onPageChange={(nextPage) => {
+                  setPage(Math.max(nextPage - 1, 0));
+                  setSelectedRoleId(null);
+                }}
               />
               <div className={styles.empty}>
                 {rolesQuery.data.totalElements} papéis filtrados, {activeRolesCount} ativos nesta página.
@@ -479,6 +528,8 @@ export function RolesPage() {
           </form>
         </aside>
       </div>
+
+      <RoleDetailPanel roleId={selectedRoleId} />
 
       <Button variant="ghost" type="button" onClick={handleResetFilters}>
         <ShieldCheck size={16} />

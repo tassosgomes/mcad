@@ -39,6 +39,17 @@ export async function authzPost<T>(path: string, body?: unknown): Promise<T> {
   return response.json() as Promise<T>;
 }
 
+export async function authzPut<T>(path: string, body: unknown): Promise<T> {
+  const response = await authenticatedClient.fetchWithAuth(`${BASE_URL}${path}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+
+  if (!response.ok) return handleError(response, path);
+  return response.json() as Promise<T>;
+}
+
 export async function authzPatch<T>(path: string, body?: unknown): Promise<T> {
   const response = await authenticatedClient.fetchWithAuth(`${BASE_URL}${path}`, {
     method: 'PATCH',
@@ -48,4 +59,12 @@ export async function authzPatch<T>(path: string, body?: unknown): Promise<T> {
 
   if (!response.ok) return handleError(response, path);
   return response.json() as Promise<T>;
+}
+
+export async function authzDelete(path: string): Promise<void> {
+  const response = await authenticatedClient.fetchWithAuth(`${BASE_URL}${path}`, {
+    method: 'DELETE',
+  });
+
+  if (!response.ok) return handleError(response, path);
 }
