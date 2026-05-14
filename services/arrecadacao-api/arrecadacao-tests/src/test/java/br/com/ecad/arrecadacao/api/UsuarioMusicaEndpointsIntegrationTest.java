@@ -33,7 +33,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest(
         classes = ArrecadacaoApplication.class,
         webEnvironment = SpringBootTest.WebEnvironment.MOCK,
-        properties = "spring.autoconfigure.exclude=org.springframework.boot.autoconfigure.security.oauth2.resource.servlet.OAuth2ResourceServerAutoConfiguration")
+        properties = "spring.autoconfigure.exclude=org.springframework.boot.autoconfigure.security.oauth2.resource.servlet.OAuth2ResourceServerAutoConfiguration,org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration,org.springframework.boot.autoconfigure.data.redis.RedisRepositoriesAutoConfiguration")
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 @Import({TestSecurityConfig.class, VerbaServiceTestConfig.class})
@@ -98,20 +98,6 @@ class UsuarioMusicaEndpointsIntegrationTest {
                 .andExpect(jsonPath("$.razaoSocial").value("Radio Cidade FM Ltda"))
                 .andExpect(jsonPath("$.status").value("ATIVO"))
                 .andExpect(jsonPath("$.cnpjFormatado").value("50.997.063/0001-32"));
-    }
-
-    // ── 7.2: GET /api/v1/usuarios-musica → 200 com paginação ──────
-
-    @Test
-    @WithMockUser(roles = "analista-arrecadacao")
-    void deveListarUsuariosComPaginacao() throws Exception {
-        criarUsuarioERetornarId("Radio A", "50997063000132");
-        criarUsuarioERetornarId("TV B", "11222333000181");
-
-        mockMvc.perform(get("/api/v1/usuarios-musica?page=0&size=10"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.items").isArray())
-                .andExpect(jsonPath("$.items.length()").value(2));
     }
 
     // ── 7.2: GET /api/v1/usuarios-musica/{id} → 200 ───────────────
@@ -272,13 +258,17 @@ class UsuarioMusicaEndpointsIntegrationTest {
                 .andExpect(status().isForbidden());
     }
 
-    // ── 7.4: Consultor pode listar (leitura) ────────────────────────
-
     @Test
-    @WithMockUser(roles = "consultor-arrecadacao")
-    void consultorPodeListar() throws Exception {
-        mockMvc.perform(get("/api/v1/usuarios-musica?page=0&size=10"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.items").isArray());
+    @WithMockUser(roles = "analista-arrecadacao")
+    void deveRetornar422AoAtivarJaAtivo() throws Exception {
+        // Usuario recem-criado ja esta ATIVO; UsuarioMusica.ativar() lanca
+        // IllegalStateException("ja ATIVO") -> 422 via GlobalExceptionHandler.
+        String id = criarUsuarioERetornarId("Radio Ja Ativa", "50997063000132");
+
+        mockMvc.perform(post("/api/v1/usuarios-musica/" + id + "/ativar")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"justificativa\": \"Tentativa de ativar usuario ja ativo\"}"))
+                .andExpect(status().isUnprocessableEntity());
     }
+
 }

@@ -1,0 +1,55 @@
+{
+  "service": "cadastro-api",
+  "domain": "cadastro",
+  "area": "default",
+  "version": "1.0.0",
+  "permissions": [
+    { "key": "cadastro:default:associacao:listar", "displayName": "Listar associações", "description": "Lista paginada de associações cadastradas.", "resource": "associacao", "action": "listar" },
+    { "key": "cadastro:default:associacao:visualizar", "displayName": "Visualizar associação", "description": "Acesso aos dados de uma associação específica.", "resource": "associacao", "action": "visualizar" },
+
+    { "key": "cadastro:default:titular:listar", "displayName": "Listar titulares", "description": "Lista paginada de titulares.", "resource": "titular", "action": "listar" },
+    { "key": "cadastro:default:titular:visualizar", "displayName": "Visualizar titular", "description": "Acesso aos dados completos de um titular.", "resource": "titular", "action": "visualizar" },
+    { "key": "cadastro:default:titular:buscar", "displayName": "Buscar titulares", "description": "Busca textual e por filtros de titulares.", "resource": "titular", "action": "buscar" },
+    { "key": "cadastro:default:titular:criar", "displayName": "Criar titular", "description": "Cadastra um novo titular.", "resource": "titular", "action": "criar" },
+    { "key": "cadastro:default:titular:editar", "displayName": "Editar titular", "description": "Atualiza dados cadastrais de um titular.", "resource": "titular", "action": "editar" },
+    { "key": "cadastro:default:titular:excluir", "displayName": "Excluir titular", "description": "Remove um titular do cadastro.", "resource": "titular", "action": "excluir" },
+
+    { "key": "cadastro:default:obra:listar", "displayName": "Listar obras", "description": "Lista paginada e filtrada de obras musicais.", "resource": "obra", "action": "listar" },
+    { "key": "cadastro:default:obra:visualizar", "displayName": "Visualizar obra", "description": "Acesso aos dados completos de uma obra.", "resource": "obra", "action": "visualizar" },
+    { "key": "cadastro:default:obra:criar", "displayName": "Criar obra", "description": "Cadastra uma nova obra musical.", "resource": "obra", "action": "criar" },
+    { "key": "cadastro:default:obra:editar", "displayName": "Editar obra", "description": "Atualiza dados de uma obra existente.", "resource": "obra", "action": "editar" },
+    { "key": "cadastro:default:obra:excluir", "displayName": "Excluir obra", "description": "Remove uma obra do cadastro.", "resource": "obra", "action": "excluir" },
+    { "key": "cadastro:default:obra:gerar-iswc", "displayName": "Gerar ISWC", "description": "Gera código ISWC para uma obra.", "resource": "obra", "action": "gerar-iswc" },
+    { "key": "cadastro:default:obra:depurar", "displayName": "Depurar obra", "description": "Aciona o processo de depuração de uma obra.", "resource": "obra", "action": "depurar" },
+    { "key": "cadastro:default:obra:dp", "displayName": "Marcar obra como domínio público", "description": "Altera o status da obra para domínio público.", "resource": "obra", "action": "dp" },
+
+    { "key": "cadastro:default:titularidade:listar", "displayName": "Listar titularidades", "description": "Lista titularidades de uma obra.", "resource": "titularidade", "action": "listar" },
+    { "key": "cadastro:default:titularidade:buscar", "displayName": "Buscar titularidades", "description": "Busca textual de titularidades.", "resource": "titularidade", "action": "buscar" },
+    { "key": "cadastro:default:titularidade:adicionar", "displayName": "Adicionar titularidade", "description": "Adiciona uma titularidade a uma obra.", "resource": "titularidade", "action": "adicionar" },
+    { "key": "cadastro:default:titularidade:editar", "displayName": "Editar titularidade", "description": "Atualiza dados de uma titularidade.", "resource": "titularidade", "action": "editar" },
+    { "key": "cadastro:default:titularidade:remover", "displayName": "Remover titularidade", "description": "Remove uma titularidade de uma obra.", "resource": "titularidade", "action": "remover" },
+
+    { "key": "cadastro:default:fonograma:listar", "displayName": "Listar fonogramas", "description": "Lista paginada e filtrada de fonogramas.", "resource": "fonograma", "action": "listar" },
+    { "key": "cadastro:default:fonograma:visualizar", "displayName": "Visualizar fonograma", "description": "Acesso aos dados completos de um fonograma.", "resource": "fonograma", "action": "visualizar" },
+    { "key": "cadastro:default:fonograma:listar-por-obra", "displayName": "Listar fonogramas por obra", "description": "Lista os fonogramas vinculados a uma obra.", "resource": "fonograma", "action": "listar-por-obra" },
+    { "key": "cadastro:default:fonograma:criar", "displayName": "Criar fonograma", "description": "Cadastra um novo fonograma.", "resource": "fonograma", "action": "criar" },
+    { "key": "cadastro:default:fonograma:editar", "displayName": "Editar fonograma", "description": "Atualiza dados de um fonograma existente.", "resource": "fonograma", "action": "editar" },
+    { "key": "cadastro:default:fonograma:excluir", "displayName": "Excluir fonograma", "description": "Remove um fonograma do cadastro.", "resource": "fonograma", "action": "excluir" },
+    { "key": "cadastro:default:fonograma:depurar", "displayName": "Depurar fonograma", "description": "Aciona o processo de depuração de um fonograma.", "resource": "fonograma", "action": "depurar" },
+
+    { "key": "cadastro:default:participacao:listar", "displayName": "Listar participações", "description": "Lista participações associadas a uma obra ou fonograma.", "resource": "participacao", "action": "listar" },
+    { "key": "cadastro:default:participacao:adicionar", "displayName": "Adicionar participação", "description": "Adiciona uma participação a uma obra ou fonograma.", "resource": "participacao", "action": "adicionar" },
+    { "key": "cadastro:default:participacao:ajustar", "displayName": "Ajustar participação", "description": "Ajusta percentual ou metadados de uma participação.", "resource": "participacao", "action": "ajustar" },
+    { "key": "cadastro:default:participacao:remover", "displayName": "Remover participação", "description": "Remove uma participação.", "resource": "participacao", "action": "remover" },
+    { "key": "cadastro:default:participacao:calcular", "displayName": "Calcular participação", "description": "Recalcula participações de uma obra.", "resource": "participacao", "action": "calcular" },
+
+    { "key": "cadastro:default:status:visualizar-historico-obra", "displayName": "Visualizar histórico de status de obra", "description": "Lista o histórico de status de uma obra.", "resource": "status", "action": "visualizar-historico-obra" },
+    { "key": "cadastro:default:status:visualizar-historico-fonograma", "displayName": "Visualizar histórico de status de fonograma", "description": "Lista o histórico de status de um fonograma.", "resource": "status", "action": "visualizar-historico-fonograma" },
+    { "key": "cadastro:default:status:liberar-obra", "displayName": "Liberar obra", "description": "Libera uma obra para distribuição.", "resource": "status", "action": "liberar-obra" },
+    { "key": "cadastro:default:status:bloquear-obra", "displayName": "Bloquear obra", "description": "Bloqueia uma obra.", "resource": "status", "action": "bloquear-obra" },
+    { "key": "cadastro:default:status:desbloquear-obra", "displayName": "Desbloquear obra", "description": "Desbloqueia uma obra previamente bloqueada.", "resource": "status", "action": "desbloquear-obra" },
+    { "key": "cadastro:default:status:liberar-fonograma", "displayName": "Liberar fonograma", "description": "Libera um fonograma para distribuição.", "resource": "status", "action": "liberar-fonograma" },
+    { "key": "cadastro:default:status:bloquear-fonograma", "displayName": "Bloquear fonograma", "description": "Bloqueia um fonograma.", "resource": "status", "action": "bloquear-fonograma" },
+    { "key": "cadastro:default:status:desbloquear-fonograma", "displayName": "Desbloquear fonograma", "description": "Desbloqueia um fonograma previamente bloqueado.", "resource": "status", "action": "desbloquear-fonograma" }
+  ]
+}

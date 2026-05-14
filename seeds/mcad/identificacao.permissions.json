@@ -1,0 +1,32 @@
+{
+  "service": "identificacao-api",
+  "domain": "identificacao",
+  "area": "default",
+  "version": "1.0.0",
+  "permissions": [
+    { "key": "identificacao:default:captacao:listar", "displayName": "Listar captações", "description": "Lista paginada e filtrada de captações musicais.", "resource": "captacao", "action": "listar" },
+    { "key": "identificacao:default:captacao:visualizar", "displayName": "Visualizar captação", "description": "Acesso aos dados completos de uma captação.", "resource": "captacao", "action": "visualizar" },
+    { "key": "identificacao:default:captacao:criar", "displayName": "Criar captação", "description": "Inicia o cadastro de uma nova captação musical.", "resource": "captacao", "action": "criar" },
+    { "key": "identificacao:default:captacao:editar", "displayName": "Editar captação", "description": "Atualiza dados de uma captação em andamento.", "resource": "captacao", "action": "editar" },
+    { "key": "identificacao:default:captacao:excluir", "displayName": "Excluir captação", "description": "Remove uma captação que ainda não foi fechada.", "resource": "captacao", "action": "excluir" },
+    { "key": "identificacao:default:captacao:cancelar", "displayName": "Cancelar captação", "description": "Cancela uma captação em andamento, preservando histórico.", "resource": "captacao", "action": "cancelar" },
+    { "key": "identificacao:default:captacao:fechar", "displayName": "Fechar captação", "description": "Finaliza uma captação e envia para identificação.", "resource": "captacao", "action": "fechar" },
+
+    { "key": "identificacao:default:execucao:listar", "displayName": "Listar execuções", "description": "Lista execuções musicais dentro de uma captação.", "resource": "execucao", "action": "listar" },
+    { "key": "identificacao:default:execucao:criar", "displayName": "Criar execução", "description": "Registra uma execução musical em uma captação.", "resource": "execucao", "action": "criar" },
+    { "key": "identificacao:default:execucao:editar", "displayName": "Editar execução", "description": "Atualiza dados de uma execução musical.", "resource": "execucao", "action": "editar" },
+    { "key": "identificacao:default:execucao:excluir", "displayName": "Excluir execução", "description": "Remove uma execução musical de uma captação.", "resource": "execucao", "action": "excluir" },
+
+    { "key": "identificacao:default:rubrica:listar", "displayName": "Listar rubricas", "description": "Lista as rubricas disponíveis para classificação.", "resource": "rubrica", "action": "listar" },
+    { "key": "identificacao:default:tipo-utilizacao:listar", "displayName": "Listar tipos de utilização", "description": "Lista os tipos de utilização musical cadastrados.", "resource": "tipo-utilizacao", "action": "listar" },
+
+    { "key": "identificacao:default:upload:listar", "displayName": "Listar uploads", "description": "Lista uploads de CSV de execuções.", "resource": "upload", "action": "listar" },
+    { "key": "identificacao:default:upload:visualizar", "displayName": "Visualizar upload", "description": "Acesso aos dados e progresso de um upload.", "resource": "upload", "action": "visualizar" },
+    { "key": "identificacao:default:upload:visualizar-erros", "displayName": "Visualizar erros de upload", "description": "Lista linhas com erro em um upload de CSV.", "resource": "upload", "action": "visualizar-erros" },
+    { "key": "identificacao:default:upload:importar", "displayName": "Importar upload", "description": "Sobe arquivo CSV de execuções para importação em lote.", "resource": "upload", "action": "importar" },
+
+    { "key": "identificacao:default:pendente:listar", "displayName": "Listar pendentes", "description": "Lista execuções pendentes de identificação.", "resource": "pendente", "action": "listar" },
+    { "key": "identificacao:default:pendente:visualizar-impacto", "displayName": "Visualizar impacto de pendente", "description": "Visualiza o impacto de uma execução pendente.", "resource": "pendente", "action": "visualizar-impacto" },
+    { "key": "identificacao:default:pendente:resolver", "displayName": "Resolver pendente", "description": "Resolve uma execução pendente atribuindo obra/fonograma.", "resource": "pendente", "action": "resolver" }
+  ]
+}

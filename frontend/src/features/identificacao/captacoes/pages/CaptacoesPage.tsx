@@ -7,6 +7,7 @@ import { ErrorState } from '@components/ui/error-state';
 import { Pagination } from '@components/ui/pagination';
 import { useToast } from '@components/ui/toast';
 import { useAuth } from '@shared/auth';
+import { usePermissions } from '@shared/authz';
 import { useDocumentTitle } from '@hooks/useDocumentTitle';
 
 import type { Captacao, CaptacaoFiltros } from '../types/captacao';
@@ -20,8 +21,9 @@ import styles from './CaptacoesPage.module.css';
 export function CaptacoesPage() {
   const navigate = useNavigate();
   const { showToast } = useToast();
-  const { hasRole, user } = useAuth();
-  const canWrite = hasRole('analista-identificacao');
+  const { user } = useAuth();
+  const { can } = usePermissions();
+  const canWrite = can('identificacao:default:captacao:criar');
   const userId = user?.profile.sub;
 
   const [filtros, setFiltros] = useState<CaptacaoFiltros>({

@@ -1,6 +1,7 @@
 package br.com.ecad.arrecadacao.domain.entities;
 
 import br.com.ecad.arrecadacao.domain.enums.StatusLicenca;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -56,5 +57,14 @@ class HistoricoStatusLicencaTest {
         });
 
         assertEquals("Justificativa deve ter no minimo 10 caracteres", ex.getMessage());
+    }
+
+    @Test
+    @Disabled("Production code lacks autor null guard in HistoricoStatusLicenca.criar() — "
+            + "Objects.requireNonNull is applied to licencaId, statusNovo and justificativa but NOT to autor. "
+            + "HistoricoStatusUsuario.criar() does guard autor via Objects.requireNonNull (simmetric sibling). "
+            + "Decision needed: add Objects.requireNonNull(autor, \"autor e obrigatorio\") to close the gap or accept null.")
+    void criar_AutorNull_DeveLancar() {
+        // Intentionally left disabled — see @Disabled message above.
     }
 }

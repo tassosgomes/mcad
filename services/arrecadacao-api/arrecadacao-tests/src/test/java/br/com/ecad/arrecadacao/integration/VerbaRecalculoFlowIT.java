@@ -13,6 +13,7 @@ import br.com.ecad.arrecadacao.domain.interfaces.VerbaRepository;
 import br.com.ecad.arrecadacao.domain.valueobjects.Cnpj;
 import br.com.ecad.arrecadacao.domain.valueobjects.Contato;
 import br.com.ecad.arrecadacao.domain.valueobjects.Endereco;
+import br.com.ecad.arrecadacao.infra.events.OutboxPublisherWorker;
 import br.com.ecad.arrecadacao.infra.persistence.SpringDataOutboxEventRepository;
 import br.com.ecad.arrecadacao.infra.persistence.SpringDataLicencaRepository;
 import br.com.ecad.arrecadacao.infra.persistence.SpringDataRubricaRepository;
@@ -20,7 +21,11 @@ import br.com.ecad.arrecadacao.infra.persistence.JpaUdaValorRepository;
 import br.com.ecad.arrecadacao.infra.persistence.SpringDataUsuarioMusicaRepository;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
+import org.springframework.amqp.AmqpException;
+import org.springframework.amqp.core.Message;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -32,7 +37,10 @@ import org.springframework.transaction.support.TransactionTemplate;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -55,7 +63,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @SpringBootTest(
         classes = ArrecadacaoApplication.class,
         webEnvironment = SpringBootTest.WebEnvironment.NONE,
-        properties = "spring.autoconfigure.exclude=org.springframework.boot.autoconfigure.security.oauth2.resource.servlet.OAuth2ResourceServerAutoConfiguration")
+        properties = "spring.autoconfigure.exclude=org.springframework.boot.autoconfigure.security.oauth2.resource.servlet.OAuth2ResourceServerAutoConfiguration,org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration,org.springframework.boot.autoconfigure.data.redis.RedisRepositoriesAutoConfiguration")
 @ActiveProfiles("test")
 @Import(TestSecurityConfig.class)
 @SuppressWarnings("null")
@@ -87,6 +95,9 @@ class VerbaRecalculoFlowIT {
 
     @Autowired
     private PlatformTransactionManager txManager;
+
+    @Autowired
+    private OutboxPublisherWorker outboxPublisherWorker;
 
     @MockBean
     private RabbitTemplate rabbitTemplate;
@@ -234,6 +245,131 @@ class VerbaRecalculoFlowIT {
         });
     }
 
+    /**
+     * Verifica que uma falha do publisher (RabbitTemplate lanca AmqpException) deixa
+     * o evento no outbox com {@code attempts} incrementado e {@code publishedAt} nulo,
+     * e que uma nova execucao do worker re-publica o MESMO evento (mesmo CloudEvent id)
+     * sem criar uma nova linha em {@code outbox_events} — garantindo a propriedade
+     * "at-least-once com idempotency_key" do Outbox Pattern.
+     *
+     * <p>Idempotency_key e o {@code OutboxEvent.id} (UUID), reutilizado como
+     * {@code messageId} AMQP em todas as retentativas — consumers podem deduplicar
+     * com base nele.</p>
+     */
+    @Test
+    void outboxFailureShouldRetryWithoutDuplicatingEvent() {
+        TransactionTemplate tt = new TransactionTemplate(txManager);
+
+        // Setup: registra 1 pagamento, gerando eventos no outbox (verba.disponivel + pagamento.registrado)
+        UUID[] licencaIdHolder = new UUID[1];
+        tt.execute(status -> {
+            var usuario = UsuarioMusica.criar(
+                    "Empresa OutboxRetry",
+                    "Fantasia OR",
+                    Cnpj.criar(gerarCnpjAleatorioValido()),
+                    Endereco.criar("12345678", "Rua Outbox", "1", "", "Bairro", "Cidade", "SP"),
+                    Contato.criar("Resp OR", "11999999999", "or@test.com"));
+            usuarioMusicaRepository.save(usuario);
+
+            var licenca = Licenca.criar(usuario.getId(), rubricaId, LocalDate.now(), null);
+            licencaRepository.save(licenca);
+            licencaIdHolder[0] = licenca.getId();
+            return null;
+        });
+
+        tt.execute(status -> {
+            var cmd = new RegistrarPagamentoCommand(
+                    licencaIdHolder[0],
+                    new BigDecimal("5.0"),
+                    "analista@ecad.org.br");
+            registrarPagamentoHandler.handle(cmd);
+            return null;
+        });
+
+        // Sanity check: outbox tem eventos pendentes
+        long pendentesAntes = outboxEventRepository.findAll().stream()
+                .filter(e -> e.getPublishedAt() == null)
+                .filter(e -> e.getRoutingKey().startsWith("arrecadacao."))
+                .count();
+        assertThat(pendentesAntes)
+                .as("Setup deve ter gerado eventos pendentes no outbox")
+                .isGreaterThanOrEqualTo(2);
+
+        // Captura os messageIds (CloudEvent ids) enviados ao RabbitTemplate em cada chamada
+        List<String> messageIdsEnviados = new ArrayList<>();
+        AtomicInteger chamadasSend = new AtomicInteger();
+
+        // Stub: 1a chamada de cada evento falha; demais sucedem.
+        // Estrategia simples: TODAS as chamadas da PRIMEIRA execucao falham,
+        // todas as chamadas da SEGUNDA sucedem.
+        Mockito.reset(rabbitTemplate);
+        final boolean[] failNext = {true};
+        Mockito.doAnswer(inv -> {
+            Message msg = inv.getArgument(2, Message.class);
+            String id = msg.getMessageProperties().getMessageId();
+            messageIdsEnviados.add(id);
+            chamadasSend.incrementAndGet();
+            if (failNext[0]) {
+                throw new AmqpException("Falha simulada do broker");
+            }
+            return null;
+        }).when(rabbitTemplate).send(Mockito.anyString(), Mockito.anyString(), Mockito.any(Message.class));
+
+        long totalEventsAntes = outboxEventRepository.count();
+
+        // Act 1 — primeira execucao do worker: todos falham
+        outboxPublisherWorker.publishPendingEvents();
+
+        // Coleta ids enviados na 1a rodada (snapshot antes do reset do flag)
+        List<String> idsRodada1 = new ArrayList<>(messageIdsEnviados);
+        int chamadasRodada1 = chamadasSend.get();
+
+        // Assert intermediario — eventos ainda pendentes, com attempts >= 1, e zero linhas novas
+        long totalEventsDepoisRodada1 = outboxEventRepository.count();
+        assertThat(totalEventsDepoisRodada1)
+                .as("Falha do publisher NAO deve criar novas linhas em outbox_events")
+                .isEqualTo(totalEventsAntes);
+
+        long pendentesDepoisRodada1 = outboxEventRepository.findAll().stream()
+                .filter(e -> e.getPublishedAt() == null)
+                .filter(e -> e.getRoutingKey().startsWith("arrecadacao."))
+                .count();
+        assertThat(pendentesDepoisRodada1)
+                .as("Eventos devem permanecer pendentes apos falha do publisher")
+                .isEqualTo(pendentesAntes);
+
+        outboxEventRepository.findAll().stream()
+                .filter(e -> e.getPublishedAt() == null)
+                .filter(e -> e.getRoutingKey().startsWith("arrecadacao."))
+                .forEach(e -> assertThat(e.getAttempts())
+                        .as("Evento %s deve ter attempts incrementado para 1 apos falha".formatted(e.getId()))
+                        .isEqualTo(1));
+
+        // Act 2 — segunda execucao do worker: agora sucede
+        failNext[0] = false;
+        outboxPublisherWorker.publishPendingEvents();
+
+        // Assert final — todos os eventos foram publicados
+        long pendentesDepoisRodada2 = outboxEventRepository.findAll().stream()
+                .filter(e -> e.getPublishedAt() == null)
+                .filter(e -> e.getRoutingKey().startsWith("arrecadacao."))
+                .count();
+        assertThat(pendentesDepoisRodada2)
+                .as("Apos retry bem-sucedido, nao deve haver eventos pendentes")
+                .isZero();
+
+        long totalEventsDepoisRodada2 = outboxEventRepository.count();
+        assertThat(totalEventsDepoisRodada2)
+                .as("Retry NAO pode criar linhas duplicadas — count deve permanecer igual")
+                .isEqualTo(totalEventsAntes);
+
+        // Ids enviados na rodada 2 devem ser exatamente os mesmos da rodada 1 (idempotency_key)
+        List<String> idsRodada2 = messageIdsEnviados.subList(chamadasRodada1, messageIdsEnviados.size());
+        assertThat(idsRodada2)
+                .as("Retry deve reutilizar mesmos CloudEvent ids (idempotency_key) — sem novos ids")
+                .containsExactlyInAnyOrderElementsOf(idsRodada1);
+    }
+
     private String getRubricaSiglaFromDb() {
         return rubricaRepository.findById(rubricaId)
                 .map(r -> r.getSigla())
@@ -246,10 +382,35 @@ class VerbaRecalculoFlowIT {
      */
     private static String gerarCnpjUnico(int idx) {
         return switch (idx) {
-            case 0 -> "40170361000190";
-            case 1 -> "13617088000172";
-            case 2 -> "88199700000150";
+            case 0 -> "95917128000120";
+            case 1 -> "77257601000109";
+            case 2 -> "08673009000175";
             default -> throw new IllegalArgumentException("Indice nao suportado: " + idx);
         };
+    }
+
+    /**
+     * Gera CNPJ valido aleatorio (mod-11) — usado quando o teste pode rodar varias vezes
+     * contra o mesmo banco e nao podemos depender de constantes (chave unica em cnpj).
+     */
+    private static String gerarCnpjAleatorioValido() {
+        java.util.Random r = new java.util.Random();
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < 12; i++) {
+            sb.append(r.nextInt(10));
+        }
+        int[] w1 = {5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2};
+        int sum1 = 0;
+        for (int i = 0; i < 12; i++) sum1 += (sb.charAt(i) - '0') * w1[i];
+        int rest1 = sum1 % 11;
+        int dv1 = rest1 < 2 ? 0 : 11 - rest1;
+        sb.append(dv1);
+        int[] w2 = {6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2};
+        int sum2 = 0;
+        for (int i = 0; i < 13; i++) sum2 += (sb.charAt(i) - '0') * w2[i];
+        int rest2 = sum2 % 11;
+        int dv2 = rest2 < 2 ? 0 : 11 - rest2;
+        sb.append(dv2);
+        return sb.toString();
     }
 }

@@ -7,7 +7,7 @@ import { ErrorState } from '@components/ui/error-state';
 import { Button } from '@components/ui/button';
 import { Pagination } from '@components/ui/pagination';
 import { useToast } from '@components/ui/toast';
-import { useAuth } from '@shared/auth';
+import { usePermissions } from '@shared/authz/usePermissions';
 import { useObras } from '../hooks/useObras';
 import { useDeleteObra } from '../hooks/useDeleteObra';
 import { ObrasTable } from '../components/ObrasTable';
@@ -20,8 +20,10 @@ export function ObrasPage() {
   const location = useLocation();
   const navigate = useNavigate();
   const { showToast } = useToast();
-  const { hasRole } = useAuth();
-  const canWrite = hasRole('analista-cadastro');
+  const { can } = usePermissions();
+  const canCreate = can('cadastro:default:obra:criar');
+  const canEdit = can('cadastro:default:obra:editar');
+  const canDelete = can('cadastro:default:obra:excluir');
   const createdObraTitle =
     typeof location.state === 'object' && location.state !== null && 'createdObraTitle' in location.state
       ? String(location.state.createdObraTitle)
@@ -53,7 +55,7 @@ export function ObrasPage() {
       <PageHeader
         title="Obras Musicais"
         description="Gestão de obras musicais, metadados e códigos ISWC."
-        action={canWrite ? (
+        action={canCreate ? (
           <Button
             variant="primary"
             onClick={() => navigate('/cadastro/obras/nova')}
@@ -75,7 +77,7 @@ export function ObrasPage() {
         <>
           <ObrasTable
             data={data.data}
-            canWrite={canWrite}
+            canWrite={canEdit || canDelete}
             sort={filtros.sort || 'titulo'}
             onSortChange={(sort) => setFiltros((prev) => ({ ...prev, sort, page: 1 }))}
             onEdit={(id) => navigate(`/cadastro/obras/${id}`)}

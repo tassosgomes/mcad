@@ -1,0 +1,29 @@
+{
+  "service": "arrecadacao-api",
+  "domain": "arrecadacao",
+  "area": "default",
+  "version": "1.0.0",
+  "permissions": [
+    { "key": "arrecadacao:default:cliente:listar", "displayName": "Listar usuários de música", "description": "Lista paginada e filtrada de usuários de música (clientes).", "resource": "cliente", "action": "listar" },
+    { "key": "arrecadacao:default:cliente:visualizar", "displayName": "Visualizar usuário de música", "description": "Acesso aos dados completos e ao histórico de status de um usuário de música.", "resource": "cliente", "action": "visualizar" },
+    { "key": "arrecadacao:default:cliente:criar", "displayName": "Criar usuário de música", "description": "Cadastra um novo usuário de música (cliente).", "resource": "cliente", "action": "criar" },
+    { "key": "arrecadacao:default:cliente:editar", "displayName": "Editar usuário de música", "description": "Atualiza dados cadastrais e altera status (ativar/inativar) do usuário de música.", "resource": "cliente", "action": "editar" },
+
+    { "key": "arrecadacao:default:contrato:listar", "displayName": "Listar licenças", "description": "Lista paginada e filtrada de licenças (contratos).", "resource": "contrato", "action": "listar" },
+    { "key": "arrecadacao:default:contrato:visualizar", "displayName": "Visualizar licença", "description": "Acesso a uma licença específica e ao seu histórico de transições.", "resource": "contrato", "action": "visualizar" },
+    { "key": "arrecadacao:default:contrato:criar", "displayName": "Criar licença", "description": "Cria uma nova licença para um usuário de música.", "resource": "contrato", "action": "criar" },
+    { "key": "arrecadacao:default:contrato:editar", "displayName": "Editar licença", "description": "Suspende, reativa ou encerra uma licença.", "resource": "contrato", "action": "editar" },
+    { "key": "arrecadacao:default:contrato:cancelar", "displayName": "Encerrar licença", "description": "Encerra definitivamente uma licença.", "resource": "contrato", "action": "cancelar" },
+
+    { "key": "arrecadacao:default:cobranca:listar", "displayName": "Consultar UDA e rubricas", "description": "Consulta valor vigente da UDA, histórico de UDAs e tabela de rubricas.", "resource": "cobranca", "action": "listar" },
+    { "key": "arrecadacao:default:cobranca:emitir", "displayName": "Ajustar UDA", "description": "Ajusta o valor da UDA (Unidade de Direito Autoral) com data de vigência.", "resource": "cobranca", "action": "emitir" },
+
+    { "key": "arrecadacao:default:pagamento:listar", "displayName": "Listar pagamentos", "description": "Lista paginada e filtrada de pagamentos.", "resource": "pagamento", "action": "listar" },
+    { "key": "arrecadacao:default:pagamento:visualizar", "displayName": "Visualizar pagamento", "description": "Acesso aos dados de um pagamento específico.", "resource": "pagamento", "action": "visualizar" },
+    { "key": "arrecadacao:default:pagamento:conciliar", "displayName": "Registrar pagamento", "description": "Registra um novo pagamento associado a uma licença vigente.", "resource": "pagamento", "action": "conciliar" },
+    { "key": "arrecadacao:default:pagamento:estornar", "displayName": "Estornar pagamento", "description": "Estorna um pagamento previamente confirmado, com justificativa.", "resource": "pagamento", "action": "estornar" },
+
+    { "key": "arrecadacao:default:relatorio:visualizar", "displayName": "Visualizar verbas", "description": "Consulta lista, agregados e detalhes de verbas por rubrica e período.", "resource": "relatorio", "action": "visualizar" },
+    { "key": "arrecadacao:default:relatorio:exportar", "displayName": "Exportar verbas", "description": "Exporta dados de verbas/relatórios para análise externa.", "resource": "relatorio", "action": "exportar" }
+  ]
+}

@@ -13,5 +13,6 @@
   </Folder>
   <Folder Name="/5-Tests/">
     <Project Path="5-Tests/Identificacao.Tests/Identificacao.Tests.csproj" />
+    <Project Path="5-Tests/Identificacao.IntegrationTests/Identificacao.IntegrationTests.csproj" />
   </Folder>
 </Solution>

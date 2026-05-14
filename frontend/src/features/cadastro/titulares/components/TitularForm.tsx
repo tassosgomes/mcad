@@ -3,7 +3,7 @@ import { FormField } from '@components/ui/form-field';
 import { TextInput } from '@components/ui/text-input';
 import { Select } from '@components/ui/select';
 import { Button } from '@components/ui/button';
-import { useAuth } from '@shared/auth';
+import { usePermissions } from '@shared/authz/usePermissions';
 import { useAssociacoes } from '../../associacoes/hooks/useAssociacoes';
 import { isValidCpf } from '../utils/cpfValidator';
 import { isValidCnpj } from '../utils/cnpjValidator';
@@ -41,9 +41,9 @@ const TIPO_OPTIONS = [
 ];
 
 export function TitularForm({ initialData, onSubmit, onCancel, isSubmitting }: TitularFormProps) {
-  const { hasRole } = useAuth();
-  const canWrite = hasRole('analista-cadastro');
+  const { can } = usePermissions();
   const isEditMode = !!initialData;
+  const canWrite = isEditMode ? can('cadastro:default:titular:editar') : can('cadastro:default:titular:criar');
   const { data: assocResp } = useAssociacoes();
 
   const [tipo, setTipo] = useState<TitularTipo>(initialData?.tipo ?? 'PF');

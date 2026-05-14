@@ -1,0 +1,107 @@
+## Catálogo de permissões da arrecadacao-api consumido pelo
+## `authz-spring-boot-starter` na inicialização (POST /permission-catalog/register).
+##
+## O contrato do starter exige chaves no formato `dominio:area:recurso:acao`
+## (4 segmentos). O PRD do mcad descreve permissões em 3 segmentos
+## (`arrecadacao:<recurso>:<acao>`). Decisão: usar `arrecadacao:default:...` como
+## área default e manter o restante igual ao PRD §4.3.
+##
+## Mapeamento sugerido para papéis iniciais:
+##   - arrecadacao.consultor  → permissões de leitura/visualização.
+##   - arrecadacao.analista   → herda consultor + escrita/processamento.
+
+permissions:
+  # ── Cliente / Usuário de música ────────────────────────────────────────────
+  - key: arrecadacao:default:cliente:listar
+    name: Listar usuários de música
+    description: Lista paginada e filtrada de usuários de música (clientes).
+    resource: cliente
+    action: listar
+  - key: arrecadacao:default:cliente:visualizar
+    name: Visualizar usuário de música
+    description: Acesso aos dados completos e ao histórico de status de um usuário de música.
+    resource: cliente
+    action: visualizar
+  - key: arrecadacao:default:cliente:criar
+    name: Criar usuário de música
+    description: Cadastra um novo usuário de música (cliente).
+    resource: cliente
+    action: criar
+  - key: arrecadacao:default:cliente:editar
+    name: Editar usuário de música
+    description: Atualiza dados cadastrais e altera status (ativar/inativar) do usuário de música.
+    resource: cliente
+    action: editar
+
+  # ── Contrato / Licença ─────────────────────────────────────────────────────
+  - key: arrecadacao:default:contrato:listar
+    name: Listar licenças
+    description: Lista paginada e filtrada de licenças (contratos).
+    resource: contrato
+    action: listar
+  - key: arrecadacao:default:contrato:visualizar
+    name: Visualizar licença
+    description: Acesso a uma licença específica e ao seu histórico de transições.
+    resource: contrato
+    action: visualizar
+  - key: arrecadacao:default:contrato:criar
+    name: Criar licença
+    description: Cria uma nova licença para um usuário de música.
+    resource: contrato
+    action: criar
+  - key: arrecadacao:default:contrato:editar
+    name: Editar licença
+    description: Suspende, reativa ou encerra uma licença.
+    resource: contrato
+    action: editar
+  - key: arrecadacao:default:contrato:cancelar
+    name: Encerrar licença
+    description: Encerra definitivamente uma licença.
+    resource: contrato
+    action: cancelar
+
+  # ── Cobrança / UDA ────────────────────────────────────────────────────────
+  - key: arrecadacao:default:cobranca:listar
+    name: Consultar UDA e rubricas
+    description: Consulta valor vigente da UDA, histórico de UDAs e tabela de rubricas.
+    resource: cobranca
+    action: listar
+  - key: arrecadacao:default:cobranca:emitir
+    name: Ajustar UDA
+    description: Ajusta o valor da UDA (Unidade de Direito Autoral) com data de vigência.
+    resource: cobranca
+    action: emitir
+
+  # ── Pagamento ─────────────────────────────────────────────────────────────
+  - key: arrecadacao:default:pagamento:listar
+    name: Listar pagamentos
+    description: Lista paginada e filtrada de pagamentos.
+    resource: pagamento
+    action: listar
+  - key: arrecadacao:default:pagamento:visualizar
+    name: Visualizar pagamento
+    description: Acesso aos dados de um pagamento específico.
+    resource: pagamento
+    action: visualizar
+  - key: arrecadacao:default:pagamento:conciliar
+    name: Registrar pagamento
+    description: Registra um novo pagamento associado a uma licença vigente.
+    resource: pagamento
+    action: conciliar
+  - key: arrecadacao:default:pagamento:estornar
+    name: Estornar pagamento
+    description: Estorna um pagamento previamente confirmado, com justificativa.
+    resource: pagamento
+    action: estornar
+
+  # ── Relatórios / Verbas ───────────────────────────────────────────────────
+  - key: arrecadacao:default:relatorio:visualizar
+    name: Visualizar verbas
+    description: Consulta lista, agregados e detalhes de verbas por rubrica e período.
+    resource: relatorio
+    action: visualizar
+  - key: arrecadacao:default:relatorio:exportar
+    name: Exportar verbas
+    description: Exporta dados de verbas/relatórios para análise externa.
+    resource: relatorio
+    action: exportar

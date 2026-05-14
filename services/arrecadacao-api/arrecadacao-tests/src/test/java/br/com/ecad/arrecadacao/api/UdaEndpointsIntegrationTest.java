@@ -2,8 +2,6 @@ package br.com.ecad.arrecadacao.api;
 
 import br.com.ecad.arrecadacao.config.TestSecurityConfig;
 import br.com.ecad.arrecadacao.config.VerbaServiceTestConfig;
-import br.com.ecad.arrecadacao.domain.entities.UdaValor;
-import br.com.ecad.arrecadacao.infra.persistence.JpaUdaValorRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
@@ -13,13 +11,11 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.math.BigDecimal;
-import java.time.LocalDate;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -29,7 +25,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest(
         classes = br.com.ecad.arrecadacao.api.ArrecadacaoApplication.class,
         webEnvironment = SpringBootTest.WebEnvironment.MOCK,
-        properties = "spring.autoconfigure.exclude=org.springframework.boot.autoconfigure.security.oauth2.resource.servlet.OAuth2ResourceServerAutoConfiguration")
+        properties = "spring.autoconfigure.exclude=org.springframework.boot.autoconfigure.security.oauth2.resource.servlet.OAuth2ResourceServerAutoConfiguration,org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration,org.springframework.boot.autoconfigure.data.redis.RedisRepositoriesAutoConfiguration")
 @ActiveProfiles("test")
 @Import({TestSecurityConfig.class, VerbaServiceTestConfig.class})
 @AutoConfigureMockMvc
@@ -39,7 +35,7 @@ class UdaEndpointsIntegrationTest {
 
     @Autowired MockMvc mockMvc;
     @Autowired ObjectMapper objectMapper;
-    @Autowired JpaUdaValorRepository udaValorRepository;
+    @Autowired JdbcTemplate jdbcTemplate;
 
     @MockBean
     private RabbitTemplate rabbitTemplate;
@@ -88,23 +84,16 @@ class UdaEndpointsIntegrationTest {
 
     @Test
     @WithMockUser
-    void deveListarHistoricoUdaComSeed() throws Exception {
-        mockMvc.perform(get("/api/v1/uda/historico"))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$").isArray())
-            .andExpect(jsonPath("$[0].valor").exists())
-            .andExpect(jsonPath("$[0].dataVigencia").exists());
+    void deveRetornar422QuandoNaoHaUdaVigente() throws Exception {
+        // Remove o seed vigente (V7 insere 2026-01-01) dentro da transacao do teste;
+        // o rollback restaura o seed apos o teste. Sem nenhum UdaValor com
+        // dataVigencia <= hoje, GET /api/v1/uda/vigente deve disparar
+        // UdaVigenteNaoEncontradaException -> 422.
+        jdbcTemplate.update("DELETE FROM arrecadacao.uda_valor WHERE data_vigencia <= CURRENT_DATE");
+
+        mockMvc.perform(get("/api/v1/uda/vigente"))
+            .andExpect(status().isUnprocessableEntity())
+            .andExpect(jsonPath("$.title").value("UDA Value Not Found"));
     }
 
-    @Test
-    @WithMockUser
-    void deveListarHistoricoUdaComNovoRegistro() throws Exception {
-        // Arrange — adicionar mais uma UDA antes de listar
-        var nova = UdaValor.criar(new BigDecimal("120.00"), LocalDate.of(2026, 10, 1), "analista");
-        udaValorRepository.save(nova);
-
-        mockMvc.perform(get("/api/v1/uda/historico"))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$").isArray());
-    }
 }

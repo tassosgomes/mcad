@@ -6,6 +6,8 @@ Node.js proxy BFF for the MCAD frontend.
 
 - `GET /health/live`
 - `GET /health/ready`
+- `GET /api/me` -> consulta `AUTHZ_BASE_URL/v1/me/authorization-context` repassando o Bearer e retorna `{ subjectId, name, email }`
+- `GET /api/me/permissions` -> mesma origem, retorna `{ subjectId, permissions, version }` e propaga `X-Authz-Version`
 - `/api/cadastro/v1/*` -> `CADASTRO_API_BASE_URL`
 - `/api/identificacao/v1/*` -> `IDENTIFICACAO_API_BASE_URL`
 - `/api/arrecadacao/v1/*` -> `ARRECADACAO_API_BASE_URL`
@@ -40,4 +42,7 @@ DISTRIBUICAO_API_BASE_URL=http://localhost:5004/api/v1
 AUDITORIA_API_BASE_URL=https://api-audit.tasso.dev.br/api/v1
 AUTHZ_UPSTREAM_BASE_URL=https://mcad-authz.tasso.dev.br/v1
 AI_ORCHESTRATOR_BASE_URL=http://localhost:5300/v1
+AUTHZ_BASE_URL=http://localhost:8085
+AUTHZ_TIMEOUT_MS=3000
+ME_CACHE_TTL_SECONDS=60
 ```

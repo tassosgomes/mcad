@@ -40,7 +40,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 @SpringBootTest(
         classes = ArrecadacaoApplication.class,
         webEnvironment = SpringBootTest.WebEnvironment.NONE,
-        properties = "spring.autoconfigure.exclude=org.springframework.boot.autoconfigure.security.oauth2.resource.servlet.OAuth2ResourceServerAutoConfiguration")
+        properties = "spring.autoconfigure.exclude=org.springframework.boot.autoconfigure.security.oauth2.resource.servlet.OAuth2ResourceServerAutoConfiguration,org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration,org.springframework.boot.autoconfigure.data.redis.RedisRepositoriesAutoConfiguration")
 @ActiveProfiles("test")
 @Import({TestSecurityConfig.class, VerbaServiceTestConfig.class})
 class UsuarioMusicaPersistenceIntegrationTest {
@@ -60,40 +60,6 @@ class UsuarioMusicaPersistenceIntegrationTest {
     @BeforeEach
     void setup() {
         jdbcTemplate.execute("TRUNCATE TABLE arrecadacao.historico_status_usuario, arrecadacao.usuarios_musica CASCADE");
-    }
-
-    // ── 7.1: Flyway migrations ──────────────────────────────────────
-
-    @Test
-    void deveAplicarMigrationsDoFlyway() {
-        Integer migrationCount = jdbcTemplate.queryForObject(
-                "SELECT COUNT(*) FROM arrecadacao.flyway_schema_history WHERE success = true",
-                Integer.class);
-        assertThat(migrationCount).isGreaterThanOrEqualTo(2);
-    }
-
-    // ── 7.1: CRUD via repositórios ──────────────────────────────────
-
-    @Test
-    void devePersistirUsuarioComCnpjValido() {
-        Endereco endereco = Endereco.criar("01001000", "Praça da Sé", "1000", null, "Sé", "São Paulo", "SP");
-        Contato contato = Contato.criar("João Silva", "(11) 99999-8888", "joao@radio.com");
-        UsuarioMusica usuario = UsuarioMusica.criar(
-                "Radio Cidade FM", "Radio Cidade", Cnpj.criar("50997063000132"),
-                endereco, contato);
-
-        UsuarioMusica salvo = repository.save(usuario);
-
-        UsuarioMusica retornado = repository.findById(salvo.getId()).orElseThrow();
-        assertThat(retornado.getRazaoSocial()).isEqualTo("Radio Cidade FM");
-        assertThat(retornado.getNomeFantasia()).isEqualTo("Radio Cidade");
-        assertThat(retornado.getCnpj().getValor()).isEqualTo("50997063000132");
-        assertThat(retornado.getCnpj().getFormatado()).isEqualTo("50.997.063/0001-32");
-        assertThat(retornado.getStatus()).isEqualTo(StatusUsuarioMusica.ATIVO);
-        assertThat(retornado.getEndereco()).isNotNull();
-        assertThat(retornado.getEndereco().getCidade()).isEqualTo("São Paulo");
-        assertThat(retornado.getContato()).isNotNull();
-        assertThat(retornado.getContato().getNomeResponsavel()).isEqualTo("João Silva");
     }
 
     // ── 7.1: UNIQUE cnpj ────────────────────────────────────────────

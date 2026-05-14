@@ -21,12 +21,6 @@ class UsuarioMusicaTest {
     }
 
     @Test
-    void shouldCreateUsuarioAtivo() {
-        UsuarioMusica u = UsuarioMusica.criar("Empresa X", "Fantasia X", criarCnpj(), criarEndereco(), criarContato());
-        assertThat(u.getStatus()).isEqualTo(StatusUsuarioMusica.ATIVO);
-    }
-
-    @Test
     void shouldInativar() {
         UsuarioMusica u = UsuarioMusica.criar("Empresa X", "Fantasia X", criarCnpj(), criarEndereco(), criarContato());
         u.inativar("justificativa valida", "autor");

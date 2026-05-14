@@ -16,9 +16,9 @@ import br.com.ecad.arrecadacao.application.queries.BuscarUsuarioMusicaPorIdQuery
 import br.com.ecad.arrecadacao.application.queries.ListarHistoricoStatusQuery;
 import br.com.ecad.arrecadacao.application.queries.ListarUsuariosMusicaQuery;
 import br.com.ecad.arrecadacao.domain.enums.StatusUsuarioMusica;
+import br.org.ecad.authz.sdk.annotation.RequiresPermission;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -52,6 +52,7 @@ public class UsuarioMusicaController {
     }
 
     @GetMapping
+    @RequiresPermission("arrecadacao:default:cliente:listar")
     public ResponseEntity<PageResponse<UsuarioMusicaResponse>> listar(
             @RequestParam(name = "page", defaultValue = "0") int page,
             @RequestParam(name = "size", defaultValue = "20") int size,
@@ -67,6 +68,7 @@ public class UsuarioMusicaController {
     }
 
     @GetMapping("/{id}")
+    @RequiresPermission("arrecadacao:default:cliente:visualizar")
     public ResponseEntity<UsuarioMusicaResponse> buscarPorId(@PathVariable("id") UUID id) {
         log.info("Buscando usuário de música {}", id);
         var query = new BuscarUsuarioMusicaPorIdQuery(id);
@@ -74,6 +76,7 @@ public class UsuarioMusicaController {
     }
 
     @GetMapping("/{id}/historico-status")
+    @RequiresPermission("arrecadacao:default:cliente:visualizar")
     public ResponseEntity<List<HistoricoStatusResponse>> listarHistorico(@PathVariable("id") UUID id) {
         log.info("Buscando histórico do usuário {}", id);
         var query = new ListarHistoricoStatusQuery(id);
@@ -81,7 +84,7 @@ public class UsuarioMusicaController {
     }
 
     @PostMapping
-    @PreAuthorize("hasRole('analista-arrecadacao')")
+    @RequiresPermission("arrecadacao:default:cliente:criar")
     public ResponseEntity<UsuarioMusicaResponse> criar(@Valid @RequestBody CriarUsuarioMusicaRequest request) {
         log.info("Criando usuário de música {}", request.razaoSocial());
         String autor = extrairAutorDoJwt();
@@ -93,7 +96,7 @@ public class UsuarioMusicaController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('analista-arrecadacao')")
+    @RequiresPermission("arrecadacao:default:cliente:editar")
     public ResponseEntity<UsuarioMusicaResponse> atualizar(
             @PathVariable("id") UUID id, @Valid @RequestBody AtualizarUsuarioMusicaRequest request) {
         log.info("Atualizando usuário de música {}", id);
@@ -106,7 +109,7 @@ public class UsuarioMusicaController {
     }
 
     @PostMapping("/{id}/inativar")
-    @PreAuthorize("hasRole('analista-arrecadacao')")
+    @RequiresPermission("arrecadacao:default:cliente:editar")
     public ResponseEntity<UsuarioMusicaResponse> inativar(
             @PathVariable("id") UUID id, @Valid @RequestBody AlterarStatusRequest request) {
         log.info("Inativando usuário de música {}", id);
@@ -117,7 +120,7 @@ public class UsuarioMusicaController {
     }
 
     @PostMapping("/{id}/ativar")
-    @PreAuthorize("hasRole('analista-arrecadacao')")
+    @RequiresPermission("arrecadacao:default:cliente:editar")
     public ResponseEntity<UsuarioMusicaResponse> ativar(
             @PathVariable("id") UUID id, @Valid @RequestBody AlterarStatusRequest request) {
         log.info("Ativando usuário de música {}", id);

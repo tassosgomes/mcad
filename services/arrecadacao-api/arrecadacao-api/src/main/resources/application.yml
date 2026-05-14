@@ -34,6 +34,11 @@ spring:
       resourceserver:
         jwt:
           issuer-uri: ${OIDC_AUTHORITY:http://localhost:8080/realms/mcad}
+  data:
+    redis:
+      host: ${AUTHZ_REDIS_HOST:localhost}
+      port: ${AUTHZ_REDIS_PORT:6379}
+      timeout: ${AUTHZ_REDIS_TIMEOUT:50ms}
 
 management:
   endpoints:
@@ -60,6 +65,24 @@ app:
     exchange: ${DISTRIBUICAO_EVENTS_EXCHANGE:distribuicao.events}
     queue: ${DISTRIBUICAO_EVENTS_QUEUE:arrecadacao.distribuicao.processos}
     routing-key: ${DISTRIBUICAO_EVENTS_ROUTING_KEY:distribuicao.processo.*}
+
+ecad:
+  authz:
+    enabled: ${AUTHZ_ENABLED:false}
+    base-url: ${AUTHZ_BASE_URL:http://localhost:8085}
+    decision-timeout-ms: ${AUTHZ_DECISION_TIMEOUT_MS:500}
+    cache:
+      local-ttl-seconds: ${AUTHZ_CACHE_LOCAL_TTL_SECONDS:60}
+      remote-ttl-seconds: ${AUTHZ_CACHE_REMOTE_TTL_SECONDS:300}
+    catalog:
+      registration-required: ${AUTHZ_CATALOG_REGISTRATION_REQUIRED:true}
+      service-name: ${AUTHZ_SERVICE_NAME:arrecadacao}
+      file: classpath:permissions.yaml
+      service-token: ${AUTHZ_SERVICE_TOKEN:}
+    idp:
+      subject-claim: ${AUTHZ_SUBJECT_CLAIM:sub}
+      session-id-claim: ${AUTHZ_SESSION_ID_CLAIM:sid}
+      association-id-claim: ${AUTHZ_ASSOCIATION_ID_CLAIM:association_id}
 
 audit:
   enabled: ${AUDIT_ENABLED:true}

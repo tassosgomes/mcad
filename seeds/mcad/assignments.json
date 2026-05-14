@@ -1,0 +1,28 @@
+[
+  {
+    "email": "consultor.dev@mcad.local",
+    "name": "Consultor Dev",
+    "subjectHint": "consultor.dev",
+    "roleKeys": [
+      "cadastro.default.consultor",
+      "identificacao.default.consultor",
+      "arrecadacao.default.consultor"
+    ]
+  },
+  {
+    "email": "analista.dev@mcad.local",
+    "name": "Analista Dev",
+    "subjectHint": "analista.dev",
+    "roleKeys": [
+      "cadastro.default.analista",
+      "identificacao.default.analista",
+      "arrecadacao.default.analista"
+    ]
+  },
+  {
+    "email": "sem-papel.dev@mcad.local",
+    "name": "Sem Papel Dev",
+    "subjectHint": "sem-papel.dev",
+    "roleKeys": []
+  }
+]

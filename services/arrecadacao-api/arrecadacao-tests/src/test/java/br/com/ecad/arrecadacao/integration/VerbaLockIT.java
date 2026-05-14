@@ -57,7 +57,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 @SpringBootTest(
         classes = ArrecadacaoApplication.class,
         webEnvironment = SpringBootTest.WebEnvironment.NONE,
-        properties = "spring.autoconfigure.exclude=org.springframework.boot.autoconfigure.security.oauth2.resource.servlet.OAuth2ResourceServerAutoConfiguration")
+        properties = "spring.autoconfigure.exclude=org.springframework.boot.autoconfigure.security.oauth2.resource.servlet.OAuth2ResourceServerAutoConfiguration,org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration,org.springframework.boot.autoconfigure.data.redis.RedisRepositoriesAutoConfiguration")
 @ActiveProfiles("test")
 @Import(TestSecurityConfig.class)
 @SuppressWarnings("null")

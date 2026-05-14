@@ -12,8 +12,10 @@
     <PackageReference Include="AwesomeAssertions" Version="9.0.0" />
     <PackageReference Include="coverlet.collector" Version="6.0.4" />
     <PackageReference Include="FluentAssertions" Version="8.9.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="8.0.16" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="9.0.4" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
+    <PackageReference Include="Moq" Version="4.20.72" />
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.0.4" />
     <PackageReference Include="Testcontainers.PostgreSql" Version="4.11.0" />
     <PackageReference Include="xunit" Version="2.9.3" />
@@ -25,8 +27,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\1-Services\Identificacao.API\Identificacao.API.csproj" />
     <ProjectReference Include="..\..\3-Domain\Identificacao.Domain\Identificacao.Domain.csproj" />
     <ProjectReference Include="..\..\4-Infra\Identificacao.Infra\Identificacao.Infra.csproj" />
+    <ProjectReference Include="..\..\..\..\libs\dotnet\Ecad.Authz.Sdk\Ecad.Authz.Sdk.csproj" />
   </ItemGroup>
 
 </Project>

@@ -1,6 +1,7 @@
 package br.com.ecad.arrecadacao.domain.entities;
 
 import br.com.ecad.arrecadacao.domain.enums.StatusPagamento;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
@@ -168,6 +169,26 @@ class PagamentoTest {
 
         // Act & Assert
         assertThatThrownBy(() -> pagamento.estornar(JUSTIFICATIVA_VALIDA, "   "))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Autor must not be blank");
+    }
+
+    @Test
+    @Disabled("Production code lacks explicit null guard on licencaId in Pagamento.registrar() — "
+            + "the factory only validates quantidadeUdas/valorUdaVigente and assigns licencaId directly. "
+            + "A null licencaId only fails later at JPA persist (nullable=false). "
+            + "Decision needed: add Objects.requireNonNull(licencaId, ...) at the factory or accept lazy failure.")
+    void registrar_NullLicencaId_DeveLancar() {
+        // Intentionally left disabled — see @Disabled message above.
+    }
+
+    @Test
+    void estornar_NullAutor_DeveLancar() {
+        // Arrange
+        Pagamento pagamento = Pagamento.registrar(LICENCA_ID, QUANTIDADE_UDAS, VALOR_UDA);
+
+        // Act & Assert — autor null deve cair na mesma guarda do autor blank
+        assertThatThrownBy(() -> pagamento.estornar(JUSTIFICATIVA_VALIDA, null))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("Autor must not be blank");
     }

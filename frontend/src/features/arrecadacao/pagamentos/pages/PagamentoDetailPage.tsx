@@ -5,7 +5,7 @@ import { PageHeader } from '@components/ui/page-header';
 import { Button } from '@components/ui/button';
 import { Loading } from '@components/ui/loading';
 import { ErrorState } from '@components/ui/error-state';
-import { useAuth } from '../../../../shared/auth/useAuth';
+import { usePermissions } from '@shared/authz';
 import { usePagamento } from '../hooks/usePagamento';
 import { StatusBadgePagamento } from '../components/StatusBadgePagamento';
 import { EstornarPagamentoModal } from '../components/EstornarPagamentoModal';
@@ -26,7 +26,7 @@ function formatDateTime(dateStr: string): string {
 export function PagamentoDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { hasRole } = useAuth();
+  const { can } = usePermissions();
   const [showModal, setShowModal] = useState(false);
   const { data: pagamento, isLoading, error, refetch } = usePagamento(id!);
 
@@ -133,7 +133,7 @@ export function PagamentoDetailPage() {
       )}
 
       {/* Ação Estornar */}
-      {pagamento.status === 'CONFIRMADO' && hasRole('analista-arrecadacao') && (
+      {pagamento.status === 'CONFIRMADO' && can('arrecadacao:default:pagamento:estornar') && (
         <div className={styles.acoesCard}>
           <h2 className={styles.sectionTitle}>Ações</h2>
           <Button

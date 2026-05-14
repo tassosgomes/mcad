@@ -17,6 +17,7 @@ import io.cloudevents.core.provider.EventFormatProvider;
 import io.cloudevents.jackson.JsonFormat;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.amqp.core.Message;
 import org.springframework.amqp.core.MessageProperties;
@@ -61,7 +62,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @SpringBootTest(
         classes = ArrecadacaoApplication.class,
         webEnvironment = SpringBootTest.WebEnvironment.NONE,
-        properties = "spring.autoconfigure.exclude=org.springframework.boot.autoconfigure.security.oauth2.resource.servlet.OAuth2ResourceServerAutoConfiguration")
+        properties = "spring.autoconfigure.exclude=org.springframework.boot.autoconfigure.security.oauth2.resource.servlet.OAuth2ResourceServerAutoConfiguration,org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration,org.springframework.boot.autoconfigure.data.redis.RedisRepositoriesAutoConfiguration")
 @ActiveProfiles("test")
 @Import({TestSecurityConfig.class, VerbaServiceTestConfig.class})
 @Transactional
@@ -215,6 +216,67 @@ class DistribuicaoProcessoEventListenerIT {
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────────
+
+    /**
+     * Garante idempotencia do listener para redelivery do mesmo CloudEvent (mesmo id).
+     *
+     * <p>Idempotencia e garantida no agregado {@link Verba#marcarEmDistribuicao()}:
+     * chamar quando ja esta EM_DISTRIBUICAO e no-op silencioso (sem excecao,
+     * sem alteracao de estado, sem novo dominio event escrito no outbox).</p>
+     *
+     * <p>O listener nao publica eventos para o outbox neste fluxo — ele apenas
+     * atualiza o agregado. Validamos que:
+     * <ul>
+     *   <li>Nenhuma excecao e lancada na segunda chamada.</li>
+     *   <li>O status permanece EM_DISTRIBUICAO (transicao unica).</li>
+     *   <li>O timestamp {@code atualizadoEm} nao muda na segunda chamada
+     *       (confirma no-op real, sem write desnecessario).</li>
+     * </ul>
+     * </p>
+     */
+    @Test
+    void deveSerIdempotenteEntreReentregasDoMesmoEvento() {
+        // Arrange — verba ABERTA com valor
+        Verba verba = Verba.abrir(rubricaId, PERIODO);
+        verba.recalcular(new BigDecimal("1000.00"), 5);
+        verbaRepository.save(verba);
+        entityManager.flush();
+        entityManager.clear();
+
+        // Constroi UMA mensagem (mesmo CloudEvent id) — simula redelivery exato
+        Message message = buildCloudEventMessage("distribuicao.processo.iniciado", rubricaSigla, PERIODO);
+
+        // Act 1 — primeira entrega
+        listener.onMessage(message);
+        entityManager.flush();
+        entityManager.clear();
+
+        var apos1 = verbaRepository.findByRubricaIdAndPeriodo(rubricaId, PERIODO);
+        assertThat(apos1).isPresent();
+        assertThat(apos1.get().getStatus())
+                .as("Status deve ser EM_DISTRIBUICAO apos primeira entrega")
+                .isEqualTo(StatusVerba.EM_DISTRIBUICAO);
+        var atualizadoEmApos1 = apos1.get().getAtualizadoEm();
+
+        // Act 2 — redelivery exato (mesma instancia Message, mesmo CloudEvent id)
+        listener.onMessage(message); // nao deve lancar
+        entityManager.flush();
+        entityManager.clear();
+
+        // Assert — status mantido, sem duplicacao de transicao
+        var apos2 = verbaRepository.findByRubricaIdAndPeriodo(rubricaId, PERIODO);
+        assertThat(apos2).isPresent();
+        assertThat(apos2.get().getStatus())
+                .as("Status deve continuar EM_DISTRIBUICAO apos redelivery (no-op idempotente)")
+                .isEqualTo(StatusVerba.EM_DISTRIBUICAO);
+
+        // O agregado e idempotente: marcarEmDistribuicao retorna sem mexer em atualizadoEm
+        // quando ja esta EM_DISTRIBUICAO. Logo o timestamp deve permanecer igual ao da
+        // primeira transicao — confirmando que nao houve write extra.
+        assertThat(apos2.get().getAtualizadoEm())
+                .as("atualizadoEm nao deve mudar na redelivery — comprova no-op real")
+                .isEqualTo(atualizadoEmApos1);
+    }
 
     private Message buildCloudEventMessage(String type, String rubricaSigla, String periodo) {
         try {

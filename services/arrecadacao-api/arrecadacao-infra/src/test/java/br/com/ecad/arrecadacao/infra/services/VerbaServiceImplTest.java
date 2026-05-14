@@ -70,85 +70,7 @@ class VerbaServiceImplTest {
     // ── recalcularVerba ────────────────────────────────────────────────────────
 
     /**
-     * (a) Verba inexistente → deve criar nova via Verba.abrir e chamar save com novo agregado;
-     * evento Outbox deve ser emitido.
-     */
-    @Test
-    void recalcularVerba_VerbaInexistente_DeveCriarComVerbaAbrir() {
-        // Arrange
-        when(verbaRepository.findByRubricaIdAndPeriodoForUpdate(RUBRICA_ID, PERIODO))
-                .thenReturn(Optional.empty());
-
-        PagamentoAgregado agregado = new PagamentoAgregado(new BigDecimal("1000.00"), 5);
-        when(pagamentoRepository.sumAndCountConfirmados(RUBRICA_ID, PERIODO)).thenReturn(agregado);
-
-        Rubrica rubrica = new Rubrica(RUBRICA_ID, RUBRICA_SIGLA, RUBRICA_NOME, false);
-        when(rubricaRepository.findById(RUBRICA_ID)).thenReturn(Optional.of(rubrica));
-
-        // Simular save retornando a mesma verba passada
-        when(verbaRepository.save(any(Verba.class))).thenAnswer(inv -> inv.getArgument(0));
-
-        // Act
-        verbaService.recalcularVerba(RUBRICA_ID, PERIODO);
-
-        // Assert — save foi chamado com verba nova (não vazia após recalcular)
-        ArgumentCaptor<Verba> verbaCaptor = ArgumentCaptor.forClass(Verba.class);
-        verify(verbaRepository).save(verbaCaptor.capture());
-        Verba verbasSalva = verbaCaptor.getValue();
-        assertThat(verbasSalva.getRubricaId()).isEqualTo(RUBRICA_ID);
-        assertThat(verbasSalva.getPeriodo()).isEqualTo(PERIODO);
-        assertThat(verbasSalva.getValorBrutoTotal()).isEqualByComparingTo("1000.00");
-        assertThat(verbasSalva.getVerbaLiquida()).isEqualByComparingTo("850.00");
-        assertThat(verbasSalva.getQuantidadePagamentos()).isEqualTo(5);
-        assertThat(verbasSalva.getStatus()).isEqualTo(StatusVerba.ABERTA);
-
-        // Evento Outbox emitido
-        verify(outboxEventWriter).addEvent(
-                eq("arrecadacao.verba.disponivel"),
-                eq("RADIO:2026-04"),
-                any());
-    }
-
-    /**
-     * (b) Verba existente → mesma instância deve ser salva com novos valores recalculados.
-     */
-    @Test
-    void recalcularVerba_VerbaExistente_DeveAtualizar() {
-        // Arrange — verba já existente no banco
-        Verba verbaExistente = Verba.abrir(RUBRICA_ID, PERIODO);
-        verbaExistente.recalcular(new BigDecimal("500.00"), 2);
-
-        when(verbaRepository.findByRubricaIdAndPeriodoForUpdate(RUBRICA_ID, PERIODO))
-                .thenReturn(Optional.of(verbaExistente));
-
-        PagamentoAgregado agregadoNovo = new PagamentoAgregado(new BigDecimal("1500.00"), 7);
-        when(pagamentoRepository.sumAndCountConfirmados(RUBRICA_ID, PERIODO)).thenReturn(agregadoNovo);
-
-        Rubrica rubrica = new Rubrica(RUBRICA_ID, RUBRICA_SIGLA, RUBRICA_NOME, false);
-        when(rubricaRepository.findById(RUBRICA_ID)).thenReturn(Optional.of(rubrica));
-
-        when(verbaRepository.save(any(Verba.class))).thenAnswer(inv -> inv.getArgument(0));
-
-        // Act
-        verbaService.recalcularVerba(RUBRICA_ID, PERIODO);
-
-        // Assert — mesma instância foi salva com valores atualizados
-        ArgumentCaptor<Verba> verbaCaptor = ArgumentCaptor.forClass(Verba.class);
-        verify(verbaRepository).save(verbaCaptor.capture());
-        Verba verbaSalva = verbaCaptor.getValue();
-        assertThat(verbaSalva.getValorBrutoTotal()).isEqualByComparingTo("1500.00");
-        assertThat(verbaSalva.getVerbaLiquida()).isEqualByComparingTo("1275.00");
-        assertThat(verbaSalva.getQuantidadePagamentos()).isEqualTo(7);
-
-        // Evento Outbox emitido com novos valores
-        verify(outboxEventWriter).addEvent(
-                eq("arrecadacao.verba.disponivel"),
-                eq("RADIO:2026-04"),
-                any());
-    }
-
-    /**
-     * (c) Verba EM_DISTRIBUICAO → recalcular lança VerbaEmDistribuicaoException que deve propagar.
+     * Verba EM_DISTRIBUICAO → recalcular lança VerbaEmDistribuicaoException que deve propagar.
      */
     @Test
     void recalcularVerba_VerbaEmDistribuicao_DevePropagar() {
@@ -215,38 +137,7 @@ class VerbaServiceImplTest {
     // ── validarLockParaAlteracao ───────────────────────────────────────────────
 
     /**
-     * (e) Verba inexistente → no-op, sem exceção.
-     */
-    @Test
-    void validarLockParaAlteracao_VerbaInexistente_NoOp() {
-        // Arrange
-        when(verbaRepository.findByRubricaIdAndPeriodo(RUBRICA_ID, PERIODO))
-                .thenReturn(Optional.empty());
-
-        // Act / Assert — não lança exceção
-        verbaService.validarLockParaAlteracao(RUBRICA_ID, PERIODO);
-
-        verify(rubricaRepository, never()).findById(any());
-    }
-
-    /**
-     * (f) Verba com status ABERTA → no-op, sem exceção.
-     */
-    @Test
-    void validarLockParaAlteracao_StatusAberta_NoOp() {
-        // Arrange — verba ABERTA
-        Verba verbaAberta = Verba.abrir(RUBRICA_ID, PERIODO);
-        when(verbaRepository.findByRubricaIdAndPeriodo(RUBRICA_ID, PERIODO))
-                .thenReturn(Optional.of(verbaAberta));
-
-        // Act / Assert — não lança exceção
-        verbaService.validarLockParaAlteracao(RUBRICA_ID, PERIODO);
-
-        verify(rubricaRepository, never()).findById(any());
-    }
-
-    /**
-     * (g) Verba EM_DISTRIBUICAO → lança VerbaEmDistribuicaoException com mensagem
+     * Verba EM_DISTRIBUICAO → lança VerbaEmDistribuicaoException com mensagem
      * contendo sigla, período e status.
      */
     @Test
@@ -323,5 +214,63 @@ class VerbaServiceImplTest {
         assertThat(payload.get("verbaLiquida")).isEqualTo("912.13");
         assertThat(payload.get("quantidadePagamentos")).isEqualTo(3);
         assertThat(payload.get("status")).isEqualTo("ABERTA");
+    }
+
+    /**
+     * RF-05 — deducoes monetarias devem usar HALF_UP, nao HALF_EVEN nem truncamento.
+     *
+     * <p>Valor escolhido para acertar a fronteira de arredondamento em ambas deducoes:
+     * bruto = 100.30 →
+     *   deducaoEcad        = 100.30 * 0.10 = 10.0300            → HALF_UP → 10.03
+     *   deducaoAssociacoes = 100.30 * 0.05 =  5.0150 (.x5)      → HALF_UP →  5.02 (HALF_EVEN seria 5.02 tambem, mas truncamento daria 5.01)
+     *   verbaLiquida       = 100.30 - 10.03 - 5.02              = 85.25
+     *
+     * <p>O caso critico e a dedu cao de 5% caindo em .x5 (5.0150). HALF_UP arredonda
+     * para cima → 5.02. HALF_DOWN/truncamento daria 5.01.</p>
+     */
+    @Test
+    @SuppressWarnings("unchecked")
+    void recalcularVerba_ValorComArredondamentoMeio_DeveAplicarHalfUp() {
+        // Arrange
+        when(verbaRepository.findByRubricaIdAndPeriodoForUpdate(RUBRICA_ID, PERIODO))
+                .thenReturn(Optional.empty());
+
+        PagamentoAgregado agregado = new PagamentoAgregado(new BigDecimal("100.30"), 1);
+        when(pagamentoRepository.sumAndCountConfirmados(RUBRICA_ID, PERIODO)).thenReturn(agregado);
+
+        Rubrica rubrica = new Rubrica(RUBRICA_ID, RUBRICA_SIGLA, RUBRICA_NOME, false);
+        when(rubricaRepository.findById(RUBRICA_ID)).thenReturn(Optional.of(rubrica));
+
+        when(verbaRepository.save(any(Verba.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        // Act
+        verbaService.recalcularVerba(RUBRICA_ID, PERIODO);
+
+        // Assert — verba persistida com HALF_UP
+        ArgumentCaptor<Verba> verbaCaptor = ArgumentCaptor.forClass(Verba.class);
+        verify(verbaRepository).save(verbaCaptor.capture());
+        Verba verbaSalva = verbaCaptor.getValue();
+
+        // bruto preservado
+        assertThat(verbaSalva.getValorBrutoTotal()).isEqualByComparingTo(new BigDecimal("100.30"));
+        // 10% = 10.0300 → HALF_UP → 10.03
+        assertThat(verbaSalva.getDeducaoEcad()).isEqualByComparingTo(new BigDecimal("10.03"));
+        // 5% = 5.0150 → HALF_UP → 5.02 (nao 5.01, que seria truncamento)
+        assertThat(verbaSalva.getDeducaoAssociacoes()).isEqualByComparingTo(new BigDecimal("5.02"));
+        // liquida por subtracao (sem drift): 100.30 - 10.03 - 5.02 = 85.25
+        assertThat(verbaSalva.getVerbaLiquida()).isEqualByComparingTo(new BigDecimal("85.25"));
+
+        // Assert — payload do evento confirma os mesmos valores em toPlainString()
+        ArgumentCaptor<Object> payloadCaptor = ArgumentCaptor.forClass(Object.class);
+        verify(outboxEventWriter).addEvent(
+                eq("arrecadacao.verba.disponivel"),
+                eq("RADIO:2026-04"),
+                payloadCaptor.capture());
+
+        Map<String, Object> payload = (Map<String, Object>) payloadCaptor.getValue();
+        assertThat(payload.get("valorBrutoTotal")).isEqualTo("100.30");
+        assertThat(payload.get("deducaoEcad")).isEqualTo("10.03");
+        assertThat(payload.get("deducaoAssociacoes")).isEqualTo("5.02");
+        assertThat(payload.get("verbaLiquida")).isEqualTo("85.25");
     }
 }

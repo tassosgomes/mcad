@@ -173,4 +173,28 @@ class EstornarPagamentoCommandHandlerTest {
         inOrder.verify(verbaService).validarLockParaAlteracao(any(), any());
         inOrder.verify(pagamentoRepository).save(any());
     }
+
+    /**
+     * Invariante de seguranca: o lock contra distribuicoes concorrentes deve ser
+     * validado ANTES de qualquer recalculo. Caso contrario, poderia haver janela
+     * onde recalculamos uma verba ja em distribuicao.
+     */
+    @Test
+    void handle_DeveChamarValidarLockAntesDeRecalcularComInOrder() {
+        // Arrange
+        Pagamento pagamento = criarPagamentoComLicencaMock();
+        when(pagamentoRepository.findById(PAGAMENTO_ID)).thenReturn(Optional.of(pagamento));
+        when(pagamentoRepository.save(any(Pagamento.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        EstornarPagamentoCommand cmd = new EstornarPagamentoCommand(PAGAMENTO_ID, JUSTIFICATIVA, AUTOR);
+
+        // Act
+        handler.handle(cmd);
+
+        // Assert — InOrder sobre o mesmo mock (verbaService): validarLock precede recalcular
+        InOrder inOrder = inOrder(verbaService);
+        inOrder.verify(verbaService).validarLockParaAlteracao(eq(RUBRICA_ID), anyString());
+        inOrder.verify(verbaService).recalcularVerba(eq(RUBRICA_ID), anyString());
+        inOrder.verifyNoMoreInteractions();
+    }
 }

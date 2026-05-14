@@ -4,7 +4,7 @@ import { Button } from '@components/ui/button';
 import { ErrorState } from '@components/ui/error-state';
 import { PageHeader } from '@components/ui/page-header';
 import { useToast } from '@components/ui/toast';
-import { useAuth } from '@shared/auth';
+import { usePermissions } from '@shared/authz';
 import { UsuarioMusicaForm } from '../components/UsuarioMusicaForm';
 import { useCreateUsuarioMusica } from '../hooks/useCreateUsuarioMusica';
 import type { CriarUsuarioMusicaRequest } from '../types/usuario-musica';
@@ -12,11 +12,11 @@ import styles from './UsuarioMusicaFormPage.module.css';
 
 export function UsuarioMusicaCreatePage() {
   const navigate = useNavigate();
-  const { hasRole } = useAuth();
+  const { can } = usePermissions();
   const { showToast } = useToast();
   const createMutation = useCreateUsuarioMusica();
 
-  if (!hasRole('analista-arrecadacao')) {
+  if (!can('arrecadacao:default:cliente:criar')) {
     return <ErrorState message="Seu perfil permite consulta, mas não cadastro de usuários de música." />;
   }
 

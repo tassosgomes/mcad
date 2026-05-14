@@ -3,6 +3,76 @@ import { type AddressInfo } from 'node:net';
 import { createServer, type IncomingHttpHeaders } from 'node:http';
 import { test } from 'node:test';
 import { buildServer } from './server.js';
+import type { BffConfig } from './config.js';
+import { createMeCache } from './meCache.js';
+
+function buildFakeJwt(claims: Record<string, unknown>): string {
+  const header = Buffer.from(JSON.stringify({ alg: 'none', typ: 'JWT' })).toString('base64url');
+  const payload = Buffer.from(JSON.stringify(claims)).toString('base64url');
+  return `${header}.${payload}.`;
+}
+
+const ME_BASE_CONFIG: BffConfig = {
+  host: '127.0.0.1',
+  port: 0,
+  requestBodyLimitBytes: 1024,
+  corsAllowedOrigins: ['https://mcad.tasso.dev.br'],
+  enableLegacyCadastroRoute: false,
+  authzBaseUrl: 'http://localhost:8085',
+  authzTimeoutMs: 3000,
+  meCacheTtlSeconds: 60,
+  upstreams: [],
+};
+
+function buildFakeFetch(handler: (url: string, init: { headers?: Record<string, string> }) => {
+  status: number;
+  body: unknown;
+  headers?: Record<string, string>;
+}) {
+  let callCount = 0;
+  const fetchImpl = (async (input: string, init?: { headers?: Record<string, string> }) => {
+    callCount += 1;
+    const result = handler(input, init ?? {});
+    return {
+      status: result.status,
+      headers: {
+        get(name: string): string | null {
+          const headers = result.headers ?? {};
+          const found = Object.keys(headers).find((k) => k.toLowerCase() === name.toLowerCase());
+          return found ? headers[found] : null;
+        },
+      },
+      async json() {
+        return result.body;
+      },
+    };
+  }) as unknown as typeof globalThis.fetch;
+
+  return {
+    fetchImpl,
+    getCallCount: () => callCount,
+  };
+}
+
+const SAMPLE_AUTHZ_PAYLOAD = {
+  user: {
+    id: 'usr-123',
+    subject: 'cyberark|abc123',
+    email: 'maria@ecad.org.br',
+    name: 'Maria Silva',
+    userType: 'ECAD_INTERNAL',
+    department: 'distribuicao',
+    businessArea: 'cadastro',
+    adminArea: null,
+  },
+  roles: ['distribuicao.cadastro.operador'],
+  permissions: ['distribuicao:cadastro:obra:visualizar', 'distribuicao:cadastro:obra:editar'],
+  scopes: [],
+  menus: [],
+  remotes: [],
+  version: 42,
+  expiresInSeconds: 300,
+};
 
 test('health endpoints return bff status', async () => {
   const server = await buildServer({
@@ -11,6 +81,9 @@ test('health endpoints return bff status', async () => {
     requestBodyLimitBytes: 1024,
     corsAllowedOrigins: ['https://mcad.tasso.dev.br'],
     enableLegacyCadastroRoute: false,
+    authzBaseUrl: 'http://localhost:8085',
+    authzTimeoutMs: 3000,
+    meCacheTtlSeconds: 60,
     upstreams: [],
   });
 
@@ -68,6 +141,9 @@ test('proxy rewrites route prefix and forwards query string and auth header', as
     requestBodyLimitBytes: 1024,
     corsAllowedOrigins: ['https://mcad.tasso.dev.br'],
     enableLegacyCadastroRoute: false,
+    authzBaseUrl: 'http://localhost:8085',
+    authzTimeoutMs: 3000,
+    meCacheTtlSeconds: 60,
     upstreams: [
       {
         name: 'identificacao',
@@ -150,6 +226,9 @@ test('ai proxy rewrites chat route and forwards auth and mcad headers', async (t
     requestBodyLimitBytes: 1024,
     corsAllowedOrigins: ['https://mcad.tasso.dev.br'],
     enableLegacyCadastroRoute: false,
+    authzBaseUrl: 'http://localhost:8085',
+    authzTimeoutMs: 3000,
+    meCacheTtlSeconds: 60,
     upstreams: [
       {
         name: 'ai',
@@ -204,6 +283,9 @@ test('cors preflight is handled by the bff before proxying', async () => {
     requestBodyLimitBytes: 1024,
     corsAllowedOrigins: ['https://mcad.tasso.dev.br'],
     enableLegacyCadastroRoute: false,
+    authzBaseUrl: 'http://localhost:8085',
+    authzTimeoutMs: 3000,
+    meCacheTtlSeconds: 60,
     upstreams: [
       {
         name: 'authz',
@@ -268,6 +350,9 @@ test('authz legacy v1 route forwards to authz upstream', async (t) => {
     requestBodyLimitBytes: 1024,
     corsAllowedOrigins: ['https://mcad.tasso.dev.br'],
     enableLegacyCadastroRoute: false,
+    authzBaseUrl: 'http://localhost:8085',
+    authzTimeoutMs: 3000,
+    meCacheTtlSeconds: 60,
     upstreams: [
       {
         name: 'authz-legacy',
@@ -300,5 +385,191 @@ test('authz legacy v1 route forwards to authz upstream', async (t) => {
         else resolve();
       });
     });
+  }
+});
+
+test('/api/me returns 401 with UNAUTHORIZED when no bearer token is sent', async () => {
+  const { fetchImpl, getCallCount } = buildFakeFetch(() => ({ status: 200, body: {} }));
+  const server = await buildServer(ME_BASE_CONFIG, { fetchImpl });
+
+  try {
+    const response = await server.inject({ method: 'GET', url: '/api/me' });
+    assert.equal(response.statusCode, 401);
+    assert.deepEqual(response.json(), { code: 'UNAUTHORIZED' });
+    assert.equal(getCallCount(), 0);
+  } finally {
+    await server.close();
+  }
+});
+
+test('/api/me/permissions returns 401 with UNAUTHORIZED when no bearer token is sent', async () => {
+  const { fetchImpl, getCallCount } = buildFakeFetch(() => ({ status: 200, body: {} }));
+  const server = await buildServer(ME_BASE_CONFIG, { fetchImpl });
+
+  try {
+    const response = await server.inject({ method: 'GET', url: '/api/me/permissions' });
+    assert.equal(response.statusCode, 401);
+    assert.deepEqual(response.json(), { code: 'UNAUTHORIZED' });
+    assert.equal(getCallCount(), 0);
+  } finally {
+    await server.close();
+  }
+});
+
+test('/api/me returns subjectId, name and email from authz upstream', async () => {
+  const { fetchImpl } = buildFakeFetch((url, init) => {
+    assert.equal(url, 'http://localhost:8085/v1/me/authorization-context');
+    assert.equal(init.headers?.authorization, 'Bearer some-token');
+    return {
+      status: 200,
+      body: SAMPLE_AUTHZ_PAYLOAD,
+      headers: { 'x-authz-version': '42' },
+    };
+  });
+  const server = await buildServer(ME_BASE_CONFIG, { fetchImpl });
+
+  try {
+    const response = await server.inject({
+      method: 'GET',
+      url: '/api/me',
+      headers: { authorization: 'Bearer some-token' },
+    });
+
+    assert.equal(response.statusCode, 200);
+    assert.deepEqual(response.json(), {
+      subjectId: 'cyberark|abc123',
+      name: 'Maria Silva',
+      email: 'maria@ecad.org.br',
+    });
+  } finally {
+    await server.close();
+  }
+});
+
+test('/api/me/permissions returns subjectId, permissions and version, propagating X-Authz-Version', async () => {
+  const { fetchImpl } = buildFakeFetch(() => ({
+    status: 200,
+    body: SAMPLE_AUTHZ_PAYLOAD,
+    headers: { 'x-authz-version': '42' },
+  }));
+  const server = await buildServer(ME_BASE_CONFIG, { fetchImpl });
+
+  try {
+    const response = await server.inject({
+      method: 'GET',
+      url: '/api/me/permissions',
+      headers: { authorization: 'Bearer some-token' },
+    });
+
+    assert.equal(response.statusCode, 200);
+    assert.deepEqual(response.json(), {
+      subjectId: 'cyberark|abc123',
+      permissions: SAMPLE_AUTHZ_PAYLOAD.permissions,
+      version: 42,
+    });
+    assert.equal(response.headers['x-authz-version'], '42');
+  } finally {
+    await server.close();
+  }
+});
+
+test('/api/me caches successive calls within TTL and does not hit upstream twice', async () => {
+  const { fetchImpl, getCallCount } = buildFakeFetch(() => ({
+    status: 200,
+    body: SAMPLE_AUTHZ_PAYLOAD,
+    headers: { 'x-authz-version': '42' },
+  }));
+  const cache = createMeCache();
+  const server = await buildServer(ME_BASE_CONFIG, { fetchImpl, meCache: cache });
+  // JWT carrying sub matching authz payload user.subject so the cache key
+  // lookup on the second request finds the cached entry.
+  const token = buildFakeJwt({ sub: 'cyberark|abc123' });
+
+  try {
+    const first = await server.inject({
+      method: 'GET',
+      url: '/api/me',
+      headers: { authorization: `Bearer ${token}` },
+    });
+    const second = await server.inject({
+      method: 'GET',
+      url: '/api/me',
+      headers: { authorization: `Bearer ${token}` },
+    });
+
+    assert.equal(first.statusCode, 200);
+    assert.equal(second.statusCode, 200);
+    assert.deepEqual(second.json(), {
+      subjectId: 'cyberark|abc123',
+      name: 'Maria Silva',
+      email: 'maria@ecad.org.br',
+    });
+    assert.equal(getCallCount(), 1, 'upstream should be hit only once when cache is warm');
+  } finally {
+    await server.close();
+  }
+});
+
+test('/api/me returns 503 AUTHZ_UNAVAILABLE when upstream returns 5xx', async () => {
+  const { fetchImpl } = buildFakeFetch(() => ({ status: 502, body: { code: 'BAD_GATEWAY' } }));
+  const cache = createMeCache();
+  const server = await buildServer(ME_BASE_CONFIG, { fetchImpl, meCache: cache });
+
+  try {
+    const response = await server.inject({
+      method: 'GET',
+      url: '/api/me',
+      headers: { authorization: 'Bearer some-token' },
+    });
+
+    assert.equal(response.statusCode, 503);
+    assert.deepEqual(response.json(), { code: 'AUTHZ_UNAVAILABLE' });
+    assert.equal(cache.size(), 0, 'errors must not be cached');
+  } finally {
+    await server.close();
+  }
+});
+
+test('/api/me returns 401 INVALID_TOKEN when upstream returns 401 with INVALID_TOKEN', async () => {
+  const { fetchImpl } = buildFakeFetch(() => ({
+    status: 401,
+    body: { code: 'INVALID_TOKEN', message: 'Token invalido ou expirado.' },
+  }));
+  const server = await buildServer(ME_BASE_CONFIG, { fetchImpl });
+
+  try {
+    const response = await server.inject({
+      method: 'GET',
+      url: '/api/me',
+      headers: { authorization: 'Bearer some-token' },
+    });
+
+    assert.equal(response.statusCode, 401);
+    const body = response.json() as { code: string };
+    assert.equal(body.code, 'INVALID_TOKEN');
+  } finally {
+    await server.close();
+  }
+});
+
+test('/api/me returns 401 SESSION_REVOKED when upstream signals session revoked', async () => {
+  const { fetchImpl } = buildFakeFetch(() => ({
+    status: 401,
+    body: { code: 'SESSION_REVOKED', message: 'Sessao revogada.' },
+  }));
+  const server = await buildServer(ME_BASE_CONFIG, { fetchImpl });
+
+  try {
+    const response = await server.inject({
+      method: 'GET',
+      url: '/api/me',
+      headers: { authorization: 'Bearer some-token' },
+    });
+
+    assert.equal(response.statusCode, 401);
+    const body = response.json() as { code: string };
+    assert.equal(body.code, 'SESSION_REVOKED');
+  } finally {
+    await server.close();
   }
 });

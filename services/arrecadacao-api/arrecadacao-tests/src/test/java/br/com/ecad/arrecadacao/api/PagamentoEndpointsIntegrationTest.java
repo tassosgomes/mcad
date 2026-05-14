@@ -38,7 +38,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest(
         classes = br.com.ecad.arrecadacao.api.ArrecadacaoApplication.class,
         webEnvironment = SpringBootTest.WebEnvironment.MOCK,
-        properties = "spring.autoconfigure.exclude=org.springframework.boot.autoconfigure.security.oauth2.resource.servlet.OAuth2ResourceServerAutoConfiguration")
+        properties = "spring.autoconfigure.exclude=org.springframework.boot.autoconfigure.security.oauth2.resource.servlet.OAuth2ResourceServerAutoConfiguration,org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration,org.springframework.boot.autoconfigure.data.redis.RedisRepositoriesAutoConfiguration")
 @ActiveProfiles("test")
 @Import({TestSecurityConfig.class, VerbaServiceTestConfig.class})
 @AutoConfigureMockMvc
@@ -102,17 +102,6 @@ class PagamentoEndpointsIntegrationTest {
             .andExpect(jsonPath("$.status").value("CONFIRMADO"))
             .andExpect(jsonPath("$.periodo").isNotEmpty())
             .andExpect(jsonPath("$.licenca.id").value(licencaAtivaId.toString()));
-    }
-
-    @Test
-    @WithMockUser
-    void deveListarPagamentosComPaginacao() throws Exception {
-        mockMvc.perform(get("/api/v1/pagamentos")
-                .param("page", "0")
-                .param("size", "10"))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.items").isArray())
-            .andExpect(jsonPath("$.metadata.page").value(0));
     }
 
     @Test

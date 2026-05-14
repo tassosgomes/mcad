@@ -6,7 +6,7 @@ import { Button } from '@components/ui/button';
 import { Loading } from '@components/ui/loading';
 import { ErrorState } from '@components/ui/error-state';
 import { useToast } from '@components/ui/toast';
-import { useAuth } from '@shared/auth';
+import { usePermissions } from '@shared/authz';
 import { useLicenca } from '../hooks/useLicenca';
 import { useHistoricoStatusLicenca } from '../hooks/useHistoricoStatusLicenca';
 import { StatusBadgeLicenca } from '../components/StatusBadgeLicenca';
@@ -35,8 +35,8 @@ export function LicencaDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { showToast } = useToast();
-  const { hasRole } = useAuth();
-  const isAnalista = hasRole('analista-arrecadacao');
+  const { can } = usePermissions();
+  const isAnalista = can('arrecadacao:default:contrato:editar');
 
   const { data: licenca, isLoading, error, refetch } = useLicenca(id!);
   const { data: historico = [] } = useHistoricoStatusLicenca(id!);

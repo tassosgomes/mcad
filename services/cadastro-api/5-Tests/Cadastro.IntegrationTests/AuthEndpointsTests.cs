@@ -45,7 +45,7 @@ public class AuthEndpointsTests : IClassFixture<CadastroApiFactory>
     public async Task PostTitulares_WithConsultorRole_Returns403()
     {
         // O sistema de autorização é baseado em permissões finas (IEcadAuthzClient).
-        // O consultor não tem a permissão cadastro:titular:criar — simulamos o serviço
+        // O consultor não tem a permissão cadastro:default:titular:criar — simulamos o serviço
         // de authz retornando "negado" para essa permissão específica.
         var authzMock = new Mock<IEcadAuthzClient>();
         authzMock

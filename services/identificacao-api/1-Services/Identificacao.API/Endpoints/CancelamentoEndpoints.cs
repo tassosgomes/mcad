@@ -1,3 +1,4 @@
+using Identificacao.API.Authorization;
 using Identificacao.API.Infrastructure;
 using Identificacao.Application.Cancelamento.Commands;
 using Identificacao.Application.Cancelamento.Queries;
@@ -10,7 +11,7 @@ public record CancelarRolRequest(string Justificativa, string OpcaoRecriacao);
 
 public static class CancelamentoEndpoints
 {
-    public static void MapCancelamentoEndpoints(this IEndpointRouteBuilder app)
+    public static void MapCancelamentoEndpoints(this IEndpointRouteBuilder app, bool authEnabled)
     {
         var group = app.MapGroup("/api/v1/captacoes/{captacaoId:guid}")
             .WithTags("Cancelamento");
@@ -22,7 +23,7 @@ public static class CancelamentoEndpoints
         {
             var result = await dispatcher.QueryAsync(new PodeCancelarQuery(captacaoId), ct);
             return Results.Ok(result);
-        }).RequireAuthorization("read");
+        }).RequireIdentificacaoPermission(IdentificacaoPermissions.CaptacaoVisualizar, authEnabled);
 
         group.MapPost("/cancelar", async (
             Guid captacaoId,
@@ -43,6 +44,6 @@ public static class CancelamentoEndpoints
 
             var result = await dispatcher.SendAsync(command, ct);
             return Results.Ok(result);
-        }).RequireAuthorization("write");
+        }).RequireIdentificacaoPermission(IdentificacaoPermissions.CaptacaoCancelar, authEnabled);
     }
 }

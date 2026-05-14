@@ -7,7 +7,7 @@ import { ErrorState } from '@components/ui/error-state';
 import { Button } from '@components/ui/button';
 import { Pagination } from '@components/ui/pagination';
 import { useToast } from '@components/ui/toast';
-import { useAuth } from '@shared/auth';
+import { usePermissions } from '@shared/authz/usePermissions';
 import { useFonogramas } from '../hooks/useFonogramas';
 import { useDeleteFonograma } from '../hooks/useDeleteFonograma';
 import { FonogramasTable } from '../components/FonogramasTable';
@@ -20,8 +20,10 @@ import styles from './FonogramasPage.module.css';
 export function FonogramasPage() {
   const navigate = useNavigate();
   const { showToast } = useToast();
-  const { hasRole } = useAuth();
-  const canWrite = hasRole('analista-cadastro');
+  const { can } = usePermissions();
+  const canCreate = can('cadastro:default:fonograma:criar');
+  const canEdit = can('cadastro:default:fonograma:editar');
+  const canDelete = can('cadastro:default:fonograma:excluir');
   const [filtros, setFiltros] = useState<FonogramaFiltros>({ page: 1, size: 20, sort: 'isrc' });
   const [fonoParaExcluir, setFonoParaExcluir] = useState<FonogramaResumo | null>(null);
   const { data, isLoading, error, refetch } = useFonogramas(filtros);
@@ -52,7 +54,7 @@ export function FonogramasPage() {
       <PageHeader
         title="Gestão de Fonogramas"
         description="Listagem, busca e gerenciamento de registros e códigos ISRC."
-        action={canWrite ? (
+        action={canCreate ? (
           <Button
             variant="primary"
             onClick={() => navigate('/cadastro/fonogramas/novo')}
@@ -77,7 +79,7 @@ export function FonogramasPage() {
         <>
           <FonogramasTable
             data={data.data}
-            canWrite={canWrite}
+            canWrite={canEdit || canDelete}
             sort={filtros.sort || 'isrc'}
             onSortChange={(sort) => setFiltros((prev) => ({ ...prev, sort, page: 1 }))}
             onEdit={(id) => navigate(`/cadastro/fonogramas/${id}`)}

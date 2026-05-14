@@ -1,3 +1,4 @@
+using Identificacao.API.Authorization;
 using Identificacao.API.Infrastructure;
 using Identificacao.Application.Common;
 using Identificacao.Application.Execucoes.Commands;
@@ -8,7 +9,7 @@ namespace Identificacao.API.Endpoints;
 
 public static class ExecucaoEndpoints
 {
-    public static void MapExecucaoEndpoints(this IEndpointRouteBuilder app)
+    public static void MapExecucaoEndpoints(this IEndpointRouteBuilder app, bool authEnabled)
     {
         var group = app.MapGroup("/api/v1/captacoes/{captacaoId:guid}/execucoes")
             .WithTags("Execuções");
@@ -24,7 +25,7 @@ public static class ExecucaoEndpoints
             var result = await dispatcher.QueryAsync(q, ct);
             return Results.Ok(result);
         })
-        .RequireAuthorization("read");
+        .RequireIdentificacaoPermission(IdentificacaoPermissions.ExecucaoListar, authEnabled);
 
         // POST — Criar
         group.MapPost("/", async (
@@ -44,7 +45,7 @@ public static class ExecucaoEndpoints
             var result = await dispatcher.SendAsync<Application.Execucoes.Responses.ExecucaoResponse>(command, ct);
             return Results.Created($"/api/v1/captacoes/{captacaoId}/execucoes/{result.Id}", result);
         })
-        .RequireAuthorization("write");
+        .RequireIdentificacaoPermission(IdentificacaoPermissions.ExecucaoCriar, authEnabled);
 
         // PUT — Atualizar
         group.MapPut("/{id:guid}", async (
@@ -65,7 +66,7 @@ public static class ExecucaoEndpoints
             var result = await dispatcher.SendAsync<Application.Execucoes.Responses.ExecucaoResponse>(command, ct);
             return Results.Ok(result);
         })
-        .RequireAuthorization("write");
+        .RequireIdentificacaoPermission(IdentificacaoPermissions.ExecucaoEditar, authEnabled);
 
         // DELETE — Excluir
         group.MapDelete("/{id:guid}", async (
@@ -79,7 +80,7 @@ public static class ExecucaoEndpoints
             await dispatcher.SendAsync<bool>(new ExcluirExecucaoCommand(captacaoId, id, analistaId), ct);
             return Results.NoContent();
         })
-        .RequireAuthorization("write");
+        .RequireIdentificacaoPermission(IdentificacaoPermissions.ExecucaoExcluir, authEnabled);
     }
 }
 

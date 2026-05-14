@@ -2,6 +2,7 @@ package br.com.ecad.arrecadacao.api.controllers;
 
 import br.com.ecad.arrecadacao.application.dto.RubricaResumoResponse;
 import br.com.ecad.arrecadacao.domain.interfaces.RubricaRepository;
+import br.org.ecad.authz.sdk.annotation.RequiresPermission;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -20,6 +21,7 @@ public class RubricaController {
     }
 
     @GetMapping
+    @RequiresPermission("arrecadacao:default:cobranca:listar")
     public ResponseEntity<List<RubricaResumoResponse>> listar() {
         var rubricas = rubricaRepository.findAll().stream()
             .map(r -> new RubricaResumoResponse(r.getId(), r.getSigla(), r.getNome()))

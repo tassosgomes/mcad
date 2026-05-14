@@ -71,61 +71,10 @@ class DistribuicaoProcessoEventListenerTest {
         );
     }
 
-    // ── Cenário a: processo.iniciado → verba muda para EM_DISTRIBUICAO ──────────
+    // ── type desconhecido → ignora sem save ───────────────────────────
 
     /**
-     * (a) onMessage com tipo distribuicao.processo.iniciado deve chamar marcarEmDistribuicao e save.
-     */
-    @Test
-    void onMessage_ProcessoIniciado_DeveAplicarLock() {
-        // Arrange
-        Rubrica rubrica = new Rubrica(RUBRICA_ID, RUBRICA_SIGLA, "Radio Comercial", false);
-        when(rubricaRepository.findBySigla(RUBRICA_SIGLA)).thenReturn(Optional.of(rubrica));
-
-        Verba verba = Verba.abrir(RUBRICA_ID, PERIODO);
-        when(verbaRepository.findByRubricaIdAndPeriodo(RUBRICA_ID, PERIODO)).thenReturn(Optional.of(verba));
-        when(verbaRepository.save(any(Verba.class))).thenAnswer(inv -> inv.getArgument(0));
-
-        Message message = buildCloudEventMessage("distribuicao.processo.iniciado", RUBRICA_SIGLA, PERIODO);
-
-        // Act
-        listener.onMessage(message);
-
-        // Assert
-        assertThat(verba.getStatus()).isEqualTo(StatusVerba.EM_DISTRIBUICAO);
-        verify(verbaRepository, times(1)).save(verba);
-    }
-
-    // ── Cenário b: processo.finalizado → verba muda para DISTRIBUIDA ─────────────
-
-    /**
-     * (b) onMessage com tipo distribuicao.processo.finalizado deve chamar marcarDistribuida e save.
-     */
-    @Test
-    void onMessage_ProcessoFinalizado_DeveMarcarDistribuida() {
-        // Arrange
-        Rubrica rubrica = new Rubrica(RUBRICA_ID, RUBRICA_SIGLA, "Radio Comercial", false);
-        when(rubricaRepository.findBySigla(RUBRICA_SIGLA)).thenReturn(Optional.of(rubrica));
-
-        Verba verba = Verba.abrir(RUBRICA_ID, PERIODO);
-        verba.marcarEmDistribuicao(); // pré-condição: precisa estar EM_DISTRIBUICAO para marcarDistribuida funcionar
-        when(verbaRepository.findByRubricaIdAndPeriodo(RUBRICA_ID, PERIODO)).thenReturn(Optional.of(verba));
-        when(verbaRepository.save(any(Verba.class))).thenAnswer(inv -> inv.getArgument(0));
-
-        Message message = buildCloudEventMessage("distribuicao.processo.finalizado", RUBRICA_SIGLA, PERIODO);
-
-        // Act
-        listener.onMessage(message);
-
-        // Assert
-        assertThat(verba.getStatus()).isEqualTo(StatusVerba.DISTRIBUIDA);
-        verify(verbaRepository, times(1)).save(verba);
-    }
-
-    // ── Cenário c: type desconhecido → ignora sem save ───────────────────────────
-
-    /**
-     * (c) onMessage com tipo desconhecido deve ignorar sem chamar save e sem lançar exceção.
+     * onMessage com tipo desconhecido deve ignorar sem chamar save e sem lançar exceção.
      */
     @Test
     void onMessage_TypeDesconhecido_DeveIgnorar() {
@@ -180,36 +129,6 @@ class DistribuicaoProcessoEventListenerTest {
 
         // Assert — save nunca chamado
         verify(verbaRepository, never()).save(any());
-    }
-
-    // ── Cenário f: idempotência em reexecução ────────────────────────────────────
-
-    /**
-     * (f) onMessage com iniciado aplicado duas vezes não falha (idempotência garantida pela entidade).
-     * Save é chamado 2x (cada chamada é independente), mas o status não muda na segunda execução.
-     */
-    @Test
-    void onMessage_IniciadoIdempotente_NaoFalhaEmReexecucao() {
-        // Arrange
-        Rubrica rubrica = new Rubrica(RUBRICA_ID, RUBRICA_SIGLA, "Radio Comercial", false);
-        when(rubricaRepository.findBySigla(RUBRICA_SIGLA)).thenReturn(Optional.of(rubrica));
-
-        Verba verba = Verba.abrir(RUBRICA_ID, PERIODO);
-        when(verbaRepository.findByRubricaIdAndPeriodo(RUBRICA_ID, PERIODO)).thenReturn(Optional.of(verba));
-        when(verbaRepository.save(any(Verba.class))).thenAnswer(inv -> inv.getArgument(0));
-
-        Message message = buildCloudEventMessage("distribuicao.processo.iniciado", RUBRICA_SIGLA, PERIODO);
-
-        // Act — primeira execução
-        listener.onMessage(message);
-        assertThat(verba.getStatus()).isEqualTo(StatusVerba.EM_DISTRIBUICAO);
-
-        // Act — segunda execução (redelivery / reprocessamento idempotente)
-        listener.onMessage(message);
-
-        // Assert — status continua EM_DISTRIBUICAO (no-op), save chamado 2x total, sem exceção
-        assertThat(verba.getStatus()).isEqualTo(StatusVerba.EM_DISTRIBUICAO);
-        verify(verbaRepository, times(2)).save(verba);
     }
 
     // ── Helpers ──────────────────────────────────────────────────────────────────

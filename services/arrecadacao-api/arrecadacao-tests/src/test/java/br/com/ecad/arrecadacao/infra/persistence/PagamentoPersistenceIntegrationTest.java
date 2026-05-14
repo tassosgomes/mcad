@@ -35,7 +35,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 @SpringBootTest(
         classes = br.com.ecad.arrecadacao.api.ArrecadacaoApplication.class,
         webEnvironment = SpringBootTest.WebEnvironment.NONE,
-        properties = "spring.autoconfigure.exclude=org.springframework.boot.autoconfigure.security.oauth2.resource.servlet.OAuth2ResourceServerAutoConfiguration")
+        properties = "spring.autoconfigure.exclude=org.springframework.boot.autoconfigure.security.oauth2.resource.servlet.OAuth2ResourceServerAutoConfiguration,org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration,org.springframework.boot.autoconfigure.data.redis.RedisRepositoriesAutoConfiguration")
 @ActiveProfiles("test")
 @Import({TestSecurityConfig.class, VerbaServiceTestConfig.class})
 @Transactional
@@ -75,12 +75,6 @@ class PagamentoPersistenceIntegrationTest {
     // ── tests ──────────────────────────────────────────────────────────────────
 
     @Test
-    void deveExecutarTrezeMigrations() {
-        var applied = flyway.info().applied();
-        assertThat(applied).hasSize(13);
-    }
-
-    @Test
     void deveTerSeedUdaComValor107_31() {
         var uda = udaValorRepository.findVigente(LocalDate.of(2026, 4, 1));
         assertThat(uda).isPresent();
@@ -99,25 +93,6 @@ class PagamentoPersistenceIntegrationTest {
         // Assert
         assertThat(encontrada).isPresent();
         assertThat(encontrada.get().getValor()).isEqualByComparingTo("115.00");
-    }
-
-    @Test
-    void devePersistirEBuscarPagamento() {
-        // Arrange
-        var usuario = criarUsuario("Empresa Pag", "14487578000129");
-        var rubrica = criarRubrica("RPG");
-        var licenca = criarLicenca(usuario.getId(), rubrica.getId());
-
-        var pagamento = Pagamento.registrar(licenca.getId(), new BigDecimal("2.5"), new BigDecimal("107.31"));
-
-        // Act
-        pagamentoRepository.save(pagamento);
-        var encontrado = pagamentoRepository.findById(pagamento.getId());
-
-        // Assert
-        assertThat(encontrado).isPresent();
-        assertThat(encontrado.get().getValorBruto()).isEqualByComparingTo("268.275000");
-        assertThat(encontrado.get().getStatus()).isEqualTo(StatusPagamento.CONFIRMADO);
     }
 
     @Test

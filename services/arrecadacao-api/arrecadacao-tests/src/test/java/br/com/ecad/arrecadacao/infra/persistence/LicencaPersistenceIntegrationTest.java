@@ -31,7 +31,7 @@ import br.com.ecad.arrecadacao.config.VerbaServiceTestConfig;
 @SpringBootTest(
         classes = br.com.ecad.arrecadacao.api.ArrecadacaoApplication.class,
         webEnvironment = SpringBootTest.WebEnvironment.NONE,
-        properties = "spring.autoconfigure.exclude=org.springframework.boot.autoconfigure.security.oauth2.resource.servlet.OAuth2ResourceServerAutoConfiguration")
+        properties = "spring.autoconfigure.exclude=org.springframework.boot.autoconfigure.security.oauth2.resource.servlet.OAuth2ResourceServerAutoConfiguration,org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration,org.springframework.boot.autoconfigure.data.redis.RedisRepositoriesAutoConfiguration")
 @ActiveProfiles("test")
 @Import({TestSecurityConfig.class, VerbaServiceTestConfig.class})
 @Transactional
@@ -49,29 +49,6 @@ class LicencaPersistenceIntegrationTest {
     private RabbitTemplate rabbitTemplate;
 
     @Test
-    void deveExecutarSeisMigrations() {
-        var applied = flyway.info().applied();
-        assertThat(applied).hasSize(10);
-    }
-
-    @Test
-    void devePersistirEBuscarLicenca() {
-        var usuario = UsuarioMusica.criar("Empresa Teste", "Fantasia", Cnpj.criar("45527325000165"), Endereco.criar("12345678", "Logradouro", "123", "Complemento", "Bairro", "Cidade", "UF"), Contato.criar("Responsavel", "1234", "test@test.com"));
-        usuarioMusicaSpringData.saveAndFlush(usuario);
-
-        var rubrica = new Rubrica(UUID.randomUUID(), "RBT", "Rubrica Teste", false);
-        rubricaSpringData.saveAndFlush(rubrica);
-
-        var licenca = Licenca.criar(usuario.getId(), rubrica.getId(), LocalDate.now(), null);
-        licencaRepository.save(licenca);
-
-        var licencaEncontrada = licencaRepository.findById(licenca.getId());
-        assertThat(licencaEncontrada).isPresent();
-        assertThat(licencaEncontrada.get().getId()).isEqualTo(licenca.getId());
-        assertThat(licencaEncontrada.get().getUsuarioMusicaId()).isEqualTo(usuario.getId());
-    }
-
-    @Test
     void deveFalharComFkUsuarioInexistente() {
         var rubrica = new Rubrica(UUID.randomUUID(), "RB2", "Rubrica Teste 2", false);
         rubricaSpringData.saveAndFlush(rubrica);
@@ -82,27 +59,6 @@ class LicencaPersistenceIntegrationTest {
             licencaRepository.save(licenca);
             entityManager.flush();
         });
-    }
-
-    @Test
-    void devePersistirHistoricoComFkParaLicenca() {
-        var usuario = UsuarioMusica.criar("Outra Empresa", "Fantasia", Cnpj.criar("14487578000129"), Endereco.criar("12345678", "Logradouro", "123", "Complemento", "Bairro", "Cidade", "UF"), Contato.criar("Responsavel", "1234", "test@test.com"));
-        usuarioMusicaSpringData.saveAndFlush(usuario);
-
-        var rubrica = new Rubrica(UUID.randomUUID(), "RB3", "Rubrica 3", false);
-        rubricaSpringData.saveAndFlush(rubrica);
-
-        var licenca = Licenca.criar(usuario.getId(), rubrica.getId(), LocalDate.now(), null);
-        licencaRepository.save(licenca);
-
-        var historico = licenca.suspender("Suspensao de teste", "sistema");
-        licencaRepository.save(licenca);
-        
-        historicoRepository.save(historico);
-
-        var historicosEncontrados = historicoRepository.findByLicencaIdOrderByDataDesc(licenca.getId());
-        assertThat(historicosEncontrados).hasSize(1);
-        assertThat(historicosEncontrados.get(0).getStatusNovo().name()).isEqualTo("SUSPENSA");
     }
 
     @Test

@@ -1,3 +1,4 @@
+using Identificacao.API.Authorization;
 using Identificacao.API.Infrastructure;
 using Identificacao.Application.Common;
 using Identificacao.Application.Captacoes.Commands;
@@ -11,7 +12,7 @@ public record AtualizarCaptacaoRequest(Guid RubricaId, DateOnly Periodo, string 
 
 public static class CaptacaoEndpoints
 {
-    public static void MapCaptacaoEndpoints(this IEndpointRouteBuilder app)
+    public static void MapCaptacaoEndpoints(this IEndpointRouteBuilder app, bool authEnabled)
     {
         var group = app.MapGroup("/api/v1/captacoes")
             .WithTags("Captações");
@@ -30,11 +31,11 @@ public static class CaptacaoEndpoints
         {
             var query = new ListarCaptacoesQuery(
                 rubricaId, periodoInicial, periodoFinal, status, analistaResponsavelId, sort, page ?? 1, size ?? 10);
-            
+
             var result = await dispatcher.QueryAsync(query, ct);
             return Results.Ok(result);
         })
-        .RequireAuthorization("read");
+        .RequireIdentificacaoPermission(IdentificacaoPermissions.CaptacaoListar, authEnabled);
 
         group.MapGet("/{id:guid}", async (
             Guid id,
@@ -45,7 +46,7 @@ public static class CaptacaoEndpoints
             var result = await dispatcher.QueryAsync(query, ct);
             return Results.Ok(result);
         })
-        .RequireAuthorization("read");
+        .RequireIdentificacaoPermission(IdentificacaoPermissions.CaptacaoVisualizar, authEnabled);
 
         group.MapPost("/", async (
             [FromBody] CriarCaptacaoRequest request,
@@ -63,7 +64,7 @@ public static class CaptacaoEndpoints
             var result = await dispatcher.SendAsync(command, ct);
             return Results.Created($"/api/v1/captacoes/{result.Id}", result);
         })
-        .RequireAuthorization("write");
+        .RequireIdentificacaoPermission(IdentificacaoPermissions.CaptacaoCriar, authEnabled);
 
         group.MapPut("/{id:guid}", async (
             Guid id,
@@ -80,7 +81,7 @@ public static class CaptacaoEndpoints
             var result = await dispatcher.SendAsync(command, ct);
             return Results.Ok(result);
         })
-        .RequireAuthorization("write");
+        .RequireIdentificacaoPermission(IdentificacaoPermissions.CaptacaoEditar, authEnabled);
 
         group.MapDelete("/{id:guid}", async (
             Guid id,
@@ -95,6 +96,6 @@ public static class CaptacaoEndpoints
             await dispatcher.SendAsync(command, ct);
             return Results.NoContent();
         })
-        .RequireAuthorization("write");
+        .RequireIdentificacaoPermission(IdentificacaoPermissions.CaptacaoExcluir, authEnabled);
     }
 }

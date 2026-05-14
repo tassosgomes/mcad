@@ -7,13 +7,13 @@ import br.com.ecad.arrecadacao.application.dto.AjustarUdaRequest;
 import br.com.ecad.arrecadacao.application.dto.UdaResponse;
 import br.com.ecad.arrecadacao.application.queries.ConsultarUdaVigenteQuery;
 import br.com.ecad.arrecadacao.application.queries.ListarHistoricoUdaQuery;
+import br.org.ecad.authz.sdk.annotation.RequiresPermission;
 
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
@@ -34,12 +34,13 @@ public class UdaController {
     }
 
     @GetMapping("/vigente")
+    @RequiresPermission("arrecadacao:default:cobranca:listar")
     public ResponseEntity<UdaResponse> consultarVigente() {
         return ResponseEntity.ok(queryDispatcher.dispatch(new ConsultarUdaVigenteQuery()));
     }
 
     @PostMapping
-    @PreAuthorize("hasRole('analista-arrecadacao')")
+    @RequiresPermission("arrecadacao:default:cobranca:emitir")
     public ResponseEntity<UdaResponse> ajustar(@Valid @RequestBody AjustarUdaRequest request,
                                                Authentication auth) {
         LOGGER.info("Adjusting UDA value: valor={}, dataVigencia={}, user={}",
@@ -49,6 +50,7 @@ public class UdaController {
     }
 
     @GetMapping("/historico")
+    @RequiresPermission("arrecadacao:default:cobranca:listar")
     public ResponseEntity<List<UdaResponse>> listarHistorico() {
         return ResponseEntity.ok(queryDispatcher.dispatch(new ListarHistoricoUdaQuery()));
     }

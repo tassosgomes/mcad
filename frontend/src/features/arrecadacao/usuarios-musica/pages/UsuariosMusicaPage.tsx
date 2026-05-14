@@ -6,7 +6,7 @@ import { ErrorState } from '@components/ui/error-state';
 import { Loading } from '@components/ui/loading';
 import { PageHeader } from '@components/ui/page-header';
 import { Pagination } from '@components/ui/pagination';
-import { useAuth } from '@shared/auth';
+import { usePermissions } from '@shared/authz';
 import { UsuariosMusicaFilters } from '../components/UsuariosMusicaFilters';
 import { UsuariosMusicaTable } from '../components/UsuariosMusicaTable';
 import { useUsuariosMusica } from '../hooks/useUsuariosMusica';
@@ -21,8 +21,8 @@ const FILTROS_INICIAIS: UsuarioMusicaFiltros = {
 
 export function UsuariosMusicaPage() {
   const navigate = useNavigate();
-  const { hasRole } = useAuth();
-  const canWrite = hasRole('analista-arrecadacao');
+  const { can } = usePermissions();
+  const canWrite = can('arrecadacao:default:cliente:criar');
   const [filtros, setFiltros] = useState<UsuarioMusicaFiltros>(FILTROS_INICIAIS);
   const { data, isLoading, error, refetch } = useUsuariosMusica(filtros);
 

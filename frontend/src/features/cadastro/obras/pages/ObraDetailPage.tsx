@@ -7,7 +7,7 @@ import { Loading } from '@components/ui/loading';
 import { ErrorState } from '@components/ui/error-state';
 import { useToast } from '@components/ui/toast';
 import { Badge } from '@components/ui/badge';
-import { useAuth } from '@shared/auth';
+import { usePermissions } from '@shared/authz/usePermissions';
 import { useObra } from '../hooks/useObra';
 import { useUpdateObra } from '../hooks/useUpdateObra';
 import { useDeleteObra } from '../hooks/useDeleteObra';
@@ -45,8 +45,16 @@ export function ObraDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { showToast } = useToast();
-  const { hasRole } = useAuth();
-  const canWrite = hasRole('analista-cadastro');
+  const { can } = usePermissions();
+  const canEdit = can('cadastro:default:obra:editar');
+  const canDelete = can('cadastro:default:obra:excluir');
+  const canLiberar = can('cadastro:default:status:liberar-obra');
+  const canBloquear = can('cadastro:default:status:bloquear-obra');
+  const canDesbloquear = can('cadastro:default:status:desbloquear-obra');
+  // Aggregate gate for sub-sections (TitularidadesSection, ObraFonogramasSection,
+  // IswcSection, DominioPublicoToggle) — each evaluates its own granular permissions
+  // internally; we forward "can edit obra" as the high-level write capability.
+  const canWrite = canEdit;
   
   const { data: obra, isLoading, error, refetch } = useObra(id);
   const updateMutation = useUpdateObra();
@@ -140,21 +148,21 @@ export function ObraDetailPage() {
             <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
               <Badge variant={STATUS_VARIANT[obra.status] as any}>{obra.status}</Badge>
               
-              {canWrite && (
+              {(canLiberar || canBloquear || canDesbloquear) && (
                 <div style={{ display: 'flex', gap: '8px' }}>
-                  {obra.status === 'PENDENTE' && (
+                  {obra.status === 'PENDENTE' && canLiberar && (
                     <LiberarButton onClick={handleLiberar} isLoading={liberarMutation.isPending} />
                   )}
-                  {(obra.status === 'PENDENTE' || obra.status === 'LIBERADO') && (
+                  {(obra.status === 'PENDENTE' || obra.status === 'LIBERADO') && canBloquear && (
                     <BloquearButton onClick={() => setShowBloqueioModal(true)} />
                   )}
-                  {obra.status === 'BLOQUEADO' && (
+                  {obra.status === 'BLOQUEADO' && canDesbloquear && (
                     <DesbloquearButton onClick={() => desbloquearMutation.mutate(obra.id)} isLoading={desbloquearMutation.isPending} />
                   )}
                 </div>
               )}
 
-              {canWrite && !isReadOnly && obra.status !== 'BLOQUEADO' && (
+              {canDelete && !isReadOnly && obra.status !== 'BLOQUEADO' && (
                 <Button
                   variant="danger"
                   onClick={() => setShowDeleteModal(true)}

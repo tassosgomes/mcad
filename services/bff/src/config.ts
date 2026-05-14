@@ -11,9 +11,15 @@ export interface BffConfig {
   corsAllowedOrigins: string[];
   upstreams: UpstreamConfig[];
   enableLegacyCadastroRoute: boolean;
+  authzBaseUrl: string;
+  authzTimeoutMs: number;
+  meCacheTtlSeconds: number;
 }
 
 const DEFAULT_REQUEST_BODY_LIMIT_BYTES = 50 * 1024 * 1024;
+const DEFAULT_AUTHZ_BASE_URL = 'http://localhost:8085';
+const DEFAULT_AUTHZ_TIMEOUT_MS = 3000;
+const DEFAULT_ME_CACHE_TTL_SECONDS = 60;
 
 function getEnv(name: string, fallback: string): string {
   const value = process.env[name];
@@ -70,6 +76,9 @@ export function loadConfig(): BffConfig {
       'https://mcad.tasso.dev.br',
     ]),
     enableLegacyCadastroRoute: getBooleanEnv('BFF_ENABLE_LEGACY_CADASTRO_ROUTE', true),
+    authzBaseUrl: getEnv('AUTHZ_BASE_URL', DEFAULT_AUTHZ_BASE_URL).replace(/\/$/, ''),
+    authzTimeoutMs: getNumberEnv('AUTHZ_TIMEOUT_MS', DEFAULT_AUTHZ_TIMEOUT_MS),
+    meCacheTtlSeconds: getNumberEnv('ME_CACHE_TTL_SECONDS', DEFAULT_ME_CACHE_TTL_SECONDS),
     upstreams: [
       {
         name: 'cadastro',

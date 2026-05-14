@@ -1,4 +1,88 @@
+# =============================================================================
+# Relação com o ecad-authz (plataforma de autorização fina)
+# -----------------------------------------------------------------------------
+# O ecad-authz vive em um repositório separado:
+#   /home/tsgomes/github-tassosgomes/ecad-authz/
+# A forma canônica de subir o ambiente do ecad-authz é:
+#   docker compose -f /home/tsgomes/github-tassosgomes/ecad-authz/infra/dev/docker-compose.yml up -d
+# Esse compose sobe Postgres dedicado (porta 5432 do compose dele — conflita com o
+# mcad-postgres, então use bridge isolada ou execute em hosts/portas distintas),
+# Redis e Keycloak para autenticar a Admin UI do authz.
+#
+# Os serviços abaixo (`ecad-authz-*`) são STUBS opcionais que servem para:
+#   1) Subir o backend do ecad-authz dentro da mesma rede do mcad, quando houver
+#      uma imagem publicada (ex.: `ghcr.io/tassosgomes/ecad-authz:dev`).
+#   2) Permitir que as APIs (cadastro, identificacao, arrecadacao) chamem
+#      http://ecad-authz:8085/v1/* sem depender de DNS externo.
+#
+# TODO: enquanto não há imagem publicada do ecad-authz, suba o backend pelo compose
+#       do próprio repositório (acima) e deixe os stubs abaixo desativados via
+#       perfil `authz`. Para ativá-los após publicar imagem:
+#         docker compose -f docker-compose.dev.yml --profile authz up -d
+# =============================================================================
+
 services:
+  # ── ecad-authz (stub local; ativado pelo perfil `authz`) ──────────
+  ecad-authz-postgres:
+    image: postgres:16-alpine
+    container_name: mcad-ecad-authz-postgres
+    profiles: ["authz"]
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ecad_authz
+      POSTGRES_USER: authz
+      POSTGRES_PASSWORD: ${AUTHZ_DB_PASSWORD:-authz}
+    ports:
+      - "55432:5432" # 55432 para não conflitar com mcad-postgres
+    volumes:
+      - mcad_authz_pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U authz -d ecad_authz"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  ecad-authz-redis:
+    image: redis:7-alpine
+    container_name: mcad-ecad-authz-redis
+    profiles: ["authz"]
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "no", "--save", ""]
+    ports:
+      - "56379:6379"
+    volumes:
+      - mcad_authz_redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  ecad-authz:
+    # TODO: substituir pela imagem oficial quando publicada. Enquanto isso,
+    # gerar localmente com `docker build` no repositório do ecad-authz.
+    image: ${ECAD_AUTHZ_IMAGE:-ecad-authz:local}
+    container_name: mcad-ecad-authz
+    profiles: ["authz"]
+    restart: unless-stopped
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      SERVER_PORT: 8085
+      DB_HOST: ecad-authz-postgres
+      DB_PORT: 5432
+      DB_NAME: ecad_authz
+      DB_USER: authz
+      DB_PASSWORD: ${AUTHZ_DB_PASSWORD:-authz}
+      REDIS_HOST: ecad-authz-redis
+      REDIS_PORT: 6379
+    ports:
+      - "8085:8085"
+    depends_on:
+      ecad-authz-postgres:
+        condition: service_healthy
+      ecad-authz-redis:
+        condition: service_healthy
+
   # ── Postgres ──────────────────────────────────────────────────────
   mcad-postgres:
     image: postgres:16-alpine
@@ -161,3 +245,5 @@ volumes:
   mcad_pg_data:
   mcad_rmq_data:
   mcad_minio_data:
+  mcad_authz_pg_data:
+  mcad_authz_redis_data:

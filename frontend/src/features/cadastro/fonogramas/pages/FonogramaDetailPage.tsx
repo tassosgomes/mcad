@@ -28,7 +28,7 @@ import { DeleteFonogramaModal } from '../components/DeleteFonogramaModal';
 import { formatIsrc } from '../utils/isrcFormatter';
 import { Button } from '@components/ui/button';
 import { ArrowLeft } from 'lucide-react';
-import { useAuth } from '@shared/auth';
+import { usePermissions } from '@shared/authz/usePermissions';
 
 import styles from './FonogramaDetailPage.module.css';
 import { ParticipacoesSection } from '@features/cadastro/participacoes';
@@ -44,8 +44,15 @@ export function FonogramaDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { showToast } = useToast();
-  const { hasRole } = useAuth();
-  const canWrite = hasRole('analista-cadastro');
+  const { can } = usePermissions();
+  const canEdit = can('cadastro:default:fonograma:editar');
+  const canDelete = can('cadastro:default:fonograma:excluir');
+  const canLiberar = can('cadastro:default:status:liberar-fonograma');
+  const canBloquear = can('cadastro:default:status:bloquear-fonograma');
+  const canDesbloquear = can('cadastro:default:status:desbloquear-fonograma');
+  // Aggregate write capability propagated to sub-sections (FonogramaForm,
+  // ParticipacoesSection). Each enforces its own granular gates downstream.
+  const canWrite = canEdit;
 
   const { data: fonograma, isLoading, error, refetch } = useFonograma(id);
   const updateMutation = useUpdateFonograma();
@@ -120,13 +127,13 @@ export function FonogramaDetailPage() {
 
   const statusActions = (
     <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-      {(!isLiberadoOuDepurado && !isBloqueado) && (
+      {(!isLiberadoOuDepurado && !isBloqueado) && canLiberar && (
         <LiberarButton onClick={handleLiberar} isLoading={liberarMutation.isPending} />
       )}
-      {(isLiberadoOuDepurado || !isBloqueado) && !isDepurado && (
+      {(isLiberadoOuDepurado || !isBloqueado) && !isDepurado && canBloquear && (
         <BloquearButton onClick={() => setShowBloqueioModal(true)} />
       )}
-      {isBloqueado && (
+      {isBloqueado && canDesbloquear && (
         <DesbloquearButton onClick={() => desbloquearMutation.mutate(id!)} isLoading={desbloquearMutation.isPending} />
       )}
     </div>
@@ -152,7 +159,7 @@ export function FonogramaDetailPage() {
             <Badge variant={STATUS_VARIANT[fonograma.status] as any}>
               {fonograma.status.replace('_', ' ')}
             </Badge>
-            {canWrite ? statusActions : null}
+            {(canLiberar || canBloquear || canDesbloquear) ? statusActions : null}
           </div>
         }
       />
@@ -180,7 +187,7 @@ export function FonogramaDetailPage() {
             isLoading={updateMutation.isPending}
           />
           
-          {canWrite && !isLiberadoOuDepurado && (
+          {canDelete && !isLiberadoOuDepurado && (
             <div className={styles.deleteZone}>
               <button
                 type="button"

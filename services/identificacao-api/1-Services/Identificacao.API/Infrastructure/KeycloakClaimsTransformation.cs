@@ -6,9 +6,11 @@ namespace Identificacao.API.Infrastructure;
 // Logto emite:
 //   - roles como array flat na claim "roles" (scope "roles" requerido no ID token)
 //   - scopes da API resource como string espaço-separada na claim "scope" do access token
-// Esta transformação:
-//   1. Expande "roles" → role claims no ClaimsPrincipal
-//   2. Expande "scope" → individual scope claims (para uso em RequireClaim("scope", "access"))
+// Esta transformação apenas normaliza o ClaimsPrincipal:
+//   1. Expande "roles" → role claims (apenas para auditoria/UX; autorização é via Ecad.Authz).
+//   2. Expande "scope" → claims individuais (úteis para diagnóstico; autorização fina não
+//      depende mais de RequireClaim("scope", ...) — todo gate de negócio passa por
+//      RequirePermission/PermissionAuthorizationHandler).
 public sealed class LogtoClaimsTransformation : IClaimsTransformation
 {
     public Task<ClaimsPrincipal> TransformAsync(ClaimsPrincipal principal)

@@ -23,6 +23,7 @@
         <spring-boot.version>3.3.5</spring-boot.version>
         <cloudevents.version>3.0.0</cloudevents.version>
         <audit-sdk.version>0.1.0</audit-sdk.version>
+        <authz-sdk.version>0.1.0-SNAPSHOT</authz-sdk.version>
         <testcontainers.version>1.20.6</testcontainers.version>
         <maven.compiler.release>${java.version}</maven.compiler.release>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>

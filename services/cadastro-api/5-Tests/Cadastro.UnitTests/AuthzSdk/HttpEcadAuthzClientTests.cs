@@ -27,7 +27,7 @@ public class HttpEcadAuthzClientTests
         var client = CreateClient(handler);
 
         var decision = await client.CheckAsync(
-            new AuthzCheckRequest("cadastro:obra:listar"),
+            new AuthzCheckRequest("cadastro:default:obra:listar"),
             "token-123",
             CancellationToken.None);
 
@@ -45,7 +45,7 @@ public class HttpEcadAuthzClientTests
             new StubHttpMessageHandler(_ => new HttpResponseMessage(HttpStatusCode.InternalServerError)));
 
         var decision = await client.CheckAsync(
-            new AuthzCheckRequest("cadastro:obra:listar"),
+            new AuthzCheckRequest("cadastro:default:obra:listar"),
             "token-123",
             CancellationToken.None);
 

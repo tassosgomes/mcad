@@ -2,7 +2,7 @@ import { useState, type FormEvent } from 'react';
 import { Button } from '@components/ui/button';
 import { FormField } from '@components/ui/form-field';
 import { TextInput } from '@components/ui/text-input';
-import { useAuth } from '@shared/auth';
+import { usePermissions } from '@shared/authz';
 import type {
   AtualizarUsuarioMusicaRequest,
   CriarUsuarioMusicaRequest,
@@ -46,8 +46,8 @@ export function UsuarioMusicaForm({
   onCancel,
   isSubmitting,
 }: UsuarioMusicaFormProps) {
-  const { hasRole } = useAuth();
-  const canWrite = hasRole('analista-arrecadacao');
+  const { can } = usePermissions();
+  const canWrite = can('arrecadacao:default:cliente:editar');
   const isEditMode = !!initialData;
 
   const [razaoSocial, setRazaoSocial] = useState(initialData?.razaoSocial ?? '');

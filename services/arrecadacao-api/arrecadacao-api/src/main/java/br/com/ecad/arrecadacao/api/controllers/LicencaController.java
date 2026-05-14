@@ -15,11 +15,11 @@ import br.com.ecad.arrecadacao.application.queries.BuscarLicencaPorIdQuery;
 import br.com.ecad.arrecadacao.application.queries.ListarHistoricoStatusLicencaQuery;
 import br.com.ecad.arrecadacao.application.queries.ListarLicencasQuery;
 import br.com.ecad.arrecadacao.domain.enums.StatusLicenca;
+import br.org.ecad.authz.sdk.annotation.RequiresPermission;
 
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.web.bind.annotation.*;
@@ -41,6 +41,7 @@ public class LicencaController {
     }
 
     @GetMapping
+    @RequiresPermission("arrecadacao:default:contrato:listar")
     public ResponseEntity<PageResponse<LicencaResponse>> listar(
             @RequestParam(name = "page", defaultValue = "0") int page,
             @RequestParam(name = "size", defaultValue = "20") int size,
@@ -56,7 +57,7 @@ public class LicencaController {
     }
 
     @PostMapping
-    @PreAuthorize("hasRole('analista-arrecadacao')")
+    @RequiresPermission("arrecadacao:default:contrato:criar")
     public ResponseEntity<LicencaResponse> criar(
             @Valid @RequestBody CriarLicencaRequest request) {
         var autor = extrairAutor();
@@ -68,12 +69,13 @@ public class LicencaController {
     }
 
     @GetMapping("/{id}")
+    @RequiresPermission("arrecadacao:default:contrato:visualizar")
     public ResponseEntity<LicencaResponse> buscarPorId(@PathVariable("id") UUID id) {
         return ResponseEntity.ok(queryDispatcher.dispatch(new BuscarLicencaPorIdQuery(id)));
     }
 
     @PostMapping("/{id}/suspender")
-    @PreAuthorize("hasRole('analista-arrecadacao')")
+    @RequiresPermission("arrecadacao:default:contrato:editar")
     public ResponseEntity<LicencaResponse> suspender(
             @PathVariable("id") UUID id,
             @Valid @RequestBody TransicaoStatusRequest request) {
@@ -83,7 +85,7 @@ public class LicencaController {
     }
 
     @PostMapping("/{id}/reativar")
-    @PreAuthorize("hasRole('analista-arrecadacao')")
+    @RequiresPermission("arrecadacao:default:contrato:editar")
     public ResponseEntity<LicencaResponse> reativar(
             @PathVariable("id") UUID id,
             @Valid @RequestBody TransicaoStatusRequest request) {
@@ -93,7 +95,7 @@ public class LicencaController {
     }
 
     @PostMapping("/{id}/encerrar")
-    @PreAuthorize("hasRole('analista-arrecadacao')")
+    @RequiresPermission("arrecadacao:default:contrato:cancelar")
     public ResponseEntity<LicencaResponse> encerrar(
             @PathVariable("id") UUID id,
             @Valid @RequestBody TransicaoStatusRequest request) {
@@ -103,6 +105,7 @@ public class LicencaController {
     }
 
     @GetMapping("/{id}/historico-status")
+    @RequiresPermission("arrecadacao:default:contrato:visualizar")
     public ResponseEntity<List<HistoricoStatusLicencaResponse>> listarHistorico(
             @PathVariable("id") UUID id) {
         return ResponseEntity.ok(

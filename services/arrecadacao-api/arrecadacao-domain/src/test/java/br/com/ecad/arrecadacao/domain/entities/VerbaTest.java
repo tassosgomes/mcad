@@ -231,4 +231,15 @@ class VerbaTest {
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("ABERTA");
     }
+
+    @Test
+    void recalcular_NegativeNovoBruto_DeveLancar() {
+        // Given — verba ABERTA com bruto negativo (dado corrompido)
+        Verba verba = Verba.abrir(RUBRICA_ID, PERIODO);
+
+        // When / Then
+        assertThatThrownBy(() -> verba.recalcular(new BigDecimal("-0.01"), 1))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("novoBruto nao pode ser negativo");
+    }
 }

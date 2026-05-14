@@ -20,6 +20,8 @@ import br.com.ecad.arrecadacao.domain.interfaces.PagamentoRepository;
 import br.com.ecad.arrecadacao.domain.interfaces.UdaValorRepository;
 import br.com.ecad.arrecadacao.domain.interfaces.VerbaService;
 import br.org.ecad.audit.sdk.AuditClient;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -27,11 +29,13 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
+import org.slf4j.MDC;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
@@ -238,5 +242,73 @@ class RegistrarPagamentoCommandHandlerTest {
         // Verify: pagamento NAO foi salvo e evento NAO foi emitido
         verify(pagamentoRepository, never()).save(any());
         verify(outboxEventWriter, never()).addEvent(any(), any(), any());
+    }
+
+    /**
+     * Garante isolamento entre execucoes: MDC e populado dentro de handle()
+     * e limpo no bloco finally, evitando vazamento entre threads do pool.
+     *
+     * <p>Producao usa as chaves MDC "rubrica" (sigla) e "periodo" — divergente do
+     * comentario do TODO original ("rubricaSigla"). Este teste pina o comportamento
+     * real.</p>
+     */
+    @BeforeEach
+    void limparMdcAntes() {
+        MDC.clear();
+    }
+
+    @AfterEach
+    void limparMdcDepois() {
+        MDC.clear();
+    }
+
+    @Test
+    void handle_DeveLimparMdcAposExecucao() {
+        // Arrange — happy path identico ao teste de registro feliz
+        Licenca licencaMock = criarLicencaMock(StatusLicenca.ATIVA);
+        UdaValor udaMock = UdaValor.criar(VALOR_UDA, LocalDate.of(2026, 1, 1), null);
+        Pagamento pagamentoSalvo = Pagamento.registrar(LICENCA_ID, QUANTIDADE_UDAS, VALOR_UDA);
+
+        when(licencaRepository.findById(LICENCA_ID)).thenReturn(Optional.of(licencaMock));
+        when(udaValorRepository.findVigente(any(LocalDate.class))).thenReturn(Optional.of(udaMock));
+        when(pagamentoRepository.existsConfirmadoByLicencaIdAndPeriodo(eq(LICENCA_ID), anyString()))
+                .thenReturn(false);
+        when(pagamentoRepository.save(any(Pagamento.class))).thenReturn(pagamentoSalvo);
+        when(auditContextProvider.current("analista")).thenReturn(AuditContext.system("analista"));
+
+        // Captura MDC durante handle() via Answer no recalcularVerba (chamado apos MDC.put)
+        AtomicReference<String> rubricaDuranteHandle = new AtomicReference<>();
+        AtomicReference<String> periodoDuranteHandle = new AtomicReference<>();
+        doAnswer(inv -> {
+            rubricaDuranteHandle.set(MDC.get("rubrica"));
+            periodoDuranteHandle.set(MDC.get("periodo"));
+            return null;
+        }).when(verbaService).recalcularVerba(any(), anyString());
+
+        // Pre-condicao: MDC limpo
+        assertThat(MDC.get("rubrica")).isNull();
+        assertThat(MDC.get("periodo")).isNull();
+
+        RegistrarPagamentoCommand cmd = new RegistrarPagamentoCommand(LICENCA_ID, QUANTIDADE_UDAS, "analista");
+
+        // Act
+        handler.handle(cmd);
+
+        // Assert — MDC foi populado durante handle()
+        assertThat(rubricaDuranteHandle.get())
+                .as("MDC[rubrica] deve estar populado durante handle()")
+                .isEqualTo("RADIO");
+        assertThat(periodoDuranteHandle.get())
+                .as("MDC[periodo] deve estar populado durante handle()")
+                .isNotNull()
+                .matches("\\d{4}-\\d{2}");
+
+        // Assert — MDC limpo apos handle() (finally executou)
+        assertThat(MDC.get("rubrica"))
+                .as("MDC[rubrica] deve ser removido no finally")
+                .isNull();
+        assertThat(MDC.get("periodo"))
+                .as("MDC[periodo] deve ser removido no finally")
+                .isNull();
     }
 }

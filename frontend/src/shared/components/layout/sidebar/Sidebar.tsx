@@ -1,15 +1,37 @@
 import { useState } from 'react';
+import type { ComponentType } from 'react';
 import { NavLink } from 'react-router-dom';
+import type { LucideProps } from 'lucide-react';
 import { Database, Search, Banknote, Split, ChevronDown, ScrollText, ShieldCheck } from 'lucide-react';
-import { useAuth } from '@shared/auth';
+import { usePermissions } from '@shared/authz';
 import styles from './Sidebar.module.css';
 
-const navigation = [
+interface SidebarChild {
+  label: string;
+  path: string;
+}
+
+interface SidebarGroup {
+  label: string;
+  icon: ComponentType<LucideProps>;
+  basePath: string;
+  disabled?: boolean;
+  /** anyOf-semantics: visible if the subject has at least one permission. */
+  requiredPermissions: string[];
+  children: SidebarChild[];
+}
+
+/**
+ * Permissões que governam quais grupos do menu são visíveis. A regra é "anyOf":
+ * o usuário precisa ter ao menos uma das permissões listadas para enxergar o
+ * grupo. Espelha o critério usado em `routes.tsx`.
+ */
+const navigation: SidebarGroup[] = [
   {
     label: 'Cadastro',
     icon: Database,
     basePath: '/cadastro',
-    requiredRoles: ['analista-cadastro', 'consultor'],
+    requiredPermissions: ['cadastro:default:associacao:listar'],
     children: [
       { label: 'Associações', path: '/cadastro/associacoes' },
       { label: 'Titulares', path: '/cadastro/titulares' },
@@ -18,23 +40,23 @@ const navigation = [
     ],
   },
   // Fases futuras (desabilitados):
-  { 
-    label: 'Identificação', 
-    icon: Search, 
-    basePath: '/identificacao', 
+  {
+    label: 'Identificação',
+    icon: Search,
+    basePath: '/identificacao',
     disabled: false,
-    requiredRoles: ['analista-identificacao', 'consultor-identificacao'],
+    requiredPermissions: ['identificacao:default:captacao:listar'],
     children: [
       { label: 'Captações', path: '/identificacao/captacoes' },
       { label: 'Pendentes', path: '/identificacao/pendentes' },
     ]
   },
-  { 
-    label: 'Arrecadação', 
-    icon: Banknote, 
-    basePath: '/arrecadacao', 
-    disabled: false, 
-    requiredRoles: ['analista-arrecadacao', 'consultor-arrecadacao'],
+  {
+    label: 'Arrecadação',
+    icon: Banknote,
+    basePath: '/arrecadacao',
+    disabled: false,
+    requiredPermissions: ['arrecadacao:default:cliente:listar'],
     children: [
       { label: 'Usuários de Música', path: '/arrecadacao/usuarios-musica' },
       { label: 'Licenças', path: '/arrecadacao/licencas' },
@@ -48,7 +70,8 @@ const navigation = [
     icon: Split,
     basePath: '/distribuicao',
     disabled: false,
-    requiredRoles: ['analista-distribuicao', 'consultor-distribuicao'],
+    // TODO: aguardando catálogo real da distribuicao-api.
+    requiredPermissions: ['distribuicao:default:roteiro:listar'],
     children: [
       { label: 'Rubricas', path: '/distribuicao/rubricas' },
     ],
@@ -58,11 +81,12 @@ const navigation = [
     icon: ScrollText,
     basePath: '/auditoria',
     disabled: false,
-    requiredRoles: [
-      'analista-cadastro',
-      'analista-identificacao',
-      'analista-arrecadacao',
-      'analista-distribuicao',
+    // TODO B3: validar permissões de auditoria com o backend.
+    requiredPermissions: [
+      'cadastro:default:status:visualizar-historico-obra',
+      'cadastro:default:status:visualizar-historico-fonograma',
+      'identificacao:default:captacao:listar',
+      'arrecadacao:default:cliente:listar',
     ],
     children: [
       { label: 'Eventos por entidade', path: '/auditoria/eventos' },
@@ -75,11 +99,12 @@ const navigation = [
     icon: ShieldCheck,
     basePath: '/autorizacao',
     disabled: false,
-    requiredRoles: [
-      'analista-cadastro',
-      'analista-identificacao',
-      'analista-arrecadacao',
-      'analista-distribuicao',
+    // TODO B3: validar permissões para administração de autorização.
+    requiredPermissions: [
+      'cadastro:default:status:visualizar-historico-obra',
+      'cadastro:default:status:visualizar-historico-fonograma',
+      'identificacao:default:captacao:listar',
+      'arrecadacao:default:cliente:listar',
     ],
     children: [
       { label: 'Permissões', path: '/autorizacao/permissoes' },
@@ -94,7 +119,7 @@ interface SidebarProps {
 }
 
 export function Sidebar({ isOpen, onClose }: SidebarProps) {
-  const { hasRole } = useAuth();
+  const { hasAny, isLoading } = usePermissions();
 
   // Always open first section for now
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({
@@ -115,25 +140,28 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
 
   return (
     <>
-      <div 
-        className={`${styles.overlay} ${isOpen ? styles.open : ''}`} 
-        onClick={onClose} 
-        aria-hidden="true" 
+      <div
+        className={`${styles.overlay} ${isOpen ? styles.open : ''}`}
+        onClick={onClose}
+        aria-hidden="true"
       />
       <aside className={`${styles.sidebar} ${isOpen ? styles.open : ''}`}>
         <nav className={styles.nav}>
           {navigation.map((group) => {
             const Icon = group.icon;
             const isGroupOpen = openSections[group.label];
-            
-            // Check visibility
-            const isVisible = group.requiredRoles.length === 0 || group.requiredRoles.some(role => hasRole(role));
+
+            // Visibility: hide while permissions are loading to avoid flashing
+            // entries the user can't access. After loading, show only when
+            // the subject has at least one of the required permissions.
+            const required = group.requiredPermissions;
+            const isVisible = !isLoading && (!required.length || hasAny(required));
             if (!isVisible) return null;
-            
+
             return (
               <div key={group.label} className={styles.group}>
-                <button 
-                  className={`${styles.groupButton} ${group.disabled ? styles.disabled : ''}`} 
+                <button
+                  className={`${styles.groupButton} ${group.disabled ? styles.disabled : ''}`}
                   onClick={() => !group.disabled && toggleSection(group.label)}
                   disabled={group.disabled}
                   type="button"
@@ -146,12 +174,12 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                     <ChevronDown size={16} className={`${styles.chevron} ${isGroupOpen ? styles.open : ''}`} />
                   )}
                 </button>
-                
+
                 {!group.disabled && group.children && isGroupOpen && (
                   <div className={styles.links}>
                     {group.children.map(child => (
-                      <NavLink 
-                        key={child.path} 
+                      <NavLink
+                        key={child.path}
                         to={child.path}
                         className={({ isActive }) => `${styles.link} ${isActive ? styles.active : ''}`}
                         onClick={() => {

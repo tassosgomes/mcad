@@ -7,6 +7,7 @@ import { Badge } from '@components/ui/badge';
 import { Button } from '@components/ui/button';
 import { useToast } from '@components/ui/toast';
 import { useAuth } from '@shared/auth';
+import { usePermissions } from '@shared/authz';
 import { useDocumentTitle } from '@hooks/useDocumentTitle';
 import styles from './CaptacaoDetailPage.module.css';
 
@@ -28,8 +29,9 @@ export function CaptacaoDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { showToast } = useToast();
-  const { hasRole, user } = useAuth();
-  
+  const { user } = useAuth();
+  const { can } = usePermissions();
+
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
   const { data: captacao, isLoading, error, refetch } = useCaptacao(id);
@@ -46,7 +48,7 @@ export function CaptacaoDetailPage() {
   const isFechada = captacao.status?.toUpperCase() === 'FECHADA';
   const currentUserId = user?.profile.sub;
   const isOwner = captacao.analistaResponsavel.id === currentUserId;
-  const canWrite = hasRole('analista-identificacao');
+  const canWrite = can('identificacao:default:captacao:editar');
   const canEdit = canWrite && isOwner && !isFechada && captacao.status !== 'CANCELADA';
   const canDelete = canEdit && captacao.status?.toUpperCase() === 'ABERTA';
 

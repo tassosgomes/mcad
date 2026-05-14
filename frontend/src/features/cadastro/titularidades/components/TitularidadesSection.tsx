@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Plus } from 'lucide-react';
 import { Button } from '@components/ui/button';
 import { useToast } from '@components/ui/toast';
-import { useAuth } from '@shared/auth';
+import { usePermissions } from '@shared/authz/usePermissions';
 import { useTitularidades } from '../hooks/useTitularidades';
 import { useAddTitularidade } from '../hooks/useAddTitularidade';
 import { useRemoveTitularidade } from '../hooks/useRemoveTitularidade';
@@ -26,7 +26,7 @@ export function TitularidadesSection({
   canWrite: canWriteProp,
   onDepuracaoRequired,
 }: TitularidadesSectionProps) {
-  const { hasRole } = useAuth();
+  const { can } = usePermissions();
   const { data, isLoading } = useTitularidades(obraId);
   const addMutation = useAddTitularidade(obraId);
   const removeMutation = useRemoveTitularidade(obraId);
@@ -35,7 +35,7 @@ export function TitularidadesSection({
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingTitularidade, setEditingTitularidade] = useState<TitularidadeItem | null>(null);
 
-  const canWrite = canWriteProp ?? hasRole('analista-cadastro');
+  const canWrite = canWriteProp ?? can('cadastro:default:titularidade:adicionar');
 
   // RF-20: obras depuradas e domínio público são read-only
   const isReadOnly = !canWrite || obraStatus === 'DEPURADA' || obraStatus === 'DOMINIO_PUBLICO';

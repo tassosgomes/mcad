@@ -1,14 +1,14 @@
 import { useState } from 'react';
 import { PageHeader } from '@components/ui/page-header';
-import { useAuth } from '@shared/auth';
+import { usePermissions } from '@shared/authz';
 import { UdaVigenteCard } from '../components/UdaVigenteCard';
 import { UdaHistoricoTable } from '../components/UdaHistoricoTable';
 import { AjustarUdaModal } from '../components/AjustarUdaModal';
 import styles from './UdaPage.module.css';
 
 export function UdaPage() {
-  const { hasRole } = useAuth();
-  const isAnalista = hasRole('analista-arrecadacao');
+  const { can } = usePermissions();
+  const isAnalista = can('arrecadacao:default:cobranca:emitir');
   const [showModal, setShowModal] = useState(false);
 
   return (

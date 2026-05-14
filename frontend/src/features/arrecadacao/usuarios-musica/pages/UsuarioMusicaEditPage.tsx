@@ -5,7 +5,7 @@ import { ErrorState } from '@components/ui/error-state';
 import { Loading } from '@components/ui/loading';
 import { PageHeader } from '@components/ui/page-header';
 import { useToast } from '@components/ui/toast';
-import { useAuth } from '@shared/auth';
+import { usePermissions } from '@shared/authz';
 import { UsuarioMusicaForm } from '../components/UsuarioMusicaForm';
 import { useUpdateUsuarioMusica } from '../hooks/useUpdateUsuarioMusica';
 import { useUsuarioMusica } from '../hooks/useUsuarioMusica';
@@ -15,12 +15,12 @@ import styles from './UsuarioMusicaFormPage.module.css';
 export function UsuarioMusicaEditPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { hasRole } = useAuth();
+  const { can } = usePermissions();
   const { showToast } = useToast();
   const { data: usuario, isLoading, error, refetch } = useUsuarioMusica(id);
   const updateMutation = useUpdateUsuarioMusica();
 
-  if (!hasRole('analista-arrecadacao')) {
+  if (!can('arrecadacao:default:cliente:editar')) {
     return <ErrorState message="Seu perfil permite consulta, mas não alteração de usuários de música." />;
   }
 

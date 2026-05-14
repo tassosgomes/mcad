@@ -13,7 +13,7 @@ public class PermissionAuthorizationHandlerTests
     [Fact]
     public async Task HandleAsync_WhenUserIsNotAuthenticated_DoesNotSucceed()
     {
-        var requirement = new PermissionRequirement("cadastro:obra:listar");
+        var requirement = new PermissionRequirement("cadastro:default:obra:listar");
         var context = CreateContext(requirement, isAuthenticated: false);
         var authzClient = new Mock<IEcadAuthzClient>(MockBehavior.Strict);
         var handler = CreateHandler(authzClient.Object, enabled: true);
@@ -27,7 +27,7 @@ public class PermissionAuthorizationHandlerTests
     [Fact]
     public async Task HandleAsync_WhenAuthzAllowsPermission_Succeeds()
     {
-        const string permission = "cadastro:obra:listar";
+        const string permission = "cadastro:default:obra:listar";
         const string bearerToken = "token-123";
         var requirement = new PermissionRequirement(permission);
         var context = CreateContext(requirement, isAuthenticated: true);

@@ -1,6 +1,8 @@
 using DotNetEnv;
 using Ecad.Audit.AspNetCore;
 using Ecad.Audit.Sdk;
+using Ecad.Authz.AspNetCore;
+using Ecad.Authz.Sdk;
 using FluentValidation;
 using Identificacao.API.AsyncApi;
 using Identificacao.API.Audit;
@@ -185,24 +187,25 @@ if (authEnabled)
         });
 
     builder.Services.AddTransient<IClaimsTransformation, LogtoClaimsTransformation>();
+}
 
-    builder.Services.AddAuthorization(options =>
-    {
-        options.FallbackPolicy = new AuthorizationPolicyBuilder().RequireAuthenticatedUser().Build();
-        // Scopes de API resource (Logto): access → todos os papéis, write → somente analistas
-        options.AddPolicy("read", p => p.RequireClaim("scope", "access"));
-        options.AddPolicy("write", p => p.RequireClaim("scope", "write"));
-    });
-}
-else
+builder.Services.AddAuthorization(options =>
 {
-    builder.Services.AddAuthorization(options =>
+    if (authEnabled)
     {
-        options.FallbackPolicy = new AuthorizationPolicyBuilder().RequireAssertion(_ => true).Build();
-        options.AddPolicy("read", p => p.RequireAssertion(_ => true));
-        options.AddPolicy("write", p => p.RequireAssertion(_ => true));
-    });
-}
+        options.FallbackPolicy = new AuthorizationPolicyBuilder()
+            .RequireAuthenticatedUser()
+            .Build();
+    }
+});
+
+// ── Autorização fina via Ecad.Authz (PDP externo) ────────────────────
+// Cada endpoint declara sua permissão (ex.: identificacao:default:captacao:listar)
+// e o PermissionAuthorizationHandler consulta o serviço de authz por requisição.
+// Quando AUTH_ENABLED=false, o flag desliga a checagem para uso em dev local.
+builder.Services.AddEcadAuthz(builder.Configuration);
+builder.Services.Configure<EcadAuthzOptions>(options =>
+    options.Enabled = authEnabled && options.Enabled);
 
 // Global Exception Handler
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
@@ -255,14 +258,14 @@ app.MapAsyncApiDocs();
 
 // Map Endpoints
 app.MapHealthChecks("/health").AllowAnonymous();
-app.MapFechamentoEndpoints();
-app.MapCancelamentoEndpoints();
-app.MapRubricaEndpoints();
-app.MapCaptacaoEndpoints();
-app.MapExecucaoEndpoints();
-app.MapTipoUtilizacaoEndpoints();
-app.MapUploadEndpoints();
-app.MapPendenteEndpoints();
+app.MapFechamentoEndpoints(authEnabled);
+app.MapCancelamentoEndpoints(authEnabled);
+app.MapRubricaEndpoints(authEnabled);
+app.MapCaptacaoEndpoints(authEnabled);
+app.MapExecucaoEndpoints(authEnabled);
+app.MapTipoUtilizacaoEndpoints(authEnabled);
+app.MapUploadEndpoints(authEnabled);
+app.MapPendenteEndpoints(authEnabled);
 
 // Executa Migrations no Startup
 using (var scope = app.Services.CreateScope())
@@ -272,6 +275,9 @@ using (var scope = app.Services.CreateScope())
 }
 
 app.Run();
+
+// Expõe a classe Program para WebApplicationFactory nos testes de integração
+public partial class Program { }
 
 internal static class AuditConfigurationHelpers
 {

@@ -46,6 +46,9 @@ function problemMessage(error: unknown): string {
 export function ProcessoCalculoPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  // TODO Fase F: substituir hasRole('analista-distribuicao') por can('distribuicao:default:processo:calcular')
+  // assim que o catálogo de permissões da distribuicao-api estiver definido. Hoje o serviço de
+  // distribuição ainda é um placeholder ("planned" no vision.md) e não publica permissões.
   const { hasRole } = useAuth();
   const [page, setPage] = useState(0);
   const [filters, setFilters] = useState<UiFilters>(initialFilters);

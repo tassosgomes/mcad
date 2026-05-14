@@ -6,7 +6,7 @@ import { Loading } from '@components/ui/loading';
 import { ErrorState } from '@components/ui/error-state';
 import { Button } from '@components/ui/button';
 import { Pagination } from '@components/ui/pagination';
-import { useAuth } from '@shared/auth';
+import { usePermissions } from '@shared/authz';
 import { usePagamentos } from '../hooks/usePagamentos';
 import { PagamentosTable } from '../components/PagamentosTable';
 import { PagamentosFilters } from '../components/PagamentosFilters';
@@ -21,8 +21,8 @@ const FILTROS_INICIAIS: PagamentoFiltros = {
 
 export function PagamentosPage() {
   const navigate = useNavigate();
-  const { hasRole } = useAuth();
-  const isAnalista = hasRole('analista-arrecadacao');
+  const { can } = usePermissions();
+  const isAnalista = can('arrecadacao:default:pagamento:conciliar');
   const [filtros, setFiltros] = useState<PagamentoFiltros>(FILTROS_INICIAIS);
 
   const { data, isLoading, error, refetch } = usePagamentos(filtros);

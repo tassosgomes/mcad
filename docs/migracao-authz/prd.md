@@ -544,10 +544,10 @@ builder.Services.AddEcadAuthz(builder.Configuration);
 
 ```csharp
 group.MapGet("/", ListarObras)
-    .RequirePermission("cadastro:obra:listar");
+    .RequirePermission("cadastro:default:obra:listar");
 
 group.MapPost("/", CriarObra)
-    .RequirePermission("cadastro:obra:criar");
+    .RequirePermission("cadastro:default:obra:criar");
 ```
 
 ---
@@ -581,9 +581,9 @@ GET /api/me/permissions
 {
   "subjectId": "user-id",
   "permissions": [
-    "cadastro:obra:listar",
-    "cadastro:obra:visualizar",
-    "cadastro:obra:criar"
+    "cadastro:default:obra:listar",
+    "cadastro:default:obra:visualizar",
+    "cadastro:default:obra:criar"
   ]
 }
 ```
@@ -609,9 +609,9 @@ Trocar autorização de tela baseada em role/scope por autorização baseada em 
 ```typescript
 const { can, permissions, isLoading } = usePermissions();
 
-can('cadastro:obra:criar');
-can('cadastro:titular:editar');
-can('distribuicao:roteiro:processar');
+can('cadastro:default:obra:criar');
+can('cadastro:default:titular:editar');
+can('distribuicao:default:roteiro:processar');
 ```
 
 ## 8.3 Componentes esperados
@@ -625,7 +625,7 @@ frontend/src/shared/authz/Can.tsx
 ## 8.4 Exemplo de componente `Can`
 
 ```tsx
-<Can permission="cadastro:obra:criar">
+<Can permission="cadastro:default:obra:criar">
   <Button>Nova Obra</Button>
 </Can>
 ```
@@ -642,8 +642,8 @@ hasRole('consultor')
 Substituir por:
 
 ```typescript
-can('cadastro:obra:criar')
-can('cadastro:titular:editar')
+can('cadastro:default:obra:criar')
+can('cadastro:default:titular:editar')
 ```
 
 ---
@@ -1029,11 +1029,11 @@ hasRole('consultor')
 Por:
 
 ```typescript
-can('cadastro:obra:criar')
-can('cadastro:titular:editar')
-can('identificacao:obra:validar')
-can('arrecadacao:cobranca:emitir')
-can('distribuicao:roteiro:processar')
+can('cadastro:default:obra:criar')
+can('cadastro:default:titular:editar')
+can('identificacao:default:obra:validar')
+can('arrecadacao:default:cobranca:emitir')
+can('distribuicao:default:roteiro:processar')
 ```
 
 ### Critérios de aceite
@@ -1066,7 +1066,7 @@ Exemplo de check:
 ```json
 {
   "subjectId": "user-id",
-  "permission": "cadastro:obra:criar",
+  "permission": "cadastro:default:obra:criar",
   "tenantId": null,
   "context": {}
 }
@@ -1218,27 +1218,27 @@ Validar que a migração foi concluída.
 ### Checklist
 
 ```text
-[ ] Catálogo de permissões criado para Cadastro
-[ ] Catálogo de permissões criado para Identificação
-[ ] Catálogo de permissões criado para Arrecadação
-[ ] Catálogo de permissões criado para Distribuição
-[ ] Seeds criados no ecad-authz
-[ ] SDK .NET criado
-[ ] SDK .NET integrado no cadastro-api
-[ ] SDK .NET integrado no identificacao-api
-[ ] SDK .NET integrado no arrecadacao-api
-[ ] SDK .NET integrado no distribuicao-api
-[ ] Frontend chama BFF
-[ ] BFF possui /api/me
-[ ] BFF possui /api/me/permissions
-[ ] React possui usePermissions
-[ ] React possui componente Can
-[ ] Nenhum endpoint usa RequireAuthorization("read")
-[ ] Nenhum endpoint usa RequireAuthorization("write")
-[ ] Nenhum componente usa hasRole como autorização de negócio
-[ ] Testes de autorização passam nas 4 APIs
-[ ] Ambiente local documentado e funcional
-[ ] ADRs criadas
+[x] Catálogo de permissões criado para Cadastro
+[x] Catálogo de permissões criado para Identificação
+[x] Catálogo de permissões criado para Arrecadação
+[ ] Catálogo de permissões criado para Distribuição (serviço ainda planned)
+[x] Seeds criados no ecad-authz
+[x] SDK .NET criado
+[x] SDK .NET integrado no cadastro-api
+[x] SDK .NET integrado no identificacao-api
+[x] SDK .NET integrado no arrecadacao-api (via authz-spring-boot-starter Java)
+[ ] SDK .NET integrado no distribuicao-api (serviço ainda planned)
+[x] Frontend chama BFF
+[x] BFF possui /api/me
+[x] BFF possui /api/me/permissions
+[x] React possui usePermissions
+[x] React possui componente Can
+[x] Nenhum endpoint usa RequireAuthorization("read")
+[x] Nenhum endpoint usa RequireAuthorization("write")
+[x] Nenhum componente usa hasRole como autorização de negócio (única exceção: ProcessoCalculoPage do domínio Distribuição, marcada com TODO Fase F — aguardando catálogo `distribuicao:*`)
+[ ] Testes de autorização passam nas 4 APIs (cadastro e identificacao concluídos; arrecadacao parcial)
+[x] Ambiente local documentado e funcional
+[ ] ADRs criadas (Tarefa 19/Fase H)
 ```
 
 ---

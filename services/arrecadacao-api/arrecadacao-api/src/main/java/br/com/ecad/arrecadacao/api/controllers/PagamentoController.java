@@ -11,13 +11,13 @@ import br.com.ecad.arrecadacao.application.dto.RegistrarPagamentoRequest;
 import br.com.ecad.arrecadacao.application.queries.BuscarPagamentoPorIdQuery;
 import br.com.ecad.arrecadacao.application.queries.ListarPagamentosQuery;
 import br.com.ecad.arrecadacao.domain.enums.StatusPagamento;
+import br.org.ecad.authz.sdk.annotation.RequiresPermission;
 
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
@@ -38,6 +38,7 @@ public class PagamentoController {
     }
 
     @GetMapping
+    @RequiresPermission("arrecadacao:default:pagamento:listar")
     public ResponseEntity<PageResponse<PagamentoResponse>> listar(
             @RequestParam(name = "page", defaultValue = "0") int page,
             @RequestParam(name = "size", defaultValue = "20") int size,
@@ -53,7 +54,7 @@ public class PagamentoController {
     }
 
     @PostMapping
-    @PreAuthorize("hasRole('analista-arrecadacao')")
+    @RequiresPermission("arrecadacao:default:pagamento:conciliar")
     public ResponseEntity<PagamentoResponse> registrar(
             @Valid @RequestBody RegistrarPagamentoRequest request,
             Authentication auth) {
@@ -65,12 +66,13 @@ public class PagamentoController {
     }
 
     @GetMapping("/{id}")
+    @RequiresPermission("arrecadacao:default:pagamento:visualizar")
     public ResponseEntity<PagamentoResponse> buscarPorId(@PathVariable("id") UUID id) {
         return ResponseEntity.ok(queryDispatcher.dispatch(new BuscarPagamentoPorIdQuery(id)));
     }
 
     @PostMapping("/{id}/estornar")
-    @PreAuthorize("hasRole('analista-arrecadacao')")
+    @RequiresPermission("arrecadacao:default:pagamento:estornar")
     public ResponseEntity<PagamentoResponse> estornar(
             @PathVariable("id") UUID id,
             @Valid @RequestBody EstornarPagamentoRequest request,

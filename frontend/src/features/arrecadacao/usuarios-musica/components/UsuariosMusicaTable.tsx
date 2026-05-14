@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@components/ui/button';
 import { RowAuditHistoryButton } from '@features/auditoria/components/RowAuditHistoryButton';
 import { auditEntityTypes } from '@features/auditoria/constants/auditEntityTypes';
-import { useAuth } from '@shared/auth';
+import { usePermissions } from '@shared/authz';
 import { StatusBadgeUsuarioMusica } from './StatusBadgeUsuarioMusica';
 import type { UsuarioMusica } from '../types/usuario-musica';
 import styles from './UsuariosMusicaTable.module.css';
@@ -28,8 +28,8 @@ function getSortIcon(sort: string, key: string) {
 
 export function UsuariosMusicaTable({ data, sort, onSortChange }: UsuariosMusicaTableProps) {
   const navigate = useNavigate();
-  const { hasRole } = useAuth();
-  const canWrite = hasRole('analista-arrecadacao');
+  const { can } = usePermissions();
+  const canWrite = can('arrecadacao:default:cliente:editar');
 
   function toggleSort(key: string) {
     onSortChange(sort === key ? `-${key}` : key);

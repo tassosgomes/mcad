@@ -1,5 +1,5 @@
 import { useState, FormEvent } from 'react';
-import { useAuth } from '@shared/auth';
+import { usePermissions } from '@shared/authz/usePermissions';
 import { ObraSelect } from './ObraSelect';
 import { isValidIsrc } from '../utils/isrcValidator';
 import type { Fonograma } from '../types/fonograma';
@@ -14,9 +14,9 @@ interface FonogramaFormProps {
 }
 
 export function FonogramaForm({ initialData, initialObraId, initialObraTitulo, onSubmit, isLoading }: FonogramaFormProps) {
-  const { hasRole } = useAuth();
-  const canWrite = hasRole('analista-cadastro');
+  const { can } = usePermissions();
   const isEditing = !!initialData;
+  const canWrite = isEditing ? can('cadastro:default:fonograma:editar') : can('cadastro:default:fonograma:criar');
   const isLiberadoOuDepurado = initialData?.status === 'Liberado' || initialData?.status === 'Depurado';
 
   const [isrc, setIsrc] = useState(initialData?.isrcFormatado || '');

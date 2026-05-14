@@ -1,6 +1,13 @@
 import Fastify, { type FastifyInstance } from 'fastify';
 import type { BffConfig } from './config.js';
+import { createMeCache, type MeCache } from './meCache.js';
+import { registerMeRoutes } from './meRoutes.js';
 import { registerProxy } from './proxy.js';
+
+export interface BuildServerOptions {
+  meCache?: MeCache;
+  fetchImpl?: typeof globalThis.fetch;
+}
 
 function isCorsOriginAllowed(origin: string, allowedOrigins: string[]): boolean {
   return allowedOrigins.includes('*') || allowedOrigins.includes(origin);
@@ -34,7 +41,10 @@ function registerCors(server: FastifyInstance, allowedOrigins: string[]) {
   });
 }
 
-export async function buildServer(config: BffConfig): Promise<FastifyInstance> {
+export async function buildServer(
+  config: BffConfig,
+  options: BuildServerOptions = {},
+): Promise<FastifyInstance> {
   const server = Fastify({
     logger: true,
     bodyLimit: config.requestBodyLimitBytes,
@@ -52,6 +62,15 @@ export async function buildServer(config: BffConfig): Promise<FastifyInstance> {
     status: 'UP',
     upstreams: config.upstreams.map((upstream) => upstream.name),
   }));
+
+  // Rotas proprias do BFF — devem ser registradas antes dos proxies para
+  // garantir que /api/me/* nao seja capturado por nenhum upstream.
+  const meCache = options.meCache ?? createMeCache();
+  await registerMeRoutes(server, {
+    config,
+    cache: meCache,
+    fetchImpl: options.fetchImpl as unknown as Parameters<typeof registerMeRoutes>[1]['fetchImpl'],
+  });
 
   for (const upstream of config.upstreams) {
     await registerProxy(server, upstream);

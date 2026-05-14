@@ -2,7 +2,7 @@ import { lazy, Suspense } from 'react';
 import { createBrowserRouter, isRouteErrorResponse, Navigate, useRouteError } from 'react-router-dom';
 import { MainLayout } from '@components/layout/main-layout';
 import { Loading } from '@components/ui/loading';
-import { CallbackPage, LoggedOutPage, ProtectedRoute, RequireRole, SilentCallbackPage } from '@shared/auth';
+import { CallbackPage, LoggedOutPage, ProtectedRoute, RequirePermission, SilentCallbackPage } from '@shared/auth';
 import { useAuth } from '@shared/auth/useAuth';
 import { getDefaultAuthorizedPath } from '@shared/auth/authorizedRoutes';
 
@@ -16,22 +16,35 @@ const CopilotoPage = lazy(() =>
   import('@features/copiloto').then((module) => ({ default: module.CopilotoPage })),
 );
 
-const AUDIT_ROLES = [
-  'analista-cadastro',
-  'analista-identificacao',
-  'analista-arrecadacao',
-  'analista-distribuicao',
+/**
+ * Auditoria precisa abranger usuários de qualquer domínio. Como ainda não
+ * existe uma permissão dedicada de auditoria, derivamos de permissões de
+ * histórico/status nos catálogos de cadastro e identificação. Quando a
+ * arrecadacao-api expuser histórico, incluir aqui.
+ *
+ * TODO B3: validar permissões de auditoria com o backend (catálogo definitivo
+ * de auditoria ainda não existe).
+ */
+const AUDIT_PERMISSIONS = [
+  'cadastro:default:status:visualizar-historico-obra',
+  'cadastro:default:status:visualizar-historico-fonograma',
+  'identificacao:default:captacao:listar',
+  'arrecadacao:default:cliente:listar',
 ];
 
-const COPILOTO_ROLES = [
-  'analista-cadastro',
-  'consultor',
-  'analista-identificacao',
-  'consultor-identificacao',
-  'analista-arrecadacao',
-  'consultor-arrecadacao',
-  'analista-distribuicao',
-  'consultor-distribuicao',
+/**
+ * Copiloto está disponível para qualquer usuário que tenha acesso (mesmo de
+ * leitura) a um dos domínios.
+ *
+ * TODO B3: definir permissão copiloto dedicada quando o catálogo de copiloto
+ * estiver formalizado.
+ */
+const COPILOTO_PERMISSIONS = [
+  'cadastro:default:associacao:listar',
+  'identificacao:default:captacao:listar',
+  'arrecadacao:default:cliente:listar',
+  // TODO: aguardando catálogo real da distribuicao-api
+  'distribuicao:default:roteiro:listar',
 ];
 
 function HomeRedirect() {
@@ -80,74 +93,77 @@ export const router = createBrowserRouter([
     errorElement: <RouteErrorFallback />,
     children: [
       { index: true, element: <HomeRedirect /> },
-      { 
-        path: 'cadastro/*', 
+      {
+        path: 'cadastro/*',
         element: (
-          <RequireRole roles={['analista-cadastro', 'consultor']}>
+          <RequirePermission permission="cadastro:default:associacao:listar">
             <Suspense fallback={<Loading />}>
               <CadastroRoutes />
             </Suspense>
-          </RequireRole>
-        ) 
+          </RequirePermission>
+        )
       },
-      { 
-        path: 'identificacao/*', 
+      {
+        path: 'identificacao/*',
         element: (
-          <RequireRole roles={['analista-identificacao', 'consultor-identificacao']}>
+          <RequirePermission permission="identificacao:default:captacao:listar">
             <Suspense fallback={<Loading />}>
               <IdentificacaoRoutes />
             </Suspense>
-          </RequireRole>
-        ) 
+          </RequirePermission>
+        )
       },
-      { 
-        path: 'arrecadacao/*', 
+      {
+        path: 'arrecadacao/*',
         element: (
-          <RequireRole roles={['analista-arrecadacao', 'consultor-arrecadacao']}>
+          <RequirePermission permission="arrecadacao:default:cliente:listar">
             <Suspense fallback={<Loading />}>
               <ArrecadacaoRoutes />
             </Suspense>
-          </RequireRole>
-        ) 
+          </RequirePermission>
+        )
       },
       {
         path: 'distribuicao/*',
+        // TODO: aguardando catálogo real da distribuicao-api. Quando o
+        // serviço expuser permissões, substituir pelo equivalente de listar
+        // roteiros/processos.
         element: (
-          <RequireRole roles={['analista-distribuicao', 'consultor-distribuicao']}>
+          <RequirePermission permission="distribuicao:default:roteiro:listar">
             <Suspense fallback={<Loading />}>
               <DistribuicaoRoutes />
             </Suspense>
-          </RequireRole>
+          </RequirePermission>
         )
       },
       {
         path: 'auditoria/*',
         element: (
-          <RequireRole roles={AUDIT_ROLES}>
+          <RequirePermission anyOf={AUDIT_PERMISSIONS}>
             <Suspense fallback={<Loading />}>
               <AuditoriaRoutes />
             </Suspense>
-          </RequireRole>
+          </RequirePermission>
         )
       },
       {
         path: 'autorizacao/*',
         element: (
-          <RequireRole roles={AUDIT_ROLES}>
+          <RequirePermission anyOf={AUDIT_PERMISSIONS}>
             <Suspense fallback={<Loading />}>
               <AuthzRoutes />
             </Suspense>
-          </RequireRole>
+          </RequirePermission>
         )
       },
       {
         path: 'copiloto',
         element: (
-          <RequireRole roles={COPILOTO_ROLES}>
+          <RequirePermission anyOf={COPILOTO_PERMISSIONS}>
             <Suspense fallback={<Loading />}>
               <CopilotoPage />
             </Suspense>
-          </RequireRole>
+          </RequirePermission>
         )
       },
     ],

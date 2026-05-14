@@ -1,3 +1,4 @@
+using Identificacao.API.Authorization;
 using Identificacao.API.Infrastructure;
 using Identificacao.Application.Common;
 using Identificacao.Application.Fechamento.Commands;
@@ -8,7 +9,7 @@ namespace Identificacao.API.Endpoints;
 
 public static class FechamentoEndpoints
 {
-    public static void MapFechamentoEndpoints(this IEndpointRouteBuilder app)
+    public static void MapFechamentoEndpoints(this IEndpointRouteBuilder app, bool authEnabled)
     {
         var group = app.MapGroup("/api/v1/captacoes/{captacaoId:guid}")
             .WithTags("Fechamento do Rol");
@@ -18,7 +19,7 @@ public static class FechamentoEndpoints
         {
             var result = await dispatcher.QueryAsync(new ValidarPreRequisitosQuery(captacaoId), ct);
             return Results.Ok(result);
-        }).RequireAuthorization("read");
+        }).RequireIdentificacaoPermission(IdentificacaoPermissions.CaptacaoVisualizar, authEnabled);
 
         group.MapPost("/fechar", async (Guid captacaoId,
             HttpContext httpContext, IDispatcher dispatcher, CancellationToken ct) =>
@@ -27,6 +28,6 @@ public static class FechamentoEndpoints
 
             var result = await dispatcher.SendAsync(new FecharRolCommand(captacaoId, analistaId), ct);
             return Results.Ok(result);
-        }).RequireAuthorization("write");
+        }).RequireIdentificacaoPermission(IdentificacaoPermissions.CaptacaoFechar, authEnabled);
     }
 }

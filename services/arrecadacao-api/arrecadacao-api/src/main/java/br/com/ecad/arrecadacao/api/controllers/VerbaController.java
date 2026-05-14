@@ -8,12 +8,12 @@ import br.com.ecad.arrecadacao.application.queries.BuscarVerbaQuery;
 import br.com.ecad.arrecadacao.application.queries.ListarVerbasAgregadasQuery;
 import br.com.ecad.arrecadacao.application.queries.ListarVerbasQuery;
 import br.com.ecad.arrecadacao.domain.enums.StatusVerba;
+import br.org.ecad.authz.sdk.annotation.RequiresPermission;
 
 import jakarta.validation.constraints.Pattern;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -33,7 +33,7 @@ public class VerbaController {
     }
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('analista-arrecadacao', 'consultor-arrecadacao')")
+    @RequiresPermission("arrecadacao:default:relatorio:visualizar")
     public ResponseEntity<PageResponse<VerbaResponse>> listar(
             @RequestParam(name = "rubricaSigla", required = false) String rubricaSigla,
             @RequestParam(name = "periodo", required = false)
@@ -56,7 +56,7 @@ public class VerbaController {
     }
 
     @GetMapping("/agregado-por-rubrica")
-    @PreAuthorize("hasAnyRole('analista-arrecadacao', 'consultor-arrecadacao')")
+    @RequiresPermission("arrecadacao:default:relatorio:visualizar")
     public ResponseEntity<List<VerbaAgregadoResponse>> listarAgregado(
             @RequestParam(name = "periodoInicio", required = false)
             @Pattern(regexp = "\\d{4}-\\d{2}", message = "periodoInicio deve estar no formato YYYY-MM")
@@ -72,7 +72,7 @@ public class VerbaController {
     }
 
     @GetMapping("/{rubricaSigla}/{periodo}")
-    @PreAuthorize("hasAnyRole('analista-arrecadacao', 'consultor-arrecadacao')")
+    @RequiresPermission("arrecadacao:default:relatorio:visualizar")
     public ResponseEntity<VerbaResponse> buscar(
             @PathVariable("rubricaSigla") String rubricaSigla,
             @PathVariable("periodo")

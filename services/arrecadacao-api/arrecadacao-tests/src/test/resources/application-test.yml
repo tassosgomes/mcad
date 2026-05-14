@@ -32,3 +32,13 @@ app:
   outbox:
     publisher:
       poll-interval-ms: 99999999
+
+# AuthZ starter desabilitado nos testes — usamos @PreAuthorize/@WithMockUser para
+# validar a coarse role-based check; testes específicos do starter ligam manualmente.
+# A exclusão de RedisAutoConfiguration está nos atributos @SpringBootTest(properties=...)
+# de cada teste de integração para garantir precedência sobre este arquivo.
+ecad:
+  authz:
+    enabled: false
+    catalog:
+      registration-required: false

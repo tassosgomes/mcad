@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Plus } from 'lucide-react';
 import { Button } from '@components/ui/button';
 import { useToast } from '@components/ui/toast';
-import { useAuth } from '@shared/auth';
+import { usePermissions } from '@shared/authz/usePermissions';
 import { SomaIndicator } from '@features/cadastro/titularidades/components/SomaIndicator';
 import { useParticipacoes } from '../hooks/useParticipacoes';
 import { useAddParticipacao } from '../hooks/useAddParticipacao';
@@ -30,7 +30,7 @@ export function ParticipacoesSection({
   canWrite: canWriteProp,
   onDepuracaoRequired,
 }: ParticipacoesSecaoProps) {
-  const { hasRole } = useAuth();
+  const { can } = usePermissions();
   const { data, isLoading } = useParticipacoes(fonogramaId);
   const addMutation = useAddParticipacao(fonogramaId);
   const removeMutation = useRemoveParticipacao(fonogramaId);
@@ -41,7 +41,7 @@ export function ParticipacoesSection({
   const [showAddForm, setShowAddForm] = useState(false);
   const [showRecalcularModal, setShowRecalcularModal] = useState(false);
 
-  const canWrite = canWriteProp ?? hasRole('analista-cadastro');
+  const canWrite = canWriteProp ?? can('cadastro:default:participacao:adicionar');
 
   // Read-only em fonogramas depurados
   const isReadOnly = !canWrite || fonogramaStatus === 'DEPURADO';

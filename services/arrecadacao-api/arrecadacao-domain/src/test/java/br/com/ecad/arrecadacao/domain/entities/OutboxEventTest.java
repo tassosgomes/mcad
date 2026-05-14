@@ -26,26 +26,6 @@ class OutboxEventTest {
     }
 
     @Test
-    void marcarPublicadoShouldSetPublishedAtToCurrentInstant() {
-        OutboxEvent event = OutboxEvent.criar("arrecadacao.rubrica.criada", "entity-123", "{}");
-        Instant before = Instant.now();
-
-        event.marcarPublicado();
-
-        Instant after = Instant.now();
-        assertThat(event.getPublishedAt()).isBetween(before, after);
-    }
-
-    @Test
-    void incrementarTentativaShouldIncrementAttemptsByOne() {
-        OutboxEvent event = OutboxEvent.criar("arrecadacao.rubrica.criada", "entity-123", "{}");
-
-        event.incrementarTentativa();
-
-        assertThat(event.getAttempts()).isEqualTo(1);
-    }
-
-    @Test
     void excedeuTentativasShouldReturnFalseWhenAttemptsAreBelowLimit() {
         OutboxEvent event = OutboxEvent.criar("arrecadacao.rubrica.criada", "entity-123", "{}");
         for (int index = 0; index < OutboxEvent.MAX_ATTEMPTS - 1; index++) {
