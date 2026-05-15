@@ -42,6 +42,8 @@ build.log
 *.nupkg
 *.nuspec
 project.lock.json
+# C# DevKit / Roslyn cache local (gerado por VSCode C# extension e Rider)
+*.csproj.lscache
 project.fragment.lock.json
 artifacts/
 .vs/
