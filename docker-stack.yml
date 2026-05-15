@@ -249,6 +249,9 @@ services:
       ARRECADACAO_API_BASE_URL: https://mcad-arrecadacao.tasso.dev.br/api/v1
       DISTRIBUICAO_API_BASE_URL: https://mcad-distribuicao.tasso.dev.br/api/v1
       AUDITORIA_API_BASE_URL: https://api-audit.tasso.dev.br/api/v1
+      AUTHZ_BASE_URL: ${AUTHZ_BASE_URL:-https://mcad-authz.tasso.dev.br}
+      AUTHZ_TIMEOUT_MS: ${AUTHZ_TIMEOUT_MS:-3000}
+      ME_CACHE_TTL_SECONDS: ${ME_CACHE_TTL_SECONDS:-60}
     networks:
       - mcad-internal
       - traefik-public
