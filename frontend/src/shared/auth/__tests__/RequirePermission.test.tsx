@@ -10,6 +10,10 @@ vi.mock('@shared/authz', () => ({
   usePermissions: usePermissionsMock,
 }));
 
+vi.mock('@shared/authz/usePermissions', () => ({
+  usePermissions: usePermissionsMock,
+}));
+
 function permissionsState(overrides: Partial<PermissionsState> = {}): PermissionsState {
   const permissions = overrides.permissions ?? new Set<string>();
 
@@ -55,7 +59,7 @@ describe('RequirePermission', () => {
     expect(screen.getByText('conteúdo')).toBeInTheDocument();
   });
 
-  it('redirects to "/" by default when the required permission is missing', () => {
+  it('renders the access-denied fallback by default when the required permission is missing', () => {
     usePermissionsMock.mockReturnValue(permissionsState());
 
     renderWithRouter(
@@ -65,7 +69,13 @@ describe('RequirePermission', () => {
     );
 
     expect(screen.queryByText('conteúdo')).not.toBeInTheDocument();
-    expect(screen.getByText('home')).toBeInTheDocument();
+    // Default fallback no longer navigates to "/" because doing so could
+    // create a redirect loop with HomeRedirect when the user lacks the
+    // permissions needed by the default landing page.
+    expect(screen.queryByText('home')).not.toBeInTheDocument();
+    expect(
+      screen.getByText(/Você não tem permissão para acessar esta área/i),
+    ).toBeInTheDocument();
   });
 
   it('renders custom fallback when the required permission is missing', () => {

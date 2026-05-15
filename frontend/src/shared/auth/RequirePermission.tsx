@@ -1,6 +1,5 @@
 import type { ReactNode } from 'react';
-import { Navigate } from 'react-router-dom';
-import { usePermissions } from '@shared/authz';
+import { usePermissions } from '@shared/authz/usePermissions';
 import { ErrorState } from '@components/ui/error-state';
 
 interface RequirePermissionProps {
@@ -12,7 +11,13 @@ interface RequirePermissionProps {
   allOf?: string[];
   /**
    * Rendered when the user is not allowed. When omitted, the component
-   * redirects to `/` (the application root). Pass `null` to render nothing.
+   * renders the access-denied UI. Pass `null` to render nothing.
+   *
+   * Note: we deliberately do NOT redirect to `/` by default because the
+   * home route uses `HomeRedirect` to send users to a domain landing page,
+   * which would trigger a navigation loop whenever the chosen landing page
+   * is also gated by a permission the user lacks (Chrome/Firefox eventually
+   * throttle `history.pushState` and the SPA hangs).
    */
   fallback?: ReactNode;
   children: ReactNode;
@@ -59,7 +64,7 @@ export function RequirePermission({
     if (fallback !== undefined) {
       return <>{fallback}</>;
     }
-    return <Navigate to="/" replace />;
+    return <PermissionDeniedFallback />;
   }
 
   return <>{children}</>;

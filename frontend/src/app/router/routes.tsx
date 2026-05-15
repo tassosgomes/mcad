@@ -2,9 +2,8 @@ import { lazy, Suspense } from 'react';
 import { createBrowserRouter, isRouteErrorResponse, Navigate, useRouteError } from 'react-router-dom';
 import { MainLayout } from '@components/layout/main-layout';
 import { Loading } from '@components/ui/loading';
-import { CallbackPage, LoggedOutPage, ProtectedRoute, RequirePermission, SilentCallbackPage } from '@shared/auth';
-import { useAuth } from '@shared/auth/useAuth';
-import { getDefaultAuthorizedPath } from '@shared/auth/authorizedRoutes';
+import { CallbackPage, LoggedOutPage, PermissionDeniedFallback, ProtectedRoute, RequirePermission, SilentCallbackPage } from '@shared/auth';
+import { usePermissions } from '@shared/authz/usePermissions';
 
 const CadastroRoutes = lazy(() => import('@features/cadastro'));
 const IdentificacaoRoutes = lazy(() => import('@features/identificacao'));
@@ -47,10 +46,37 @@ const COPILOTO_PERMISSIONS = [
   'distribuicao:default:roteiro:listar',
 ];
 
-function HomeRedirect() {
-  const { roles } = useAuth();
+/**
+ * Mapping of "listing" permissions to the corresponding landing page.
+ * Used by HomeRedirect to pick the first domain the user has access to.
+ * Order matters: first match wins.
+ */
+const DOMAIN_LANDING: Array<{ permission: string; path: string }> = [
+  { permission: 'cadastro:default:associacao:listar', path: '/cadastro/associacoes' },
+  { permission: 'identificacao:default:captacao:listar', path: '/identificacao/captacoes' },
+  { permission: 'arrecadacao:default:cliente:listar', path: '/arrecadacao/licencas' },
+  // TODO Fase F: incluir distribuicao quando o catálogo existir.
+];
 
-  return <Navigate to={getDefaultAuthorizedPath(roles)} replace />;
+/**
+ * Resolve a landing path purely from permissions. Returns null when the
+ * user has none of the listing permissions — caller should render an
+ * access-denied/awaiting-setup UI instead of redirecting (a Navigate to "/"
+ * would re-enter HomeRedirect and could loop).
+ */
+function HomeRedirect() {
+  const { can, isLoading } = usePermissions();
+
+  if (isLoading) {
+    return <Loading />;
+  }
+
+  const landing = DOMAIN_LANDING.find(({ permission }) => can(permission));
+  if (landing) {
+    return <Navigate to={landing.path} replace />;
+  }
+
+  return <PermissionDeniedFallback />;
 }
 
 function RouteErrorFallback() {
