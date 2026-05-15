@@ -11,6 +11,7 @@
   <ItemGroup>
     <PackageReference Include="AwesomeAssertions" Version="9.0.0" />
     <PackageReference Include="coverlet.collector" Version="6.0.4" />
+    <PackageReference Include="Ecad.Authz.Sdk" Version="1.0.0" />
     <PackageReference Include="FluentAssertions" Version="8.9.0" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="8.0.16" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="9.0.4" />
@@ -30,7 +31,6 @@
     <ProjectReference Include="..\..\1-Services\Identificacao.API\Identificacao.API.csproj" />
     <ProjectReference Include="..\..\3-Domain\Identificacao.Domain\Identificacao.Domain.csproj" />
     <ProjectReference Include="..\..\4-Infra\Identificacao.Infra\Identificacao.Infra.csproj" />
-    <ProjectReference Include="..\..\..\..\libs\dotnet\Ecad.Authz.Sdk\Ecad.Authz.Sdk.csproj" />
   </ItemGroup>
 
 </Project>

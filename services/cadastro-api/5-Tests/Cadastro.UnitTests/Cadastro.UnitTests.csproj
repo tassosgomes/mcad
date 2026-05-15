@@ -11,6 +11,8 @@
     <PackageReference Include="AwesomeAssertions" Version="9.0.0" />
     <PackageReference Include="CloudNative.CloudEvents" Version="2.7.1" />
     <PackageReference Include="coverlet.collector" Version="6.0.4" />
+    <PackageReference Include="Ecad.Authz.AspNetCore" Version="1.0.0" />
+    <PackageReference Include="Ecad.Authz.Sdk" Version="1.0.0" />
     <PackageReference Include="FluentAssertions" Version="8.9.0" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="9.0.4" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="9.0.4" />
@@ -29,8 +31,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\..\libs\dotnet\Ecad.Authz.AspNetCore\Ecad.Authz.AspNetCore.csproj" />
-    <ProjectReference Include="..\..\..\..\libs\dotnet\Ecad.Authz.Sdk\Ecad.Authz.Sdk.csproj" />
     <ProjectReference Include="..\..\1-Services\Cadastro.API\Cadastro.API.csproj" />
     <ProjectReference Include="..\..\2-Application\Cadastro.Application\Cadastro.Application.csproj" />
     <ProjectReference Include="..\..\3-Domain\Cadastro.Domain\Cadastro.Domain.csproj" />

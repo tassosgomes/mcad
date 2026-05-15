@@ -1,7 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\..\libs\dotnet\Ecad.Authz.AspNetCore\Ecad.Authz.AspNetCore.csproj" />
     <ProjectReference Include="..\..\2-Application\Identificacao.Application\Identificacao.Application.csproj" />
     <ProjectReference Include="..\..\4-Infra\Identificacao.Infra\Identificacao.Infra.csproj" />
   </ItemGroup>
@@ -10,6 +9,8 @@
     <PackageReference Include="AWSSDK.S3" Version="4.0.23" />
     <PackageReference Include="DotNetEnv" Version="3.1.1" />
     <PackageReference Include="Ecad.Audit.AspNetCore" Version="0.1.0" />
+    <PackageReference Include="Ecad.Authz.AspNetCore" Version="1.0.0" />
+    <PackageReference Include="Ecad.Authz.Sdk" Version="1.0.0" />
     <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="11.11.0" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.0" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.4">
