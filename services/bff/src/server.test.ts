@@ -473,44 +473,6 @@ test('/api/me/permissions returns subjectId, permissions and version, propagatin
   }
 });
 
-test('/api/me/permissions normalizes 3-segment legacy keys to 4-segment with area=default', async () => {
-  const legacyPayload = {
-    ...SAMPLE_AUTHZ_PAYLOAD,
-    permissions: [
-      'cadastro:obra:listar', // legado 3-seg -> deve virar cadastro:default:obra:listar
-      'identificacao:default:captacao:listar', // ja 4-seg, mantem
-      'arrecadacao:cliente:visualizar', // legado 3-seg -> arrecadacao:default:cliente:visualizar
-    ],
-  };
-  const { fetchImpl } = buildFakeFetch(() => ({
-    status: 200,
-    body: legacyPayload,
-    headers: { 'x-authz-version': '7' },
-  }));
-  const server = await buildServer(ME_BASE_CONFIG, { fetchImpl });
-
-  try {
-    const response = await server.inject({
-      method: 'GET',
-      url: '/api/me/permissions',
-      headers: { authorization: 'Bearer some-token' },
-    });
-
-    assert.equal(response.statusCode, 200);
-    assert.deepEqual(response.json(), {
-      subjectId: 'cyberark|abc123',
-      permissions: [
-        'cadastro:default:obra:listar',
-        'identificacao:default:captacao:listar',
-        'arrecadacao:default:cliente:visualizar',
-      ],
-      version: legacyPayload.version,
-    });
-  } finally {
-    await server.close();
-  }
-});
-
 test('/api/me caches successive calls within TTL and does not hit upstream twice', async () => {
   const { fetchImpl, getCallCount } = buildFakeFetch(() => ({
     status: 200,

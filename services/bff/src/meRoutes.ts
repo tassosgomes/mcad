@@ -253,29 +253,10 @@ export async function registerMeRoutes(
 
     return reply.code(200).send({
       subjectId: payload.user.subject,
-      permissions: payload.permissions.map(normalizePermissionKey),
+      permissions: payload.permissions,
       version: payload.version,
     });
   });
-}
-
-/**
- * Compatibilidade com instancias do ecad-authz que ainda mantem
- * permissoes registradas no formato legado `dominio:recurso:acao` (3
- * segmentos). A ADR 0002 padroniza `dominio:area:recurso:acao`; este
- * normalizador injeta `default` como `area` quando o upstream devolve a
- * forma antiga, evitando que o frontend (que so reconhece 4 segmentos)
- * caia em acesso negado.
- *
- * Remover quando o catalogo do ecad-authz tiver sido reseedado com chaves
- * 4-segmentos.
- */
-function normalizePermissionKey(permission: string): string {
-  const parts = permission.split(':');
-  if (parts.length === 3) {
-    return `${parts[0]}:default:${parts[1]}:${parts[2]}`;
-  }
-  return permission;
 }
 
 /**
