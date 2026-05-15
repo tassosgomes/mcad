@@ -166,7 +166,7 @@ jobs:
       - name: Build and push image
         uses: docker/build-push-action@v6
         with:
-          context: services/identificacao-api
+          context: .
           file: services/identificacao-api/Dockerfile
           push: ${{ github.event_name == 'push' || github.event_name == 'workflow_dispatch' }}
           tags: |
@@ -188,6 +188,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+      packages: read
     defaults:
       run:
         working-directory: services/arrecadacao-api
@@ -204,7 +205,7 @@ jobs:
       - name: Run unit tests (skip integration module)
         env:
           GITHUB_ACTOR: ${{ github.actor }}
-          GITHUB_TOKEN: ${{ secrets.GH_PACKAGES_READ_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GH_PACKAGES_READ_TOKEN || github.token }}
         run: mvn -B -ntp -s .mvn/settings.xml test -pl '!arrecadacao-tests'
 
       - name: Upload Surefire reports
@@ -226,7 +227,6 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Generate Maven settings for Docker build
-        if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
         run: |
           mkdir -p .ci
           cat > .ci/settings.xml <<'EOF'
@@ -234,9 +234,14 @@ jobs:
           <settings xmlns="http://maven.apache.org/SETTINGS/1.0.0">
             <servers>
               <server>
-                <id>github</id>
+                <id>github-auditoria</id>
                 <username>${{ github.actor }}</username>
-                <password>${{ secrets.GH_PACKAGES_READ_TOKEN }}</password>
+                <password>${{ secrets.GH_PACKAGES_READ_TOKEN || github.token }}</password>
+              </server>
+              <server>
+                <id>github-authz</id>
+                <username>${{ github.actor }}</username>
+                <password>${{ secrets.GH_PACKAGES_READ_TOKEN || github.token }}</password>
               </server>
             </servers>
           </settings>

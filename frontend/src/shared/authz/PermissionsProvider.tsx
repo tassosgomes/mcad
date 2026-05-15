@@ -1,7 +1,7 @@
 import { createContext, useCallback, useEffect, useMemo, useRef } from 'react';
 import type { ReactNode } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { useAuth } from '@shared/auth';
+import { useAuth } from '@shared/auth/useAuth';
 import { fetchPermissions } from './permissionsApi';
 import {
   PermissionsUnauthorizedError,

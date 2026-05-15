@@ -50,13 +50,23 @@
 
     <repositories>
         <repository>
-            <id>github</id>
+            <id>github-auditoria</id>
             <url>https://maven.pkg.github.com/tassosgomes/ecad-auditoria</url>
             <releases>
                 <enabled>true</enabled>
             </releases>
             <snapshots>
                 <enabled>false</enabled>
+            </snapshots>
+        </repository>
+        <repository>
+            <id>github-authz</id>
+            <url>https://maven.pkg.github.com/tassosgomes/ecad-authz</url>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+            <snapshots>
+                <enabled>true</enabled>
             </snapshots>
         </repository>
     </repositories>

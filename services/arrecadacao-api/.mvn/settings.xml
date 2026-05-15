@@ -5,7 +5,12 @@
                               https://maven.apache.org/xsd/settings-1.0.0.xsd">
     <servers>
         <server>
-            <id>github</id>
+            <id>github-auditoria</id>
+            <username>${env.GITHUB_ACTOR}</username>
+            <password>${env.GITHUB_TOKEN}</password>
+        </server>
+        <server>
+            <id>github-authz</id>
             <username>${env.GITHUB_ACTOR}</username>
             <password>${env.GITHUB_TOKEN}</password>
         </server>
