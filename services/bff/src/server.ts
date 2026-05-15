@@ -27,7 +27,7 @@ function registerCors(server: FastifyInstance, allowedOrigins: string[]) {
       );
       reply.header(
         'access-control-expose-headers',
-        'content-disposition,x-mcad-bff-upstream,x-mcad-request-id',
+        'content-disposition,x-mcad-bff-upstream,x-mcad-request-id,x-authz-version',
       );
       reply.header('access-control-max-age', '600');
     }

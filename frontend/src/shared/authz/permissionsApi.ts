@@ -1,11 +1,33 @@
+import { runtimeConfig } from '@shared/config/runtimeConfig';
 import { PermissionsUnauthorizedError, type PermissionsResponse } from './types';
 
 /**
  * BFF endpoint that returns the effective permission set for the current
- * authenticated subject. The BFF is mounted at `/api/*` and consumes the
- * Bearer token, calling `ecad-authz` upstream.
+ * authenticated subject. The BFF mounts `/api/me/*` and consumes the Bearer
+ * token, calling `ecad-authz` upstream.
+ *
+ * In development the URL is relative (`/api/me/permissions`) so the Vite
+ * dev-server proxy can forward it to the local BFF. In production the
+ * frontend is served from a different host (`mcad.tasso.dev.br`) than the
+ * BFF (`mcad-bff.tasso.dev.br`), so we derive the BFF origin from
+ * `AUTHZ_API_BASE_URL` (already provisioned in docker-stack as
+ * `https://mcad-bff.tasso.dev.br/api/authz/v1`) and emit an absolute URL.
+ * CORS for the frontend origin is already configured at the BFF for the
+ * existing authz/auditoria flows.
  */
-const PERMISSIONS_PATH = '/api/me/permissions';
+function resolveBffOrigin(): string {
+  const authzUrl = runtimeConfig.authzApiBaseUrl;
+  if (!authzUrl || authzUrl.startsWith('/')) {
+    return '';
+  }
+  try {
+    return new URL(authzUrl).origin;
+  } catch {
+    return '';
+  }
+}
+
+const PERMISSIONS_PATH = `${resolveBffOrigin()}/api/me/permissions`;
 
 export interface FetchPermissionsOptions {
   token: string;
