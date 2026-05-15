@@ -1,14 +1,25 @@
 # Relatório Final — Migração de Autorização do MCAD para ecad-authz
 
-> Data: 2026-05-14
-> Sessão de execução: paralelizada em 4 ondas, coordenada via tasklist.
+> Data inicial: 2026-05-14
+> **Fechamento: 2026-05-15** — migração concluída em produção, validada via Playwright.
+> Sessão de execução: paralelizada em 4 ondas + uma sessão final de seed/atribuições.
 > Documento companheiro: `docs/migracao-authz/analise-estado-atual.md` (status consolidado) e `docs/migracao-authz/prd.md` (plano original).
 
 ---
 
 ## 1. Sumário executivo
 
-A migração do MCAD para o modelo de autorização fina centralizada no `ecad-authz` foi concluída para 3 das 4 APIs planejadas (cadastro, identificacao, arrecadacao) e em toda a camada de frontend e BFF. A 4ª API (`distribuicao`) permanece intencionalmente fora do escopo enquanto o serviço estiver no estado `planned` no `vision.md`. O modelo antigo (`read`/`write` scopes e `hasRole(...)`) foi removido do código de produção, restando apenas TODOs explícitos para itens dependentes de decisões futuras (catálogo de Distribuição, permissões de auditoria, escopo `ASSOCIATION`).
+A migração do MCAD para o modelo de autorização fina centralizada no `ecad-authz` foi **concluída em produção em 2026-05-15**. Cobertura: 3 das 4 APIs planejadas (cadastro, identificacao, arrecadacao) + camada completa de frontend e BFF. A 4ª API (`distribuicao`) permanece intencionalmente fora do escopo enquanto o serviço estiver no estado `planned` no `vision.md`.
+
+**Estado em produção (validado via Playwright em 2026-05-15):**
+- 78 permissões 4-seg (`dominio:default:recurso:acao`) registradas no `mcad-authz.tasso.dev.br`
+- 41 permissões 3-seg legadas automaticamente depreciadas pelo `POST /v1/permission-catalog/register`
+- 6 papéis criados (`{cadastro,identificacao,arrecadacao}.default.{consultor,analista}`)
+- 7 usuários reais atribuídos aos novos papéis (`tsgomes` → `cadastro.default.analista`; 6 dev users → papéis correspondentes)
+- `tsgomes` valida: navega `/cadastro/associacoes`, sidebar mostra grupos corretos, conteúdo carrega (ABRAMUS, AMAR, ASSIM...)
+- BFF redeployado sem o normalizer 3→4-seg — `/api/me/permissions` repassa direto o que o ecad-authz devolve
+
+O modelo antigo (`read`/`write` scopes e `hasRole(...)`) foi removido do código de produção, restando apenas TODOs explícitos para itens dependentes de decisões futuras (catálogo de Distribuição, permissões de auditoria, escopo `ASSOCIATION`).
 
 ---
 
@@ -26,7 +37,12 @@ A migração do MCAD para o modelo de autorização fina centralizada no `ecad-a
 | G | Limpeza de resíduos `read`/`write`/`hasRole` | 14 arquivos do frontend, 5 controllers Java, 2 Program.cs, deleção de `RequireRole.tsx` |
 | H | 5 ADRs + índice em `docs/adr/` | `docs/adr/{0001..0005}-*.md` + `README.md` |
 | H | Análise atualizada com seção 0 (status final) | `docs/migracao-authz/analise-estado-atual.md` |
-| H | PRD original com checklist da Tarefa 20 atualizado (17/21 `[x]`) | `docs/migracao-authz/prd.md` |
+| H | PRD original com checklist da Tarefa 20 atualizado | `docs/migracao-authz/prd.md` |
+| Encerramento (2026-05-15) | Override `ECAD_AUTHZ_CATALOG_EXPECTED_AUDIENCE` no stack do ecad-authz | `ecad-authz/infra/prod/docker-stack.yml` + `.env.example` |
+| Encerramento (2026-05-15) | Seed aplicado em produção: 78 perms + 6 papéis | `scripts/seed-authz.sh` rodado contra `mcad-authz.tasso.dev.br` |
+| Encerramento (2026-05-15) | 7 usuários reatribuídos aos papéis 4-seg | via API direta `POST/DELETE /v1/users/{id}/roles` |
+| Encerramento (2026-05-15) | Normalizer 3→4-seg removido do BFF | `services/bff/src/meRoutes.ts` (commit `b0418e9`) |
+| Encerramento (2026-05-15) | `*.csproj.lscache` no `.gitignore` | `.gitignore` (commit `b4341e3`) |
 
 ### Catálogos versionados
 
@@ -34,11 +50,19 @@ A migração do MCAD para o modelo de autorização fina centralizada no `ecad-a
 - **Identificação**: 20 permissões em `services/identificacao-api/.../IdentificacaoPermissions.cs` (formato 4 segmentos `identificacao:default:<recurso>:<acao>`). Mapeamento em `docs/authz/catalog/identificacao.md`.
 - **Arrecadação**: 17 permissões em `permissions.yaml` (formato 4 segmentos `arrecadacao:default:<recurso>:<acao>`). Mapeamento em `docs/authz/catalog/arrecadacao.md`.
 
-### Seeds
+### Seeds (aplicados em prod 2026-05-15)
 
-- 78 permissões totais (41 + 20 + 17).
+- 78 permissões totais (41 cadastro + 20 identificacao + 17 arrecadacao).
 - 6 papéis: `{cadastro,identificacao,arrecadacao}.default.{consultor,analista}`.
-- 3 usuários de teste (`consultor.dev`, `analista.dev`, `sem-papel.dev`).
+- Atribuições reais:
+  - `tasso.gomes@tasso.dev.br` (tsgomes) → `cadastro.default.analista` (41 perms efetivas)
+  - `consultor_geral@mcad.dev` → 3 papéis consultor (cadastro + identificacao + arrecadacao)
+  - `consultor_identificacao@mcad.dev` → `identificacao.default.consultor`
+  - `consultor_arrecadacao@mcad.dev` → `arrecadacao.default.consultor`
+  - `analista_cadastro@mcad.dev` → `cadastro.default.analista`
+  - `analista_identificacao@mcad.dev` → `identificacao.default.analista`
+  - `analista_arrecadacao@mcad.dev` → `arrecadacao.default.analista`
+- Papéis `authz.admin.*` (admin da plataforma de autorização) mantidos inalterados nos respectivos usuários.
 
 ---
 
@@ -48,10 +72,14 @@ A migração do MCAD para o modelo de autorização fina centralizada no `ecad-a
 |---|---|---|
 | Catálogo e SDK em `distribuicao-api` | serviço ainda `planned` | Aguarda criação do serviço (Fase F). |
 | ~~Reconciliação 3 vs 4 segmentos~~ | resolvido em 2026-05-14 | Migrado todo o mcad para 4 segmentos uniformes (`dominio:default:recurso:acao`). Atualizado `seeds/mcad/*.json`, catálogos .NET e literais do frontend. ADR 0002 consolidada. |
+| ~~Re-seed do ecad-authz em produção~~ | resolvido em 2026-05-15 | `scripts/seed-authz.sh` rodou com sucesso em `mcad-authz.tasso.dev.br` (78 perms + 6 papéis registrados; 41 perms 3-seg antigas auto-deprecadas). Necessário 1 override de config: `ECAD_AUTHZ_CATALOG_EXPECTED_AUDIENCE=https://api.mcad.local` em `ecad-authz/infra/prod/docker-stack.yml`. Catálogos usaram M2M token do Logto; criação de papéis usou JWT do `authz.admin.global`. |
+| ~~Atribuição dos usuários reais~~ | resolvido em 2026-05-15 | `tsgomes` migrado de `cadastro.obras.analista` para `cadastro.default.analista`. 6 dev users mapeados aos papéis equivalentes. Validado via Playwright. |
+| ~~Remoção do normalizer 3→4-seg no BFF~~ | resolvido em 2026-05-15 | `normalizePermissionKey` removido de `services/bff/src/meRoutes.ts`. BFF agora repassa permissões direto do ecad-authz. |
 | Suite E2E ponta-a-ponta real | não criada | Cenários: consultor lê / analista escreve / sem papel = 403 nas 3 APIs migradas, via Playwright. |
 | Integração com Testcontainers para `@RequiresPermission` (Java) | `arrecadacao-tests` | Hoje cobre só unit/slice (4 testes). |
 | Escopo `ASSOCIATION` no MCAD | catálogos + SDKs | Discussão em aberto: analista da Associação X só edita obras dela? |
 | Telemetria estruturada das decisões authz | SDK .NET + starter Java | Adicionar tracing OpenTelemetry consistente. |
+| Limpeza pós-seed | ecad-authz prod | Probe roles deixados durante diagnóstico: `probe.default.test`, `probe.default.admin-check`, `probe.default.seed-check`. Permissão `probe:default:health:check`. Remover via admin UI ou DELETE direto quando conveniente. |
 
 ### TODOs no código (mapeados via grep)
 

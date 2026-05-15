@@ -1,5 +1,7 @@
 # Próximos passos — Migração ecad-authz
 
+> **STATUS: ✅ CONCLUÍDO em 2026-05-15.** Toda a checklist deste documento foi executada.
+> Veja `relatorio-final.md` para o estado consolidado e residuais.
 > Última atualização: 2026-05-15 (madrugada). Sessão interrompida com a
 > branch `main` 6 commits à frente de `origin/main` e a aplicação parcialmente
 > funcional em produção. Este documento registra o que falta para fechar a
