@@ -87,6 +87,7 @@ const navigation: SidebarGroup[] = [
       'cadastro:default:status:visualizar-historico-fonograma',
       'identificacao:default:captacao:listar',
       'arrecadacao:default:cliente:listar',
+      'authz:admin:audit:visualizar',
     ],
     children: [
       { label: 'Eventos por entidade', path: '/auditoria/eventos' },
@@ -99,12 +100,15 @@ const navigation: SidebarGroup[] = [
     icon: ShieldCheck,
     basePath: '/autorizacao',
     disabled: false,
-    // TODO B3: validar permissões para administração de autorização.
+    // Administração da plataforma de autorização — visível para qualquer
+    // usuário com permissão de leitura `authz:admin:*`.
     requiredPermissions: [
-      'cadastro:default:status:visualizar-historico-obra',
-      'cadastro:default:status:visualizar-historico-fonograma',
-      'identificacao:default:captacao:listar',
-      'arrecadacao:default:cliente:listar',
+      'authz:admin:role:visualizar',
+      'authz:admin:permission:visualizar',
+      'authz:admin:user:visualizar',
+      'authz:admin:user-role:visualizar',
+      'authz:admin:session:visualizar',
+      'authz:admin:audit:visualizar',
     ],
     children: [
       { label: 'Permissões', path: '/autorizacao/permissoes' },

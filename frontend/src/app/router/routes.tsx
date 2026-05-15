@@ -29,6 +29,25 @@ const AUDIT_PERMISSIONS = [
   'cadastro:default:status:visualizar-historico-fonograma',
   'identificacao:default:captacao:listar',
   'arrecadacao:default:cliente:listar',
+  // Inclui tambem visualizar-audit do dominio authz (eventos da plataforma
+  // de autorizacao). Usuarios "admin de authz" precisam alcancar Auditoria.
+  'authz:admin:audit:visualizar',
+];
+
+/**
+ * Administração da plataforma de autorização (catálogo, papéis, atribuições,
+ * sessões). Quem tem qualquer permissão de leitura `authz:admin:*` pode
+ * acessar o módulo /autorizacao. Mantemos um `anyOf` largo porque o módulo
+ * tem páginas heterogêneas (catálogo, papéis, sessões) — cada página fará
+ * verificação granular interna.
+ */
+const AUTHZ_ADMIN_PERMISSIONS = [
+  'authz:admin:role:visualizar',
+  'authz:admin:permission:visualizar',
+  'authz:admin:user:visualizar',
+  'authz:admin:user-role:visualizar',
+  'authz:admin:session:visualizar',
+  'authz:admin:audit:visualizar',
 ];
 
 /**
@@ -49,13 +68,15 @@ const COPILOTO_PERMISSIONS = [
 /**
  * Mapping of "listing" permissions to the corresponding landing page.
  * Used by HomeRedirect to pick the first domain the user has access to.
- * Order matters: first match wins.
+ * Order: domínios de negócio primeiro; admin de autorização entra como
+ * fallback para usuários que só tenham permissões `authz:admin:*`.
  */
 const DOMAIN_LANDING: Array<{ permission: string; path: string }> = [
   { permission: 'cadastro:default:associacao:listar', path: '/cadastro/associacoes' },
   { permission: 'identificacao:default:captacao:listar', path: '/identificacao/captacoes' },
   { permission: 'arrecadacao:default:cliente:listar', path: '/arrecadacao/licencas' },
   // TODO Fase F: incluir distribuicao quando o catálogo existir.
+  { permission: 'authz:admin:role:visualizar', path: '/autorizacao/papeis' },
 ];
 
 /**
@@ -175,7 +196,7 @@ export const router = createBrowserRouter([
       {
         path: 'autorizacao/*',
         element: (
-          <RequirePermission anyOf={AUDIT_PERMISSIONS}>
+          <RequirePermission anyOf={AUTHZ_ADMIN_PERMISSIONS}>
             <Suspense fallback={<Loading />}>
               <AuthzRoutes />
             </Suspense>
