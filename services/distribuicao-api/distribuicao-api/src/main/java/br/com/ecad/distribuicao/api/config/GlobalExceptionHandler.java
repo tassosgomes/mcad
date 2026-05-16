@@ -5,10 +5,15 @@ import br.com.ecad.distribuicao.domain.exceptions.ConflictException;
 import br.com.ecad.distribuicao.domain.exceptions.NotFoundException;
 import br.com.ecad.distribuicao.domain.exceptions.PreRequisitosException;
 import br.com.ecad.distribuicao.domain.exceptions.TransicaoInvalidaException;
+import br.org.ecad.authz.sdk.error.AuthzServiceUnavailableException;
+import br.org.ecad.authz.sdk.error.InvalidTokenException;
+import br.org.ecad.authz.sdk.error.MissingPermissionException;
+import br.org.ecad.authz.sdk.error.SessionRevokedException;
 import jakarta.servlet.http.HttpServletRequest;
 import java.net.URI;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -83,10 +88,47 @@ public class GlobalExceptionHandler {
         return problemDetail;
     }
 
+    @ExceptionHandler(InvalidTokenException.class)
+    ResponseEntity<ProblemDetail> handleAuthzInvalidToken(InvalidTokenException ex) {
+        ProblemDetail pd = ProblemDetail.forStatusAndDetail(HttpStatus.UNAUTHORIZED, ex.getMessage());
+        pd.setTitle("Unauthorized");
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(pd);
+    }
+
+    @ExceptionHandler(MissingPermissionException.class)
+    ResponseEntity<ProblemDetail> handleAuthzMissingPermission(MissingPermissionException ex) {
+        ProblemDetail pd = ProblemDetail.forStatusAndDetail(HttpStatus.FORBIDDEN, ex.getMessage());
+        pd.setTitle("Forbidden");
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(pd);
+    }
+
+    @ExceptionHandler(SessionRevokedException.class)
+    ResponseEntity<ProblemDetail> handleAuthzSessionRevoked(SessionRevokedException ex) {
+        ProblemDetail pd = ProblemDetail.forStatusAndDetail(HttpStatus.UNAUTHORIZED, ex.getMessage());
+        pd.setTitle("Session Revoked");
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(pd);
+    }
+
+    @ExceptionHandler(AuthzServiceUnavailableException.class)
+    ResponseEntity<ProblemDetail> handleAuthzServiceUnavailable(AuthzServiceUnavailableException ex) {
+        ProblemDetail pd = ProblemDetail.forStatusAndDetail(HttpStatus.SERVICE_UNAVAILABLE, ex.getMessage());
+        pd.setTitle("AuthZ Service Unavailable");
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(pd);
+    }
+
     @ExceptionHandler(Exception.class)
     ProblemDetail handleUnexpected(Exception exception) {
         if (exception instanceof org.springframework.security.access.AccessDeniedException accessDeniedException) {
             throw accessDeniedException;
+        }
+        // Repassa exceções do `authz-spring-boot-starter` para os handlers específicos acima.
+        // Necessário porque o catch-all Exception.class pode capturá-las via inheritance antes
+        // do handler específico, deixando 500 em vez de 401/403/503.
+        if (exception instanceof InvalidTokenException
+                || exception instanceof MissingPermissionException
+                || exception instanceof SessionRevokedException
+                || exception instanceof AuthzServiceUnavailableException) {
+            throw (RuntimeException) exception;
         }
         ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(
                 HttpStatus.INTERNAL_SERVER_ERROR,
