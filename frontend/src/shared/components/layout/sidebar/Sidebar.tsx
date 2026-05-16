@@ -72,10 +72,16 @@ const navigation: SidebarGroup[] = [
     icon: Split,
     basePath: '/distribuicao',
     disabled: false,
-    // TODO: aguardando catálogo real da distribuicao-api.
-    requiredPermissions: ['distribuicao:default:roteiro:listar'],
+    requiredPermissions: [
+      'distribuicao:default:rubrica:listar',
+      'distribuicao:default:processo:listar',
+    ],
     children: [
-      { label: 'Rubricas', path: '/distribuicao/rubricas' },
+      {
+        label: 'Rubricas',
+        path: '/distribuicao/rubricas',
+        requiredPermission: 'distribuicao:default:rubrica:listar',
+      },
       {
         label: 'Processos',
         path: '/distribuicao/processos',

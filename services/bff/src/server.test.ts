@@ -552,6 +552,82 @@ test('/api/me returns 401 INVALID_TOKEN when upstream returns 401 with INVALID_T
   }
 });
 
+test('CT-BFF-R03a: meCache.maybeUpdateVersion invalida a entrada quando versão upstream é maior', () => {
+  // Cobre o caminho de invalidação por versão dentro do cache em memória.
+  // O cliente (frontend) chama `reload()` quando observa nova `X-Authz-Version`
+  // no response; este teste exercita o helper que o BFF expõe para esse fluxo.
+  const cache = createMeCache();
+  cache.set('cyberark|abc123', SAMPLE_AUTHZ_PAYLOAD, 60);
+
+  assert.equal(cache.size(), 1);
+  assert.equal(cache.maybeUpdateVersion('cyberark|abc123', 42), false, 'mesma versão não invalida');
+  assert.equal(cache.size(), 1);
+
+  assert.equal(cache.maybeUpdateVersion('cyberark|abc123', 43), true, 'versão maior invalida');
+  assert.equal(cache.size(), 0);
+  assert.equal(cache.get('cyberark|abc123'), undefined);
+});
+
+test('CT-BFF-R03b: meCache.maybeUpdateVersion ignora subject desconhecido', () => {
+  const cache = createMeCache();
+  assert.equal(cache.maybeUpdateVersion('inexistente', 99), false);
+});
+
+test('CT-BFF-R03c: /api/me serve do cache até a entrada ser invalidada', async () => {
+  // Cobre o gating do cache: invalidate() força próxima chamada a bater no upstream.
+  let callCount = 0;
+  const fetchImpl = (async () => {
+    callCount += 1;
+    return {
+      status: 200,
+      headers: {
+        get(name: string): string | null {
+          return name.toLowerCase() === 'x-authz-version' ? '42' : null;
+        },
+      },
+      async json() {
+        return SAMPLE_AUTHZ_PAYLOAD;
+      },
+    };
+  }) as unknown as typeof globalThis.fetch;
+
+  const cache = createMeCache();
+  const server = await buildServer(ME_BASE_CONFIG, { fetchImpl, meCache: cache });
+  const token = buildFakeJwt({ sub: 'cyberark|abc123' });
+
+  try {
+    // 1ª chamada: cache miss → bate no upstream.
+    const first = await server.inject({
+      method: 'GET',
+      url: '/api/me',
+      headers: { authorization: `Bearer ${token}` },
+    });
+    assert.equal(first.statusCode, 200);
+    assert.equal(callCount, 1);
+
+    // 2ª chamada: cache hit → não bate no upstream.
+    const second = await server.inject({
+      method: 'GET',
+      url: '/api/me',
+      headers: { authorization: `Bearer ${token}` },
+    });
+    assert.equal(second.statusCode, 200);
+    assert.equal(callCount, 1, 'cache hit deve evitar chamada extra ao upstream');
+
+    // Invalidar manualmente (simula version push ou logout) → próxima chamada bate no upstream.
+    cache.invalidate('cyberark|abc123');
+    const third = await server.inject({
+      method: 'GET',
+      url: '/api/me',
+      headers: { authorization: `Bearer ${token}` },
+    });
+    assert.equal(third.statusCode, 200);
+    assert.equal(callCount, 2, 'após invalidação, upstream deve ser consultado de novo');
+  } finally {
+    await server.close();
+  }
+});
+
 test('/api/me returns 401 SESSION_REVOKED when upstream signals session revoked', async () => {
   const { fetchImpl } = buildFakeFetch(() => ({
     status: 401,

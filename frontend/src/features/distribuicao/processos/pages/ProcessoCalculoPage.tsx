@@ -5,7 +5,7 @@ import { Button } from '@components/ui/button';
 import { ErrorState } from '@components/ui/error-state';
 import { Loading } from '@components/ui/loading';
 import { PageHeader } from '@components/ui/page-header';
-import { useAuth } from '@shared/auth/useAuth';
+import { usePermissions } from '@shared/authz';
 import { CalculoSummary } from '../components/CalculoSummary';
 import { CreditosFilters } from '../components/CreditosFilters';
 import { CreditosTable } from '../components/CreditosTable';
@@ -46,10 +46,7 @@ function problemMessage(error: unknown): string {
 export function ProcessoCalculoPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  // TODO Fase F: substituir hasRole('analista-distribuicao') por can('distribuicao:default:processo:calcular')
-  // assim que o catálogo de permissões da distribuicao-api estiver definido. Hoje o serviço de
-  // distribuição ainda é um placeholder ("planned" no vision.md) e não publica permissões.
-  const { hasRole } = useAuth();
+  const { can } = usePermissions();
   const [page, setPage] = useState(0);
   const [filters, setFilters] = useState<UiFilters>(initialFilters);
   const processoId = id ?? '';
@@ -64,7 +61,7 @@ export function ProcessoCalculoPage() {
 
   const calculoQuery = useProcessoCalculo(processoId, queryFilters);
   const calcularMutation = useCalcularProcesso(processoId);
-  const isAnalyst = hasRole('analista-distribuicao');
+  const isAnalyst = can('distribuicao:default:processo:calcular');
   const canCalculate = isAnalyst && calculoQuery.data?.status === 'CRIADO';
 
   useEffect(() => {

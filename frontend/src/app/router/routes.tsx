@@ -52,17 +52,17 @@ const AUTHZ_ADMIN_PERMISSIONS = [
 
 /**
  * Copiloto está disponível para qualquer usuário que tenha acesso (mesmo de
- * leitura) a um dos domínios.
- *
- * TODO B3: definir permissão copiloto dedicada quando o catálogo de copiloto
- * estiver formalizado.
+ * leitura) a um dos domínios. Cada domínio aparece com sua permissão de
+ * "listar primário": associações em Cadastro, captações em Identificação,
+ * clientes em Arrecadação, rubricas em Distribuição. Catálogo dedicado de
+ * copiloto fica para uma fase futura caso o time decida formalizar.
  */
 const COPILOTO_PERMISSIONS = [
   'cadastro:default:associacao:listar',
   'identificacao:default:captacao:listar',
   'arrecadacao:default:cliente:listar',
-  // TODO: aguardando catálogo real da distribuicao-api
-  'distribuicao:default:roteiro:listar',
+  'distribuicao:default:rubrica:listar',
+  'distribuicao:default:processo:listar',
 ];
 
 /**
@@ -75,7 +75,8 @@ const DOMAIN_LANDING: Array<{ permission: string; path: string }> = [
   { permission: 'cadastro:default:associacao:listar', path: '/cadastro/associacoes' },
   { permission: 'identificacao:default:captacao:listar', path: '/identificacao/captacoes' },
   { permission: 'arrecadacao:default:cliente:listar', path: '/arrecadacao/licencas' },
-  // TODO Fase F: incluir distribuicao quando o catálogo existir.
+  { permission: 'distribuicao:default:rubrica:listar', path: '/distribuicao/rubricas' },
+  { permission: 'distribuicao:default:processo:listar', path: '/distribuicao/processos' },
   { permission: 'authz:admin:role:visualizar', path: '/autorizacao/papeis' },
 ];
 
@@ -172,11 +173,13 @@ export const router = createBrowserRouter([
       },
       {
         path: 'distribuicao/*',
-        // TODO: aguardando catálogo real da distribuicao-api. Quando o
-        // serviço expuser permissões, substituir pelo equivalente de listar
-        // roteiros/processos.
         element: (
-          <RequirePermission permission="distribuicao:default:roteiro:listar">
+          <RequirePermission
+            anyOf={[
+              'distribuicao:default:rubrica:listar',
+              'distribuicao:default:processo:listar',
+            ]}
+          >
             <Suspense fallback={<Loading />}>
               <DistribuicaoRoutes />
             </Suspense>

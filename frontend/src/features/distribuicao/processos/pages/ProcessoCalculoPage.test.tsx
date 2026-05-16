@@ -5,10 +5,13 @@ import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { describe, expect, it, vi } from 'vitest';
 import { AuthContext, type AuthContextValue } from '@shared/auth/AuthContext';
+import { PermissionsContext } from '@shared/authz';
+import type { PermissionsState } from '@shared/authz';
 import type { CalculoProcessoResponse } from '../types/calculo';
 import { ProcessoCalculoPage } from './ProcessoCalculoPage';
 
 const processoId = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
+const CALCULAR_PERMISSION = 'distribuicao:default:processo:calcular';
 
 function calculoResponse(overrides: Partial<CalculoProcessoResponse> = {}): CalculoProcessoResponse {
   return {
@@ -62,7 +65,25 @@ function jsonResponse(body: unknown, status = 200): Response {
   });
 }
 
-function renderPage(children: ReactNode, roles: string[], initialEntry = `/processos/${processoId}`) {
+function buildPermissionsState(permissions: string[]): PermissionsState {
+  const set = new Set(permissions);
+  return {
+    permissions: set,
+    version: 1,
+    isLoading: false,
+    error: null,
+    can: (permission: string) => set.has(permission),
+    hasAny: (perms: string[]) => perms.some((p) => set.has(p)),
+    hasAll: (perms: string[]) => perms.every((p) => set.has(p)),
+    reload: () => undefined,
+  };
+}
+
+function renderPage(
+  children: ReactNode,
+  permissions: string[],
+  initialEntry = `/processos/${processoId}`,
+) {
   const queryClient = new QueryClient({
     defaultOptions: {
       queries: { retry: false },
@@ -73,8 +94,7 @@ function renderPage(children: ReactNode, roles: string[], initialEntry = `/proce
     user: null,
     isAuthenticated: true,
     isLoggingOut: false,
-    roles,
-    hasRole: (role: string) => roles.includes(role),
+    roles: [],
     login: async () => undefined,
     logout: async () => undefined,
     getToken: () => 'token-123',
@@ -82,21 +102,23 @@ function renderPage(children: ReactNode, roles: string[], initialEntry = `/proce
 
   return render(
     <AuthContext.Provider value={authValue}>
-      <QueryClientProvider client={queryClient}>
-        <MemoryRouter initialEntries={[initialEntry]}>
-          {children}
-        </MemoryRouter>
-      </QueryClientProvider>
+      <PermissionsContext.Provider value={buildPermissionsState(permissions)}>
+        <QueryClientProvider client={queryClient}>
+          <MemoryRouter initialEntries={[initialEntry]}>
+            {children}
+          </MemoryRouter>
+        </QueryClientProvider>
+      </PermissionsContext.Provider>
     </AuthContext.Provider>,
   );
 }
 
-function renderRoute(roles: string[]) {
+function renderRoute(permissions: string[]) {
   return renderPage(
     <Routes>
       <Route path="/processos/:id" element={<ProcessoCalculoPage />} />
     </Routes>,
-    roles,
+    permissions,
   );
 }
 
@@ -104,7 +126,7 @@ describe('ProcessoCalculoPage', () => {
   it('loads the review route with summary and first credit page', async () => {
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(jsonResponse(calculoResponse()));
 
-    renderRoute(['analista-distribuicao']);
+    renderRoute([CALCULAR_PERMISSION]);
 
     expect(await screen.findByRole('heading', { name: /processo aaaaaaaa/i })).toBeInTheDocument();
     expect(screen.getAllByText('R$ 1.000,00').length).toBeGreaterThan(0);
@@ -130,7 +152,7 @@ describe('ProcessoCalculoPage', () => {
       },
     })));
 
-    renderRoute(['consultor-distribuicao']);
+    renderRoute([]);
 
     expect(await screen.findByText(/consulta em modo somente leitura/i)).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /calcular/i })).not.toBeInTheDocument();
@@ -170,7 +192,7 @@ describe('ProcessoCalculoPage', () => {
       .mockResolvedValueOnce(jsonResponse({ processoId, status: 'CALCULADO' }))
       .mockResolvedValueOnce(jsonResponse(updated));
 
-    renderRoute(['analista-distribuicao']);
+    renderRoute([CALCULAR_PERMISSION]);
 
     await userEvent.click(await screen.findByRole('button', { name: /calcular/i }));
 
@@ -196,7 +218,7 @@ describe('ProcessoCalculoPage', () => {
         detail: 'Rol fechado não encontrado para o processo.',
       }, 422));
 
-    renderRoute(['analista-distribuicao']);
+    renderRoute([CALCULAR_PERMISSION]);
 
     await userEvent.click(await screen.findByRole('button', { name: /calcular/i }));
 
@@ -211,7 +233,7 @@ describe('ProcessoCalculoPage', () => {
       <Routes>
         <Route path="/processos" element={<ProcessoCalculoPage />} />
       </Routes>,
-      ['analista-distribuicao'],
+      [CALCULAR_PERMISSION],
       '/processos',
     );
 
@@ -225,7 +247,7 @@ describe('ProcessoCalculoPage', () => {
       detail: 'Processo de distribuição não encontrado.',
     }, 404));
 
-    renderRoute(['analista-distribuicao']);
+    renderRoute([CALCULAR_PERMISSION]);
 
     expect(await screen.findByText('Processo de distribuição não encontrado.')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /tentar novamente/i })).toBeInTheDocument();

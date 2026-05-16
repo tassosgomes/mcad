@@ -6,12 +6,6 @@ export interface AuthContextValue {
   isAuthenticated: boolean;
   isLoggingOut: boolean;
   roles: string[];
-  /**
-   * @deprecated Não use para autorização de negócio. Use `usePermissions().can(...)`
-   * do `@shared/authz`. Mantido apenas para callers em domínios ainda sem catálogo
-   * de permissões formalizado (ex.: distribuição, marcada com TODO Fase F).
-   */
-  hasRole: (role: string) => boolean;
   login: () => Promise<void>;
   logout: () => Promise<void>;
   getToken: () => string | null;

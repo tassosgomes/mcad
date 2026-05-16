@@ -117,7 +117,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
   };
 
   const getToken = () => user?.access_token ?? null;
-  const hasRole = (role: string) => roles.includes(role);
 
   useEffect(() => {
     setArrecadacaoAuthTokenProvider(() => user?.access_token ?? null);
@@ -172,7 +171,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
         isAuthenticated,
         isLoggingOut,
         roles,
-        hasRole,
         login,
         logout,
         getToken,

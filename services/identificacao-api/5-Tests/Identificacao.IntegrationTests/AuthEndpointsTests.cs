@@ -1,7 +1,9 @@
 using System.Net;
 using System.Net.Http.Json;
+using System.Reflection;
 using AwesomeAssertions;
 using Ecad.Authz.Sdk;
+using Identificacao.API.Authorization;
 using Identificacao.IntegrationTests.Fixtures;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
@@ -31,6 +33,8 @@ public class AuthEndpointsTests : IClassFixture<IdentificacaoApiFactory>
     [InlineData("/api/v1/rubricas")]
     [InlineData("/api/v1/tipos-utilizacao")]
     [InlineData("/api/v1/pendentes")]
+    [InlineData("/api/v1/captacoes/00000000-0000-0000-0000-000000000000/uploads")]
+    [InlineData("/api/v1/captacoes/00000000-0000-0000-0000-000000000000/execucoes")]
     public async Task Get_WithoutToken_Returns401(string url)
     {
         var client = _factory.CreateUnauthenticatedClient();
@@ -127,6 +131,43 @@ public class AuthEndpointsTests : IClassFixture<IdentificacaoApiFactory>
         var response = await client.PostAsJsonAsync($"/api/v1/pendentes/{pendenteId}/resolver", payload);
 
         response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+    }
+
+    [Fact]
+    public async Task PostExecucao_WithConsultorRoleButAuthzDenied_Returns403()
+    {
+        var client = CreateClientWithDeniedAuthz(roles: "identificacao.consultor");
+
+        var captacaoId = Guid.NewGuid();
+        var payload = new
+        {
+            tipoUtilizacaoId = Guid.NewGuid(),
+            obra = "qualquer",
+            interprete = "qualquer",
+            duracaoSegundos = 180
+        };
+
+        var response = await client.PostAsJsonAsync($"/api/v1/captacoes/{captacaoId}/execucoes", payload);
+
+        response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+    }
+
+    // ── CT-IDF-R07: sanity check do catálogo declarado ────────────────────
+
+    [Fact]
+    public void IdentificacaoPermissions_Catalog_HasExpectedShape()
+    {
+        // Garante que IdentificacaoPermissions.cs mantém as 20 permissões 4-seg
+        // declaradas (alinhado com docs/authz/catalog/identificacao.md e o seed).
+        var permissions = typeof(IdentificacaoPermissions)
+            .GetFields(BindingFlags.Public | BindingFlags.Static | BindingFlags.FlattenHierarchy)
+            .Where(f => f.IsLiteral && !f.IsInitOnly && f.FieldType == typeof(string))
+            .Select(f => (string)f.GetRawConstantValue()!)
+            .ToList();
+
+        permissions.Should().HaveCount(20, "o catálogo de Identificação deve manter as 20 permissões 4-segmentos declaradas");
+        permissions.Should().OnlyContain(p => p.StartsWith("identificacao:default:"), "todas as permissões do catálogo devem ser 4-seg no domínio identificacao:default");
+        permissions.Distinct().Should().HaveCount(permissions.Count, "não deve haver chaves duplicadas no catálogo");
     }
 
     // ── Helpers ──────────────────────────────────────────────────────────

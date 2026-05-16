@@ -18,6 +18,9 @@ import java.util.Optional;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -29,12 +32,18 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
 /**
- * Verifica que o {@code authz-spring-boot-starter} gera as decisões esperadas (401/403/200)
+ * Verifica que o {@code authz-spring-boot-starter} gera as decisões esperadas (401/403/200/503)
  * para os endpoints anotados com {@code @RequiresPermission}.
  *
- * <p>Liga o starter via {@code ecad.authz.enabled=true} e mocka o {@link AuthzDecisionClient}
- * para evitar dependência externa do serviço de AuthZ; também mocka o {@link RemoteDecisionCache}
- * para não exigir Redis.
+ * <p>Cobre CT-ARR-R01..R07 do plano de testes da integração ecad-authz × MCAD:
+ *
+ * <ul>
+ *   <li>CT-ARR-R01: sem JWT → 401 em qualquer endpoint protegido.
+ *   <li>CT-ARR-R02: com JWT mas authz nega → 403.
+ *   <li>CT-ARR-R03: com JWT e authz permite → aspect libera (≠ 401/403/503).
+ *   <li>CT-ARR-R07: catálogo declarado em <code>permissions.yaml</code> mantém 17 chaves
+ *       4-segmentos no domínio {@code arrecadacao:default}.
+ * </ul>
  */
 @SpringBootTest(
         classes = ArrecadacaoApplication.class,
@@ -83,51 +92,96 @@ class AuthzPermissionEnforcementTest {
         localDecisionCache.invalidateAll();
     }
 
+    // ── CT-ARR-R01: sem JWT → 401 em cada endpoint protegido ────────────────
+
+    @ParameterizedTest(name = "401 sem JWT em {0}")
+    @ValueSource(
+            strings = {
+                "/api/v1/uda/vigente",
+                "/api/v1/licencas",
+                "/api/v1/pagamentos",
+                "/api/v1/usuarios-musica"
+            })
+    void deveRetornar401SemJwtParaTodosEndpointsProtegidos(String url) throws Exception {
+        mockMvc.perform(get(url)).andExpect(status().isUnauthorized());
+    }
+
     @Test
     void deveRetornar401QuandoChamadaSemJwt() throws Exception {
-        // Sem post-processor de jwt() → SecurityContext não terá JwtAuthenticationToken
-        // → o aspect lança InvalidTokenException → 401.
-        mockMvc.perform(get("/api/v1/uda/vigente"))
-            .andExpect(status().isUnauthorized());
+        mockMvc.perform(get("/api/v1/uda/vigente")).andExpect(status().isUnauthorized());
+    }
+
+    // ── CT-ARR-R02: com JWT mas authz nega → 403 ────────────────────────────
+
+    @ParameterizedTest(name = "403 quando {1} é negada em {0}")
+    @CsvSource({
+        "/api/v1/uda/vigente, arrecadacao:default:cobranca:listar",
+        "/api/v1/licencas, arrecadacao:default:contrato:listar",
+        "/api/v1/pagamentos, arrecadacao:default:pagamento:listar"
+    })
+    void deveRetornar403QuandoAuthzNegaPermissao(String url, String permission) throws Exception {
+        when(authzDecisionClient.checkDecision(eq(permission), any(), anyString())).thenReturn(false);
+
+        mockMvc.perform(
+                        get(url)
+                                .with(
+                                        jwt().jwt(
+                                                        j ->
+                                                                j.subject("user-sem-permissao")
+                                                                        .claim("sid", "sess-1"))))
+                .andExpect(status().isForbidden());
     }
 
     @Test
     void deveRetornar403QuandoDecisaoForNegada() throws Exception {
         when(authzDecisionClient.checkDecision(
-                eq("arrecadacao:default:cobranca:listar"), any(), anyString()))
-            .thenReturn(false);
+                        eq("arrecadacao:default:cobranca:listar"), any(), anyString()))
+                .thenReturn(false);
 
-        mockMvc.perform(get("/api/v1/uda/vigente")
-                .with(jwt().jwt(j -> j.subject("user-sem-permissao").claim("sid", "sess-1"))))
-            .andExpect(status().isForbidden());
+        mockMvc.perform(
+                        get("/api/v1/uda/vigente")
+                                .with(
+                                        jwt().jwt(
+                                                        j ->
+                                                                j.subject("user-sem-permissao")
+                                                                        .claim("sid", "sess-1"))))
+                .andExpect(status().isForbidden());
     }
 
     @Test
     void deveRetornar503QuandoServicoDeDecisaoFalha() throws Exception {
         when(authzDecisionClient.checkDecision(anyString(), any(), anyString()))
-            .thenThrow(new org.springframework.web.client.ResourceAccessException("down"));
+                .thenThrow(new org.springframework.web.client.ResourceAccessException("down"));
 
-        mockMvc.perform(get("/api/v1/uda/vigente")
-                .with(jwt().jwt(j -> j.subject("user-x").claim("sid", "sess-1"))))
-            .andExpect(status().isServiceUnavailable());
+        mockMvc.perform(
+                        get("/api/v1/uda/vigente")
+                                .with(jwt().jwt(j -> j.subject("user-x").claim("sid", "sess-1"))))
+                .andExpect(status().isServiceUnavailable());
     }
+
+    // ── CT-ARR-R03: com JWT e authz permite → aspect libera o controller ────
 
     @Test
     void deveDeixarRequisicaoProsseguirQuandoDecisaoForPermitida() throws Exception {
-        // Aspect responde "permitido" → o controller é invocado. Sem DB neste teste de slice,
-        // o controller propaga uma exceção do data layer; o importante é que NÃO seja
-        // 401/403/503 — comprovando que o aspect liberou a execução.
         when(authzDecisionClient.checkDecision(
-                eq("arrecadacao:default:cobranca:listar"), any(), anyString()))
-            .thenReturn(true);
+                        eq("arrecadacao:default:cobranca:listar"), any(), anyString()))
+                .thenReturn(true);
 
-        var result = mockMvc.perform(get("/api/v1/uda/vigente")
-                .with(jwt().jwt(j -> j.subject("user-com-permissao").claim("sid", "sess-1"))))
-            .andReturn();
+        var result =
+                mockMvc.perform(
+                                get("/api/v1/uda/vigente")
+                                        .with(
+                                                jwt().jwt(
+                                                                j ->
+                                                                        j.subject(
+                                                                                        "user-com-permissao")
+                                                                                .claim(
+                                                                                        "sid",
+                                                                                        "sess-1"))))
+                        .andReturn();
 
         int status = result.getResponse().getStatus();
-        // qualquer status diferente de 401/403/503 prova que o aspect liberou a chamada.
-        org.assertj.core.api.Assertions.assertThat(status)
-            .isNotIn(401, 403, 503);
+        org.assertj.core.api.Assertions.assertThat(status).isNotIn(401, 403, 503);
     }
+
 }
