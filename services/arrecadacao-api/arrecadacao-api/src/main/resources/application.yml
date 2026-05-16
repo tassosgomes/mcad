@@ -34,11 +34,6 @@ spring:
       resourceserver:
         jwt:
           issuer-uri: ${OIDC_AUTHORITY:http://localhost:8080/realms/mcad}
-  data:
-    redis:
-      host: ${AUTHZ_REDIS_HOST:localhost}
-      port: ${AUTHZ_REDIS_PORT:6379}
-      timeout: ${AUTHZ_REDIS_TIMEOUT:50ms}
 
 management:
   endpoints:

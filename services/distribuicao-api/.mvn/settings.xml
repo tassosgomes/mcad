@@ -5,9 +5,14 @@
                               https://maven.apache.org/xsd/settings-1.0.0.xsd">
     <servers>
         <server>
-            <id>github</id>
-            <username>${env.GITHUB_ACTOR}</username>
-            <password>${env.GITHUB_TOKEN}</password>
+            <id>github-ecad-auditoria</id>
+            <username>${env.MAVEN_GH_USER}</username>
+            <password>${env.MAVEN_GH_TOKEN}</password>
+        </server>
+        <server>
+            <id>github-ecad-authz</id>
+            <username>${env.MAVEN_GH_USER}</username>
+            <password>${env.MAVEN_GH_TOKEN}</password>
         </server>
     </servers>
 </settings>

@@ -204,8 +204,8 @@ jobs:
 
       - name: Run unit tests (skip integration module)
         env:
-          GITHUB_ACTOR: ${{ github.actor }}
-          GITHUB_TOKEN: ${{ secrets.GH_PACKAGES_READ_TOKEN || github.token }}
+          MAVEN_GH_USER: ${{ github.actor }}
+          MAVEN_GH_TOKEN: ${{ secrets.GH_PACKAGES_READ_TOKEN || github.token }}
         run: mvn -B -ntp -s .mvn/settings.xml test -pl '!arrecadacao-tests'
 
       - name: Upload Surefire reports
@@ -234,12 +234,12 @@ jobs:
           <settings xmlns="http://maven.apache.org/SETTINGS/1.0.0">
             <servers>
               <server>
-                <id>github-auditoria</id>
+                <id>github-ecad-auditoria</id>
                 <username>${{ github.actor }}</username>
                 <password>${{ secrets.GH_PACKAGES_READ_TOKEN || github.token }}</password>
               </server>
               <server>
-                <id>github-authz</id>
+                <id>github-ecad-authz</id>
                 <username>${{ github.actor }}</username>
                 <password>${{ secrets.GH_PACKAGES_READ_TOKEN || github.token }}</password>
               </server>
@@ -288,8 +288,8 @@ jobs:
 
       - name: Run unit tests (skip *IntegrationTest classes)
         env:
-          GITHUB_ACTOR: ${{ github.actor }}
-          GITHUB_TOKEN: ${{ secrets.GH_PACKAGES_READ_TOKEN || github.token }}
+          MAVEN_GH_USER: ${{ github.actor }}
+          MAVEN_GH_TOKEN: ${{ secrets.GH_PACKAGES_READ_TOKEN || github.token }}
         run: mvn -B -ntp -s .mvn/settings.xml test -Dtest='!*IntegrationTest' -Dsurefire.failIfNoSpecifiedTests=false
 
       - name: Upload Surefire reports
@@ -318,7 +318,12 @@ jobs:
           <settings xmlns="http://maven.apache.org/SETTINGS/1.0.0">
             <servers>
               <server>
-                <id>github</id>
+                <id>github-ecad-auditoria</id>
+                <username>${{ github.actor }}</username>
+                <password>${{ secrets.GH_PACKAGES_READ_TOKEN || github.token }}</password>
+              </server>
+              <server>
+                <id>github-ecad-authz</id>
                 <username>${{ github.actor }}</username>
                 <password>${{ secrets.GH_PACKAGES_READ_TOKEN || github.token }}</password>
               </server>
