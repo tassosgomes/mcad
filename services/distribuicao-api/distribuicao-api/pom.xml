@@ -67,6 +67,14 @@
                         <goals>
                             <goal>repackage</goal>
                         </goals>
+                        <configuration>
+                            <!-- classifier=exec preserva o JAR thin original como artefato
+                                 default; o executable fat JAR vira distribuicao-api-X-exec.jar.
+                                 Necessario para que distribuicao-tests consiga resolver
+                                 dependencia do modulo distribuicao-api (caso contrario o
+                                 fat JAR substitui o thin e o classpath de teste quebra). -->
+                            <classifier>exec</classifier>
+                        </configuration>
                     </execution>
                 </executions>
             </plugin>
