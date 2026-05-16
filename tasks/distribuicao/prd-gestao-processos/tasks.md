@@ -33,11 +33,11 @@ API client, hooks, componentes, páginas, roteamento; **gate de ações por perm
 
 ## Tarefas
 
-- [ ] 1.0 Migration + Domain entities (ProcessoDistribuicao, Snapshots, OutboxEvent) — `audit_outbox` já existe via V4
-- [ ] 1.5 **Permissionamento:** adicionar `authz-spring-boot-starter` (pom), criar `permissions.yaml` (7 keys da F02 + 2 keys legacy de rubrica) e `docs/authz/catalog/distribuicao.md`, **migrar `RubricaController` de `@PreAuthorize` para `@RequiresPermission`**, configurar bloco `ecad.authz` no application.yml
-- [ ] 1.7 **Auditoria:** portar `AuditContextProvider` de arrecadacao-application, criar `ProcessoAuditEventFactory` + enum `ProcessoAuditOperation` (CREATE/CALCULATE/APPROVE/FINALIZE/CANCEL) + record `ProcessoAuditChange`, configurar bloco `audit` (mode=OUTBOX_RABBITMQ) no application.yml
-- [ ] 2.0 Outbox Pattern: writer, publisher, worker (portado de arrecadação) — **apenas para eventos de domínio; auditoria usa relay próprio do starter**
-- [ ] 3.0 Event consumers: Rol e Verba (listeners + handlers) — **sem auditoria** (consumers de evento, não ações de usuário)
+- [x] 1.0 Migration + Domain entities (ProcessoDistribuicao, Snapshots, OutboxEvent) — `audit_outbox` já existe via V4
+- [x] 1.5 **Permissionamento:** adicionar `authz-spring-boot-starter` (pom), criar `permissions.yaml` (7 keys da F02 + 2 keys legacy de rubrica) e `docs/authz/catalog/distribuicao.md`, **migrar `RubricaController` de `@PreAuthorize` para `@RequiresPermission`**, configurar bloco `ecad.authz` no application.yml
+- [x] 1.7 **Auditoria:** portar `AuditContextProvider` de arrecadacao-application, criar `ProcessoAuditEventFactory` + enum `ProcessoAuditOperation` (CREATE/CALCULATE/APPROVE/FINALIZE/CANCEL) + record `ProcessoAuditChange`, configurar bloco `audit` (mode=OUTBOX_RABBITMQ) no application.yml
+- [x] 2.0 Outbox Pattern: writer, publisher, worker (portado de arrecadação) — **apenas para eventos de domínio; auditoria usa relay próprio do starter**
+- [x] 3.0 Event consumers: Rol e Verba (listeners + handlers) — **sem auditoria** (consumers de evento, não ações de usuário)
 - [ ] 4.0 Commands: criar, aprovar, finalizar, cancelar, calcular (stub) — **todos injetam `AuditClient` + `AuditContextProvider` + `ProcessoAuditEventFactory` e publicam `userAction` + `dataChange` na mesma transação**
 - [ ] 5.0 Queries + Controller + Exception handler — **cada endpoint do ProcessoController com `@RequiresPermission("distribuicao:default:processo:<acao>")`**
 - [ ] 6.0 Testes backend: unitários e integração + **`AuthzPermissionEnforcementTest` (401/403/200 para cada endpoint, mockando `AuthzDecisionClient`)** + **`ProcessoAuditOutboxIntegrationTest` (verifica registros em `audit_outbox` após cada cenário de fluxo)** + `TestSecurityConfig`

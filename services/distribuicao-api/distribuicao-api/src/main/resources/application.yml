@@ -55,9 +55,16 @@ app:
     exchange: arrecadacao.events
     queues:
       rubricas: distribuicao.rubricas
+      rol: ${RABBITMQ_QUEUE_ROL:distribuicao.rol}
+      verba: ${RABBITMQ_QUEUE_VERBA:distribuicao.verba}
     routing-keys:
       rubrica-criada: arrecadacao.rubrica.criada
       rubrica-atualizada: arrecadacao.rubrica.atualizada
+    exchanges:
+      distribuicao: ${RABBITMQ_EXCHANGE_DISTRIBUICAO:distribuicao.events}
+  outbox:
+    publisher:
+      poll-interval-ms: ${OUTBOX_POLL_INTERVAL_MS:5000}
   identity-events:
     exchange: ${IDENTITY_EVENTS_EXCHANGE:identity.events}
     queue: ${IDENTITY_EVENTS_QUEUE:distribuicao.identity.users}
@@ -81,3 +88,16 @@ audit:
   relay-batch-size: ${AUDIT_RELAY_BATCH_SIZE:50}
   relay-lock-ttl: ${AUDIT_RELAY_LOCK_TTL:2m}
   relay-delay-ms: ${AUDIT_RELAY_DELAY_MS:5000}
+
+ecad:
+  authz:
+    base-url: ${ECAD_AUTHZ_BASE_URL:http://localhost:8081}
+    catalog:
+      domain: distribuicao
+      register-on-startup: ${ECAD_AUTHZ_REGISTER_ON_STARTUP:true}
+    cache:
+      local:
+        ttl-seconds: 60
+      remote:
+        enabled: ${ECAD_AUTHZ_REMOTE_CACHE:true}
+        ttl-seconds: 300

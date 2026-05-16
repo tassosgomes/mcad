@@ -1,0 +1,59 @@
+## Catálogo de permissões da distribuicao-api consumido pelo
+## `authz-spring-boot-starter` na inicialização (POST /permission-catalog/register).
+##
+## Convenção: 4 segmentos `dominio:area:recurso:acao` (ADR 0002).
+## Toda permissão pertence à área `default` da Distribuição.
+##
+## Mapeamento sugerido para papéis iniciais:
+##   - distribuicao.consultor  → permissões de leitura/visualização.
+##   - distribuicao.analista   → herda consultor + escrita/processamento.
+
+permissions:
+  # ── Rubrica (F01 — legacy migrado nesta task) ─────────────────────────────
+  - key: distribuicao:default:rubrica:listar
+    name: Listar rubricas
+    description: Lista as rubricas sincronizadas a partir da Arrecadação.
+    resource: rubrica
+    action: listar
+  - key: distribuicao:default:rubrica:visualizar
+    name: Visualizar rubrica
+    description: Detalhe de uma rubrica específica.
+    resource: rubrica
+    action: visualizar
+
+  # ── Processo de Distribuição (F02) ─────────────────────────────────────────
+  - key: distribuicao:default:processo:listar
+    name: Listar processos
+    description: Lista paginada de processos de distribuição; também usado pelo endpoint /disponiveis.
+    resource: processo
+    action: listar
+  - key: distribuicao:default:processo:visualizar
+    name: Visualizar processo
+    description: Detalhes de um processo de distribuição.
+    resource: processo
+    action: visualizar
+  - key: distribuicao:default:processo:criar
+    name: Criar processo
+    description: Cria um novo processo de distribuição para uma combinação rubrica+período.
+    resource: processo
+    action: criar
+  - key: distribuicao:default:processo:calcular
+    name: Calcular processo
+    description: Dispara o cálculo de créditos (transição CRIADO → CALCULADO).
+    resource: processo
+    action: calcular
+  - key: distribuicao:default:processo:aprovar
+    name: Aprovar processo
+    description: Aprova o cálculo (transição CALCULADO → APROVADO).
+    resource: processo
+    action: aprovar
+  - key: distribuicao:default:processo:finalizar
+    name: Finalizar processo
+    description: Finaliza o processo (APROVADO → FINALIZADO; irreversível).
+    resource: processo
+    action: finalizar
+  - key: distribuicao:default:processo:cancelar
+    name: Cancelar processo
+    description: Cancela o processo a partir de qualquer estado exceto FINALIZADO; exige justificativa.
+    resource: processo
+    action: cancelar

@@ -1,5 +1,5 @@
 ---
-status: pending
+status: done
 parallelizable: true
 blocked_by: []
 ---
@@ -42,10 +42,10 @@ Esta task adota o novo padrão (ADR 0002 — naming 4 segmentos; ADR 0003 — ba
 
 ## Subtarefas
 
-- [ ] 1.5.1 Adicionar `<authz-sdk.version>` ao parent pom e `<dependency>authz-spring-boot-starter</dependency>` no `distribuicao-api/pom.xml`. Alinhar a versão com a definida em `arrecadacao-api/pom.xml`
-- [ ] 1.5.2 Criar `permissions.yaml` com as 7 keys da F02 (processo:listar/visualizar/criar/calcular/aprovar/finalizar/cancelar) + 2 keys legacy (rubrica:listar/visualizar)
-- [ ] 1.5.3 Criar `docs/authz/catalog/distribuicao.md` documentando as keys, descrição, endpoint(s) mapeado(s) e perfil-base sugerido (consultor/analista). Espelhar formato de `arrecadacao.md`
-- [ ] 1.5.4 Adicionar bloco `ecad.authz` ao `application.yml`:
+- [x] 1.5.1 Adicionar `<authz-sdk.version>` ao parent pom e `<dependency>authz-spring-boot-starter</dependency>` no `distribuicao-api/pom.xml`. Alinhar a versão com a definida em `arrecadacao-api/pom.xml`
+- [x] 1.5.2 Criar `permissions.yaml` com as 7 keys da F02 (processo:listar/visualizar/criar/calcular/aprovar/finalizar/cancelar) + 2 keys legacy (rubrica:listar/visualizar)
+- [x] 1.5.3 Criar `docs/authz/catalog/distribuicao.md` documentando as keys, descrição, endpoint(s) mapeado(s) e perfil-base sugerido (consultor/analista). Espelhar formato de `arrecadacao.md`
+- [x] 1.5.4 Adicionar bloco `ecad.authz` ao `application.yml`:
   ```yaml
   ecad:
     authz:
@@ -60,9 +60,9 @@ Esta task adota o novo padrão (ADR 0002 — naming 4 segmentos; ADR 0003 — ba
           enabled: ${ECAD_AUTHZ_REMOTE_CACHE:true}
           ttl-seconds: 300
   ```
-- [ ] 1.5.5 Migrar `RubricaController`: substituir `@PreAuthorize` por `@RequiresPermission` nos 2 endpoints existentes; remover imports não usados
+- [x] 1.5.5 Migrar `RubricaController`: substituir `@PreAuthorize` por `@RequiresPermission` nos 2 endpoints existentes; remover imports não usados
 - [ ] 1.5.6 Verificar que a aplicação sobe (`mvn -pl distribuicao-api spring-boot:run`) e registra o catálogo (log do starter)
-- [ ] 1.5.7 Verificar compilação: `cd services/distribuicao-api && mvn compile`
+- [x] 1.5.7 Verificar compilação: `cd services/distribuicao-api && mvn compile`
 
 ## Sequenciamento
 

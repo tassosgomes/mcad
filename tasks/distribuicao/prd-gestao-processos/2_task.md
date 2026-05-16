@@ -1,5 +1,5 @@
 ---
-status: pending
+status: done
 parallelizable: false
 blocked_by: ["1.0"]
 ---
@@ -47,12 +47,12 @@ Portar a infraestrutura de Outbox Pattern da arrecadacao-api para a distribuicao
 
 ## Subtarefas
 
-- [ ] 2.1 Criar OutboxEventWriterImpl (serializa payload JSON + persiste)
-- [ ] 2.2 Criar RabbitMqPublisher (CloudEvent v1.0, source `urn:distribuicao-api`, exchange `distribuicao.events`)
-- [ ] 2.3 Criar OutboxPublisherWorker (@Scheduled, batch 100, max 10 tentativas)
-- [ ] 2.4 Adicionar exchange `distribuicao.events` ao RabbitMqConfig
-- [ ] 2.5 Adicionar config de outbox poll interval ao application.yml
-- [ ] 2.6 Verificar compilação
+- [x] 2.1 Criar OutboxEventWriterImpl (serializa payload JSON + persiste)
+- [x] 2.2 Criar RabbitMqPublisher (CloudEvent v1.0, source `urn:distribuicao-api`, exchange `distribuicao.events`)
+- [x] 2.3 Criar OutboxPublisherWorker (@Scheduled, batch 100, max 10 tentativas)
+- [x] 2.4 Adicionar exchange `distribuicao.events` ao RabbitMqConfig
+- [x] 2.5 Adicionar config de outbox poll interval ao application.yml
+- [x] 2.6 Verificar compilação
 
 ## Sequenciamento
 
@@ -80,8 +80,8 @@ app:
 
 ## Critérios de Sucesso (Verificáveis)
 
-- [ ] Build compila: `cd services/distribuicao-api && mvn compile`
-- [ ] OutboxEventWriterImpl implementa OutboxEventWriter interface
-- [ ] RabbitMqPublisher serializa CloudEvent v1.0 com source `urn:distribuicao-api`
-- [ ] OutboxPublisherWorker tem @Scheduled com intervalo configurável
-- [ ] RabbitMqConfig declara TopicExchange `distribuicao.events` (durable)
+- [x] Build compila: `cd services/distribuicao-api && mvn compile`
+- [x] OutboxEventWriterImpl implementa OutboxEventWriter interface
+- [x] RabbitMqPublisher serializa CloudEvent v1.0 com source `urn:distribuicao-api`
+- [x] OutboxPublisherWorker tem @Scheduled com intervalo configurável
+- [x] RabbitMqConfig declara TopicExchange `distribuicao.events` (durable)

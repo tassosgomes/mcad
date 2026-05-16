@@ -1,5 +1,5 @@
 ---
-status: pending
+status: done
 parallelizable: true
 blocked_by: []
 ---
@@ -42,14 +42,14 @@ Padrão a seguir é o de `CriarUsuarioMusicaCommandHandler:30-78` em `arrecadaca
 
 ## Subtarefas
 
-- [ ] 1.7.1 Portar `AuditContextProvider` de `arrecadacao-application/audit/AuditContextProvider.java`. Ajustar package e `serviceName="distribuicao-api"`. Resolve do JWT/HttpRequest: userId, username, displayName, roles, authProvider, ip, userAgent, traceId, requestId, userSessionId, screenAccessId, commandId, screenId, screenName, route, channel
-- [ ] 1.7.2 Criar enum `ProcessoAuditOperation` com 5 valores (CREATE, CALCULATE, APPROVE, FINALIZE, CANCEL), cada um com `actionCode` (ex: `PROCESSO_DISTRIBUICAO_CREATE`) e `label` (ex: `"Criar processo"`)
-- [ ] 1.7.3 Criar record `ProcessoSnapshot` que serializa o estado relevante de `ProcessoDistribuicao` (id, rubricaSigla, periodo, status, verbaLiquida, totalExecucoes, justificativaCancelamento, criadoEm, calculadoEm, aprovadoEm, finalizadoEm, canceladoEm). Método estático `from(ProcessoDistribuicao)`
-- [ ] 1.7.4 Criar record `ProcessoAuditChange(ProcessoDistribuicao processo, ProcessoAuditOperation operation, ProcessoSnapshot before)`
-- [ ] 1.7.5 Criar `ProcessoAuditEventFactory` com 2 métodos:
+- [x] 1.7.1 Portar `AuditContextProvider` de `arrecadacao-application/audit/AuditContextProvider.java`. Ajustar package e `serviceName="distribuicao-api"`. Resolve do JWT/HttpRequest: userId, username, displayName, roles, authProvider, ip, userAgent, traceId, requestId, userSessionId, screenAccessId, commandId, screenId, screenName, route, channel
+- [x] 1.7.2 Criar enum `ProcessoAuditOperation` com 5 valores (CREATE, CALCULATE, APPROVE, FINALIZE, CANCEL), cada um com `actionCode` (ex: `PROCESSO_DISTRIBUICAO_CREATE`) e `label` (ex: `"Criar processo"`)
+- [x] 1.7.3 Criar record `ProcessoSnapshot` que serializa o estado relevante de `ProcessoDistribuicao` (id, rubricaSigla, periodo, status, verbaLiquida, totalExecucoes, justificativaCancelamento, criadoEm, calculadoEm, aprovadoEm, finalizadoEm, canceladoEm). Método estático `from(ProcessoDistribuicao)`
+- [x] 1.7.4 Criar record `ProcessoAuditChange(ProcessoDistribuicao processo, ProcessoAuditOperation operation, ProcessoSnapshot before)`
+- [x] 1.7.5 Criar `ProcessoAuditEventFactory` com 2 métodos:
   - `userAction(ProcessoDistribuicao processo, AuditContext ctx, ProcessoAuditOperation op)` → `AuditEvent` com `eventType=USER_ACTION`, `source.entityType="ProcessoDistribuicao"`, `source.entityId=processo.getId()`, `source.systemName="mcad"`, `source.serviceName="distribuicao-api"`, `userAction.actionCode=op.code()`, `userAction.label=op.label()`
   - `dataChange(ProcessoAuditChange change, AuditContext ctx)` → `AuditEvent` com `eventType=DATA_CHANGE`, `data.entityType="ProcessoDistribuicao"`, `data.entityId=change.processo().getId()`, `data.before=change.before()` (pode ser null no CREATE), `data.after=ProcessoSnapshot.from(change.processo())`, `data.dataAction` derivado da operation (CREATE/UPDATE/DELETE)
-- [ ] 1.7.6 Adicionar bloco `audit` ao `application.yml`:
+- [x] 1.7.6 Adicionar bloco `audit` ao `application.yml`:
   ```yaml
   audit:
     mode: ${AUDIT_MODE:OUTBOX_RABBITMQ}
@@ -58,7 +58,7 @@ Padrão a seguir é o de `CriarUsuarioMusicaCommandHandler:30-78` em `arrecadaca
       exchange: ${AUDIT_RABBIT_EXCHANGE:audit.events.exchange.v1}
       routing-key: ${AUDIT_RABBIT_ROUTING_KEY:audit.event.v1}
   ```
-- [ ] 1.7.7 Verificar compilação: `cd services/distribuicao-api && mvn compile`
+- [x] 1.7.7 Verificar compilação: `cd services/distribuicao-api && mvn compile`
 
 ## Sequenciamento
 
@@ -144,9 +144,9 @@ public class ProcessoAuditEventFactory {
 
 ## Critérios de Sucesso (Verificáveis)
 
-- [ ] Build compila: `cd services/distribuicao-api && mvn compile`
-- [ ] `AuditContextProvider`, `ProcessoAuditEventFactory`, `ProcessoAuditOperation`, `ProcessoAuditChange`, `ProcessoSnapshot` existem em `distribuicao-application/.../audit/`
-- [ ] `application.yml` contém bloco `audit` com `mode=OUTBOX_RABBITMQ`
-- [ ] Todos os 5 valores de `ProcessoAuditOperation` mapeiam para `actionCode` no padrão `PROCESSO_DISTRIBUICAO_<OP>`
-- [ ] `ProcessoSnapshot.from(processo)` produz snapshot completo (validado por unit test em 6.0)
+- [x] Build compila: `cd services/distribuicao-api && mvn compile`
+- [x] `AuditContextProvider`, `ProcessoAuditEventFactory`, `ProcessoAuditOperation`, `ProcessoAuditChange`, `ProcessoSnapshot` existem em `distribuicao-application/.../audit/`
+- [x] `application.yml` contém bloco `audit` com `mode=OUTBOX_RABBITMQ`
+- [x] Todos os 5 valores de `ProcessoAuditOperation` mapeiam para `actionCode` no padrão `PROCESSO_DISTRIBUICAO_<OP>`
+- [x] `ProcessoSnapshot.from(processo)` produz snapshot completo (validado por unit test em 6.0)
 - [ ] App sobe sem erro com o `audit-sdk` ativo (log mostra `RabbitAuditOutboxRelay started` ou equivalente)
