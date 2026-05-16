@@ -24,7 +24,7 @@
         <cloudevents.version>3.0.0</cloudevents.version>
         <audit-sdk.version>1.0.0</audit-sdk.version>
         <authz-sdk.version>0.1.0-SNAPSHOT</authz-sdk.version>
-        <testcontainers.version>1.20.6</testcontainers.version>
+        <testcontainers.version>1.21.3</testcontainers.version>
         <awaitility.version>4.2.1</awaitility.version>
         <maven.compiler.release>${java.version}</maven.compiler.release>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -55,17 +55,26 @@
 
     <dependencyManagement>
         <dependencies>
-            <dependency>
-                <groupId>org.springframework.boot</groupId>
-                <artifactId>spring-boot-dependencies</artifactId>
-                <version>${spring-boot.version}</version>
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>
+            <!-- testcontainers-bom DEVE vir antes de spring-boot-dependencies:
+                 a BOM do Spring Boot 3.3.5 amarra testcontainers em 1.19.8,
+                 que envia API 1.32 ao Docker daemon (rejeitada por engines >= 25.0
+                 que exigem MinAPI 1.44). Importar a BOM do testcontainers primeiro
+                 garante que a 1.21.3 vencera.
+                 Complemento: ver distribuicao-tests/src/test/resources/docker-java.properties
+                 (workaround para o ping inicial enviar api.version=1.44; necessario ate
+                 bumparmos para testcontainers 2.x). Issue:
+                 https://github.com/testcontainers/testcontainers-java/issues/11210 -->
             <dependency>
                 <groupId>org.testcontainers</groupId>
                 <artifactId>testcontainers-bom</artifactId>
                 <version>${testcontainers.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-dependencies</artifactId>
+                <version>${spring-boot.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
