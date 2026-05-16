@@ -20,6 +20,16 @@
             <artifactId>distribuicao-domain</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <!-- audit-sdk-core: registra o JPA/Hibernate type que serializa
+             payload_json como JSONB. Sem ele, o INSERT em audit_outbox vai
+             como varchar e o PostgreSQL rejeita (column is of type jsonb but
+             expression is of type character varying). Mesmo padrao usado em
+             arrecadacao-infra. -->
+        <dependency>
+            <groupId>br.org.ecad.audit</groupId>
+            <artifactId>audit-sdk-core</artifactId>
+            <version>${audit-sdk.version}</version>
+        </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-jpa</artifactId>

@@ -10,6 +10,12 @@ spring:
     password: ${DB_PASSWORD_DISTRIBUICAO:distribuicao_app}
     hikari:
       maximum-pool-size: 10
+      data-source-properties:
+        # stringtype=unspecified: necessario para o INSERT de payload_json (jsonb)
+        # pelo JdbcAuditOutboxRepository do audit-sdk, que usa setString (varchar).
+        # Sem isto, PostgreSQL rejeita: "column is of type jsonb but expression is
+        # of type character varying". Vale tanto em prod quanto em testes.
+        stringtype: unspecified
   jpa:
     hibernate:
       ddl-auto: validate

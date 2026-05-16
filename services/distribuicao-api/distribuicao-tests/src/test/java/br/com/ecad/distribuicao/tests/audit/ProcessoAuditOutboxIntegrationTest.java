@@ -122,22 +122,29 @@ class ProcessoAuditOutboxIntegrationTest {
         List<Map<String, Object>> rows = queryAuditOutbox();
         assertThat(rows).hasSize(2);
 
-        // One USER_ACTION row with correct action code
+        // One USER_ACTION row with correct action code. NOTE: a coluna aggregate_type
+        // em audit_outbox e populada pelo JdbcAuditOutboxRepository a partir de
+        // event.data().entityType(); USER_ACTION tem data=null por padrao (segue
+        // o template UsuarioMusicaAuditEventFactory), entao aggregate_type fica null
+        // para esta linha. A identificacao do agregado no USER_ACTION vai dentro
+        // de payload_json.action.businessContext.entityType/entityId.
         var userActionRow = rows.stream()
                 .filter(r -> "USER_ACTION".equals(r.get("event_type")))
                 .findFirst();
         assertThat(userActionRow).isPresent();
-        assertThat(userActionRow.get().get("aggregate_type")).isEqualTo("ProcessoDistribuicao");
+        assertThat(userActionRow.get().get("aggregate_type")).isNull();
         assertThat(userActionRow.get().get("status")).isEqualTo("PENDING");
         String userActionPayload = (String) userActionRow.get().get("payload_json");
         assertThat(userActionPayload).contains("PROCESSO_DISTRIBUICAO_CREATE");
+        assertThat(userActionPayload).contains("\"entityType\": \"ProcessoDistribuicao\"");
 
-        // One DATA_CHANGE row with null before (CREATE)
+        // One DATA_CHANGE row with null before (CREATE) - aggregate_type populado
         var dataChangeRow = rows.stream()
                 .filter(r -> "DATA_CHANGE".equals(r.get("event_type")))
                 .findFirst();
         assertThat(dataChangeRow).isPresent();
         assertThat(dataChangeRow.get().get("status")).isEqualTo("PENDING");
+        assertThat(dataChangeRow.get().get("aggregate_type")).isEqualTo("ProcessoDistribuicao");
         String dataChangePayload = (String) dataChangeRow.get().get("payload_json");
         // before should be null for CREATE
         assertThat(dataChangePayload).doesNotContain("\"before\":{");
@@ -243,12 +250,31 @@ class ProcessoAuditOutboxIntegrationTest {
 
     @Test
     void eachOperation_ShouldWriteAggregateType_ProcessoDistribuicao() {
-        // Verify that all rows have the correct aggregate_type
+        // Verify aggregate_type contract: DATA_CHANGE rows carregam o aggregate_type
+        // na coluna (extraido pelo starter de event.data().entityType()); USER_ACTION
+        // rows tem data=null e por isso aggregate_type=null - a identificacao do
+        // agregado vai dentro de payload_json.action.businessContext. Mesmo padrao
+        // de PagamentoAuditEventFactory/UsuarioMusicaAuditEventFactory.
         criarHandler.handle(new CriarProcessoCommand(RUBRICA, PERIODO, ANALISTA));
 
         List<Map<String, Object>> rows = queryAuditOutbox();
-        assertThat(rows).allSatisfy(row ->
+
+        var dataChangeRows = rows.stream()
+                .filter(r -> "DATA_CHANGE".equals(r.get("event_type")))
+                .toList();
+        assertThat(dataChangeRows).isNotEmpty();
+        assertThat(dataChangeRows).allSatisfy(row ->
                 assertThat(row.get("aggregate_type")).isEqualTo("ProcessoDistribuicao"));
+
+        var userActionRows = rows.stream()
+                .filter(r -> "USER_ACTION".equals(r.get("event_type")))
+                .toList();
+        assertThat(userActionRows).isNotEmpty();
+        assertThat(userActionRows).allSatisfy(row -> {
+            assertThat(row.get("aggregate_type")).isNull();
+            assertThat((String) row.get("payload_json"))
+                    .contains("\"entityType\": \"ProcessoDistribuicao\"");
+        });
     }
 
     private List<Map<String, Object>> queryAuditOutbox() {
