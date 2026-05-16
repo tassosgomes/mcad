@@ -22,7 +22,7 @@
         <java.version>21</java.version>
         <spring-boot.version>3.3.5</spring-boot.version>
         <cloudevents.version>3.0.0</cloudevents.version>
-        <audit-sdk.version>0.1.0</audit-sdk.version>
+        <audit-sdk.version>1.0.0</audit-sdk.version>
         <authz-sdk.version>0.1.0-SNAPSHOT</authz-sdk.version>
         <testcontainers.version>1.20.6</testcontainers.version>
         <maven.compiler.release>${java.version}</maven.compiler.release>
@@ -50,7 +50,7 @@
 
     <repositories>
         <repository>
-            <id>github-auditoria</id>
+            <id>github-ecad-auditoria</id>
             <url>https://maven.pkg.github.com/tassosgomes/ecad-auditoria</url>
             <releases>
                 <enabled>true</enabled>
@@ -60,7 +60,7 @@
             </snapshots>
         </repository>
         <repository>
-            <id>github-authz</id>
+            <id>github-ecad-authz</id>
             <url>https://maven.pkg.github.com/tassosgomes/ecad-authz</url>
             <releases>
                 <enabled>true</enabled>

@@ -6,7 +6,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Ecad.Audit.AspNetCore" Version="0.1.0" />
+    <PackageReference Include="Ecad.Audit.AspNetCore" Version="1.0.0" />
     <PackageReference Include="Ecad.Authz.AspNetCore" Version="1.0.0" />
     <PackageReference Include="Ecad.Authz.Sdk" Version="1.0.0" />
     <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="12.1.1" />
