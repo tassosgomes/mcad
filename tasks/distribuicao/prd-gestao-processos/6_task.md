@@ -1,5 +1,5 @@
 ---
-status: pending
+status: done
 parallelizable: false
 blocked_by: ["5.0"]
 ---
@@ -41,24 +41,24 @@ Implementar testes unitários (entity state machine, command handlers, query han
 
 ## Subtarefas
 
-- [ ] 6.1 ProcessoDistribuicaoTest: todas transições válidas (5), todas inválidas (ex: CRIADO→APROVADO), cancelar de cada estado, cancelar FINALIZADO rejeita
-- [ ] 6.2 CriarProcessoCommandHandlerTest: happy path, Rol ausente (422), Verba ausente (422), duplicata (409). **Mockar `AuditClient` e verificar 2 `publish()` por chamada bem-sucedida (1 userAction + 1 dataChange com `before=null`)**
-- [ ] 6.3 TransicoesCommandHandlerTest: aprovar de CALCULADO (ok), aprovar de CRIADO (erro); finalizar de APROVADO (ok + 2 outbox); cancelar com justificativa válida/inválida. **Mockar `AuditClient` e verificar `before/after` corretos no `dataChange`**
-- [ ] 6.4 SnapshotHandlersTest: RolEventHandler (criar, cancelar, idempotência), VerbaEventHandler (criar, atualizar). **Verificar que `AuditClient` NÃO é chamado** (consumers de evento ≠ auditoria)
-- [ ] 6.5 ListarDisponiveisQueryHandlerTest: combinações com Rol+Verba+sem processo; com processo ativo filtra; cancelados não filtram
-- [ ] 6.6 ProcessoAuditEventFactoryTest: para cada `ProcessoAuditOperation`, validar que `userAction()` produz `actionCode` esperado (`PROCESSO_DISTRIBUICAO_<OP>`) e que `dataChange()` produz `data.before/after` com snapshot correto da entidade
-- [ ] 6.7 ProcessoControllerIntegrationTest: fluxo completo criar→calcular→aprovar→finalizar; criar com 409; transição inválida 422; cancelar com justificativa; filtros e paginação. **Após cada cenário, query em `distribuicao.audit_outbox` confirma os registros esperados**
-- [ ] 6.8 SnapshotEventListenerIntegrationTest: CloudEvent válido → snapshot; payload inválido → descartado
-- [ ] 6.9 OutboxPublisherIntegrationTest: evento na tabela → publicado no RabbitMQ
-- [ ] 6.10 **AuthzPermissionEnforcementTest** (espelha `arrecadacao-tests/.../authz/AuthzPermissionEnforcementTest.java`): para CADA endpoint do `ProcessoController` (e dos endpoints atualizados do `RubricaController`):
+- [x] 6.1 ProcessoDistribuicaoTest: todas transições válidas (5), todas inválidas (ex: CRIADO→APROVADO), cancelar de cada estado, cancelar FINALIZADO rejeita
+- [x] 6.2 CriarProcessoCommandHandlerTest: happy path, Rol ausente (422), Verba ausente (422), duplicata (409). **Mockar `AuditClient` e verificar 2 `publish()` por chamada bem-sucedida (1 userAction + 1 dataChange com `before=null`)**
+- [x] 6.3 TransicoesCommandHandlerTest: aprovar de CALCULADO (ok), aprovar de CRIADO (erro); finalizar de APROVADO (ok + 2 outbox); cancelar com justificativa válida/inválida. **Mockar `AuditClient` e verificar `before/after` corretos no `dataChange`**
+- [x] 6.4 SnapshotHandlersTest: RolEventHandler (criar, cancelar, idempotência), VerbaEventHandler (criar, atualizar). **Verificar que `AuditClient` NÃO é chamado** (consumers de evento ≠ auditoria)
+- [x] 6.5 ListarDisponiveisQueryHandlerTest: combinações com Rol+Verba+sem processo; com processo ativo filtra; cancelados não filtram
+- [x] 6.6 ProcessoAuditEventFactoryTest: para cada `ProcessoAuditOperation`, validar que `userAction()` produz `actionCode` esperado (`PROCESSO_DISTRIBUICAO_<OP>`) e que `dataChange()` produz `data.before/after` com snapshot correto da entidade
+- [x] 6.7 ProcessoControllerIntegrationTest: fluxo completo criar→calcular→aprovar→finalizar; criar com 409; transição inválida 422; cancelar com justificativa; filtros e paginação. **Após cada cenário, query em `distribuicao.audit_outbox` confirma os registros esperados**
+- [x] 6.8 SnapshotEventListenerIntegrationTest: CloudEvent válido → snapshot; payload inválido → descartado
+- [x] 6.9 OutboxPublisherIntegrationTest: evento na tabela → publicado no RabbitMQ
+- [x] 6.10 **AuthzPermissionEnforcementTest** (espelha `arrecadacao-tests/.../authz/AuthzPermissionEnforcementTest.java`): para CADA endpoint do `ProcessoController` (e dos endpoints atualizados do `RubricaController`):
   - `401` quando sem JWT
   - `403` quando `AuthzDecisionClient.checkDecision(<key>, ...)` mockado retorna `false`
   - `200/201` quando mock retorna `true`
-- [ ] 6.11 **ProcessoAuditOutboxIntegrationTest** (Testcontainers PostgreSQL): para cada operation (CREATE, CALCULATE, APPROVE, FINALIZE, CANCEL), invocar o handler e verificar que `distribuicao.audit_outbox` contém:
+- [x] 6.11 **ProcessoAuditOutboxIntegrationTest** (Testcontainers PostgreSQL): para cada operation (CREATE, CALCULATE, APPROVE, FINALIZE, CANCEL), invocar o handler e verificar que `distribuicao.audit_outbox` contém:
   - 1 linha com `event_type=USER_ACTION`, payload com `userAction.actionCode=PROCESSO_DISTRIBUICAO_<OP>`
   - 1 linha com `event_type=DATA_CHANGE`, payload com `data.before` (null para CREATE) e `data.after` (estado final)
   - Ambas com `aggregate_type=ProcessoDistribuicao`, `aggregate_id` correto, e `status=PENDING`
-- [ ] 6.12 **TestSecurityConfig**: configurar Spring Security para aceitar `jwt()` mockado e expor `@MockBean AuthzDecisionClient` para os testes 6.10
+- [x] 6.12 **TestSecurityConfig**: configurar Spring Security para aceitar `jwt()` mockado e expor `@MockBean AuthzDecisionClient` para os testes 6.10
 
 ## Sequenciamento
 

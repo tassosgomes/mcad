@@ -1,8 +1,11 @@
 package br.com.ecad.distribuicao.api.config;
 
 import br.com.ecad.distribuicao.domain.exceptions.CadastroIntegrationException;
+import br.com.ecad.distribuicao.domain.exceptions.ConflictException;
 import br.com.ecad.distribuicao.domain.exceptions.NotFoundException;
 import br.com.ecad.distribuicao.domain.exceptions.PreRequisitosException;
+import br.com.ecad.distribuicao.domain.exceptions.TransicaoInvalidaException;
+import jakarta.servlet.http.HttpServletRequest;
 import java.net.URI;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
@@ -13,6 +16,32 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 @RestControllerAdvice
 @SuppressWarnings("null")
 public class GlobalExceptionHandler {
+
+    @ExceptionHandler(TransicaoInvalidaException.class)
+    ProblemDetail handleTransicaoInvalida(TransicaoInvalidaException exception, HttpServletRequest request) {
+        ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(
+                HttpStatus.UNPROCESSABLE_ENTITY,
+                exception.getMessage());
+        problemDetail.setTitle("Unprocessable Entity");
+        problemDetail.setType(URI.create("https://www.rfc-editor.org/rfc/rfc9457"));
+        if (request != null) {
+            problemDetail.setInstance(URI.create(request.getRequestURI()));
+        }
+        return problemDetail;
+    }
+
+    @ExceptionHandler(ConflictException.class)
+    ProblemDetail handleConflict(ConflictException exception, HttpServletRequest request) {
+        ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(
+                HttpStatus.CONFLICT,
+                exception.getMessage());
+        problemDetail.setTitle("Conflict");
+        problemDetail.setType(URI.create("https://www.rfc-editor.org/rfc/rfc9457"));
+        if (request != null) {
+            problemDetail.setInstance(URI.create(request.getRequestURI()));
+        }
+        return problemDetail;
+    }
 
     @ExceptionHandler(NotFoundException.class)
     ProblemDetail handleNotFound(NotFoundException exception) {

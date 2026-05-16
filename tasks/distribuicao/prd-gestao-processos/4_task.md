@@ -1,5 +1,5 @@
 ---
-status: pending
+status: done
 parallelizable: false
 blocked_by: ["2.0", "3.0", "1.7"]
 ---
@@ -42,15 +42,15 @@ Implementar os 5 command handlers CQRS que encapsulam a lógica de negócio: cri
 
 ## Subtarefas
 
-- [ ] 4.1 Criar records de Command (5 records). **CriarProcessoCommand inclui `analistaResponsavel`; demais incluem `autor` (preenchido pelo controller via `Authentication.getName()`)**
-- [ ] 4.2 Implementar CriarProcessoCommandHandler: validar Rol, Verba, unicidade → criar → outbox de domínio → **`auditClient.publish(factory.userAction(processo, ctx, CREATE))` + `factory.dataChange(new ProcessoAuditChange(processo, CREATE, null), ctx)`**
-- [ ] 4.3 Implementar AprovarProcessoCommandHandler: buscar → snapshot do estado anterior → `aprovar()` → outbox → **auditoria APPROVE com `before=snapshot`/`after=processo`**
-- [ ] 4.4 Implementar FinalizarProcessoCommandHandler: buscar → snapshot anterior → `finalizar()` → 2 outbox events (processo.finalizado + rol.processado) → **auditoria FINALIZE**
-- [ ] 4.5 Implementar CancelarProcessoCommandHandler: validar justificativa (min 10) → snapshot anterior → `cancelar(justificativa)` → outbox → **auditoria CANCEL (justificativa entra no `after`)**
-- [ ] 4.6 Implementar CalcularProcessoCommandHandler como stub (transição CRIADO→CALCULADO sem cálculo real) → **auditoria CALCULATE**
-- [ ] 4.7 Logging em todas as transições (INFO para sucesso, WARN para cancelamento). **Não é substituto de auditoria — é log operacional.**
-- [ ] 4.8 Em cada handler, injetar via construtor: `AuditClient`, `AuditContextProvider`, `ProcessoAuditEventFactory` (criados na task 1.7)
-- [ ] 4.9 Verificar compilação
+- [x] 4.1 Criar records de Command (5 records). **CriarProcessoCommand inclui `analistaResponsavel`; demais incluem `autor` (preenchido pelo controller via `Authentication.getName()`)**
+- [x] 4.2 Implementar CriarProcessoCommandHandler: validar Rol, Verba, unicidade → criar → outbox de domínio → **`auditClient.publish(factory.userAction(processo, ctx, CREATE))` + `factory.dataChange(new ProcessoAuditChange(processo, CREATE, null), ctx)`**
+- [x] 4.3 Implementar AprovarProcessoCommandHandler: buscar → snapshot do estado anterior → `aprovar()` → outbox → **auditoria APPROVE com `before=snapshot`/`after=processo`**
+- [x] 4.4 Implementar FinalizarProcessoCommandHandler: buscar → snapshot anterior → `finalizar()` → 2 outbox events (processo.finalizado + rol.processado) → **auditoria FINALIZE**
+- [x] 4.5 Implementar CancelarProcessoCommandHandler: validar justificativa (min 10) → snapshot anterior → `cancelar(justificativa)` → outbox → **auditoria CANCEL (justificativa entra no `after`)**
+- [x] 4.6 Implementar CalcularProcessoCommandHandler como stub (transição CRIADO→CALCULADO sem cálculo real) → **auditoria CALCULATE**
+- [x] 4.7 Logging em todas as transições (INFO para sucesso, WARN para cancelamento). **Não é substituto de auditoria — é log operacional.**
+- [x] 4.8 Em cada handler, injetar via construtor: `AuditClient`, `AuditContextProvider`, `ProcessoAuditEventFactory` (criados na task 1.7)
+- [x] 4.9 Verificar compilação
 
 ## Sequenciamento
 

@@ -1,5 +1,5 @@
 ---
-status: pending
+status: done
 parallelizable: false
 blocked_by: ["4.0", "1.5"]
 ---
@@ -50,16 +50,16 @@ Implementar queries CQRS (listar com filtros+paginação, buscar por ID, listar 
 
 ## Subtarefas
 
-- [ ] 5.1 Criar DTOs: ProcessoResponse, DisponibilidadeResponse, CriarProcessoRequest, CancelarProcessoRequest, RubricaResumoDto
-- [ ] 5.2 Criar queries records (3 queries)
-- [ ] 5.3 Implementar ListarProcessosQueryHandler (Specification + Pageable)
-- [ ] 5.4 Implementar BuscarProcessoPorIdQueryHandler
-- [ ] 5.5 Implementar ListarDisponiveisQueryHandler (cruzar snapshots - processos ativos)
-- [ ] 5.6 Criar ProcessoController com 9 endpoints conforme api-contract.yaml
-- [ ] 5.7 **Anotar cada método do controller com `@RequiresPermission("distribuicao:default:processo:<acao>")`** — keys conforme `permissions.yaml` criado em 1.5 (NÃO usar `@PreAuthorize`)
-- [ ] 5.8 Adicionar handlers no GlobalExceptionHandler: TransicaoInvalidaException→422, ConflictException→409, PreRequisitosException→422
-- [ ] 5.9 Extrair `Authentication.getName()` (ou JWT claim) no controller e passar como `autor`/`analistaResponsavel` para os commands de escrita
-- [ ] 5.10 Verificar compilação
+- [x] 5.1 Criar DTOs: ProcessoResponse, DisponibilidadeResponse, CriarProcessoRequest, CancelarProcessoRequest, RubricaResumoDto
+- [x] 5.2 Criar queries records (3 queries)
+- [x] 5.3 Implementar ListarProcessosQueryHandler (Specification + Pageable)
+- [x] 5.4 Implementar BuscarProcessoPorIdQueryHandler
+- [x] 5.5 Implementar ListarDisponiveisQueryHandler (cruzar snapshots - processos ativos)
+- [x] 5.6 Criar ProcessoController com 9 endpoints conforme api-contract.yaml
+- [x] 5.7 **Anotar cada método do controller com `@RequiresPermission("distribuicao:default:processo:<acao>")`** — keys conforme `permissions.yaml` criado em 1.5 (NÃO usar `@PreAuthorize`)
+- [x] 5.8 Adicionar handlers no GlobalExceptionHandler: TransicaoInvalidaException→422, ConflictException→409, PreRequisitosException→422
+- [x] 5.9 Extrair `Authentication.getName()` (ou JWT claim) no controller e passar como `autor`/`analistaResponsavel` para os commands de escrita
+- [x] 5.10 Verificar compilação
 
 ## Sequenciamento
 

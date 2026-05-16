@@ -38,11 +38,11 @@ API client, hooks, componentes, páginas, roteamento; **gate de ações por perm
 - [x] 1.7 **Auditoria:** portar `AuditContextProvider` de arrecadacao-application, criar `ProcessoAuditEventFactory` + enum `ProcessoAuditOperation` (CREATE/CALCULATE/APPROVE/FINALIZE/CANCEL) + record `ProcessoAuditChange`, configurar bloco `audit` (mode=OUTBOX_RABBITMQ) no application.yml
 - [x] 2.0 Outbox Pattern: writer, publisher, worker (portado de arrecadação) — **apenas para eventos de domínio; auditoria usa relay próprio do starter**
 - [x] 3.0 Event consumers: Rol e Verba (listeners + handlers) — **sem auditoria** (consumers de evento, não ações de usuário)
-- [ ] 4.0 Commands: criar, aprovar, finalizar, cancelar, calcular (stub) — **todos injetam `AuditClient` + `AuditContextProvider` + `ProcessoAuditEventFactory` e publicam `userAction` + `dataChange` na mesma transação**
-- [ ] 5.0 Queries + Controller + Exception handler — **cada endpoint do ProcessoController com `@RequiresPermission("distribuicao:default:processo:<acao>")`**
-- [ ] 6.0 Testes backend: unitários e integração + **`AuthzPermissionEnforcementTest` (401/403/200 para cada endpoint, mockando `AuthzDecisionClient`)** + **`ProcessoAuditOutboxIntegrationTest` (verifica registros em `audit_outbox` após cada cenário de fluxo)** + `TestSecurityConfig`
-- [ ] 7.0 Frontend: tipos, API client, hooks
-- [ ] 8.0 Frontend: componentes, páginas, roteamento — **`ProcessoActions` esconde botões conforme permissions do usuário (BFF, ADR 0004); item de sidebar escondido se sem `distribuicao:default:processo:listar`**
+- [x] 4.0 Commands: criar, aprovar, finalizar, cancelar, calcular (stub) — **todos injetam `AuditClient` + `AuditContextProvider` + `ProcessoAuditEventFactory` e publicam `userAction` + `dataChange` na mesma transação**
+- [x] 5.0 Queries + Controller + Exception handler — **cada endpoint do ProcessoController com `@RequiresPermission("distribuicao:default:processo:<acao>")`**
+- [x] 6.0 Testes backend: unitários e integração + **`AuthzPermissionEnforcementTest` (401/403/200 para cada endpoint, mockando `AuthzDecisionClient`)** + **`ProcessoAuditOutboxIntegrationTest` (verifica registros em `audit_outbox` após cada cenário de fluxo)** + `TestSecurityConfig`
+- [x] 7.0 Frontend: tipos, API client, hooks
+- [x] 8.0 Frontend: componentes, páginas, roteamento — **`ProcessoActions` esconde botões conforme permissions do usuário (BFF, ADR 0004); item de sidebar escondido se sem `distribuicao:default:processo:listar`**
 
 ## Rastreabilidade US → Tasks
 
