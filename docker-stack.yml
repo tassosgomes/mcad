@@ -62,9 +62,20 @@ services:
 
   mcad-cadastro-api:
     image: ${CADASTRO_API_IMAGE:-mcad-cadastro-api:latest}
+    labels:
+      mcad.observability.logs: enabled
+      mcad.observability.service_name: mcad-cadastro-api
+      mcad.observability.service_namespace: mcad
+      mcad.observability.environment: prod
     environment:
       ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Production}
       ASPNETCORE_URLS: http://+:5001
+      OTEL_SERVICE_NAME: mcad-cadastro-api
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://mcad-observability-alloy:4318}
+      OTEL_EXPORTER_OTLP_PROTOCOL: ${OTEL_EXPORTER_OTLP_PROTOCOL:-http/protobuf}
+      OTEL_RESOURCE_ATTRIBUTES: service.namespace=mcad,deployment.environment=prod,service.version=${CADASTRO_API_VERSION:-0.1.0}
+      OTEL_TRACES_SAMPLER: ${OTEL_TRACES_SAMPLER:-parentbased_traceidratio}
+      OTEL_TRACES_SAMPLER_ARG: ${OTEL_TRACES_SAMPLER_ARG:-0.1}
       CADASTRO_DB_HOST: mcad-postgres
       CADASTRO_DB_PORT: 5432
       CADASTRO_DB_NAME: ${POSTGRES_DB:-mcad}
@@ -85,6 +96,7 @@ services:
       CORS_ALLOWED_ORIGINS: https://mcad.tasso.dev.br
     networks:
       - mcad-internal
+      - mcad-observability-net
       - traefik-public
     deploy:
       replicas: ${CADASTRO_API_REPLICAS:-1}
@@ -101,9 +113,20 @@ services:
 
   mcad-identificacao-api:
     image: ${IDENTIFICACAO_API_IMAGE:-mcad-identificacao-api:latest}
+    labels:
+      mcad.observability.logs: enabled
+      mcad.observability.service_name: mcad-identificacao-api
+      mcad.observability.service_namespace: mcad
+      mcad.observability.environment: prod
     environment:
       ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Production}
       ASPNETCORE_URLS: http://+:5100
+      OTEL_SERVICE_NAME: mcad-identificacao-api
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://mcad-observability-alloy:4318}
+      OTEL_EXPORTER_OTLP_PROTOCOL: ${OTEL_EXPORTER_OTLP_PROTOCOL:-http/protobuf}
+      OTEL_RESOURCE_ATTRIBUTES: service.namespace=mcad,deployment.environment=prod,service.version=${IDENTIFICACAO_API_VERSION:-0.1.0}
+      OTEL_TRACES_SAMPLER: ${OTEL_TRACES_SAMPLER:-parentbased_traceidratio}
+      OTEL_TRACES_SAMPLER_ARG: ${OTEL_TRACES_SAMPLER_ARG:-0.1}
       IDENTIFICACAO_DB_HOST: mcad-postgres
       IDENTIFICACAO_DB_PORT: 5432
       IDENTIFICACAO_DB_NAME: ${POSTGRES_DB:-mcad}
@@ -127,6 +150,7 @@ services:
       CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-https://mcad.tasso.dev.br}
     networks:
       - mcad-internal
+      - mcad-observability-net
       - traefik-public
     deploy:
       replicas: ${IDENTIFICACAO_API_REPLICAS:-1}
@@ -143,8 +167,19 @@ services:
 
   mcad-arrecadacao-api:
     image: ${ARRECADACAO_API_IMAGE:-mcad-arrecadacao-api:latest}
+    labels:
+      mcad.observability.logs: enabled
+      mcad.observability.service_name: mcad-arrecadacao-api
+      mcad.observability.service_namespace: mcad
+      mcad.observability.environment: prod
     environment:
       SERVER_PORT: 5003
+      OTEL_SERVICE_NAME: mcad-arrecadacao-api
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://mcad-observability-alloy:4318}
+      OTEL_EXPORTER_OTLP_PROTOCOL: ${OTEL_EXPORTER_OTLP_PROTOCOL:-http/protobuf}
+      OTEL_RESOURCE_ATTRIBUTES: service.namespace=mcad,deployment.environment=prod,service.version=${ARRECADACAO_API_VERSION:-0.1.0-SNAPSHOT}
+      OTEL_TRACES_SAMPLER: ${OTEL_TRACES_SAMPLER:-parentbased_traceidratio}
+      OTEL_TRACES_SAMPLER_ARG: ${OTEL_TRACES_SAMPLER_ARG:-0.1}
       ARRECADACAO_DB_HOST: mcad-postgres
       ARRECADACAO_DB_PORT: 5432
       ARRECADACAO_DB_NAME: ${POSTGRES_DB:-mcad}
@@ -162,6 +197,7 @@ services:
       ARRECADACAO_CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-https://mcad.tasso.dev.br}
     networks:
       - mcad-internal
+      - mcad-observability-net
       - traefik-public
     deploy:
       replicas: ${ARRECADACAO_API_REPLICAS:-1}
@@ -178,8 +214,19 @@ services:
 
   mcad-distribuicao-api:
     image: ${DISTRIBUICAO_API_IMAGE:-mcad-distribuicao-api:latest}
+    labels:
+      mcad.observability.logs: enabled
+      mcad.observability.service_name: mcad-distribuicao-api
+      mcad.observability.service_namespace: mcad
+      mcad.observability.environment: prod
     environment:
       SERVER_PORT: 5004
+      OTEL_SERVICE_NAME: mcad-distribuicao-api
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://mcad-observability-alloy:4318}
+      OTEL_EXPORTER_OTLP_PROTOCOL: ${OTEL_EXPORTER_OTLP_PROTOCOL:-http/protobuf}
+      OTEL_RESOURCE_ATTRIBUTES: service.namespace=mcad,deployment.environment=prod,service.version=${DISTRIBUICAO_API_VERSION:-0.1.0-SNAPSHOT}
+      OTEL_TRACES_SAMPLER: ${OTEL_TRACES_SAMPLER:-parentbased_traceidratio}
+      OTEL_TRACES_SAMPLER_ARG: ${OTEL_TRACES_SAMPLER_ARG:-0.1}
       DB_HOST: mcad-postgres
       DB_PORT: 5432
       DB_NAME: ${POSTGRES_DB:-mcad}
@@ -196,6 +243,7 @@ services:
       DISTRIBUICAO_CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-https://mcad.tasso.dev.br}
     networks:
       - mcad-internal
+      - mcad-observability-net
       - traefik-public
     deploy:
       replicas: ${DISTRIBUICAO_API_REPLICAS:-0}
@@ -212,6 +260,11 @@ services:
 
   mcad-frontend:
     image: ${FRONTEND_IMAGE:-mcad-frontend:latest}
+    labels:
+      mcad.observability.logs: enabled
+      mcad.observability.service_name: mcad-frontend
+      mcad.observability.service_namespace: mcad
+      mcad.observability.environment: prod
     environment:
       CADASTRO_API_BASE_URL: ${CADASTRO_API_BASE_URL:-https://mcad-cadastro.tasso.dev.br/api/v1}
       IDENTIFICACAO_API_BASE_URL: ${IDENTIFICACAO_API_BASE_URL:-https://mcad-identificacao.tasso.dev.br/api/v1}
@@ -241,9 +294,20 @@ services:
 
   mcad-bff:
     image: ${BFF_IMAGE:-tassosgomes/mcad-bff:latest}
+    labels:
+      mcad.observability.logs: enabled
+      mcad.observability.service_name: mcad-bff
+      mcad.observability.service_namespace: mcad
+      mcad.observability.environment: prod
     environment:
       BFF_PORT: 5200
       BFF_HOST: 0.0.0.0
+      OTEL_SERVICE_NAME: mcad-bff
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://mcad-observability-alloy:4318}
+      OTEL_EXPORTER_OTLP_PROTOCOL: ${OTEL_EXPORTER_OTLP_PROTOCOL:-http/protobuf}
+      OTEL_RESOURCE_ATTRIBUTES: service.namespace=mcad,deployment.environment=prod,service.version=${BFF_VERSION:-0.1.0}
+      OTEL_TRACES_SAMPLER: ${OTEL_TRACES_SAMPLER:-parentbased_traceidratio}
+      OTEL_TRACES_SAMPLER_ARG: ${OTEL_TRACES_SAMPLER_ARG:-0.1}
       CADASTRO_API_BASE_URL: https://mcad-cadastro.tasso.dev.br/api/v1
       IDENTIFICACAO_API_BASE_URL: https://mcad-identificacao.tasso.dev.br/api/v1
       ARRECADACAO_API_BASE_URL: https://mcad-arrecadacao.tasso.dev.br/api/v1
@@ -254,6 +318,7 @@ services:
       ME_CACHE_TTL_SECONDS: ${ME_CACHE_TTL_SECONDS:-60}
     networks:
       - mcad-internal
+      - mcad-observability-net
       - traefik-public
     healthcheck:
       test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:5200/health/live').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
@@ -276,9 +341,20 @@ services:
 
   mcad-identity-sync-api:
     image: ${IDENTITY_SYNC_API_IMAGE:-tassosgomes/mcad-identity-sync-api:latest}
+    labels:
+      mcad.observability.logs: enabled
+      mcad.observability.service_name: mcad-identity-sync-api
+      mcad.observability.service_namespace: mcad
+      mcad.observability.environment: prod
     environment:
       IDENTITY_SYNC_PORT: 5300
       IDENTITY_SYNC_HOST: 0.0.0.0
+      OTEL_SERVICE_NAME: mcad-identity-sync-api
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://mcad-observability-alloy:4318}
+      OTEL_EXPORTER_OTLP_PROTOCOL: ${OTEL_EXPORTER_OTLP_PROTOCOL:-http/protobuf}
+      OTEL_RESOURCE_ATTRIBUTES: service.namespace=mcad,deployment.environment=prod,service.version=${IDENTITY_SYNC_API_VERSION:-0.1.0}
+      OTEL_TRACES_SAMPLER: ${OTEL_TRACES_SAMPLER:-parentbased_traceidratio}
+      OTEL_TRACES_SAMPLER_ARG: ${OTEL_TRACES_SAMPLER_ARG:-0.1}
       LOGTO_WEBHOOK_SYNC_KEY: ${LOGTO_WEBHOOK_SYNC_KEY:?LOGTO_WEBHOOK_SYNC_KEY is required}
       RABBITMQ_HOST: kebnekaise.lmq.cloudamqp.com
       RABBITMQ_PORT: 5672
@@ -289,6 +365,7 @@ services:
       IDENTITY_EVENTS_EXCHANGE: ${IDENTITY_EVENTS_EXCHANGE:-identity.events}
     networks:
       - mcad-internal
+      - mcad-observability-net
       - traefik-public
     healthcheck:
       test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:5300/health/live').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
@@ -313,6 +390,8 @@ networks:
   mcad-internal:
     driver: overlay
     attachable: true
+  mcad-observability-net:
+    external: true
   traefik-public:
     external: true
 
