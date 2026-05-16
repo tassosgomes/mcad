@@ -5,6 +5,7 @@
 > **Prioridade:** Must Have
 > **Status:** `planned`
 > **Data:** 2026-04-10
+> **Revisão:** 2026-05-15 — alinhado ao novo padrão de Permissionamento (ecad-authz / `@RequiresPermission` em 4 segmentos) e Auditoria obrigatória (audit-sdk + tabela `audit_outbox`) consolidados pela migração authz encerrada em 2026-05-15. Ver ADRs `docs/adr/0002` (naming) e `docs/adr/0003` (backend autoritativo), e relatório `docs/migracao-authz/relatorio-final.md`.
 
 ---
 
@@ -288,6 +289,69 @@ O Analista deve poder ver quais combinações rubrica+período estão prontas (t
 
 ---
 
+## Permissionamento (ecad-authz)
+
+Todos os endpoints expostos pela feature DEVEM ser protegidos com `@RequiresPermission(<key>)` do `authz-spring-boot-starter` (ADR 0003 — backend autoritativo). A resolução é feita por chamada ao serviço externo `ecad-authz` (com cache local + Redis); papéis NÃO são checados localmente. O catálogo de permissões da Distribuição deve ser publicado em `services/distribuicao-api/distribuicao-api/src/main/resources/permissions.yaml` e documentado em `docs/authz/catalog/distribuicao.md` (mesmo padrão de `arrecadacao.md` / `identificacao.md`).
+
+Convenção: **4 segmentos** `dominio:area:recurso:acao` (ADR 0002). Como toda permissão da feature pertence à área default da Distribuição, usar `distribuicao:default:...`.
+
+### Catálogo de permissões da feature
+
+| key | name | Endpoint(s) | Perfil-base sugerido |
+|---|---|---|---|
+| `distribuicao:default:processo:listar` | Listar processos | `GET /processos`, `GET /processos/disponiveis` | consultor, analista |
+| `distribuicao:default:processo:visualizar` | Visualizar processo | `GET /processos/{id}` | consultor, analista |
+| `distribuicao:default:processo:criar` | Criar processo | `POST /processos` | analista |
+| `distribuicao:default:processo:calcular` | Disparar cálculo | `POST /processos/{id}/calcular` | analista |
+| `distribuicao:default:processo:aprovar` | Aprovar processo | `POST /processos/{id}/aprovar` | analista |
+| `distribuicao:default:processo:finalizar` | Finalizar processo | `POST /processos/{id}/finalizar` | analista |
+| `distribuicao:default:processo:cancelar` | Cancelar processo | `POST /processos/{id}/cancelar` | analista |
+
+> **Sem permissão**, o starter retorna **403 Forbidden** (não 401). **Sem JWT válido**, o filtro do Spring Security retorna **401 Unauthorized**. Esses dois cenários devem ser cobertos por testes de integração com `MockMvc + JwtRequestPostProcessors` mockando `AuthzDecisionClient`, no padrão de `AuthzPermissionEnforcementTest` em `arrecadacao-tests`.
+
+> **Migração legacy:** o `RubricaController` (F01) ainda usa `@PreAuthorize("hasAnyAuthority(...)")`. Esta feature DEVE migrar o controller existente para `@RequiresPermission` (mapeando `distribuicao:default:rubrica:listar` / `visualizar`), pois ter dois padrões coexistindo no mesmo serviço é exatamente o estado contra o qual o ADR 0002 foi escrito.
+
+### BFF / Frontend
+
+Conforme ADR 0004, o BFF expõe ao frontend as permissions do usuário; o módulo `processos` deve esconder ações no `ProcessoActions` baseado nelas (ex: botão "Aprovar" só aparece se `distribuicao:default:processo:aprovar` está presente). A proteção REAL é no backend — UI é apenas UX.
+
+---
+
+## Auditoria (audit-sdk)
+
+Toda operação de escrita DEVE registrar evento(s) de auditoria via `AuditClient` do `audit-sdk-spring-boot-starter` (já presente no `pom.xml` da `distribuicao-api`; tabela `distribuicao.audit_outbox` já provisionada pela migration `V4__create_audit_outbox.sql`). Padrão a seguir é o de `CriarUsuarioMusicaCommandHandler` em arrecadacao-application:
+
+1. Handler injeta `AuditClient`, `AuditContextProvider` (helper local) e uma factory específica `ProcessoAuditEventFactory`.
+2. Dentro da mesma transação (`@Transactional`) do comando, chama:
+   - `auditClient.publish(factory.userAction(processo, ctx, OPERATION))` — registra a AÇÃO do analista (CREATE/CALCULATE/APPROVE/FINALIZE/CANCEL).
+   - `auditClient.publish(factory.dataChange(change, ctx))` — registra ANTES/DEPOIS do estado da entidade (delta de status, justificativa de cancelamento etc.).
+3. O `RabbitAuditOutboxRelay` (do starter) publica de forma assíncrona para o exchange `audit.events.exchange.v1` (routing key `audit.event.v1`). Frontend `frontend/src/features/auditoria/` consome essa stream.
+
+### Ações auditadas pela feature
+
+| Ação do analista | OPERATION (enum) | userAction publicado? | dataChange publicado? | Observação |
+|---|---|---|---|---|
+| Criar processo (`POST /processos`) | `CREATE` | sim | sim (before=null, after=novo processo) | obrigatório |
+| Calcular (`POST /processos/{id}/calcular`) | `CALCULATE` | sim | sim (status CRIADO→CALCULADO + totalExecucoes) | mesmo sendo stub na F02 |
+| Aprovar (`POST /processos/{id}/aprovar`) | `APPROVE` | sim | sim (status CALCULADO→APROVADO) | obrigatório |
+| Finalizar (`POST /processos/{id}/finalizar`) | `FINALIZE` | sim | sim (status APROVADO→FINALIZADO) | ação irreversível — auditoria crítica |
+| Cancelar (`POST /processos/{id}/cancelar`) | `CANCEL` | sim | sim (status anterior→CANCELADO + justificativa) | justificativa entra no payload |
+| Consumo de evento `rol.fechado/cancelado` | `SYSTEM_EVENT` | NÃO | NÃO | evento do sistema, não auditado (snapshots locais são read-model) |
+| Consumo de evento `verba.disponivel` | `SYSTEM_EVENT` | NÃO | NÃO | idem |
+
+### Dados capturados (do `AuditContext`)
+
+O `AuditContextProvider.current(autor)` deve preencher: `userId`, `username`, `displayName`, `roles`, `authProvider`, `ip`, `userAgent`, `traceId`, `requestId`, `userSessionId`, `screenAccessId`, `commandId`, `screenId`, `screenName`, `route`, `channel`. A maior parte vem do JWT + headers; o serviço só precisa portar o `AuditContextProvider` de `arrecadacao-application` (ou criar equivalente).
+
+### Critérios de aceitação — auditoria
+
+- **RF-AUD-01:** Cada ação da tabela acima gera 1 `userAction` + 1 `dataChange` em `distribuicao.audit_outbox` na mesma transação do comando.
+- **RF-AUD-02:** Falha na chamada ao `auditClient` NÃO bloqueia o comando (o starter encapsula o I/O; o write na tabela é local e transacional).
+- **RF-AUD-03:** Testes de integração devem verificar que `audit_outbox` recebe os registros esperados após cada cenário de fluxo completo (criar → calcular → aprovar → finalizar; criar → cancelar).
+- **RF-AUD-04:** Eventos com `eventType=USER_ACTION` devem carregar `userAction.actionCode` derivado da OPERATION (ex: `PROCESSO_DISTRIBUICAO_CREATE`, `PROCESSO_DISTRIBUICAO_FINALIZE`).
+
+---
+
 ## Não-Objetivos (Fora de Escopo)
 
 - Cálculo de créditos — lógica de split, ponderação e atribuição é da F03
@@ -297,8 +361,9 @@ O Analista deve poder ver quais combinações rubrica+período estão prontas (t
 - Demonstrativo de créditos — F07
 - Transição automática de estados (ex: auto-aprovar após cálculo)
 - Reprocessamento/recalculação de um processo já calculado (para recalcular, cancela e cria novo)
-- Histórico detalhado de auditoria (log de todas as ações) — pode ser adicionado como melhoria futura
 - Notificações (email, push) para o Analista sobre processos pendentes
+- Tela própria de auditoria dentro do módulo `processos` — auditoria é centralizada em `frontend/src/features/auditoria/` (já implementada)
+- Auditoria de leitura (`GET`) — apenas comandos de escrita são auditados nesta feature
 
 ---
 

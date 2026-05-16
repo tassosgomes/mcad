@@ -1,5 +1,5 @@
 ---
-status: pending
+status: done
 parallelizable: false
 blocked_by: []
 ---
@@ -68,16 +68,16 @@ Criar a migration V2 (tabelas snapshots_rol, snapshots_verba, processos, outbox_
 
 ## Subtarefas
 
-- [ ] 1.1 Criar migration V2 (4 tabelas + índices + EXCLUDE constraint)
-- [ ] 1.2 Criar enum StatusProcesso
-- [ ] 1.3 Criar entidade ProcessoDistribuicao com factory, transições e validações
-- [ ] 1.4 Criar entidades SnapshotRol e SnapshotVerba
-- [ ] 1.5 Portar entidade OutboxEvent de arrecadação
-- [ ] 1.6 Criar exceções: TransicaoInvalidaException, ConflictException, PreRequisitosException
-- [ ] 1.7 Criar interfaces de repositório no domain (5 interfaces)
-- [ ] 1.8 Criar implementações JPA (SpringData + adapters) para todos os repositórios
-- [ ] 1.9 Criar ProcessoSpecification (JPA Specification para filtros dinâmicos)
-- [ ] 1.10 Verificar compilação
+- [x] 1.1 Criar migration V2 (4 tabelas + índices + EXCLUDE constraint)
+- [x] 1.2 Criar enum StatusProcesso
+- [x] 1.3 Criar entidade ProcessoDistribuicao com factory, transições e validações
+- [x] 1.4 Criar entidades SnapshotRol e SnapshotVerba
+- [x] 1.5 Portar entidade OutboxEvent de arrecadação
+- [x] 1.6 Criar exceções: TransicaoInvalidaException, ConflictException, PreRequisitosException
+- [x] 1.7 Criar interfaces de repositório no domain (5 interfaces)
+- [x] 1.8 Criar implementações JPA (SpringData + adapters) para todos os repositórios
+- [x] 1.9 Criar ProcessoSpecification (JPA Specification para filtros dinâmicos)
+- [x] 1.10 Verificar compilação
 
 ## Sequenciamento
 
@@ -116,9 +116,9 @@ public class ProcessoSpecification {
 
 ## Critérios de Sucesso (Verificáveis)
 
-- [ ] Build compila: `cd services/distribuicao-api && mvn compile`
-- [ ] Migration V2 é SQL válido (4 tabelas, índices, EXCLUDE constraint)
-- [ ] ProcessoDistribuicao tem 5 métodos de transição (marcarCalculado, aprovar, finalizar, cancelar + factory criar)
-- [ ] Cada transição inválida lança TransicaoInvalidaException
-- [ ] cancelar() de FINALIZADO lança TransicaoInvalidaException
-- [ ] OutboxEvent portada com métodos: criar, marcarPublicado, incrementarTentativa, excedeuTentativas
+- [x] Build compila: `cd services/distribuicao-api && mvn compile`
+- [x] Migration V2 é SQL válido (4 tabelas, índices, EXCLUDE constraint)
+- [x] ProcessoDistribuicao tem 5 métodos de transição (marcarCalculado, aprovar, finalizar, cancelar + factory criar)
+- [x] Cada transição inválida lança TransicaoInvalidaException
+- [x] cancelar() de FINALIZADO lança TransicaoInvalidaException
+- [x] OutboxEvent portada com métodos: criar, marcarPublicado, incrementarTentativa, excedeuTentativas

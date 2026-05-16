@@ -1,5 +1,5 @@
 ---
-status: pending
+status: done
 parallelizable: true
 blocked_by: ["1.0"]
 ---
@@ -49,15 +49,15 @@ Implementar consumidores de eventos para `identificacao.rol.fechado`, `identific
 
 ## Subtarefas
 
-- [ ] 3.1 Criar RolEventPayload (record: rubricaSigla, periodo, captacaoId, totalExecucoes, payload JSON)
-- [ ] 3.2 Criar RolEventHandler (@Transactional, upsert snapshot, marcar cancelado)
-- [ ] 3.3 Criar RolEventListener (@RabbitListener, parse CloudEvent, delega ao handler)
-- [ ] 3.4 Criar VerbaEventPayload (record: rubricaSigla, periodo, valorBruto, deducoes, verbaLiquida)
-- [ ] 3.5 Criar VerbaEventHandler (@Transactional, upsert por rubrica+período)
-- [ ] 3.6 Criar VerbaEventListener (@RabbitListener, parse CloudEvent, delega ao handler)
-- [ ] 3.7 Adicionar queues, exchange identificacao e bindings ao RabbitMqConfig
-- [ ] 3.8 Adicionar queue names ao application.yml
-- [ ] 3.9 Verificar compilação
+- [x] 3.1 Criar RolEventPayload (record: rubricaSigla, periodo, captacaoId, totalExecucoes, payload JSON)
+- [x] 3.2 Criar RolEventHandler (@Transactional, upsert snapshot, marcar cancelado)
+- [x] 3.3 Criar RolEventListener (@RabbitListener, parse CloudEvent, delega ao handler)
+- [x] 3.4 Criar VerbaEventPayload (record: rubricaSigla, periodo, valorBruto, deducoes, verbaLiquida)
+- [x] 3.5 Criar VerbaEventHandler (@Transactional, upsert por rubrica+período)
+- [x] 3.6 Criar VerbaEventListener (@RabbitListener, parse CloudEvent, delega ao handler)
+- [x] 3.7 Adicionar queues, exchange identificacao e bindings ao RabbitMqConfig
+- [x] 3.8 Adicionar queue names ao application.yml
+- [x] 3.9 Verificar compilação
 
 ## Sequenciamento
 
@@ -100,8 +100,8 @@ public void handleRolCancelado(RolEventPayload payload) {
 
 ## Critérios de Sucesso (Verificáveis)
 
-- [ ] Build compila: `cd services/distribuicao-api && mvn compile`
-- [ ] RabbitMqConfig declara 2 queues, 1 exchange novo, 3 bindings
-- [ ] RolEventListener distingue `rol.fechado` de `rol.cancelado`
-- [ ] VerbaEventHandler faz upsert por rubrica+período
-- [ ] Payload inválido logado e descartado sem exceção
+- [x] Build compila: `cd services/distribuicao-api && mvn compile`
+- [x] RabbitMqConfig declara 2 queues, 1 exchange novo, 3 bindings
+- [x] RolEventListener distingue `rol.fechado` de `rol.cancelado`
+- [x] VerbaEventHandler faz upsert por rubrica+período
+- [x] Payload inválido logado e descartado sem exceção

@@ -3,33 +3,33 @@ package br.com.ecad.distribuicao.infra.persistence;
 import br.com.ecad.distribuicao.domain.entities.ProcessoDistribuicao;
 import br.com.ecad.distribuicao.domain.enums.StatusProcesso;
 import br.com.ecad.distribuicao.domain.interfaces.ProcessoRepository;
-import jakarta.persistence.EntityManager;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Repository;
-import org.springframework.transaction.annotation.Transactional;
 
 @Repository
-@Transactional(readOnly = true)
 @SuppressWarnings("null")
 public class JpaProcessoRepository implements ProcessoRepository {
 
-    private final EntityManager entityManager;
+    private final SpringDataProcessoRepository springDataProcessoRepository;
 
-    public JpaProcessoRepository(EntityManager entityManager) {
-        this.entityManager = Objects.requireNonNull(entityManager, "entityManager must not be null");
+    public JpaProcessoRepository(SpringDataProcessoRepository springDataProcessoRepository) {
+        this.springDataProcessoRepository =
+                Objects.requireNonNull(springDataProcessoRepository, "springDataProcessoRepository must not be null");
     }
 
     @Override
     public Optional<ProcessoDistribuicao> findById(UUID id) {
-        return Optional.ofNullable(entityManager.find(ProcessoDistribuicao.class, id));
+        return springDataProcessoRepository.findById(id);
     }
 
     @Override
-    @Transactional
     public ProcessoDistribuicao save(ProcessoDistribuicao processo) {
-        return entityManager.merge(processo);
+        return springDataProcessoRepository.save(processo);
     }
 
     @Override
@@ -37,17 +37,20 @@ public class JpaProcessoRepository implements ProcessoRepository {
             String rubricaSigla,
             String periodo,
             StatusProcesso status) {
-        Long count = entityManager.createQuery("""
-                        select count(processo)
-                        from ProcessoDistribuicao processo
-                        where processo.rubricaSigla = :rubricaSigla
-                          and processo.periodo = :periodo
-                          and processo.status <> :status
-                        """, Long.class)
-                .setParameter("rubricaSigla", rubricaSigla)
-                .setParameter("periodo", periodo)
-                .setParameter("status", status)
-                .getSingleResult();
-        return count > 0;
+        return springDataProcessoRepository
+                .existsByRubricaSiglaAndPeriodoAndStatusNot(rubricaSigla, periodo, status);
+    }
+
+    @Override
+    public ProcessoPage findAll(String rubricaSigla, String periodo, String status, int page, int size) {
+        var spec = ProcessoSpecification.comFiltros(rubricaSigla, periodo, status);
+        Page<ProcessoDistribuicao> result = springDataProcessoRepository.findAll(spec, PageRequest.of(page, size));
+        return new ProcessoPage(result.getContent(), result.getTotalElements(), result.getTotalPages());
+    }
+
+    @Override
+    public List<ProcessoDistribuicao> findAtivos() {
+        return springDataProcessoRepository.findAll(
+                ProcessoSpecification.comFiltros(null, null, null));
     }
 }

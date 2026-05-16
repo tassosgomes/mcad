@@ -1,7 +1,7 @@
 ---
-status: pending
+status: done
 parallelizable: false
-blocked_by: ["4.0"]
+blocked_by: ["4.0", "1.5"]
 ---
 
 <task_context>
@@ -45,20 +45,21 @@ Implementar queries CQRS (listar com filtros+paginação, buscar por ID, listar 
   - `services/distribuicao-api/distribuicao-api/src/main/java/br/com/ecad/distribuicao/api/config/GlobalExceptionHandler.java` (adicionar handlers 409, 422)
 - **Referência:**
   - `tasks/distribuicao/prd-gestao-processos/api-contract.yaml` (contrato)
-  - `services/arrecadacao-api/arrecadacao-api/src/main/java/br/com/ecad/arrecadacao/api/controllers/PagamentoController.java` (padrão)
+  - `services/arrecadacao-api/arrecadacao-api/src/main/java/br/com/ecad/arrecadacao/api/controllers/PagamentoController.java` (padrão de `@RequiresPermission`)
+  - `docs/adr/0002-permission-naming-convention.md`, `docs/adr/0003-backend-authoritative-authorization.md`
 
 ## Subtarefas
 
-- [ ] 5.1 Criar DTOs: ProcessoResponse, DisponibilidadeResponse, CriarProcessoRequest, CancelarProcessoRequest, RubricaResumoDto
-- [ ] 5.2 Criar queries records (3 queries)
-- [ ] 5.3 Implementar ListarProcessosQueryHandler (Specification + Pageable)
-- [ ] 5.4 Implementar BuscarProcessoPorIdQueryHandler
-- [ ] 5.5 Implementar ListarDisponiveisQueryHandler (cruzar snapshots - processos ativos)
-- [ ] 5.6 Criar ProcessoController com 9 endpoints conforme api-contract.yaml
-- [ ] 5.7 Adicionar @PreAuthorize nos endpoints de escrita (analista-distribuicao)
-- [ ] 5.8 Adicionar handlers no GlobalExceptionHandler: TransicaoInvalidaException→422, ConflictException→409, PreRequisitosException→422
-- [ ] 5.9 Extrair analistaResponsavel do JWT no controller (claim preferred_username)
-- [ ] 5.10 Verificar compilação
+- [x] 5.1 Criar DTOs: ProcessoResponse, DisponibilidadeResponse, CriarProcessoRequest, CancelarProcessoRequest, RubricaResumoDto
+- [x] 5.2 Criar queries records (3 queries)
+- [x] 5.3 Implementar ListarProcessosQueryHandler (Specification + Pageable)
+- [x] 5.4 Implementar BuscarProcessoPorIdQueryHandler
+- [x] 5.5 Implementar ListarDisponiveisQueryHandler (cruzar snapshots - processos ativos)
+- [x] 5.6 Criar ProcessoController com 9 endpoints conforme api-contract.yaml
+- [x] 5.7 **Anotar cada método do controller com `@RequiresPermission("distribuicao:default:processo:<acao>")`** — keys conforme `permissions.yaml` criado em 1.5 (NÃO usar `@PreAuthorize`)
+- [x] 5.8 Adicionar handlers no GlobalExceptionHandler: TransicaoInvalidaException→422, ConflictException→409, PreRequisitosException→422
+- [x] 5.9 Extrair `Authentication.getName()` (ou JWT claim) no controller e passar como `autor`/`analistaResponsavel` para os commands de escrita
+- [x] 5.10 Verificar compilação
 
 ## Sequenciamento
 
@@ -76,19 +77,32 @@ Implementar queries CQRS (listar com filtros+paginação, buscar por ID, listar 
 // 3. NÃO existe ProcessoDistribuicao com status != CANCELADO
 ```
 
-**ProcessoController** — extração do analista do JWT:
+**ProcessoController** — `@RequiresPermission` + extração de `autor` pelo `Authentication`:
+
 ```java
+import br.org.ecad.authz.sdk.annotation.RequiresPermission;
+import org.springframework.security.core.Authentication;
+
 @PostMapping
-@PreAuthorize("hasRole('analista-distribuicao')")
+@RequiresPermission("distribuicao:default:processo:criar")
 public ResponseEntity<ProcessoResponse> criar(
-    @RequestBody @Valid CriarProcessoRequest request,
-    @AuthenticationPrincipal Jwt jwt) {
-    var analista = jwt != null ? jwt.getClaimAsString("preferred_username") : "dev-local";
-    var comando = new CriarProcessoCommand(request.rubricaSigla(), request.periodo(), analista);
-    var processo = criarHandler.handle(comando);
-    return ResponseEntity.status(HttpStatus.CREATED).body(ProcessoResponse.from(processo));
+        @Valid @RequestBody CriarProcessoRequest request,
+        Authentication auth) {
+    var analista = auth.getName();   // username do JWT
+    var cmd = new CriarProcessoCommand(request.rubricaSigla(), request.periodo(), analista);
+    var response = dispatcher.dispatch(cmd);
+    return ResponseEntity.status(HttpStatus.CREATED).body(response);
 }
+
+@PostMapping("/{id}/aprovar")
+@RequiresPermission("distribuicao:default:processo:aprovar")
+public ResponseEntity<ProcessoResponse> aprovar(@PathVariable UUID id, Authentication auth) {
+    return ResponseEntity.ok(dispatcher.dispatch(new AprovarProcessoCommand(id, auth.getName())));
+}
+// ...mesmo padrão para calcular, finalizar, cancelar
 ```
+
+> **NÃO usar `@PreAuthorize`** — todas as decisões de autorização vão pelo `authz-spring-boot-starter`. O catálogo `permissions.yaml` (task 1.5) já define essas 7 keys; o starter rejeita anotações com keys que não estejam no catálogo registrado.
 
 **GlobalExceptionHandler additions:**
 ```java
@@ -112,9 +126,11 @@ public ProblemDetail handleConflict(ConflictException ex, HttpServletRequest req
 ## Critérios de Sucesso (Verificáveis)
 
 - [ ] Build compila: `cd services/distribuicao-api && mvn compile`
-- [ ] GET /api/v1/processos/disponiveis retorna array
-- [ ] GET /api/v1/processos retorna paginação (items + metadata)
-- [ ] POST /api/v1/processos retorna 201
+- [ ] GET /api/v1/processos/disponiveis retorna array (com `distribuicao:default:processo:listar`)
+- [ ] GET /api/v1/processos retorna paginação (items + metadata) (com `distribuicao:default:processo:listar`)
+- [ ] POST /api/v1/processos retorna 201 (com `distribuicao:default:processo:criar`)
 - [ ] POST /api/v1/processos com duplicata retorna 409
 - [ ] POST /api/v1/processos/{id}/aprovar de CRIADO retorna 422
 - [ ] POST /api/v1/processos/{id}/cancelar com justificativa < 10 chars retorna 400
+- [ ] **Nenhum método do `ProcessoController` usa `@PreAuthorize` — apenas `@RequiresPermission`**
+- [ ] **Todas as 7 keys usadas no controller estão declaradas no `permissions.yaml` (task 1.5)** — bate por inspeção visual e pelos testes 401/403 da task 6.0

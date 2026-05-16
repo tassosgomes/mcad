@@ -9,6 +9,8 @@ import styles from './Sidebar.module.css';
 interface SidebarChild {
   label: string;
   path: string;
+  /** optional: child is hidden unless the user has this permission */
+  requiredPermission?: string;
 }
 
 interface SidebarGroup {
@@ -74,6 +76,11 @@ const navigation: SidebarGroup[] = [
     requiredPermissions: ['distribuicao:default:roteiro:listar'],
     children: [
       { label: 'Rubricas', path: '/distribuicao/rubricas' },
+      {
+        label: 'Processos',
+        path: '/distribuicao/processos',
+        requiredPermission: 'distribuicao:default:processo:listar',
+      },
     ],
   },
   {
@@ -123,7 +130,7 @@ interface SidebarProps {
 }
 
 export function Sidebar({ isOpen, onClose }: SidebarProps) {
-  const { hasAny, isLoading } = usePermissions();
+  const { hasAny, can, isLoading } = usePermissions();
 
   // Always open first section for now
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({
@@ -162,6 +169,11 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
             const isVisible = !isLoading && (!required.length || hasAny(required));
             if (!isVisible) return null;
 
+            // Filter children by per-item permission (if specified)
+            const visibleChildren = group.children.filter(
+              (child) => !child.requiredPermission || can(child.requiredPermission),
+            );
+
             return (
               <div key={group.label} className={styles.group}>
                 <button
@@ -179,9 +191,9 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                   )}
                 </button>
 
-                {!group.disabled && group.children && isGroupOpen && (
+                {!group.disabled && visibleChildren.length > 0 && isGroupOpen && (
                   <div className={styles.links}>
-                    {group.children.map(child => (
+                    {visibleChildren.map(child => (
                       <NavLink
                         key={child.path}
                         to={child.path}

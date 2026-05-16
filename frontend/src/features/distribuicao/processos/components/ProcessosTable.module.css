@@ -1,0 +1,109 @@
+.tableWrapper {
+  overflow-x: auto;
+  border: 1px solid rgba(67, 70, 85, 0.15);
+  border-radius: var(--radius-lg);
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--text-sm);
+}
+
+.thead {
+  background: var(--color-bg-surface);
+}
+
+.th {
+  padding: var(--space-3) var(--space-4);
+  text-align: left;
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--color-text-muted);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.textRight {
+  text-align: right;
+}
+
+.row {
+  border-top: 1px solid rgba(67, 70, 85, 0.1);
+  transition: background var(--transition-fast);
+}
+
+.row:hover {
+  background: var(--color-bg-surface);
+}
+
+.td {
+  padding: var(--space-3) var(--space-4);
+  vertical-align: middle;
+}
+
+.chip {
+  display: inline-block;
+  padding: 2px var(--space-2);
+  background: var(--color-accent);
+  color: #fff;
+  border-radius: var(--radius-sm);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  margin-right: var(--space-2);
+}
+
+.rubricaNome {
+  color: var(--color-text-secondary);
+  font-size: var(--text-sm);
+}
+
+.mono {
+  font-family: var(--font-mono, monospace);
+  font-size: var(--text-sm);
+}
+
+.valor {
+  font-family: var(--font-mono, monospace);
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.dateText {
+  color: var(--color-text-secondary);
+  font-size: var(--text-xs);
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-2);
+}
+
+.actionBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: none;
+  background: transparent;
+  color: var(--color-text-muted);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background var(--transition-fast), color var(--transition-fast);
+}
+
+.actionBtn:hover {
+  background: var(--color-bg-surface);
+  color: var(--color-text-primary);
+}
+
+.empty {
+  padding: var(--space-10);
+  text-align: center;
+  color: var(--color-text-muted);
+  border: 1px dashed rgba(67, 70, 85, 0.2);
+  border-radius: var(--radius-lg);
+}

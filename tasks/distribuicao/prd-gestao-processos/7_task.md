@@ -1,5 +1,5 @@
 ---
-status: pending
+status: done
 parallelizable: true
 blocked_by: []
 ---
@@ -44,15 +44,15 @@ Criar a camada de dados do frontend: tipos TypeScript (do api-contract.yaml), ex
 
 ## Subtarefas
 
-- [ ] 7.1 Adicionar `apiPostDist<T>(path, body)` ao apiDistribuicaoClient.ts
-- [ ] 7.2 Criar `processo.ts` com todas as interfaces (Processo, StatusProcesso, ProcessoListResponse, etc.)
-- [ ] 7.3 Criar `processosApi.ts` com 8 funções fetch
-- [ ] 7.4 Criar `useProcessos.ts` (listagem paginada com keepPreviousData)
-- [ ] 7.5 Criar `useProcesso.ts` (detalhe por ID)
-- [ ] 7.6 Criar `useDisponiveis.ts` (combinações disponíveis)
-- [ ] 7.7 Criar `useProcessoMutations.ts` (5 mutations com invalidação)
-- [ ] 7.8 Criar `index.ts` (barrel exports)
-- [ ] 7.9 Verificar: `cd frontend && npx tsc --noEmit`
+- [x] 7.1 Adicionar `apiPostDist<T>(path, body)` ao apiDistribuicaoClient.ts
+- [x] 7.2 Criar `processo.ts` com todas as interfaces (Processo, StatusProcesso, ProcessoListResponse, etc.)
+- [x] 7.3 Criar `processosApi.ts` com 8 funções fetch
+- [x] 7.4 Criar `useProcessos.ts` (listagem paginada com keepPreviousData)
+- [x] 7.5 Criar `useProcesso.ts` (detalhe por ID)
+- [x] 7.6 Criar `useDisponiveis.ts` (combinações disponíveis)
+- [x] 7.7 Criar `useProcessoMutations.ts` (5 mutations com invalidação)
+- [x] 7.8 Criar `index.ts` (barrel exports)
+- [x] 7.9 Verificar: `cd frontend && npx tsc --noEmit`
 
 ## Sequenciamento
 
@@ -71,8 +71,8 @@ Ver techspec-frontend.md para código completo de cada arquivo. Pontos-chave:
 
 ## Critérios de Sucesso (Verificáveis)
 
-- [ ] TypeScript compila: `cd frontend && npx tsc --noEmit`
-- [ ] `apiPostDist` existe no apiDistribuicaoClient.ts
-- [ ] 8 funções de API no processosApi.ts
-- [ ] 4 hooks de query + 1 arquivo com 5 mutations
-- [ ] Barrel export funcional
+- [x] TypeScript compila: `cd frontend && npx tsc --noEmit`
+- [x] `apiPostDist` existe no apiDistribuicaoClient.ts
+- [x] 8 funções de API no processosApi.ts
+- [x] 4 hooks de query + 1 arquivo com 5 mutations
+- [x] Barrel export funcional

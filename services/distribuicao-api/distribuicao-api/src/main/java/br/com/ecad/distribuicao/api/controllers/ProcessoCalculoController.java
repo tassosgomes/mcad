@@ -6,11 +6,11 @@ import br.com.ecad.distribuicao.application.dto.CalcularProcessoResponse;
 import br.com.ecad.distribuicao.application.dto.CalculoProcessoResponse;
 import br.com.ecad.distribuicao.application.queries.ConsultarCalculoProcessoQuery;
 import br.com.ecad.distribuicao.application.queries.handlers.ConsultarCalculoProcessoQueryHandler;
+import br.org.ecad.authz.sdk.annotation.RequiresPermission;
 import java.security.Principal;
 import java.util.UUID;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -34,7 +34,7 @@ public class ProcessoCalculoController {
     }
 
     @PostMapping("/calcular")
-    @PreAuthorize("hasAuthority('ROLE_analista-distribuicao') or hasAuthority('SCOPE_write')")
+    @RequiresPermission("distribuicao:default:processo:calcular")
     public ResponseEntity<CalcularProcessoResponse> calcular(
             @PathVariable UUID id,
             Principal principal,
@@ -46,12 +46,7 @@ public class ProcessoCalculoController {
     }
 
     @GetMapping("/calculo")
-    @PreAuthorize("""
-            hasAuthority('ROLE_analista-distribuicao')
-            or hasAuthority('ROLE_consultor-distribuicao')
-            or hasAuthority('SCOPE_access')
-            or hasAuthority('SCOPE_write')
-            """)
+    @RequiresPermission("distribuicao:default:processo:visualizar")
     public ResponseEntity<CalculoProcessoResponse> consultar(
             @PathVariable UUID id,
             @RequestParam(defaultValue = "0") int page,
