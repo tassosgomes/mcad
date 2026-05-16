@@ -4,9 +4,9 @@
 
 **Domínio:** Cadastro
 **Responsável:** a definir
-**Status:** `planned`
+**Status:** `done`
 **Fase do Roadmap:** Fase 1 — Fundação + Cadastro (MVP)
-**Última revisão:** 2026-03-29
+**Última revisão:** 2026-05-16
 
 ---
 
@@ -69,18 +69,21 @@ ABRAMUS, AMAR, ASSIM, SBACEM, SICAM, SOCINPRO, UBC
 
 ---
 
-## 4. Features Previstas (Planned Features)
+## 4. Features
 
 | # | Feature | Descrição | Prioridade | Status | PRD |
 |---|---|---|---|---|---|
-| F01 | Seed de Associações | Carga inicial das 7 associações de gestão coletiva. Dados não editáveis pelo usuário. | Must Have | `done` | `tasks/prd-seed-associacoes/prd.md` |
-| F02 | Gestão de Titulares | CRUD de titulares (PF/PJ) com CPF/CNPJ, CAE/IPI, vínculo a associação e categorias. Um titular pode acumular categorias autorais e conexas. | Must Have | `done` | `tasks/prd-gestao-titulares/prd.md` |
-| F03 | Gestão de Obras Musicais | CRUD de obras com ISWC (obtido via API externa), título, tipo (MUSICAL, LITEROMUSICAL, VERSAO, POT_POURRI), gênero e validação de unicidade (título + titulares). | Must Have | `done` | `tasks/prd-gestao-obras/prd.md` |
-| F04 | Titularidades Autorais | Vinculação de titulares a obras com categoria e percentual. Validação obrigatória: soma = 100%. | Must Have | `done` | `tasks/prd-titularidades-autorais/prd.md` |
-| F05 | Gestão de Fonogramas | CRUD de fonogramas com ISRC (manual, formato validado), vínculo à obra (imutável), depuração por alteração ISRC/conexos. | Must Have | `done` | `tasks/prd-gestao-fonogramas/prd.md` |
-| F06 | Participação Conexa Automática | Cálculo automático dos percentuais conexos ao vincular titulares ao fonograma. Com músico: 43,7% intérprete / 41,7% produtor / 14,6% músicos (÷ N). Sem músico: 50% / 50%. | Must Have | `done` | `tasks/prd-participacao-conexa/prd.md` |
-| F07 | Controle de Status | Liberação manual com validação de pré-requisitos, bloqueio com justificativa, desbloqueio, transição automática fonograma, campo urlAudio. | Must Have | `done` | `tasks/prd-controle-status/prd.md` |
-| F08 | Eventos de Cadastro | Publicação de 8 eventos CloudEvents no RabbitMQ via Outbox Pattern (at-least-once). | Must Have | `done` | `tasks/prd-eventos-cadastro/prd.md` |
+| F01 | Seed de Associações | Carga inicial das 7 associações de gestão coletiva. Dados não editáveis pelo usuário. | Must Have | `done` | `tasks/cadastro/done-prd-seed-associacoes/prd.md` |
+| F02 | Gestão de Titulares | CRUD de titulares (PF/PJ) com CPF/CNPJ, CAE/IPI, vínculo a associação e categorias. Um titular pode acumular categorias autorais e conexas. | Must Have | `done` | `tasks/cadastro/done-prd-gestao-titulares/prd.md` |
+| F03 | Gestão de Obras Musicais | CRUD de obras com ISWC (obtido via API externa), título, tipo (MUSICAL, LITEROMUSICAL, VERSAO, POT_POURRI), gênero e validação de unicidade (título + titulares). | Must Have | `done` | `tasks/cadastro/done-prd-gestao-obras/prd.md` |
+| F04 | Titularidades Autorais | Vinculação de titulares a obras com categoria e percentual. Validação obrigatória: soma = 100%. | Must Have | `done` | `tasks/cadastro/done-prd-titularidades-autorais/prd.md` |
+| F05 | Gestão de Fonogramas | CRUD de fonogramas com ISRC (manual, formato validado), vínculo à obra (imutável), depuração por alteração ISRC/conexos. | Must Have | `done` | `tasks/cadastro/done-prd-gestao-fonogramas/prd.md` |
+| F06 | Participação Conexa Automática | Cálculo automático dos percentuais conexos ao vincular titulares ao fonograma. Com músico: 43,7% intérprete / 41,7% produtor / 14,6% músicos (÷ N). Sem músico: 50% / 50%. | Must Have | `done` | `tasks/cadastro/done-prd-participacao-conexa/prd.md` |
+| F07 | Controle de Status | Liberação manual com validação de pré-requisitos, bloqueio com justificativa, desbloqueio, transição automática fonograma, campo urlAudio. | Must Have | `done` | `tasks/cadastro/done-prd-controle-status/prd.md` |
+| F08 | Eventos de Cadastro | Publicação de 8 eventos CloudEvents no RabbitMQ via Outbox Pattern (at-least-once). | Must Have | `done` | `tasks/cadastro/prd-eventos-cadastro/prd.md` |
+| F09 | Campo Código | Código sequencial em associações, titulares, obras e fonogramas, com filtros e exibição nas telas/listagens. | Must Have | `done` | `tasks/cadastro/done-prd-campo-codigo/prd.md` |
+| F10 | Autenticação e Autorização | Proteção dos endpoints por permissões do domínio Cadastro, integração com authz e gates no frontend/BFF. | Must Have | `done` | `tasks/cadastro/done-prd-autenticacao/prd.md` |
+| F11 | Ownership Snapshot para Distribuição | Endpoint interno para retornar titularidades autorais e participações conexas por lote de obras/fonogramas, usado pelo cálculo de créditos. | Must Have | `done` | Implementado em `POST /api/v1/distribuicao/ownership-snapshot` |
 
 **Prioridades (MoSCoW):** `Must Have` · `Should Have` · `Could Have` · `Won't Have`
 **Status possíveis:** `planned` · `prd-ready` · `in-progress` · `done` · `out-of-scope`
@@ -101,6 +104,7 @@ O Cadastro é totalmente independente — não depende de nenhum outro domínio.
 |---|---|---|---|
 | Identificação | Dados de obras e fonogramas para identificar execuções (consulta por ISRC/ISWC) | Consulta HTTP (Open Host Service) | Alta |
 | Distribuição | Titularidades autorais e participações conexas para calcular créditos | Consulta HTTP (Open Host Service) | Alta |
+| Distribuição | Snapshot em lote de titularidades e participações para cálculo de créditos | Consulta HTTP (Open Host Service) | Alta |
 | Analytics | Eventos de mudança de estado para alimentar read models | Evento assíncrono (RabbitMQ) | Média |
 
 ### Integrações Externas (External Integrations)
@@ -138,15 +142,27 @@ O Cadastro é totalmente independente — não depende de nenhum outro domínio.
 - `cadastro.obra.liberada` — obra atinge status LIBERADO após validação completa
 - `cadastro.obra.bloqueada` — obra bloqueada por pendência ou conflito
 - `cadastro.obra.dominio-publico` — obra marcada como Domínio Público
+- `cadastro.obra.depurada` — obra volta a exigir validação após alteração relevante
 - `cadastro.fonograma.liberado` — fonograma validado e liberado
+- `cadastro.fonograma.depurado` — fonograma volta a exigir validação após alteração relevante
+- `cadastro.fonograma.bloqueado` — fonograma bloqueado por pendência ou conflito
 - `cadastro.titular.criado` — novo titular cadastrado no sistema
 
 ### Consome (Subscribes)
-Nenhum — o Cadastro é o domínio mais upstream do sistema.
+Nenhum evento de negócio de outro domínio. A codebase possui consumo cross-cutting de eventos de identidade para manter a projeção local `cadastro.usuarios_identidade`.
 
 ---
 
-## 8. Estratégia de Desenvolvimento (Development Strategy)
+## 8. Estado da Codebase (2026-05-16)
+
+- O escopo funcional do Cadastro está implementado: associações seed, titulares, obras, titularidades autorais, fonogramas, participações conexas, controle de status, eventos, código sequencial, autenticação/autorização e auditoria.
+- A publicação de eventos usa Outbox + RabbitMQ no exchange `cadastro.events`.
+- O endpoint de ownership snapshot já atende a Distribuição com dados de titularidade e participação; ele também expõe dados necessários para retenção, mas a retenção ainda não é consumida pelo domínio Distribuição.
+- O domínio segue independente dos demais domínios de negócio. A única assinatura implementada é de identidade, considerada cross-cutting.
+
+---
+
+## 9. Estratégia de Desenvolvimento (Development Strategy)
 
 ### Ordem de Implementação Sugerida
 1. **F01 — Seed de Associações** — pré-requisito para vincular titulares
@@ -157,6 +173,9 @@ Nenhum — o Cadastro é o domínio mais upstream do sistema.
 6. **F06 — Participação Conexa Automática** — depende de F02 + F05, implementa RN-04
 7. **F07 — Controle de Status** — transversal a F03 e F05, implementa RN-05 e RN-06
 8. **F08 — Eventos de Cadastro** — transversal, depende de todas as features anteriores
+9. **F09 — Campo Código** — transversal às entidades principais e à experiência de consulta
+10. **F10 — Autenticação e Autorização** — transversal aos endpoints e ao frontend/BFF
+11. **F11 — Ownership Snapshot para Distribuição** — extensão da Open Host Service para suportar cálculo de créditos em lote
 
 ### Riscos do Domínio
 | Risco | Probabilidade | Impacto | Mitigação |
@@ -167,7 +186,7 @@ Nenhum — o Cadastro é o domínio mais upstream do sistema.
 
 ---
 
-## 9. Questões em Aberto (Open Questions)
+## 10. Questões em Aberto (Open Questions)
 
 - [x] ~~Estratégia de arredondamento~~ → Resolvido: algoritmo de alocação de remanescente (RN-12)
 - [x] ~~Múltiplos intérpretes~~ → Resolvido: duetos/feats suportados, fatia rateada (RN-09)
@@ -175,7 +194,7 @@ Nenhum — o Cadastro é o domínio mais upstream do sistema.
 - [x] ~~Subeditor e Versionista na PoC~~ → Resolvido: ambos fora do escopo (RN-14)
 - [x] ~~Múltiplos produtores~~ → Resolvido: percentual configurável, soma = 100% da fatia (RN-15)
 
-Todas as questões foram resolvidas. Domain Doc pronto para geração de PRDs.
+Todas as questões foram resolvidas. Domain Doc sincronizado com a implementação atual.
 
 ---
 

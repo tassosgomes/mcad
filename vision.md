@@ -43,20 +43,21 @@ O mini-ECAD (mcad) é uma aplicação de demonstração multi-contexto que usa o
 |---|---|---|---|---|
 | D01 | Cadastro | Fonte de verdade de Obras Musicais, Fonogramas e Titulares. Valida percentuais de titularidade autoral (soma = 100%) e conexa, controla ciclo de vida de status (LIBERADO/BLOQUEADO/PENDENTE) e publica eventos de mudança. | `done` | `domains/cadastro/domain.md` |
 | D02 | Identificação | Recebe execuções musicais de diversas origens (planilhas, plataformas de streaming, gravações), identifica obras e fonogramas via ISRC/ISWC, atribui tipo de utilização com peso correspondente e fecha o Rol de Execuções do período. | `done` | `domains/identificacao/domain.md` |
-| D03 | Arrecadação | Registra usuários de música licenciados, controla pagamentos de licença por rubrica e período, calcula verba líquida (dedução administrativa de 15% sobre o bruto) e disponibiliza a verba para distribuição. | `in-progress` | `domains/arrecadacao/domain.md` |
-| D04 | Distribuição | Cruza verba líquida da Arrecadação com Rol de Execuções da Identificação, calcula créditos por titular aplicando split autoral (66,67%) / conexo (33,33%), gerencia retenções por pendências cadastrais e gera demonstrativos. | `in-progress` | `domains/distribuicao/domain.md` |
+| D03 | Arrecadação | Registra usuários de música licenciados, controla pagamentos de licença por rubrica e período, calcula verba líquida (dedução administrativa de 15% sobre o bruto), publica verba disponível e processa estornos. | `done` | `domains/arrecadacao/domain.md` |
+| D04 | Distribuição | Cruza verba líquida da Arrecadação com Rol de Execuções da Identificação e calcula créditos por titular aplicando split autoral (66,67%) / conexo (33,33%). Retenções, ajustes e demonstrativos permanecem planejados. | `in-progress` | `domains/distribuicao/domain.md` |
 
 **Cross-cutting (não são domínios de negócio):**
 - **Plataforma** — BFF/API Composition, Frontend React/Vite, Analytics Consumer (CQRS Read Model), DW Sync (ClickHouse), Dashboards Metabase
 
 **Status possíveis:** `planned` · `in-progress` · `done` · `out-of-scope`
 
-### Status por feature (PRD) — snapshot 2026-05-11
+### Status por feature (PRD) — snapshot 2026-05-16
 
 | Domínio | PRD | Status |
 |---|---|---|
 | D01 Cadastro | seed-associacoes, gestao-titulares, gestao-obras, titularidades-autorais, gestao-fonogramas, participacao-conexa, controle-status, campo-codigo, autenticacao | `done` |
 | D01 Cadastro | eventos-cadastro (Outbox + CloudEvents) | `done` |
+| D01 Cadastro | ownership-snapshot para Distribuição | `done` |
 | D02 Identificação | gestao-captacoes | `done` |
 | D02 Identificação | registro-manual-execucoes | `done` |
 | D02 Identificação | upload-csv-execucoes (MinIO + worker + telas alinhadas ao DESIGN.md) | `done` |
@@ -68,10 +69,21 @@ O mini-ECAD (mcad) é uma aplicação de demonstração multi-contexto que usa o
 | D03 Arrecadação | gestao-usuarios-musica, gestao-licencas | `done` (backend + frontend + rotas + sidebar implementados; tasks 100% concluídas) |
 | D03 Arrecadação | calculo-verba-liquida | `done` (10/10 tasks; qa_report; migration V13, VerbaService + handlers + recálculo + Outbox) |
 | D03 Arrecadação | estorno-pagamento | `done` (backend + frontend; migration V10, endpoint `POST /pagamentos/{id}/estornar`, VerbaEstornoFlowIT/VerbaLockIT) |
-| D04 Distribuição | sync-rubricas (consumer + snapshot) | `in-progress` (testes unitários verdes; integração bloqueada por Testcontainers) |
+| D04 Distribuição | sync-rubricas (consumer + snapshot) | `done` (implementado; testes de integração seguem bloqueados por dívida de Testcontainers/Docker) |
 | D04 Distribuição | gestao-processos | `done` (backend + frontend completos; `@RequiresPermission` em todos os endpoints e auditoria via `AuditClient` em todos os handlers de comando; 95 unit tests verdes; 10 IT bloqueados por dívida pré-existente de Testcontainers 1.19.8 / Docker engine 1.44+ — escopo separado) |
+| D04 Distribuição | calculo-creditos | `done` (cálculo ponderado por quantidade/peso, split autoral/conexo, persistência de créditos e evento `distribuicao.processo.calculado`; sem retenção, ajuste ou demonstrativo) |
+| D04 Distribuição | retencao-creditos, liberacao-retidos, ajustes-estorno, demonstrativo-creditos | `planned` |
 
 > Fonte: auditoria cruzando `tasks/**/prd-*` e código em `services/{cadastro,identificacao,arrecadacao,distribuicao}-api/`.
+
+### Lacunas de integração conhecidas — snapshot 2026-05-16
+
+- **Contrato de período:** Identificação publica `identificacao.rol.fechado` com `periodo` no formato `YYYY-MM-DD`, enquanto Arrecadação e Distribuição operam com período mensal `YYYY-MM`. O fluxo Rol + Verba só fica confiável quando o contrato for normalizado.
+- **Confirmação de Rol processado:** Distribuição publica `distribuicao.rol.processado`, mas o payload atual usa o id do snapshot de Rol como `captacaoId`; Identificação espera o id original da captação para bloquear cancelamento.
+- **Lock da Verba:** Arrecadação já consome `distribuicao.processo.iniciado` e `distribuicao.processo.finalizado` para bloquear/liberar verba, mas Distribuição ainda não publica `distribuicao.processo.iniciado`. O bloqueio no início do processo ainda é latente.
+- **Snapshots em Distribuição:** eventos novos de Rol e Verba são persistidos, mas reenvios/atualizações de snapshots existentes ainda são tratados como no-op/log.
+- **Estornos e retenções:** Arrecadação publica estorno; Distribuição ainda não consome `arrecadacao.pagamento.estornado`. Retenção/liberação de créditos e demonstrativos ainda não foram implementados.
+- **Status de Cadastro na Identificação:** o fluxo automático valida status `LIBERADO`, mas o handler de registro manual compara `LIBERADA`; isso pode gerar pendências indevidas até a correção.
 
 ---
 
@@ -84,6 +96,7 @@ Identificação ──depende de──→ Cadastro (consulta obras/fonogramas pa
 Distribuição  ──depende de──→ Cadastro (consulta titularidades para calcular créditos)
 Distribuição  ──depende de──→ Identificação (consome Rol de Execuções fechado via evento)
 Distribuição  ──depende de──→ Arrecadação (consome Verba Líquida disponível via evento)
+Arrecadação   ──consome feedback de──→ Distribuição (lock operacional de verba)
 Analytics     ──consome de──→ Todos os domínios (eventos de todos os contextos)
 ```
 
@@ -93,9 +106,10 @@ Analytics     ──consome de──→ Todos os domínios (eventos de todos os 
 | Distribuição | Cadastro | Consulta HTTP — obter titularidades de obras e fonogramas | Médio — modelo de titularidade é complexo |
 | Distribuição | Identificação | Evento `identificacao.rol.fechado` — Rol do período | Médio — formato do evento precisa ser acordado |
 | Distribuição | Arrecadação | Evento `arrecadacao.verba.disponivel` — Verba líquida | Baixo — estrutura simples |
+| Arrecadação | Distribuição | Eventos `distribuicao.processo.iniciado` / `distribuicao.processo.finalizado` — lock operacional de verba | Médio — início ainda não é publicado por D04 |
 | Analytics | Todos | Eventos de todos os domínios (consumidor passivo) | Baixo — read-only, sem impacto nos domínios |
 
-**Nota:** Cadastro é totalmente independente. Identificação e Arrecadação dependem apenas do Cadastro e não dependem entre si — podem ser desenvolvidos em paralelo. Distribuição é o orquestrador que consome os três domínios anteriores.
+**Nota:** Cadastro é totalmente independente. Identificação depende do Cadastro para resolver obras/fonogramas. Arrecadação é independente no fluxo principal e consome apenas feedback operacional da Distribuição para lock de verba. Distribuição é o orquestrador que consome os três domínios anteriores.
 
 ---
 
@@ -150,7 +164,7 @@ Analytics     ──consome de──→ Todos os domínios (eventos de todos os 
 - Uma rubrica por vez (sem múltiplas rubricas paralelas no mesmo processo de distribuição)
 - Sem amostragem estatística — todas as execuções são identificadas diretamente
 - Sem integração com associações externas (ABRAMUS, UBC, etc.)
-- Sem autenticação/autorização entre serviços
+- Sem mTLS ou service mesh entre serviços; chamadas serviço-serviço usam ACLs HTTP/eventos e, em alguns fluxos, propagação de token de usuário/serviço
 - Domínio Público por configuração manual, não por cálculo de datas reais (70 anos)
 - Sem rol retroativo (execuções de períodos anteriores)
 
@@ -159,7 +173,7 @@ Analytics     ──consome de──→ Todos os domínios (eventos de todos os 
 - **Não cobrirá 100% das rubricas e regras do Regulamento** — apenas o suficiente para demonstrar os padrões
 - **Não atingirá escala de produção** — não precisa processar bilhões de execuções/ano
 - **Não incluirá app mobile**
-- **Não implementará autorização granular** (ex: Analista X só edita titulares da sua associação) — apenas role-based (Analista vs Consultor)
+- **Não implementará ABAC granular por associação/tenant** (ex: Analista X só edita titulares da sua associação). A codebase já implementa autorização por roles/permissões de domínio em APIs e BFF.
 - **Não terá integração com sistemas externos** — é auto-contido
 - **Não gerará pagamentos reais** — o ciclo termina no demonstrativo de créditos
 
@@ -230,6 +244,7 @@ Analytics     ──consome de──→ Todos os domínios (eventos de todos os 
 | 1.5 | 2026-05-11 | Sincronização do D03 | Auditoria confirmou que `gestao-usuarios-musica` e `gestao-licencas` estão 100% implementados (backend Java + frontend React + rotas + sidebar; tasks 11/11 com `[x]`). Vision estava desatualizado — features promovidas de `in-progress` para `done`. `estorno-pagamento` já possui PRD/techspec/tasks (5 tasks), mas implementação ainda pendente — classificação mantida em `planned`. Próximo bloqueio no D03 é `calculo-verba-liquida`, que possui apenas PRD (techspec e tasks a gerar). |
 | 1.6 | 2026-05-15 | Sincronização tardia D03 | Auditoria de filesystem revelou que `calculo-verba-liquida` (10/10 tasks `[x]`, migration V13, qa_report) e `estorno-pagamento` (backend completo: migration V10, `EstornarPagamentoCommand/Handler`, `VerbaEmDistribuicaoException`, endpoint `POST /pagamentos/{id}/estornar`, `VerbaEstornoFlowIT`+`VerbaLockIT`; frontend completo: types/api/hook/`EstornarPagamentoModal`/extensão `PagamentoDetailPage`) já estavam **integralmente implementados**, contradizendo classificação `planned` da revisão 1.5. Vision sincronizado — ambas features promovidas para `done`. D03 agora completo exceto por features ainda não planejadas. |
 | 1.7 | 2026-05-16 | Entrega de F02 (D04) gestao-processos | PRD revisado e implementado fim a fim alinhado ao novo padrão consolidado pela migração authz (encerrada em 2026-05-15): **permissionamento** via `authz-spring-boot-starter` com `@RequiresPermission("distribuicao:default:processo:<acao>")` em 4 segmentos (ADR 0002/0003), `permissions.yaml` com 9 keys e catálogo em `docs/authz/catalog/distribuicao.md`; migração legacy de `RubricaController` e `ProcessoCalculoController` (`@PreAuthorize` removido). **Auditoria** obrigatória via `audit-sdk` — `ProcessoAuditEventFactory` produz `userAction` + `dataChange` para cada operação (CREATE/CALCULATE/APPROVE/FINALIZE/CANCEL) na mesma transação do comando. Backend: 5 commands + 3 queries + `ProcessoController` (8 endpoints), Outbox de domínio, event consumers Rol/Verba. Frontend: módulo `features/distribuicao/processos` completo com gate de UI por permission via BFF (ADR 0004). 95 unit tests verdes; 10 integration tests bloqueados por dívida pré-existente de infra (Testcontainers 1.19.8 incompatível com Docker engine 1.44+ — afeta também IT legados do mesmo módulo). Próximo bloqueio em D04 é fechar a task 6.0 de `sync-rubricas` (mesma dívida de Testcontainers) ou avançar para o núcleo da Fase 3 (cálculo de créditos / split / retenção / demonstrativo — ainda sem PRD). |
+| 1.8 | 2026-05-16 | Auditoria de coerência codebase/docs | Documentação alinhada ao estado real da codebase: D01, D02 e D03 marcados como `done`; D04 mantido `in-progress` com F01/F02/F03 implementadas e retenção/liberação/ajustes/demonstrativos planejados. Registradas lacunas de contrato entre eventos, período, lock de verba e payload de `distribuicao.rol.processado`. |
 
 ---
 

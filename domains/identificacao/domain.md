@@ -4,9 +4,9 @@
 
 **Domínio:** Identificação
 **Responsável:** a definir
-**Status:** `planned`
+**Status:** `done`
 **Fase do Roadmap:** Fase 2 — Identificação + Arrecadação
-**Última revisão:** 2026-04-01
+**Última revisão:** 2026-05-16
 
 ---
 
@@ -73,16 +73,16 @@ Sem um processo estruturado de captação e identificação, a Distribuição n�
 
 ---
 
-## 4. Features Previstas (Planned Features)
+## 4. Features
 
 | # | Feature | Descrição | Prioridade | Status | PRD |
 |---|---|---|---|---|---|
-| F01 | Gestão de Captações | Criar, listar e acompanhar captações por rubrica + período. Garante unicidade de Rol não-cancelado por rubrica+período. | Must Have | `done` | `tasks/prd-gestao-captacoes/prd.md` |
-| F02 | Registro Manual de Execuções | Formulário para inclusão individual de execuções com busca integrada ao Cadastro (ISRC, ISWC, título, titular), campos condicionais por rubrica, criação inline de obra/fonograma pendente. | Must Have | `done` | `tasks/prd-registro-manual-execucoes/prd.md` |
-| F03 | Upload de Execuções via CSV | Layout CSV (`;` separador, UTF-8), upload para MinIO, processamento assíncrono com agrupamento de linhas idênticas, identificação automática, relatório de erros por linha/coluna. Até 10.000 linhas. | Must Have | `prd-ready` | `tasks/prd-upload-csv-execucoes/prd.md` |
-| F04 | Identificação de Execuções | Tela centralizada de pendentes com indicador de impacto (captações afetadas), resolução manual (vincular a obra/fonograma LIBERADA), resolução em lote, re-verificação automática via background job. | Must Have | `prd-ready` | `tasks/prd-identificacao-execucoes/prd.md` |
-| F05 | Fechamento do Rol | Ação explícita e irreversível do Analista. Valida pré-requisitos (zero pendentes, min 1 execução, classificação audiovisual). Publica `identificacao.rol.fechado` via Outbox Pattern. Payload diferenciado: audiovisual (tempo+peso) vs áudio (quantidade). | Must Have | `prd-ready` | `tasks/prd-fechamento-rol/prd.md` |
-| F06 | Cancelamento e Recriação | Cancelar Rol fechado com justificativa obrigatória (publica `identificacao.rol.cancelado`). Bloqueado se Distribuição já processou (`distribuicao.rol.processado`). 3 opções de recriação: copiar execuções, recriar vazia ou apenas cancelar. | Must Have | `prd-ready` | `tasks/prd-cancelamento-recriacao/prd.md` |
+| F01 | Gestão de Captações | Criar, listar e acompanhar captações por rubrica + período. Garante unicidade de Rol não-cancelado por rubrica+período. | Must Have | `done` | `tasks/identificacao/prd-gestao-captacoes/prd.md` |
+| F02 | Registro Manual de Execuções | Formulário para inclusão individual de execuções com busca integrada ao Cadastro (ISRC, ISWC, título, titular), campos condicionais por rubrica, criação inline de obra/fonograma pendente. | Must Have | `done` | `tasks/identificacao/prd-registro-manual-execucoes/prd.md` |
+| F03 | Upload de Execuções via CSV | Layout CSV (`;` separador, UTF-8), upload para MinIO, processamento assíncrono com agrupamento de linhas idênticas, identificação automática, relatório de erros por linha/coluna. Até 10.000 linhas. | Must Have | `done` | `tasks/identificacao/done-prd-upload-csv-execucoes/prd.md` |
+| F04 | Identificação de Execuções | Tela centralizada de pendentes com indicador de impacto (captações afetadas), resolução manual (vincular a obra/fonograma LIBERADO), resolução em lote, re-verificação automática via background job. | Must Have | `done` | `tasks/identificacao/prd-identificacao-execucoes/prd.md` |
+| F05 | Fechamento do Rol | Ação explícita e irreversível do Analista. Valida pré-requisitos (zero pendentes, min 1 execução, classificação audiovisual). Publica `identificacao.rol.fechado` via Outbox Pattern. Payload diferenciado: audiovisual (tempo+peso) vs áudio (quantidade). | Must Have | `done` | `tasks/identificacao/prd-fechamento-rol/prd.md` |
+| F06 | Cancelamento e Recriação | Cancelar Rol fechado com justificativa obrigatória (publica `identificacao.rol.cancelado`). Bloqueado se Distribuição já processou (`distribuicao.rol.processado`). 3 opções de recriação: copiar execuções, recriar vazia ou apenas cancelar. | Must Have | `done` | `tasks/identificacao/prd-cancelamento-recriacao/prd.md` |
 
 **Prioridades (MoSCoW):** `Must Have` · `Should Have` · `Could Have` · `Won't Have`
 **Status possíveis:** `planned` · `prd-ready` · `in-progress` · `done` · `out-of-scope`
@@ -109,7 +109,7 @@ Sem um processo estruturado de captação e identificação, a Distribuição n�
 
 | Sistema Externo | Finalidade | Direção | Status |
 |---|---|---|---|
-| MinIO (S3-compatible) | Armazenamento de arquivos CSV de execuções enviados via upload | Entrada | `planned` |
+| MinIO (S3-compatible) | Armazenamento de arquivos CSV de execuções enviados via upload | Entrada | `done` |
 
 ---
 
@@ -143,7 +143,18 @@ Sem um processo estruturado de captação e identificação, a Distribuição n�
 
 ---
 
-## 8. Estratégia de Desenvolvimento (Development Strategy)
+## 8. Estado da Codebase (2026-05-16)
+
+- O escopo funcional do domínio está implementado: captações, registro manual, upload CSV via MinIO, worker assíncrono, identificação automática/manual/em lote, re-verificação de pendentes, fechamento do Rol, cancelamento/recriação e consumer de `distribuicao.rol.processado`.
+- O CSV implementado usa as colunas obrigatórias `isrc`, `iswc`, `inicio`, `fim`, `tipo_utilizacao` e `titulo_programa`. Uma linha representa uma ocorrência; linhas válidas idênticas são agrupadas e viram `Quantidade = Count()`.
+- O fechamento publica `identificacao.rol.fechado` via Outbox com `captacaoId`, `rubricaSigla`, `periodo` e execuções ponderadas. O cancelamento publica `identificacao.rol.cancelado`.
+- Lacuna conhecida: o contrato de período enviado hoje é diário (`YYYY-MM-DD`), enquanto Arrecadação e Distribuição trabalham com período mensal (`YYYY-MM`).
+- Lacuna conhecida: o handler de registro manual ainda compara status cadastral `LIBERADA`, embora Cadastro e os demais fluxos usem `LIBERADO`. Isso pode gerar pendências indevidas no registro manual.
+- Lacuna conhecida: o bloqueio de cancelamento depende de Distribuição enviar o `captacaoId` original no evento `distribuicao.rol.processado`; a implementação atual de Distribuição ainda precisa corrigir esse payload.
+
+---
+
+## 9. Estratégia de Desenvolvimento (Development Strategy)
 
 ### Ordem de Implementação Sugerida
 1. **F01 — Gestão de Captações** — base do domínio, implementa RN-01 e RN-07
@@ -164,11 +175,11 @@ Sem um processo estruturado de captação e identificação, a Distribuição n�
 
 ---
 
-## 9. Questões em Aberto (Open Questions)
+## 10. Questões em Aberto (Open Questions)
 
 - [x] ~~O fechamento do Rol (F05) deve ser bloqueado se existirem pendentes?~~ → Resolvido: **bloqueado**. Zero pendentes é pré-requisito obrigatório.
-- [ ] No CSV, uma linha representa uma execução única ou pode conter a quantidade de ocorrências como coluna? (Impacta o layout e a RN-03)
-- [ ] A consulta ao Cadastro via HTTP deve validar apenas a existência da obra/fonograma ou também o status LIBERADO? (Execuções de obras BLOQUEADAS devem ficar pendentes ou ser aceitas?)
+- [x] ~~No CSV, uma linha representa uma execução única ou pode conter a quantidade de ocorrências como coluna?~~ → Resolvido na implementação: não há coluna de quantidade; uma linha é uma ocorrência e linhas idênticas são agrupadas.
+- [x] ~~A consulta ao Cadastro via HTTP deve validar apenas a existência da obra/fonograma ou também o status LIBERADO?~~ → Resolvido: deve validar status `LIBERADO`; obras/fonogramas não liberados ficam pendentes.
 
 ---
 
