@@ -4,6 +4,7 @@
 > **API Contract:** `tasks/distribuicao/prd-gestao-processos/api-contract.yaml`
 > **Domínio:** Distribuição (D04)
 > **Data:** 2026-04-10
+> **Revisão:** 2026-05-15 — Permissionamento via `authz-spring-boot-starter` (ecad-authz, convenção 4 segmentos, ADR 0002/0003) e Auditoria obrigatória via `audit-sdk-spring-boot-starter` (tabela `audit_outbox` + relay AMQP). Substituem o esquema legado `@PreAuthorize("hasAnyAuthority('SCOPE_*')")` ainda usado pelo `RubricaController` da F01, que deve ser migrado dentro do escopo desta feature.
 
 ---
 
@@ -364,15 +365,196 @@ public TopicExchange distribuicaoEventsExchange() {
 
 ### Endpoints de API
 
-Conforme `api-contract.yaml` — 9 endpoints no `ProcessoController`.
+Conforme `api-contract.yaml` — 9 endpoints no `ProcessoController`. Cada método é anotado com `@RequiresPermission` do `authz-spring-boot-starter` (pacote `br.org.ecad.authz.sdk.annotation`). Sem outro mecanismo de autorização (`@PreAuthorize`, role checks no handler etc.).
+
+```java
+@RestController
+@RequestMapping("/api/v1/processos")
+public class ProcessoController {
+
+    private final CommandDispatcher dispatcher;
+    private final QueryDispatcher queries;
+
+    @GetMapping
+    @RequiresPermission("distribuicao:default:processo:listar")
+    public ResponseEntity<PageResponse<ProcessoResponse>> listar(
+            @ModelAttribute ListarProcessosFiltro filtro, Pageable pageable) { ... }
+
+    @GetMapping("/disponiveis")
+    @RequiresPermission("distribuicao:default:processo:listar")
+    public ResponseEntity<List<DisponibilidadeResponse>> disponiveis() { ... }
+
+    @GetMapping("/{id}")
+    @RequiresPermission("distribuicao:default:processo:visualizar")
+    public ResponseEntity<ProcessoResponse> buscar(@PathVariable UUID id) { ... }
+
+    @PostMapping
+    @RequiresPermission("distribuicao:default:processo:criar")
+    public ResponseEntity<ProcessoResponse> criar(
+            @Valid @RequestBody CriarProcessoRequest req, Authentication auth) { ... }
+
+    @PostMapping("/{id}/calcular")
+    @RequiresPermission("distribuicao:default:processo:calcular")
+    public ResponseEntity<ProcessoResponse> calcular(@PathVariable UUID id, Authentication auth) { ... }
+
+    @PostMapping("/{id}/aprovar")
+    @RequiresPermission("distribuicao:default:processo:aprovar")
+    public ResponseEntity<ProcessoResponse> aprovar(@PathVariable UUID id, Authentication auth) { ... }
+
+    @PostMapping("/{id}/finalizar")
+    @RequiresPermission("distribuicao:default:processo:finalizar")
+    public ResponseEntity<ProcessoResponse> finalizar(@PathVariable UUID id, Authentication auth) { ... }
+
+    @PostMapping("/{id}/cancelar")
+    @RequiresPermission("distribuicao:default:processo:cancelar")
+    public ResponseEntity<ProcessoResponse> cancelar(
+            @PathVariable UUID id,
+            @Valid @RequestBody CancelarProcessoRequest req,
+            Authentication auth) { ... }
+}
+```
+
+**Migração legacy (`RubricaController` — F01):** dentro desta feature, atualizar `RubricaController` para usar `@RequiresPermission("distribuicao:default:rubrica:listar")` e `:visualizar`, removendo `@PreAuthorize("hasAnyAuthority('SCOPE_access','SCOPE_write')")`. Adicionar as duas entradas ao `permissions.yaml`.
+
+### Permissionamento e Auditoria (cross-cutting)
+
+#### Permissionamento — `authz-spring-boot-starter`
+
+**Dependências (parent pom + distribuicao-api/pom.xml):**
+
+```xml
+<!-- Já presente: audit-sdk -->
+<dependency>
+    <groupId>br.org.ecad.audit</groupId>
+    <artifactId>audit-sdk-spring-boot-starter</artifactId>
+    <version>${audit-sdk.version}</version>
+</dependency>
+<!-- ADICIONAR: authz-sdk -->
+<dependency>
+    <groupId>br.org.ecad.authz</groupId>
+    <artifactId>authz-spring-boot-starter</artifactId>
+    <version>${authz-sdk.version}</version>
+</dependency>
+```
+
+**Catálogo (`services/distribuicao-api/distribuicao-api/src/main/resources/permissions.yaml`):**
+
+Conteúdo conforme PRD §Permissionamento (7 keys da F02 + 2 keys legacy da F01 — `rubrica:listar`/`visualizar`). Carregado pelo starter na inicialização e enviado via `POST /permission-catalog/register` para o serviço `ecad-authz`.
+
+**Configuração (application.yml):**
+
+```yaml
+ecad:
+  authz:
+    base-url: ${ECAD_AUTHZ_BASE_URL:http://localhost:8081}
+    catalog:
+      domain: distribuicao
+      register-on-startup: ${ECAD_AUTHZ_REGISTER_ON_STARTUP:true}
+    cache:
+      local:
+        ttl-seconds: 60
+      remote:
+        enabled: ${ECAD_AUTHZ_REMOTE_CACHE:true}
+        ttl-seconds: 300
+```
+
+**Resolução:** o starter intercepta o JWT (`sub` + `sid`), consulta `AuthzDecisionClient` (cache local → cache Redis → HTTP `ecad-authz`). 401 sem JWT; 403 sem permissão; 503 se o serviço authz estiver down.
+
+#### Auditoria — `audit-sdk-spring-boot-starter`
+
+Tabela `distribuicao.audit_outbox` já provisionada por `V4__create_audit_outbox.sql` (schema padrão do starter). Relay `RabbitAuditOutboxRelay` (do starter) publica para exchange `audit.events.exchange.v1` (routing key `audit.event.v1`).
+
+**Componentes a criar:**
+
+1. `application/audit/AuditContextProvider.java` — portar de `arrecadacao-application/audit/AuditContextProvider.java`. Resolve o `AuditContext` a partir do JWT + headers HTTP do request atual (userId, roles, ip, userAgent, traceId, requestId, screenId, etc.) + autor passado pelo handler.
+2. `application/audit/ProcessoAuditEventFactory.java` — produz `AuditEvent` para a entidade `ProcessoDistribuicao`. Define o enum:
+
+```java
+public enum ProcessoAuditOperation {
+    CREATE("PROCESSO_DISTRIBUICAO_CREATE", "Criar processo"),
+    CALCULATE("PROCESSO_DISTRIBUICAO_CALCULATE", "Calcular processo"),
+    APPROVE("PROCESSO_DISTRIBUICAO_APPROVE", "Aprovar processo"),
+    FINALIZE("PROCESSO_DISTRIBUICAO_FINALIZE", "Finalizar processo"),
+    CANCEL("PROCESSO_DISTRIBUICAO_CANCEL", "Cancelar processo");
+    // actionCode + label para userAction
+}
+```
+
+Métodos:
+- `userAction(ProcessoDistribuicao processo, AuditContext ctx, ProcessoAuditOperation op)` → `AuditEvent` com `eventType=USER_ACTION`, `userAction.actionCode=op.code()`, `source.entityType="ProcessoDistribuicao"`, `source.entityId=processo.getId()`.
+- `dataChange(ProcessoAuditChange change, AuditContext ctx)` → `AuditEvent` com `eventType=DATA_CHANGE`, `data.before/after` snapshot, `data.dataAction` derivado da operation.
+
+**Padrão obrigatório nos handlers de comando** (ver `CriarUsuarioMusicaCommandHandler:30-78` como referência):
+
+```java
+@Component
+public class CriarProcessoCommandHandler implements CommandHandler<CriarProcessoCommand, ProcessoResponse> {
+
+    private final ProcessoRepository processoRepository;
+    private final SnapshotRolRepository snapshotRolRepository;
+    private final SnapshotVerbaRepository snapshotVerbaRepository;
+    private final OutboxEventWriter outboxEventWriter;
+    private final AuditClient auditClient;
+    private final AuditContextProvider auditContextProvider;
+    private final ProcessoAuditEventFactory auditEventFactory;
+
+    @Override
+    @Transactional
+    public ProcessoResponse handle(CriarProcessoCommand cmd) {
+        // 1. Validar pré-requisitos (Rol + Verba + sem duplicata)
+        SnapshotRol rol = snapshotRolRepository.findAtivo(cmd.rubricaSigla(), cmd.periodo())
+            .orElseThrow(() -> new PreRequisitosException("Rol fechado ausente..."));
+        SnapshotVerba verba = snapshotVerbaRepository.findByRubricaAndPeriodo(cmd.rubricaSigla(), cmd.periodo())
+            .orElseThrow(() -> new PreRequisitosException("Verba disponível ausente..."));
+        if (processoRepository.existsAtivo(cmd.rubricaSigla(), cmd.periodo())) {
+            throw new ConflictException("Já existe processo ativo...");
+        }
+
+        // 2. Criar
+        ProcessoDistribuicao processo = ProcessoDistribuicao.criar(
+            cmd.rubricaSigla(), cmd.periodo(), verba.getVerbaLiquida(),
+            cmd.analistaResponsavel(), rol.getId(), verba.getId());
+        processo = processoRepository.save(processo);
+
+        // 3. Outbox de domínio (RabbitMQ exchange distribuicao.events)
+        outboxEventWriter.addEvent(
+            "distribuicao.processo.criado", processo.getId().toString(),
+            buildProcessoCriadoPayload(processo));
+
+        // 4. AUDITORIA — userAction + dataChange (mesma transação)
+        var auditCtx = auditContextProvider.current(cmd.analistaResponsavel());
+        auditClient.publish(auditEventFactory.userAction(processo, auditCtx, ProcessoAuditOperation.CREATE));
+        auditClient.publish(auditEventFactory.dataChange(
+            new ProcessoAuditChange(processo, ProcessoAuditOperation.CREATE, null), auditCtx));
+
+        return ProcessoResponse.from(processo);
+    }
+}
+```
+
+**Aplicar o mesmo padrão** nos handlers `Aprovar`, `Calcular` (stub), `Finalizar` e `Cancelar` — sempre 1 `userAction` + 1 `dataChange` com `before` (estado antes) e `after` (estado depois) do `ProcessoDistribuicao`.
+
+**Handlers que NÃO auditam:** `RolEventHandler`, `VerbaEventHandler` (consumers de evento — não são ação do usuário). `ListarProcessosQueryHandler`, `BuscarProcessoPorIdQueryHandler`, `ListarDisponiveisQueryHandler` (leituras — escopo desta feature é auditar apenas escritas).
+
+#### Testes (extensão obrigatória)
+
+- `AuthzPermissionEnforcementTest` (NOVO, em `distribuicao-tests`) — espelhar `arrecadacao-tests/.../authz/AuthzPermissionEnforcementTest.java`:
+  - 401 sem JWT em cada endpoint
+  - 403 quando `AuthzDecisionClient.checkDecision(<key>, ...)` retorna `false` (mock)
+  - 200/201 quando retorna `true`
+- `ProcessoControllerIntegrationTest` — adicionar assertions: após cada cenário de fluxo, verificar que `distribuicao.audit_outbox` contém os registros esperados (`eventType`, `actionCode`, `entityType`, `entityId`).
+- `TestSecurityConfig` (NOVO em distribuicao-tests, espelha o do arrecadacao) — desabilita validação real do JWT mas mantém o aspect do starter ativo.
+
+---
 
 ### CQRS — Commands e Queries
 
 **Commands (novos):**
-- `CriarProcessoCommand(rubricaSigla, periodo, analistaResponsavel)` → handler valida pré-requisitos, cria processo, insere outbox event
-- `AprovarProcessoCommand(processoId)` → handler transiciona estado, insere outbox
-- `FinalizarProcessoCommand(processoId)` → handler transiciona, insere 2 outbox events (processo.finalizado + rol.processado)
-- `CancelarProcessoCommand(processoId, justificativa)` → handler transiciona, insere outbox
+- `CriarProcessoCommand(rubricaSigla, periodo, analistaResponsavel)` → handler valida pré-requisitos, cria processo, insere outbox event, **publica auditoria CREATE**
+- `AprovarProcessoCommand(processoId, autor)` → handler transiciona estado, insere outbox, **publica auditoria APPROVE**
+- `FinalizarProcessoCommand(processoId, autor)` → handler transiciona, insere 2 outbox events (processo.finalizado + rol.processado), **publica auditoria FINALIZE**
+- `CancelarProcessoCommand(processoId, justificativa, autor)` → handler transiciona, insere outbox, **publica auditoria CANCEL** (a justificativa entra no `dataChange.after`)
+- `CalcularProcessoCommand(processoId, autor)` → stub na F02 (transiciona CRIADO→CALCULADO sem cálculo real), **publica auditoria CALCULATE**
 
 **Queries (novas):**
 - `ListarProcessosQuery(rubrica?, periodo?, status?, page, size, sort)` → handler com JPA Specification
@@ -447,8 +629,12 @@ features/distribuicao/
 | `application.yml` | Modificar | Adicionar config de queues e outbox poll interval | Baixo |
 | Frontend `index.tsx` (router) | Modificar | Adicionar rotas de processos | Baixo |
 | Frontend `Sidebar.tsx` | Modificar | Adicionar sub-item "Processos" | Baixo |
-| Identificação (D02) | Indireto | Precisa publicar `identificacao.rol.fechado` para que snapshots funcionem. Ainda não implementado (F05 da Identificação, prd-ready). Para testes locais, simular eventos manualmente. | Médio |
-| Arrecadação (D03) | Indireto | Precisa publicar `arrecadacao.verba.disponivel`. Ainda não implementado (F05 da Arrecadação, prd-ready). Para testes locais, simular eventos manualmente. | Médio |
+| Identificação (D02) | Indireto | Precisa publicar `identificacao.rol.fechado` para que snapshots funcionem. Já implementado (F04/F05 de identificação `done` no vision). | Baixo |
+| Arrecadação (D03) | Indireto | Precisa publicar `arrecadacao.verba.disponivel`. Já implementado em `calculo-verba-liquida` (`done` no vision). | Baixo |
+| `ecad-authz` (serviço externo) | Direto | Registro do catálogo de permissions na inicialização (`POST /permission-catalog/register`) e checagem de decisões em runtime. Hard dependency: se down, requests retornam 503 (já é o comportamento de arrecadacao/identificacao). | Médio |
+| `audit-events` consumer (BI/Auditoria) | Indireto | Vai começar a receber eventos `audit.event.v1` da distribuicao. Não requer mudança no consumer — é genérico por `source.serviceName`. | Baixo |
+| Frontend `auditoria` feature | Indireto | Vai exibir eventos novos com `entityType=ProcessoDistribuicao` no `AuditTimelinePage`. Não requer mudança (renderização é genérica). Validar visualmente em QA. | Baixo |
+| Coexistência authz legacy/novo em distribuicao-api | Direto | F01 (RubricaController) usa `@PreAuthorize`. Decisão: migrar dentro do escopo desta feature (ADR 0002 proíbe coexistência). | Baixo |
 
 ---
 
@@ -471,10 +657,12 @@ features/distribuicao/
 
 | Componente | Cenários |
 |---|---|
-| `ProcessoControllerIntegrationTest` | Fluxo completo: criar → aprovar → finalizar; Criar com conflito (409); Calcular stub; Cancelar com justificativa; Filtros e paginação; Transição inválida (422) |
-| `RolEventListenerIntegrationTest` | CloudEvent → snapshot persistido; Cancelamento atualiza snapshot |
-| `VerbaEventListenerIntegrationTest` | CloudEvent → snapshot persistido; Atualização incremental |
+| `ProcessoControllerIntegrationTest` | Fluxo completo: criar → aprovar → finalizar; Criar com conflito (409); Calcular stub; Cancelar com justificativa; Filtros e paginação; Transição inválida (422). **Assertions extras**: cada cenário verifica que `distribuicao.audit_outbox` recebeu o(s) registro(s) esperado(s) (`userAction` + `dataChange`) |
+| `RolEventListenerIntegrationTest` | CloudEvent → snapshot persistido; Cancelamento atualiza snapshot. **NÃO** gera registros em `audit_outbox` (consumer de evento ≠ ação do usuário) |
+| `VerbaEventListenerIntegrationTest` | CloudEvent → snapshot persistido; Atualização incremental. **NÃO** gera registros em `audit_outbox` |
 | `OutboxPublisherIntegrationTest` | Evento na tabela → publicado no RabbitMQ |
+| `AuthzPermissionEnforcementTest` | Para cada endpoint de `ProcessoController` (e da nova versão de `RubricaController`): 401 sem JWT; 403 quando `AuthzDecisionClient.checkDecision(<key>, ...)` mockado retorna false; 200/201 quando true |
+| `ProcessoAuditOutboxIntegrationTest` | Para cada operation (CREATE/CALCULATE/APPROVE/FINALIZE/CANCEL): após chamar o handler, `audit_outbox` contém exatamente 1 evento `USER_ACTION` com `actionCode` esperado + 1 evento `DATA_CHANGE` com `before/after` corretos |
 
 ---
 
@@ -483,30 +671,36 @@ features/distribuicao/
 ### Ordem de Construção
 
 1. **Migration V2** — tabelas snapshots_rol, snapshots_verba, processos, outbox_events
-2. **Domain: entidades** — ProcessoDistribuicao (com estado), SnapshotRol, SnapshotVerba, OutboxEvent, StatusProcesso enum, exceções
-3. **Domain: interfaces** — ProcessoRepository, SnapshotRolRepository, SnapshotVerbaRepository, OutboxEventRepository, OutboxEventWriter
-4. **Infra: repositórios JPA** — adapters para todas as interfaces
-5. **Infra: Outbox Pattern** — OutboxEventWriterImpl, RabbitMqPublisher, OutboxPublisherWorker (portado de arrecadação)
-6. **Infra: event consumers** — RolEventListener/Handler, VerbaEventListener/Handler
-7. **Config: RabbitMQ** — exchange, queues, bindings adicionais
-8. **Application: commands** — CriarProcesso, Aprovar, Finalizar, Cancelar (handlers com outbox)
-9. **Application: queries** — ListarProcessos, BuscarPorId, ListarDisponiveis (com DTOs)
-10. **API: controller** — ProcessoController com todos os endpoints
-11. **API: exception handler** — TransicaoInvalidaException, ConflictException
-12. **Testes unitários** — entity + handlers
-13. **Testes integração** — controller + event listeners + outbox
-14. **Frontend: tipos + API** — processo.ts, processosApi.ts
-15. **Frontend: hooks** — useProcessos, useProcesso, useDisponiveis, useProcessoMutations
-16. **Frontend: componentes + páginas** — tabela, detalhes, criação, modais
-17. **Frontend: roteamento** — rotas + sidebar
+2. **Permissionamento (cross-cutting)** — adicionar `authz-spring-boot-starter` ao pom; criar `permissions.yaml`; criar `docs/authz/catalog/distribuicao.md`; **migrar `RubricaController` legacy de `@PreAuthorize` para `@RequiresPermission`**; bloco `ecad.authz` no application.yml
+3. **Auditoria (cross-cutting)** — criar `AuditContextProvider`, `ProcessoAuditEventFactory` (com enum `ProcessoAuditOperation`), `ProcessoAuditChange`; bloco `audit` no application.yml
+4. **Domain: entidades** — ProcessoDistribuicao (com estado), SnapshotRol, SnapshotVerba, OutboxEvent, StatusProcesso enum, exceções
+5. **Domain: interfaces** — ProcessoRepository, SnapshotRolRepository, SnapshotVerbaRepository, OutboxEventRepository, OutboxEventWriter
+6. **Infra: repositórios JPA** — adapters para todas as interfaces
+7. **Infra: Outbox Pattern (domínio)** — OutboxEventWriterImpl, RabbitMqPublisher, OutboxPublisherWorker (portado de arrecadação). **NOTA:** auditoria usa relay separado do starter — nada a criar
+8. **Infra: event consumers** — RolEventListener/Handler, VerbaEventListener/Handler (sem auditoria)
+9. **Config: RabbitMQ** — exchange, queues, bindings adicionais
+10. **Application: commands** — CriarProcesso, Aprovar, Finalizar, Cancelar, Calcular (stub) — **todos com injeção de `AuditClient` + `ProcessoAuditEventFactory` + `AuditContextProvider`**, publicando `userAction` + `dataChange` na mesma transação
+11. **Application: queries** — ListarProcessos, BuscarPorId, ListarDisponiveis (com DTOs) — **sem auditoria** (leituras)
+12. **API: controller** — ProcessoController com todos os endpoints, **cada método com `@RequiresPermission("distribuicao:default:processo:<acao>")`**
+13. **API: exception handler** — TransicaoInvalidaException, ConflictException
+14. **Testes unitários** — entity + handlers (com mocks de `AuditClient` verificando `publish()`)
+15. **Testes integração** — controller + event listeners + outbox + **`AuthzPermissionEnforcementTest` + `ProcessoAuditOutboxIntegrationTest`** + `TestSecurityConfig`
+16. **Frontend: tipos + API** — processo.ts, processosApi.ts
+17. **Frontend: hooks** — useProcessos, useProcesso, useDisponiveis, useProcessoMutations
+18. **Frontend: componentes + páginas** — tabela, detalhes, criação, modais; **`ProcessoActions` gate por permission**
+19. **Frontend: roteamento** — rotas + sidebar (item escondido se sem `processo:listar`)
 
 ### Dependências Técnicas
 
 | Dependência | Status | Bloqueante? |
 |---|---|---|
 | F01 concluída (distribuicao-api existente) | Completa | Sim — resolvida |
-| Eventos de Identificação (`rol.fechado`) | Não implementado | Não — simular via RabbitMQ Management UI para testes |
-| Eventos de Arrecadação (`verba.disponivel`) | Não implementado | Não — simular via RabbitMQ Management UI para testes |
+| Eventos de Identificação (`rol.fechado`) | **Implementado** (D02 done no vision) | Não |
+| Eventos de Arrecadação (`verba.disponivel`) | **Implementado** (`calculo-verba-liquida` done) | Não |
+| `authz-spring-boot-starter` (artifact) | Disponível (já consumido por arrecadacao/identificacao) | Sim — adicionar ao pom |
+| `audit-sdk-spring-boot-starter` (artifact) | **Já no pom da distribuicao-api** | Sim — resolvida |
+| `distribuicao.audit_outbox` (tabela) | **Já provisionada** por V4 | Sim — resolvida |
+| Serviço `ecad-authz` em ambiente local | Sobe junto com docker-compose.dev.yml | Sim — pré-existente |
 
 ---
 
@@ -544,14 +738,21 @@ features/distribuicao/
 | EXCLUDE constraint para unicidade | PostgreSQL nativo; garante atomicamente 1 processo não-cancelado por rubrica+período | Validação no handler — race condition possível |
 | `calcular` como stub na F02 | Define interface e contrato; F03 completa a lógica | Não definir endpoint — frontend não pode ser construído até F03 |
 | Payload do snapshot Rol armazenado como JSON (TEXT) | F03 precisará do detalhe das execuções; evita segundo evento/consulta | Armazenar apenas metadados — F03 precisaria de nova integração |
+| Permission codes inline (sem `PermissionCodes.java`) | Consistência com `arrecadacao-api`/`identificacao-api`; o catálogo canônico é o `permissions.yaml` | Constantes em classe Java — duplica a verdade entre YAML e código |
+| Migrar `RubricaController` nesta feature | ADR 0002 proíbe coexistência de padrões; é trabalho pequeno e a permission `rubrica:listar/visualizar` é trivial | Diferir a migração — viola o ADR e cria dívida que tende a ficar |
+| Auditoria manual em cada handler (sem `@Audited`) | Padrão estabelecido em arrecadacao-api; explícito é melhor que mágico para fluxos de estado | Aspect/annotation — perde controle sobre `before/after` |
+| 1 `userAction` + 1 `dataChange` por operação | Permite UI de auditoria diferenciar "o que o usuário fez" de "o que mudou" (telas distintas no `frontend/src/features/auditoria`) | Apenas `userAction` — perde diff de estado |
 
 ### Riscos Conhecidos
 
 | Risco | Mitigação |
 |---|---|
-| Eventos de Identificação/Arrecadação ainda não publicados | Simular via RabbitMQ Management UI; seed script para testes manuais |
 | EXCLUDE constraint pode ter overhead em volume alto | Aceitável para PoC; volume esperado é baixo (< 100 processos) |
 | Outbox worker competindo com transações longas de cálculo (F03) | Worker usa batch pequeno (100) e timeout curto; cálculo será em transação separada |
+| `ecad-authz` indisponível derruba a API (503) | Aceitável — é o comportamento padrão de arrecadacao/identificacao; cache local + Redis amortiza intermitências curtas |
+| Versão do `authz-sdk` desalinhada com arrecadacao-api | Centralizar `${authz-sdk.version}` no parent pom de distribuicao; alinhar com a versão definida em arrecadacao-api parent pom |
+| `AuditClient.publish()` lançar exceção quebra o comando | Starter encapsula falhas de I/O — `publish()` apenas persiste em `audit_outbox` (local, transacional); falha de relay é assíncrona e não afeta a transação do comando |
+| Faltar permission em produção (catálogo desincronizado) | `register-on-startup=true` garante registro automático a cada deploy; documentar no `docs/authz/catalog/distribuicao.md` |
 
 ---
 
@@ -604,6 +805,9 @@ features/distribuicao/
 | `.../application/dto/CriarProcessoRequest.java` | DTO | Record (rubricaSigla, periodo) |
 | `.../application/dto/CancelarProcessoRequest.java` | DTO | Record (justificativa) |
 | `.../application/dto/RubricaResumoDto.java` | DTO | Record (sigla, nome) |
+| `.../application/audit/AuditContextProvider.java` | Component | Portado de `arrecadacao-application/audit/AuditContextProvider.java` — resolve `AuditContext` a partir do JWT/request + autor |
+| `.../application/audit/ProcessoAuditEventFactory.java` | Component | Factory de `AuditEvent` (userAction + dataChange) para `ProcessoDistribuicao` com enum `ProcessoAuditOperation` |
+| `.../application/audit/ProcessoAuditChange.java` | Record | DTO interno (processo, operation, beforeSnapshot) consumido pela factory |
 
 > **Nota:** caminhos relativos a `services/distribuicao-api/distribuicao-application/src/main/java/br/com/ecad/distribuicao/`
 
@@ -629,7 +833,7 @@ features/distribuicao/
 | `.../infra/events/VerbaEventListener.java` | Listener | @RabbitListener para queue distribuicao.verba |
 | `.../infra/events/VerbaEventHandler.java` | Handler | Upsert snapshot Verba |
 | `.../infra/events/VerbaEventPayload.java` | DTO | Record para payload do CloudEvent |
-| `...distribuicao-infra/src/main/resources/db/migration/V2__create_snapshots_processos_outbox.sql` | Migration | 4 tabelas + índices + constraint |
+| `...distribuicao-infra/src/main/resources/db/migration/V2__create_snapshots_processos_outbox.sql` | Migration | 3 tabelas (snapshots_rol, snapshots_verba, processos) + outbox_events + índices + constraint. **Nota:** `distribuicao.audit_outbox` já existe via `V4__create_audit_outbox.sql` — NÃO recriar |
 
 > **Nota:** caminhos relativos a `services/distribuicao-api/distribuicao-infra/src/main/java/br/com/ecad/distribuicao/`
 
@@ -637,7 +841,9 @@ features/distribuicao/
 
 | Caminho | Tipo | Descrição |
 |---|---|---|
-| `.../api/controllers/ProcessoController.java` | Controller | 9 endpoints do contract |
+| `.../api/controllers/ProcessoController.java` | Controller | 9 endpoints do contract, todos com `@RequiresPermission("distribuicao:default:processo:<acao>")` |
+| `services/distribuicao-api/distribuicao-api/src/main/resources/permissions.yaml` | Catálogo | 7 keys da F02 + 2 keys legacy (`rubrica:listar`/`visualizar`) consumidas pelo `authz-spring-boot-starter` no startup |
+| `docs/authz/catalog/distribuicao.md` | Doc | Catálogo documentado (espelha `arrecadacao.md` / `identificacao.md`) |
 
 > **Nota:** caminho relativo a `services/distribuicao-api/distribuicao-api/src/main/java/br/com/ecad/distribuicao/`
 
@@ -653,6 +859,9 @@ features/distribuicao/
 | `.../tests/integration/ProcessoControllerIntegrationTest.java` | Teste | Fluxo completo + erros |
 | `.../tests/integration/SnapshotEventListenerIntegrationTest.java` | Teste | CloudEvent → PostgreSQL |
 | `.../tests/integration/OutboxPublisherIntegrationTest.java` | Teste | Outbox → RabbitMQ |
+| `.../tests/authz/AuthzPermissionEnforcementTest.java` | Teste | Espelha `arrecadacao-tests/.../authz/AuthzPermissionEnforcementTest.java`: 401 sem JWT, 403 quando `AuthzDecisionClient.checkDecision()` retorna false, 200/201 quando true, para cada endpoint de `ProcessoController` |
+| `.../tests/audit/ProcessoAuditOutboxIntegrationTest.java` | Teste | Após cada cenário do fluxo (criar/calcular/aprovar/finalizar/cancelar), verificar registros em `distribuicao.audit_outbox` (eventType, actionCode, entityType, entityId, before/after) |
+| `.../tests/config/TestSecurityConfig.java` | Config | Desabilita validação real do JWT em testes, mantém aspect do `authz-spring-boot-starter` ativo (mock do `AuthzDecisionClient`) |
 
 > **Nota:** caminhos relativos a `services/distribuicao-api/distribuicao-tests/src/test/java/br/com/ecad/distribuicao/`
 
@@ -683,9 +892,12 @@ features/distribuicao/
 |---|---|
 | `.../api/config/RabbitMqConfig.java` | Adicionar exchange distribuicao.events, queues rol/verba, bindings |
 | `.../api/config/GlobalExceptionHandler.java` | Adicionar handlers para TransicaoInvalidaException (422), ConflictException (409), PreRequisitosException (422) |
-| `.../api/src/main/resources/application.yml` | Adicionar queues distribuicao.rol e distribuicao.verba, outbox poll interval, exchange name |
+| `.../api/src/main/resources/application.yml` | Adicionar queues distribuicao.rol e distribuicao.verba, outbox poll interval, exchange name, **bloco `ecad.authz` (base-url, catalog, cache) e `audit` (mode=OUTBOX_RABBITMQ, relay-delay-ms)** |
+| `services/distribuicao-api/pom.xml` + `services/distribuicao-api/distribuicao-api/pom.xml` | **Adicionar dependência `br.org.ecad.authz:authz-spring-boot-starter` + propriedade `authz-sdk.version`** (alinhar versão com a usada em arrecadacao-api) |
+| `services/distribuicao-api/distribuicao-api/src/main/java/.../api/controllers/RubricaController.java` | **Migração legacy:** substituir `@PreAuthorize("hasAnyAuthority('SCOPE_access','SCOPE_write')")` por `@RequiresPermission("distribuicao:default:rubrica:listar"/`:visualizar`)`; remover imports do `org.springframework.security.access.prepost.PreAuthorize` |
 | `frontend/src/features/distribuicao/index.tsx` | Adicionar rotas de processos (listagem, detalhes, criação) |
-| `frontend/src/shared/components/layout/sidebar/Sidebar.tsx` | Adicionar sub-item "Processos" em Distribuição |
+| `frontend/src/shared/components/layout/sidebar/Sidebar.tsx` | Adicionar sub-item "Processos" em Distribuição. **Esconder via permissions do BFF (ADR 0004)** se usuário não tem `distribuicao:default:processo:listar` |
+| `frontend/src/features/distribuicao/processos/components/ProcessoActions.tsx` | **(novo)** — esconder cada botão conforme permission do usuário (`...criar/calcular/aprovar/finalizar/cancelar`) consumida do BFF |
 
 ### Arquivos de Referência (não alterar)
 
@@ -701,6 +913,17 @@ features/distribuicao/
 | `tasks/distribuicao/prd-gestao-processos/api-contract.yaml` | Contrato de API |
 | `frontend/src/features/distribuicao/rubricas/` | Padrão de feature module frontend |
 | `frontend/src/features/arrecadacao/pagamentos/` | Referência de listagem com paginação e filtros |
+| `services/arrecadacao-api/arrecadacao-application/src/main/java/.../audit/AuditContextProvider.java` | **Template a portar** — resolução do AuditContext a partir do JWT/request |
+| `services/arrecadacao-api/arrecadacao-application/src/main/java/.../audit/PagamentoAuditEventFactory.java` | **Template** para `ProcessoAuditEventFactory` — pattern de factory por agregado |
+| `services/arrecadacao-api/arrecadacao-application/src/main/java/.../commands/handlers/CriarUsuarioMusicaCommandHandler.java` | **Template canônico** de handler com auditoria (linhas 30-78) |
+| `services/arrecadacao-api/arrecadacao-tests/src/test/java/.../authz/AuthzPermissionEnforcementTest.java` | **Template** para os testes 401/403/200 |
+| `services/arrecadacao-api/arrecadacao-tests/src/test/java/.../config/TestSecurityConfig.java` | **Template** para o TestSecurityConfig de distribuicao-tests |
+| `services/arrecadacao-api/arrecadacao-api/src/main/resources/permissions.yaml` | **Template** para o catálogo da distribuicao |
+| `docs/authz/catalog/arrecadacao.md` / `identificacao.md` | **Template** para o catálogo documentado |
+| `docs/adr/0002-permission-naming-convention.md` | ADR de naming (4 segmentos, obrigatório) |
+| `docs/adr/0003-backend-authoritative-authorization.md` | ADR de backend autoritativo |
+| `docs/adr/0004-bff-permissions-for-ux.md` | ADR do gate de UI via BFF |
+| `docs/migracao-authz/relatorio-final.md` | Contexto da migração já encerrada |
 
 ---
 

@@ -59,14 +59,14 @@ Implementar todos os componentes visuais e páginas do módulo processos: tabela
 - [ ] 8.2 Criar ProcessosFilters (Select rubrica via useRubricas, input período, multi-select status, limpar)
 - [ ] 8.3 Criar ProcessosTable (colunas: rubrica, período, status badge, verba, analista, data; linhas clicáveis)
 - [ ] 8.4 Criar ProcessosPage (PageHeader + botão "Novo" + Filters + Table + Pagination + estados loading/error/empty)
-- [ ] 8.5 Criar ProcessoActions (botões condicionais por estado: Calcular, Aprovar, Finalizar, Cancelar)
+- [ ] 8.5 Criar ProcessoActions (botões condicionais por estado: Calcular, Aprovar, Finalizar, Cancelar). **Adicionalmente, esconder cada botão se o usuário não tiver a permission correspondente** (`distribuicao:default:processo:calcular/aprovar/finalizar/cancelar`) lida do BFF (ADR 0004) — usar o hook/contexto de permissions já existente no frontend (ver como `arrecadacao/pagamentos/components` faz com o botão Estornar)
 - [ ] 8.6 Criar CancelarModal (textarea justificativa min 10 chars + contador + botão danger)
 - [ ] 8.7 Criar FinalizarModal (texto irreversível + botão danger "Confirmar Finalização")
 - [ ] 8.8 Criar ProcessoDetailPage (dados + timeline transições + ProcessoActions + modais)
 - [ ] 8.9 Criar DisponibilidadeList (cards/lista clicáveis com rubrica, período, verba, execuções)
 - [ ] 8.10 Criar CriarProcessoPage (PageHeader + DisponibilidadeList + empty state + redirect após criar)
 - [ ] 8.11 Adicionar rotas no distribuicao/index.tsx (processos, processos/novo, processos/:id)
-- [ ] 8.12 Adicionar sub-item "Processos" no Sidebar
+- [ ] 8.12 Adicionar sub-item "Processos" no Sidebar **escondido se o usuário não tem `distribuicao:default:processo:listar`** (ADR 0004) — seguir o padrão de gating do sidebar já em uso em outros módulos
 - [ ] 8.13 Verificar: `cd frontend && npm run build`
 
 ## Sequenciamento
@@ -94,11 +94,19 @@ const handleFilterChange = (partial: Partial<ProcessoFiltros>) => {
 };
 ```
 
-**ProcessoActions — botões condicionais:**
-- CRIADO: Calcular (primary) + Cancelar (danger)
-- CALCULADO: Aprovar (primary) + Cancelar (danger)
-- APROVADO: Finalizar (primary) + Cancelar (danger)
+**ProcessoActions — botões condicionais (estado × permission):**
+- CRIADO: Calcular (primary, gated por `processo:calcular`) + Cancelar (danger, gated por `processo:cancelar`)
+- CALCULADO: Aprovar (primary, gated por `processo:aprovar`) + Cancelar (danger, gated por `processo:cancelar`)
+- APROVADO: Finalizar (primary, gated por `processo:finalizar`) + Cancelar (danger, gated por `processo:cancelar`)
 - FINALIZADO/CANCELADO: nenhum botão
+
+```typescript
+const { hasPermission } = usePermissions(); // hook/contexto existente
+// ...
+{processo.status === 'CRIADO' && hasPermission('distribuicao:default:processo:calcular') && (
+  <Button variant="primary" onClick={...}>Calcular</Button>
+)}
+```
 
 **CancelarModal:**
 - Textarea com minLength 10, maxLength 500
@@ -142,4 +150,5 @@ const handleSelect = async (item: Disponibilidade) => {
 - [ ] Filtros resetam página ao alterar
 - [ ] CancelarModal valida justificativa min 10 chars
 - [ ] FinalizarModal exibe aviso de irreversibilidade
-- [ ] Sidebar mostra "Processos" em Distribuição
+- [ ] Sidebar mostra "Processos" em Distribuição **apenas para usuários com `distribuicao:default:processo:listar`**
+- [ ] `ProcessoActions` esconde cada botão de transição conforme a permission correspondente do usuário (validado manualmente em ambiente local com 2 usuários — analista vs. consultor)
