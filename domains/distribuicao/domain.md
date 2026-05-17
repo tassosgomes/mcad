@@ -6,14 +6,14 @@
 **Responsável:** a definir
 **Status:** `in-progress`
 **Fase do Roadmap:** Fase 3 — Distribuição
-**Última revisão:** 2026-05-16
+**Última revisão:** 2026-05-17
 
 ---
 
 ## 1. Propósito do Domínio (Domain Purpose)
 
 ### Responsabilidade Principal
-Calcular e atribuir créditos aos titulares de direitos autorais e conexos, cruzando a verba líquida da Arrecadação com o Rol de Execuções da Identificação para uma rubrica e período, aplicando o split 66,67% autoral / 33,33% conexo. A codebase já implementa snapshots, processos e cálculo básico de créditos; retenções, liberação de retidos, ajustes por estorno e demonstrativos ainda estão planejados.
+Calcular e atribuir créditos aos titulares de direitos autorais e conexos, cruzando a verba líquida da Arrecadação com o Rol de Execuções da Identificação para uma rubrica e período, aplicando o split 66,67% autoral / 33,33% conexo. A codebase já implementa snapshots, processos, cálculo de créditos, retenção por pendências cadastrais e liberação automática de créditos retidos em processos futuros; ajustes por estorno e demonstrativos ainda estão planejados.
 
 ### Problema que Resolve
 Sem um processo estruturado de distribuição, não há como transformar a verba arrecadada e as execuções identificadas em valores devidos a cada titular. A Distribuição é o domínio orquestrador que consome os três contextos anteriores (Cadastro, Identificação e Arrecadação) para executar o cálculo central do negócio — o rateio justo e rastreável de créditos conforme o Regulamento de Distribuição.
@@ -48,8 +48,9 @@ Sem um processo estruturado de distribuição, não há como transformar a verba
 | Entidade | Descrição | Atributos Principais | Relacionamentos |
 |---|---|---|---|
 | Processo de Distribuição | Operação de cálculo que cruza verba líquida com Rol de Execuções para uma rubrica e período específicos. Iniciado manualmente pelo Analista. Transita por estados até a finalização. | rubrica, período (YYYY-MM), status (CRIADO/CALCULADO/APROVADO/FINALIZADO/CANCELADO), verba líquida utilizada, total de execuções processadas, data de criação, analista responsável | possui: Créditos; referencia: Rol (Identificação), Verba (Arrecadação) |
-| Crédito | Valor calculado e atribuído a um titular específico dentro de um processo de distribuição. Detalhado por obra/fonograma, categoria e percentual aplicado. | titular_id, obra_id, fonograma_id (opcional), categoria (AUTORAL/CONEXO), subcategoria conexa (INTERPRETE/PRODUTOR/MUSICO), percentual aplicado, valor bruto da obra, valor do crédito, status (`CALCULADO` na implementação atual) | pertence a: Processo de Distribuição; referencia: Titular, Obra, Fonograma (Cadastro) |
-| Crédito Retido | Crédito bloqueado por pendência cadastral. Permanece retido até que a pendência seja resolvida no Cadastro e um novo processo de distribuição libere-o. | motivo (OBRA_PENDENTE/OBRA_BLOQUEADA/TITULAR_SEM_ASSOCIACAO), data de retenção, data de liberação (quando aplicável) | planejado; ainda não implementado |
+| Crédito | Valor calculado e atribuído a um titular específico dentro de um processo de distribuição. Detalhado por obra/fonograma, categoria e percentual aplicado. | titular_id, obra_id, fonograma_id (opcional), categoria (AUTORAL/CONEXO), subcategoria conexa (INTERPRETE/PRODUTOR/MUSICO), percentual aplicado, valor bruto da obra, valor do crédito, status (CALCULADO/RETIDO/LIBERADO), motivo de retenção, data de retenção, data/processo de liberação | pertence a: Processo de Distribuição; referencia: Titular, Obra, Fonograma (Cadastro) |
+| Crédito Retido | Crédito bloqueado por pendência cadastral. Permanece retido até que a pendência seja resolvida no Cadastro e um novo processo de distribuição libere-o. | motivo (OBRA_PENDENTE/OBRA_BLOQUEADA/TITULAR_SEM_ASSOCIACAO), data de retenção, última reavaliação, data de liberação (quando aplicável) | especialização de: Crédito |
+| Liberação de Crédito Retido | Registro do ciclo de liberação de um crédito retido em processo futuro. A previsão é criada no cálculo; a efetivação acontece apenas na finalização; cancelamento preserva o crédito original retido. | crédito retido, processo de origem, processo de liberação, status (PREVISTA/EFETIVADA/CANCELADA), valor liberado, motivo original, avaliado_em, efetivado_em, cancelado_em | vincula: Crédito Retido e Processo de Distribuição |
 | Ajuste | Correção de créditos gerada por estorno de pagamento na Arrecadação após a distribuição já ter sido calculada. Aplicado no próximo processo de distribuição da mesma rubrica+período. | rubrica, período, valor do estorno, processo de origem, processo de aplicação | planejado; ainda não implementado |
 | Demonstrativo | Relatório consolidado por titular — equivalente a um "holerite" de direitos autorais. Detalha todos os créditos e débitos (ajustes) do titular em um processo, incluindo retidos recém-liberados. | titular_id, processo_id, créditos detalhados (obra, categoria, percentual, valor), retidos liberados, ajustes, valor total | planejado; ainda não implementado |
 | Rubrica (cópia local) | Cópia local da rubrica mantida pelo domínio Arrecadação. Sincronizada via eventos para evitar acoplamento HTTP runtime. | sigla, nome, exige classificação | sincronizada via: eventos `arrecadacao.rubrica.criada`/`atualizada` |
@@ -63,10 +64,10 @@ CANCELADO  CANCELADO  CANCELADO
 ```
 
 - **CRIADO** — Processo criado pelo Analista, aguardando execução do cálculo. Neste estado, o Analista seleciona a rubrica+período e o sistema valida a existência de Rol fechado e Verba disponível.
-- **CALCULADO** — Cálculo executado com sucesso. Créditos calculados são gerados; retenções ainda não estão implementadas.
+- **CALCULADO** — Cálculo executado com sucesso. Créditos calculados e retidos do período são gerados; liberações de créditos retidos elegíveis ficam como `PREVISTA`.
 - **APROVADO** — Analista revisou e aprovou os créditos calculados. Demonstrativos permanecem planejados.
-- **FINALIZADO** — Processo encerrado. Publica `distribuicao.rol.processado` para bloquear cancelamento do Rol na Identificação. Créditos calculados são definitivos.
-- **CANCELADO** — Processo invalidado antes da finalização. Créditos descartados.
+- **FINALIZADO** — Processo encerrado. Publica `distribuicao.rol.processado` para bloquear cancelamento do Rol na Identificação. Créditos calculados são definitivos e liberações previstas viram `EFETIVADA`.
+- **CANCELADO** — Processo invalidado antes da finalização. Créditos do processo são descartados e liberações previstas viram `CANCELADA`, preservando créditos históricos como `RETIDO`.
 
 ---
 
@@ -77,8 +78,8 @@ CANCELADO  CANCELADO  CANCELADO
 | F01 | Sincronização de Rubricas | Consumir eventos `arrecadacao.rubrica.criada`/`atualizada` e manter cópia local das rubricas. Event-driven ACL sem acoplamento HTTP runtime. | Must Have | `done` | `tasks/distribuicao/prd-sync-rubricas/prd.md` |
 | F02 | Gestão de Processos de Distribuição | Criar, listar e acompanhar processos de distribuição por rubrica+período. Máquina de estados (CRIADO → CALCULADO → APROVADO → FINALIZADO / CANCELADO). Validação de pré-requisitos (Rol fechado + Verba disponível). | Must Have | `done` | `tasks/distribuicao/prd-gestao-processos/prd.md` |
 | F03 | Cálculo de Créditos | Core do domínio. Cruza verba líquida com Rol ponderado (quantidade × peso), aplica split 66,67% autoral / 33,33% conexo, distribui dentro de cada parte usando percentuais do Cadastro. Processo idempotente. | Must Have | `done` | Implementado no código; sem PRD dedicado |
-| F04 | Retenção de Créditos | Identificar e reter créditos quando a obra está PENDENTE/BLOQUEADA ou o titular não tem associação vinculada. Registrar motivo da retenção. | Must Have | `planned` | — |
-| F05 | Liberação de Créditos Retidos | Na execução de um novo processo, verificar se pendências de créditos retidos anteriores foram resolvidas no Cadastro e liberar os créditos correspondentes. Informação visível no demonstrativo. | Must Have | `planned` | — |
+| F04 | Retenção de Créditos | Identificar e reter créditos quando a obra está PENDENTE/BLOQUEADA ou o titular não tem associação vinculada. Registrar motivo da retenção. | Must Have | `done` | `tasks/distribuicao/prd-retencao-creditos/prd.md` |
+| F05 | Liberação de Créditos Retidos | Na execução de um novo processo, verificar se pendências de créditos retidos anteriores foram resolvidas no Cadastro e liberar os créditos correspondentes. Informação visível no demonstrativo. | Must Have | `done` | `tasks/distribuicao/prd-liberacao-creditos-retidos/prd.md` |
 | F06 | Ajustes por Estorno | Consumir evento `arrecadacao.pagamento.estornado` e registrar ajuste a ser aplicado no próximo processo de distribuição da rubrica+período afetado. | Must Have | `planned` | — |
 | F07 | Demonstrativo de Créditos | Gerar demonstrativo por titular — "holerite" detalhando créditos por obra, categoria, percentual e valor. Inclui retidos liberados e ajustes por estorno. Consulta por titular e por processo. | Must Have | `planned` | — |
 
@@ -146,8 +147,8 @@ CANCELADO  CANCELADO  CANCELADO
 - `distribuicao.processo.finalizado` — processo encerrado definitivamente; créditos são definitivos
 - `distribuicao.processo.cancelado` — processo invalidado antes da finalização
 - `distribuicao.rol.processado` — Rol utilizado no cálculo; Identificação deve bloquear cancelamento do Rol correspondente
-- `distribuicao.credito.retido` — planejado; ainda não implementado
-- `distribuicao.credito.liberado` — planejado; ainda não implementado
+- `distribuicao.credito.retido` — crédito foi retido no cálculo por pendência cadastral
+- `distribuicao.credito.liberado` — crédito retido foi efetivamente liberado na finalização de processo futuro
 - `distribuicao.processo.iniciado` — necessário para o lock da Arrecadação; ainda não implementado
 
 ### Consome (Subscribes)
@@ -160,16 +161,18 @@ CANCELADO  CANCELADO  CANCELADO
 
 ---
 
-## 8. Estado da Codebase (2026-05-16)
+## 8. Estado da Codebase (2026-05-17)
 
 - Implementado: cópia local de rubricas, snapshots de Rol e Verba, criação/listagem/detalhe/cancelamento/cálculo/aprovação/finalização de processos, frontend de processos, authz e auditoria.
 - Implementado: cálculo de créditos com ponderação por `quantidade × peso`, rateio da verba por obra, split 66,67%/33,33%, obra sem fonograma recebendo 100% autoral, consulta ao ownership snapshot do Cadastro, validação de soma 100% e alocação de resíduo.
-- Implementado: persistência de créditos e transição do processo para `CALCULADO`; o único status de crédito existente é `CALCULADO`.
+- Implementado: persistência de créditos com status `CALCULADO`, `RETIDO` e `LIBERADO`, incluindo motivo/data de retenção, processo/data de liberação e histórico de reavaliações.
+- Implementado: liberação automática de créditos retidos elegíveis no fluxo normal de Distribuição, com `CreditoLiberacao` em estados `PREVISTA`, `EFETIVADA` e `CANCELADA`.
+- Implementado: eventos `distribuicao.credito.retido` e `distribuicao.credito.liberado` via outbox.
 - Lacuna conhecida: o contrato de período não está normalizado com Identificação (`YYYY-MM-DD`) e Arrecadação/Distribuição (`YYYY-MM`).
 - Lacuna conhecida: `distribuicao.rol.processado` hoje envia o id do snapshot como `captacaoId`; Identificação espera o id da captação original.
 - Lacuna conhecida: `distribuicao.processo.iniciado` não é publicado, embora Arrecadação já tenha consumer para travar verba no início.
 - Lacuna conhecida: reprocessamento de eventos de Rol/Verba para snapshots existentes ainda não atualiza o snapshot; a implementação apenas registra log/no-op.
-- Lacuna conhecida: retenção/liberação de créditos, ajustes por estorno e demonstrativos ainda não existem na codebase.
+- Lacuna conhecida: ajustes por estorno e demonstrativos ainda não existem na codebase.
 
 ---
 
@@ -205,7 +208,7 @@ CANCELADO  CANCELADO  CANCELADO
 - [x] ~~Estorno pós-distribuição?~~ → Resolvido: gera ajuste no próximo processo (RN-07)
 - [x] ~~Demonstrativo: formato?~~ → Resolvido: holerite por titular com detalhamento completo
 
-As decisões funcionais principais estão resolvidas. As próximas lacunas documentadas para PRD/implementação são retenção, liberação de retidos, ajustes por estorno, demonstrativos e correções de contrato de integração.
+As decisões funcionais principais estão resolvidas. As próximas lacunas documentadas para PRD/implementação são ajustes por estorno, demonstrativos e correções de contrato de integração.
 
 ---
 

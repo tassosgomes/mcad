@@ -44,14 +44,14 @@ O mini-ECAD (mcad) é uma aplicação de demonstração multi-contexto que usa o
 | D01 | Cadastro | Fonte de verdade de Obras Musicais, Fonogramas e Titulares. Valida percentuais de titularidade autoral (soma = 100%) e conexa, controla ciclo de vida de status (LIBERADO/BLOQUEADO/PENDENTE) e publica eventos de mudança. | `done` | `domains/cadastro/domain.md` |
 | D02 | Identificação | Recebe execuções musicais de diversas origens (planilhas, plataformas de streaming, gravações), identifica obras e fonogramas via ISRC/ISWC, atribui tipo de utilização com peso correspondente e fecha o Rol de Execuções do período. | `done` | `domains/identificacao/domain.md` |
 | D03 | Arrecadação | Registra usuários de música licenciados, controla pagamentos de licença por rubrica e período, calcula verba líquida (dedução administrativa de 15% sobre o bruto), publica verba disponível e processa estornos. | `done` | `domains/arrecadacao/domain.md` |
-| D04 | Distribuição | Cruza verba líquida da Arrecadação com Rol de Execuções da Identificação e calcula créditos por titular aplicando split autoral (66,67%) / conexo (33,33%). Retenções, ajustes e demonstrativos permanecem planejados. | `in-progress` | `domains/distribuicao/domain.md` |
+| D04 | Distribuição | Cruza verba líquida da Arrecadação com Rol de Execuções da Identificação e calcula créditos por titular aplicando split autoral (66,67%) / conexo (33,33%). Já cobre retenção por pendência cadastral e liberação automática de retidos; ajustes e demonstrativos permanecem planejados. | `in-progress` | `domains/distribuicao/domain.md` |
 
 **Cross-cutting (não são domínios de negócio):**
 - **Plataforma** — BFF/API Composition, Frontend React/Vite, Analytics Consumer (CQRS Read Model), DW Sync (ClickHouse), Dashboards Metabase
 
 **Status possíveis:** `planned` · `in-progress` · `done` · `out-of-scope`
 
-### Status por feature (PRD) — snapshot 2026-05-16
+### Status por feature (PRD) — snapshot 2026-05-17
 
 | Domínio | PRD | Status |
 |---|---|---|
@@ -72,7 +72,9 @@ O mini-ECAD (mcad) é uma aplicação de demonstração multi-contexto que usa o
 | D04 Distribuição | sync-rubricas (consumer + snapshot) | `done` (implementado; testes de integração verdes após bump Testcontainers 1.21.3 + workaround api.version, commits 0fb21c0/e84764b — task 6.0 fechada) |
 | D04 Distribuição | gestao-processos | `done` (backend + frontend completos; `@RequiresPermission` em todos os endpoints e auditoria via `AuditClient` em todos os handlers de comando; 95 unit tests verdes; 10 IT bloqueados por dívida pré-existente de Testcontainers 1.19.8 / Docker engine 1.44+ — escopo separado) |
 | D04 Distribuição | calculo-creditos | `done` (cálculo ponderado por quantidade/peso, split autoral/conexo, persistência de créditos e evento `distribuicao.processo.calculado`; sem retenção, ajuste ou demonstrativo) |
-| D04 Distribuição | retencao-creditos, liberacao-retidos, ajustes-estorno, demonstrativo-creditos | `planned` |
+| D04 Distribuição | retencao-creditos | `done` (créditos `RETIDO`, motivos `OBRA_PENDENTE`/`OBRA_BLOQUEADA`/`TITULAR_SEM_ASSOCIACAO`, evento `distribuicao.credito.retido`) |
+| D04 Distribuição | liberacao-retidos | `done` (liberações `PREVISTA` no cálculo, `EFETIVADA` na finalização, `CANCELADA` no cancelamento, evento `distribuicao.credito.liberado`) |
+| D04 Distribuição | ajustes-estorno, demonstrativo-creditos | `planned` |
 
 > Fonte: auditoria cruzando `tasks/**/prd-*` e código em `services/{cadastro,identificacao,arrecadacao,distribuicao}-api/`.
 
@@ -82,7 +84,7 @@ O mini-ECAD (mcad) é uma aplicação de demonstração multi-contexto que usa o
 - **Confirmação de Rol processado:** Distribuição publica `distribuicao.rol.processado`, mas o payload atual usa o id do snapshot de Rol como `captacaoId`; Identificação espera o id original da captação para bloquear cancelamento.
 - **Lock da Verba:** Arrecadação já consome `distribuicao.processo.iniciado` e `distribuicao.processo.finalizado` para bloquear/liberar verba, mas Distribuição ainda não publica `distribuicao.processo.iniciado`. O bloqueio no início do processo ainda é latente.
 - **Snapshots em Distribuição:** eventos novos de Rol e Verba são persistidos, mas reenvios/atualizações de snapshots existentes ainda são tratados como no-op/log.
-- **Estornos e retenções:** Arrecadação publica estorno; Distribuição ainda não consome `arrecadacao.pagamento.estornado`. Retenção/liberação de créditos e demonstrativos ainda não foram implementados.
+- **Estornos e demonstrativos:** Arrecadação publica estorno; Distribuição ainda não consome `arrecadacao.pagamento.estornado`. Demonstrativos ainda não foram implementados.
 - **Status de Cadastro na Identificação:** o fluxo automático valida status `LIBERADO`, mas o handler de registro manual compara `LIBERADA`; isso pode gerar pendências indevidas até a correção.
 
 ---
@@ -207,6 +209,7 @@ Analytics     ──consome de──→ Todos os domínios (eventos de todos os 
 | Parte Conexa | 33,33% da verba de uma obra com fonograma — distribuída entre intérpretes (41,7%), produtores (41,7%) e músicos (16,6%) | Distribuição |
 | Crédito | Valor calculado e atribuído a um titular específico em um processo de distribuição | Distribuição |
 | Crédito Retido | Crédito bloqueado por pendência cadastral (obra PENDENTE/BLOQUEADA, titular sem associação). Retido por até 5 anos antes de prescrever | Distribuição |
+| Crédito Liberado | Crédito originalmente retido que teve a pendência resolvida no Cadastro e foi efetivado como liberado na finalização de um processo futuro | Distribuição |
 | Domínio Público | Obra cujo prazo de proteção patrimonial expirou (70 anos após morte do último autor). Não gera créditos | Cadastro |
 
 ---
@@ -245,6 +248,7 @@ Analytics     ──consome de──→ Todos os domínios (eventos de todos os 
 | 1.6 | 2026-05-15 | Sincronização tardia D03 | Auditoria de filesystem revelou que `calculo-verba-liquida` (10/10 tasks `[x]`, migration V13, qa_report) e `estorno-pagamento` (backend completo: migration V10, `EstornarPagamentoCommand/Handler`, `VerbaEmDistribuicaoException`, endpoint `POST /pagamentos/{id}/estornar`, `VerbaEstornoFlowIT`+`VerbaLockIT`; frontend completo: types/api/hook/`EstornarPagamentoModal`/extensão `PagamentoDetailPage`) já estavam **integralmente implementados**, contradizendo classificação `planned` da revisão 1.5. Vision sincronizado — ambas features promovidas para `done`. D03 agora completo exceto por features ainda não planejadas. |
 | 1.7 | 2026-05-16 | Entrega de F02 (D04) gestao-processos | PRD revisado e implementado fim a fim alinhado ao novo padrão consolidado pela migração authz (encerrada em 2026-05-15): **permissionamento** via `authz-spring-boot-starter` com `@RequiresPermission("distribuicao:default:processo:<acao>")` em 4 segmentos (ADR 0002/0003), `permissions.yaml` com 9 keys e catálogo em `docs/authz/catalog/distribuicao.md`; migração legacy de `RubricaController` e `ProcessoCalculoController` (`@PreAuthorize` removido). **Auditoria** obrigatória via `audit-sdk` — `ProcessoAuditEventFactory` produz `userAction` + `dataChange` para cada operação (CREATE/CALCULATE/APPROVE/FINALIZE/CANCEL) na mesma transação do comando. Backend: 5 commands + 3 queries + `ProcessoController` (8 endpoints), Outbox de domínio, event consumers Rol/Verba. Frontend: módulo `features/distribuicao/processos` completo com gate de UI por permission via BFF (ADR 0004). 95 unit tests verdes; 10 integration tests bloqueados por dívida pré-existente de infra (Testcontainers 1.19.8 incompatível com Docker engine 1.44+ — afeta também IT legados do mesmo módulo). Próximo bloqueio em D04 é fechar a task 6.0 de `sync-rubricas` (mesma dívida de Testcontainers) ou avançar para o núcleo da Fase 3 (cálculo de créditos / split / retenção / demonstrativo — ainda sem PRD). |
 | 1.8 | 2026-05-16 | Auditoria de coerência codebase/docs | Documentação alinhada ao estado real da codebase: D01, D02 e D03 marcados como `done`; D04 mantido `in-progress` com F01/F02/F03 implementadas e retenção/liberação/ajustes/demonstrativos planejados. Registradas lacunas de contrato entre eventos, período, lock de verba e payload de `distribuicao.rol.processado`. |
+| 1.9 | 2026-05-17 | Entrega de F05 (D04) liberação de retidos | Distribuição sincronizada com implementação de retenção/liberação: F04 e F05 promovidas para `done`. F05 adiciona `CreditoLiberacao`, histórico de reavaliação, status `LIBERADO`, previsão no cálculo, efetivação na finalização, cancelamento de previsões, evento `distribuicao.credito.liberado` e UI de retidos a liberar/liberados. Ajustes por estorno e demonstrativos permanecem `planned`. |
 
 ---
 
