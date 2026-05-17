@@ -6,6 +6,7 @@ import {
   formatCategoria,
   formatCurrency,
   formatDecimal,
+  formatMotivoRetencao,
   formatPercentage,
   formatStatusCredito,
   formatSubcategoria,
@@ -42,13 +43,14 @@ export function CreditosTable({ creditos, metadata, onPageChange }: CreditosTabl
               <th>Valor da obra</th>
               <th>Crédito</th>
               <th>Status</th>
+              <th>Motivo</th>
               <th>Histórico</th>
             </tr>
           </thead>
           <tbody>
             {creditos.length === 0 ? (
               <tr>
-                <td className={styles.empty} colSpan={10}>
+                <td className={styles.empty} colSpan={11}>
                   Nenhum crédito encontrado para os filtros atuais.
                 </td>
               </tr>
@@ -74,8 +76,11 @@ export function CreditosTable({ creditos, metadata, onPageChange }: CreditosTabl
                   <td className={styles.numeric}>{formatCurrency(credito.valorObra)}</td>
                   <td className={styles.creditValue}>{formatCurrency(credito.valorCredito)}</td>
                   <td>
-                    <Badge variant="success">{formatStatusCredito(credito.status)}</Badge>
+                    <Badge variant={credito.status === 'RETIDO' ? 'warning' : 'success'}>
+                      {formatStatusCredito(credito.status)}
+                    </Badge>
                   </td>
+                  <td>{formatMotivoRetencao(credito.motivoRetencao)}</td>
                   <td>
                     <RowAuditHistoryButton
                       entityType={auditEntityTypes.credito}

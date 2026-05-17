@@ -48,10 +48,12 @@ describe('processosCalculoApi', () => {
       categoria: 'CONEXO',
       titularId: 'titular-1',
       obraId: 'obra-1',
+      status: 'RETIDO',
+      motivoRetencao: 'OBRA_PENDENTE',
     });
 
     expect(fetchMock).toHaveBeenCalledWith(
-      '/api/distribuicao/v1/processos/processo-1/calculo?page=1&size=10&categoria=CONEXO&titularId=titular-1&obraId=obra-1',
+      '/api/distribuicao/v1/processos/processo-1/calculo?page=1&size=10&categoria=CONEXO&titularId=titular-1&obraId=obra-1&status=RETIDO&motivoRetencao=OBRA_PENDENTE',
       expect.objectContaining({
         headers: expect.any(Headers),
       }),

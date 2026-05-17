@@ -1,6 +1,7 @@
 package br.com.ecad.distribuicao.domain.entities;
 
 import br.com.ecad.distribuicao.domain.enums.CategoriaCredito;
+import br.com.ecad.distribuicao.domain.enums.MotivoRetencao;
 import br.com.ecad.distribuicao.domain.enums.StatusCredito;
 import br.com.ecad.distribuicao.domain.enums.SubcategoriaConexa;
 import jakarta.persistence.Column;
@@ -63,6 +64,13 @@ public class Credito {
     @Column(nullable = false, length = 20)
     private StatusCredito status;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "motivo_retencao", length = 40)
+    private MotivoRetencao motivoRetencao;
+
+    @Column(name = "retido_em")
+    private Instant retidoEm;
+
     @Column(name = "criado_em", nullable = false)
     private Instant criadoEm;
 
@@ -98,7 +106,45 @@ public class Credito {
         credito.valorCredito = Objects.requireNonNull(valorCredito, "valorCredito must not be null");
         credito.pontosObra = Objects.requireNonNull(pontosObra, "pontosObra must not be null");
         credito.status = StatusCredito.CALCULADO;
+        credito.motivoRetencao = null;
+        credito.retidoEm = null;
         credito.criadoEm = Objects.requireNonNull(criadoEm, "criadoEm must not be null");
+        return credito;
+    }
+
+    public static Credito retido(
+            UUID processoId,
+            UUID titularId,
+            String titularNome,
+            UUID obraId,
+            String obraTitulo,
+            UUID fonogramaId,
+            CategoriaCredito categoria,
+            SubcategoriaConexa subcategoriaConexa,
+            BigDecimal percentualAplicado,
+            BigDecimal valorObra,
+            BigDecimal valorCredito,
+            BigDecimal pontosObra,
+            MotivoRetencao motivoRetencao,
+            Instant retidoEm,
+            Instant criadoEm) {
+        Credito credito = calculado(
+                processoId,
+                titularId,
+                titularNome,
+                obraId,
+                obraTitulo,
+                fonogramaId,
+                categoria,
+                subcategoriaConexa,
+                percentualAplicado,
+                valorObra,
+                valorCredito,
+                pontosObra,
+                criadoEm);
+        credito.status = StatusCredito.RETIDO;
+        credito.motivoRetencao = Objects.requireNonNull(motivoRetencao, "motivoRetencao must not be null");
+        credito.retidoEm = Objects.requireNonNull(retidoEm, "retidoEm must not be null");
         return credito;
     }
 
@@ -156,6 +202,14 @@ public class Credito {
 
     public StatusCredito getStatus() {
         return status;
+    }
+
+    public MotivoRetencao getMotivoRetencao() {
+        return motivoRetencao;
+    }
+
+    public Instant getRetidoEm() {
+        return retidoEm;
     }
 
     public Instant getCriadoEm() {

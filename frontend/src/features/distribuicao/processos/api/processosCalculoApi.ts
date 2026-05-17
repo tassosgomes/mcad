@@ -21,6 +21,8 @@ export function consultarCalculoProcesso(
   appendParam(params, 'categoria', filters.categoria);
   appendParam(params, 'titularId', filters.titularId);
   appendParam(params, 'obraId', filters.obraId);
+  appendParam(params, 'status', filters.status);
+  appendParam(params, 'motivoRetencao', filters.motivoRetencao);
 
   const queryString = params.toString();
   const suffix = queryString ? `?${queryString}` : '';

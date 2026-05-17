@@ -12,6 +12,8 @@ import br.com.ecad.distribuicao.application.queries.ConsultarCalculoProcessoQuer
 import br.com.ecad.distribuicao.application.queries.handlers.ConsultarCalculoProcessoQueryHandler;
 import br.com.ecad.distribuicao.domain.entities.Credito;
 import br.com.ecad.distribuicao.domain.enums.CategoriaCredito;
+import br.com.ecad.distribuicao.domain.enums.MotivoRetencao;
+import br.com.ecad.distribuicao.domain.enums.StatusCredito;
 import br.com.ecad.distribuicao.domain.enums.StatusProcesso;
 import br.com.ecad.distribuicao.domain.exceptions.PreRequisitosException;
 import br.com.ecad.distribuicao.domain.filters.CreditoFiltro;
@@ -62,7 +64,9 @@ class ConsultarCalculoProcessoQueryHandlerTest {
                 1,
                 "AUTORAL",
                 TITULAR_ID,
-                OBRA_ID));
+                OBRA_ID,
+                "RETIDO",
+                "TITULAR_SEM_ASSOCIACAO"));
 
         assertThat(response.processoId()).isEqualTo(PROCESSO_ID);
         assertThat(response.status()).isEqualTo(StatusProcesso.CALCULADO);
@@ -84,6 +88,8 @@ class ConsultarCalculoProcessoQueryHandlerTest {
         assertThat(filtroCaptor.getValue().categoria()).isEqualTo(CategoriaCredito.AUTORAL);
         assertThat(filtroCaptor.getValue().titularId()).isEqualTo(TITULAR_ID);
         assertThat(filtroCaptor.getValue().obraId()).isEqualTo(OBRA_ID);
+        assertThat(filtroCaptor.getValue().status()).isEqualTo(StatusCredito.RETIDO);
+        assertThat(filtroCaptor.getValue().motivoRetencao()).isEqualTo(MotivoRetencao.TITULAR_SEM_ASSOCIACAO);
     }
 
     @Test
@@ -93,6 +99,8 @@ class ConsultarCalculoProcessoQueryHandlerTest {
                 0,
                 20,
                 "INVALIDA",
+                null,
+                null,
                 null,
                 null);
 
@@ -115,6 +123,8 @@ class ConsultarCalculoProcessoQueryHandlerTest {
                 new BigDecimal("10.000000"),
                 2,
                 new BigDecimal("1000.00"),
+                0,
+                BigDecimal.ZERO,
                 Instant.parse("2026-05-07T10:30:00Z"));
     }
 

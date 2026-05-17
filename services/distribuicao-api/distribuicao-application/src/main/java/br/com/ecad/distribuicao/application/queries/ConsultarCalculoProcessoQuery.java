@@ -8,5 +8,7 @@ public record ConsultarCalculoProcessoQuery(
         int size,
         String categoria,
         UUID titularId,
-        UUID obraId) {
+        UUID obraId,
+        String status,
+        String motivoRetencao) {
 }

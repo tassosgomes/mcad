@@ -2,6 +2,7 @@ package br.com.ecad.distribuicao.application.dto;
 
 import br.com.ecad.distribuicao.domain.entities.Credito;
 import br.com.ecad.distribuicao.domain.enums.CategoriaCredito;
+import br.com.ecad.distribuicao.domain.enums.MotivoRetencao;
 import br.com.ecad.distribuicao.domain.enums.StatusCredito;
 import br.com.ecad.distribuicao.domain.enums.StatusProcesso;
 import br.com.ecad.distribuicao.domain.enums.SubcategoriaConexa;
@@ -39,6 +40,8 @@ public record CalculoProcessoResponse(
             Integer totalObras,
             Integer totalCreditos,
             BigDecimal valorTotalCalculado,
+            Integer totalCreditosRetidos,
+            BigDecimal valorTotalRetido,
             Instant calculadoEm) {
 
         private static CalculoResumoResponse from(CalculoResumoProjection resumo) {
@@ -49,6 +52,8 @@ public record CalculoProcessoResponse(
                     resumo.totalObras(),
                     resumo.totalCreditos(),
                     resumo.valorTotalCalculado(),
+                    resumo.totalCreditosRetidos(),
+                    resumo.valorTotalRetido(),
                     resumo.calculadoEm());
         }
     }
@@ -84,6 +89,8 @@ public record CalculoProcessoResponse(
             BigDecimal valorCredito,
             BigDecimal pontosObra,
             StatusCredito status,
+            MotivoRetencao motivoRetencao,
+            Instant retidoEm,
             Instant criadoEm) {
 
         private static CreditoItemResponse from(Credito credito) {
@@ -101,6 +108,8 @@ public record CalculoProcessoResponse(
                     credito.getValorCredito(),
                     credito.getPontosObra(),
                     credito.getStatus(),
+                    credito.getMotivoRetencao(),
+                    credito.getRetidoEm(),
                     credito.getCriadoEm());
         }
     }

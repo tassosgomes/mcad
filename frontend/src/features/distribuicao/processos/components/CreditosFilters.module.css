@@ -1,6 +1,6 @@
 .filters {
   display: grid;
-  grid-template-columns: minmax(160px, 220px) repeat(2, minmax(220px, 1fr));
+  grid-template-columns: minmax(150px, 180px) repeat(2, minmax(180px, 1fr)) repeat(2, minmax(160px, 200px));
   gap: var(--space-4);
   padding: var(--space-4);
   background: var(--color-bg-surface);

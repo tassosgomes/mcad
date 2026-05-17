@@ -1,4 +1,10 @@
-import type { CategoriaCredito, StatusCredito, StatusProcesso, SubcategoriaConexa } from '../types/calculo';
+import type {
+  CategoriaCredito,
+  MotivoRetencao,
+  StatusCredito,
+  StatusProcesso,
+  SubcategoriaConexa,
+} from '../types/calculo';
 
 const currencyFormatter = new Intl.NumberFormat('pt-BR', {
   style: 'currency',
@@ -83,8 +89,21 @@ export function formatStatusCredito(status: StatusCredito): string {
   const labels: Record<StatusCredito, string> = {
     CALCULADO: 'Calculado',
     RETIDO: 'Retido',
-    LIBERADO: 'Liberado',
   };
 
   return labels[status] ?? status;
+}
+
+export function formatMotivoRetencao(motivo: MotivoRetencao | null): string {
+  if (!motivo) {
+    return '-';
+  }
+
+  const labels: Record<MotivoRetencao, string> = {
+    OBRA_PENDENTE: 'Obra pendente',
+    OBRA_BLOQUEADA: 'Obra bloqueada',
+    TITULAR_SEM_ASSOCIACAO: 'Titular sem associação',
+  };
+
+  return labels[motivo] ?? motivo;
 }

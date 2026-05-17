@@ -13,6 +13,7 @@ import br.com.ecad.distribuicao.domain.calculo.ParticipacaoOwnership;
 import br.com.ecad.distribuicao.domain.calculo.ResultadoCalculo;
 import br.com.ecad.distribuicao.domain.entities.Credito;
 import br.com.ecad.distribuicao.domain.enums.CategoriaCredito;
+import br.com.ecad.distribuicao.domain.enums.MotivoRetencao;
 import br.com.ecad.distribuicao.domain.enums.StatusCredito;
 import br.com.ecad.distribuicao.domain.enums.SubcategoriaConexa;
 import br.com.ecad.distribuicao.domain.exceptions.PreRequisitosException;
@@ -72,6 +73,8 @@ class CalculadoraCreditosTest {
         assertThat(credito.getCategoria()).isEqualTo(CategoriaCredito.AUTORAL);
         assertThat(credito.getFonogramaId()).isNull();
         assertThat(credito.getStatus()).isEqualTo(StatusCredito.CALCULADO);
+        assertThat(credito.getMotivoRetencao()).isNull();
+        assertThat(credito.getRetidoEm()).isNull();
         assertThat(credito.getValorObra()).isEqualByComparingTo("1000.00");
         assertThat(credito.getValorCredito()).isEqualByComparingTo("1000.00");
     }
@@ -141,6 +144,98 @@ class CalculadoraCreditosTest {
     }
 
     @Test
+    void calcular_WithObraPendente_ShouldRetainAllCreditsForWorkWithoutChangingValues() {
+        CalculoCreditosInput input = input(
+                "1000.00",
+                List.of(execucao(OBRA_A_ID, "Obra A", null, 1, "1.0000")),
+                snapshot(
+                        List.of(obraComStatus(
+                                OBRA_A_ID,
+                                "Obra A",
+                                "PENDENTE",
+                                autoral(TITULAR_A_ID, "Titular A", "60.0000"),
+                                autoral(TITULAR_B_ID, "Titular B", "40.0000"))),
+                        List.of()));
+
+        ResultadoCalculo resultado = calculadora.calcular(input);
+
+        assertThat(resultado.creditos()).hasSize(2);
+        assertThat(resultado.creditos())
+                .extracting(Credito::getStatus)
+                .containsOnly(StatusCredito.RETIDO);
+        assertThat(resultado.creditos())
+                .extracting(Credito::getMotivoRetencao)
+                .containsOnly(MotivoRetencao.OBRA_PENDENTE);
+        assertThat(creditoPorTitular(resultado, TITULAR_A_ID).getValorCredito()).isEqualByComparingTo("600.00");
+        assertThat(resultado.resumo().totalCreditosRetidos()).isEqualTo(2);
+        assertThat(resultado.resumo().valorTotalRetido()).isEqualByComparingTo("1000.00");
+    }
+
+    @Test
+    void calcular_WithObraBloqueadaAndHolderWithoutAssociation_ShouldUseObraBloqueadaPrecedence() {
+        CalculoCreditosInput input = input(
+                "1000.00",
+                List.of(execucao(OBRA_A_ID, "Obra A", null, 1, "1.0000")),
+                snapshot(
+                        List.of(obraComStatus(
+                                OBRA_A_ID,
+                                "Obra A",
+                                "BLOQUEADA",
+                                autoralSemAssociacao(TITULAR_A_ID, "Titular A", "100.0000"))),
+                        List.of()));
+
+        Credito credito = calculadora.calcular(input).creditos().getFirst();
+
+        assertThat(credito.getStatus()).isEqualTo(StatusCredito.RETIDO);
+        assertThat(credito.getMotivoRetencao()).isEqualTo(MotivoRetencao.OBRA_BLOQUEADA);
+        assertThat(credito.getRetidoEm()).isNotNull();
+    }
+
+    @Test
+    void calcular_WithHolderWithoutAssociation_ShouldRetainOnlyThatHolder() {
+        CalculoCreditosInput input = input(
+                "1000.00",
+                List.of(execucao(OBRA_A_ID, "Obra A", null, 1, "1.0000")),
+                snapshot(
+                        List.of(obra(
+                                OBRA_A_ID,
+                                "Obra A",
+                                autoralSemAssociacao(TITULAR_A_ID, "Titular Sem Associação", "40.0000"),
+                                autoral(TITULAR_B_ID, "Titular Associado", "60.0000"))),
+                        List.of()));
+
+        ResultadoCalculo resultado = calculadora.calcular(input);
+
+        Credito semAssociacao = creditoPorTitular(resultado, TITULAR_A_ID);
+        Credito associado = creditoPorTitular(resultado, TITULAR_B_ID);
+        assertThat(semAssociacao.getStatus()).isEqualTo(StatusCredito.RETIDO);
+        assertThat(semAssociacao.getMotivoRetencao()).isEqualTo(MotivoRetencao.TITULAR_SEM_ASSOCIACAO);
+        assertThat(semAssociacao.getValorCredito()).isEqualByComparingTo("400.00");
+        assertThat(associado.getStatus()).isEqualTo(StatusCredito.CALCULADO);
+        assertThat(associado.getMotivoRetencao()).isNull();
+        assertThat(resultado.resumo().totalCreditosRetidos()).isEqualTo(1);
+        assertThat(resultado.resumo().valorTotalRetido()).isEqualByComparingTo("400.00");
+    }
+
+    @Test
+    void calcular_WithNonDistributableWorkStatus_ShouldThrowBusinessPrecondition() {
+        CalculoCreditosInput input = input(
+                "1000.00",
+                List.of(execucao(OBRA_A_ID, "Obra A", null, 1, "1.0000")),
+                snapshot(
+                        List.of(obraComStatus(
+                                OBRA_A_ID,
+                                "Obra A",
+                                "DOMINIO_PUBLICO",
+                                autoral(TITULAR_A_ID, "Titular A", "100.0000"))),
+                        List.of()));
+
+        assertThatThrownBy(() -> calculadora.calcular(input))
+                .isInstanceOf(PreRequisitosException.class)
+                .hasMessageContaining("Obra não distribuível");
+    }
+
+    @Test
     void calcular_WithMissingAutoralOwnership_ShouldThrowBusinessPrecondition() {
         CalculoCreditosInput input = input(
                 "1000.00",
@@ -200,17 +295,36 @@ class CalculadoraCreditosTest {
     }
 
     private ObraOwnership obra(UUID obraId, String titulo, ParticipacaoOwnership... titularidades) {
-        return new ObraOwnership(obraId, titulo, List.of(titularidades));
+        return obraComStatus(obraId, titulo, "LIBERADA", titularidades);
+    }
+
+    private ObraOwnership obraComStatus(
+            UUID obraId,
+            String titulo,
+            String status,
+            ParticipacaoOwnership... titularidades) {
+        return new ObraOwnership(obraId, titulo, status, List.of(titularidades));
     }
 
     private FonogramaOwnership fonograma(UUID fonogramaId, UUID obraId, ParticipacaoOwnership... participacoes) {
-        return new FonogramaOwnership(fonogramaId, obraId, List.of(participacoes));
+        return new FonogramaOwnership(fonogramaId, obraId, "LIBERADO", List.of(participacoes));
     }
 
     private ParticipacaoOwnership autoral(UUID titularId, String nome, String percentual) {
         return new ParticipacaoOwnership(
                 titularId,
                 nome,
+                "UBC",
+                CategoriaCredito.AUTORAL,
+                null,
+                new BigDecimal(percentual));
+    }
+
+    private ParticipacaoOwnership autoralSemAssociacao(UUID titularId, String nome, String percentual) {
+        return new ParticipacaoOwnership(
+                titularId,
+                nome,
+                null,
                 CategoriaCredito.AUTORAL,
                 null,
                 new BigDecimal(percentual));
@@ -224,6 +338,7 @@ class CalculadoraCreditosTest {
         return new ParticipacaoOwnership(
                 titularId,
                 nome,
+                "UBC",
                 CategoriaCredito.CONEXO,
                 subcategoria,
                 new BigDecimal(percentual));

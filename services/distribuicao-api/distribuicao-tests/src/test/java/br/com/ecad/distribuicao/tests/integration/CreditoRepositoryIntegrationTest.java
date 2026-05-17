@@ -171,16 +171,16 @@ class CreditoRepositoryIntegrationTest {
         entityManager.clear();
 
         Page<Credito> firstPage = creditoRepository.findByProcessoId(
-                new CreditoFiltro(processo.getId(), null, null, null),
+                new CreditoFiltro(processo.getId(), null, null, null, null, null),
                 PageRequest.of(0, 1));
         Page<Credito> autorais = creditoRepository.findByProcessoId(
-                new CreditoFiltro(processo.getId(), CategoriaCredito.AUTORAL, null, null),
+                new CreditoFiltro(processo.getId(), CategoriaCredito.AUTORAL, null, null, null, null),
                 PageRequest.of(0, 10));
         Page<Credito> titularA = creditoRepository.findByProcessoId(
-                new CreditoFiltro(processo.getId(), null, TITULAR_A_ID, null),
+                new CreditoFiltro(processo.getId(), null, TITULAR_A_ID, null, null, null),
                 PageRequest.of(0, 10));
         Page<Credito> obraA = creditoRepository.findByProcessoId(
-                new CreditoFiltro(processo.getId(), null, null, OBRA_A_ID),
+                new CreditoFiltro(processo.getId(), null, null, OBRA_A_ID, null, null),
                 PageRequest.of(0, 10));
 
         assertThat(firstPage.getContent()).hasSize(1);
@@ -214,7 +214,7 @@ class CreditoRepositoryIntegrationTest {
 
     private Page<Credito> findCreditos(UUID processoId) {
         return creditoRepository.findByProcessoId(
-                new CreditoFiltro(processoId, null, null, null),
+                new CreditoFiltro(processoId, null, null, null, null, null),
                 PageRequest.of(0, 10));
     }
 

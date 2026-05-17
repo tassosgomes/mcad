@@ -2,6 +2,8 @@ package br.com.ecad.distribuicao.domain.calculo;
 
 import br.com.ecad.distribuicao.domain.entities.Credito;
 import br.com.ecad.distribuicao.domain.enums.CategoriaCredito;
+import br.com.ecad.distribuicao.domain.enums.MotivoRetencao;
+import br.com.ecad.distribuicao.domain.enums.StatusCredito;
 import br.com.ecad.distribuicao.domain.enums.SubcategoriaConexa;
 import br.com.ecad.distribuicao.domain.exceptions.PreRequisitosException;
 import java.math.BigDecimal;
@@ -14,6 +16,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -44,6 +47,14 @@ public class CalculadoraCreditos {
                 ownershipIndex,
                 calculadoEm);
         BigDecimal valorTotalCalculado = somarValores(creditos);
+        int totalCreditosRetidos = (int) creditos.stream()
+                .filter(credito -> credito.getStatus() == StatusCredito.RETIDO)
+                .count();
+        BigDecimal valorTotalRetido = creditos.stream()
+                .filter(credito -> credito.getStatus() == StatusCredito.RETIDO)
+                .map(Credito::getValorCredito)
+                .reduce(BigDecimal.ZERO, BigDecimal::add)
+                .setScale(2, RoundingMode.HALF_UP);
 
         ResumoCalculo resumo = new ResumoCalculo(
                 input.verbaLiquida().setScale(2, RoundingMode.HALF_UP),
@@ -52,6 +63,8 @@ public class CalculadoraCreditos {
                 contarObras(input.execucoes()),
                 creditos.size(),
                 valorTotalCalculado,
+                totalCreditosRetidos,
+                valorTotalRetido,
                 calculadoEm);
         return new ResultadoCalculo(creditos, resumo);
     }
@@ -185,7 +198,7 @@ public class CalculadoraCreditos {
 
         List<Credito> creditos = new ArrayList<>();
         creditos.addAll(gerarCreditosAutorais(processoId, execucao, valorAutoral, obra, calculadoEm));
-        creditos.addAll(gerarCreditosConexos(processoId, execucao, valorConexo, fonograma, calculadoEm));
+        creditos.addAll(gerarCreditosConexos(processoId, execucao, valorConexo, obra, fonograma, calculadoEm));
         return creditos;
     }
 
@@ -208,19 +221,20 @@ public class CalculadoraCreditos {
             Instant calculadoEm) {
         List<ParticipacaoOwnership> titulares = filtrarParticipacoes(obra.titularidades(), CategoriaCredito.AUTORAL);
         validarParticipacoes(titulares, "Titularidade autoral inválida para obra " + obra.obraId());
-        return gerarCreditosDaCategoria(processoId, execucao, valorAutoral, titulares, calculadoEm);
+        return gerarCreditosDaCategoria(processoId, execucao, valorAutoral, obra, titulares, calculadoEm);
     }
 
     private List<Credito> gerarCreditosConexos(
             UUID processoId,
             WorkExecution execucao,
             BigDecimal valorConexo,
+            ObraOwnership obra,
             FonogramaOwnership fonograma,
             Instant calculadoEm) {
         List<ParticipacaoOwnership> participantes = filtrarParticipacoes(fonograma.participacoes(), CategoriaCredito.CONEXO);
         validarParticipacoes(participantes, "Participação conexa inválida para fonograma " + fonograma.fonogramaId());
         validarSubcategoriasConexas(participantes);
-        return gerarCreditosDaCategoria(processoId, execucao, valorConexo, participantes, calculadoEm);
+        return gerarCreditosDaCategoria(processoId, execucao, valorConexo, obra, participantes, calculadoEm);
     }
 
     private List<ParticipacaoOwnership> filtrarParticipacoes(
@@ -265,6 +279,7 @@ public class CalculadoraCreditos {
             UUID processoId,
             WorkExecution execucao,
             BigDecimal valorCategoria,
+            ObraOwnership obra,
             List<ParticipacaoOwnership> participacoes,
             Instant calculadoEm) {
         List<AllocationDraft> drafts = participacoes.stream()
@@ -277,21 +292,86 @@ public class CalculadoraCreditos {
                 .collect(Collectors.toMap(result -> (HolderKey) result.key(), AllocationResult::valor));
 
         return participacoes.stream()
-                .map(participacao -> Credito.calculado(
+                .map(participacao -> criarCredito(
                         processoId,
-                        participacao.titularId(),
-                        participacao.titularNome(),
-                        execucao.key().obraId(),
-                        execucao.obraTitulo(),
-                        execucao.key().fonogramaId(),
-                        participacao.categoria(),
-                        resolveSubcategoria(participacao),
-                        participacao.percentual().setScale(6, RoundingMode.HALF_UP),
+                        obra,
+                        execucao,
                         valorCategoria,
                         valores.get(new HolderKey(participacao.titularId())),
-                        execucao.pontos().setScale(6, RoundingMode.HALF_UP),
+                        participacao,
                         calculadoEm))
                 .toList();
+    }
+
+    private Credito criarCredito(
+            UUID processoId,
+            ObraOwnership obra,
+            WorkExecution execucao,
+            BigDecimal valorCategoria,
+            BigDecimal valorCredito,
+            ParticipacaoOwnership participacao,
+            Instant calculadoEm) {
+        Optional<MotivoRetencao> motivoRetencao = motivoRetencao(obra, participacao);
+        if (motivoRetencao.isPresent()) {
+            return Credito.retido(
+                    processoId,
+                    participacao.titularId(),
+                    participacao.titularNome(),
+                    execucao.key().obraId(),
+                    execucao.obraTitulo(),
+                    execucao.key().fonogramaId(),
+                    participacao.categoria(),
+                    resolveSubcategoria(participacao),
+                    participacao.percentual().setScale(6, RoundingMode.HALF_UP),
+                    valorCategoria,
+                    valorCredito,
+                    execucao.pontos().setScale(6, RoundingMode.HALF_UP),
+                    motivoRetencao.get(),
+                    calculadoEm,
+                    calculadoEm);
+        }
+        return Credito.calculado(
+                processoId,
+                participacao.titularId(),
+                participacao.titularNome(),
+                execucao.key().obraId(),
+                execucao.obraTitulo(),
+                execucao.key().fonogramaId(),
+                participacao.categoria(),
+                resolveSubcategoria(participacao),
+                participacao.percentual().setScale(6, RoundingMode.HALF_UP),
+                valorCategoria,
+                valorCredito,
+                execucao.pontos().setScale(6, RoundingMode.HALF_UP),
+                calculadoEm);
+    }
+
+    private Optional<MotivoRetencao> motivoRetencao(ObraOwnership obra, ParticipacaoOwnership participacao) {
+        String statusObra = normalize(obra.status());
+        if ("BLOQUEADA".equals(statusObra)) {
+            return Optional.of(MotivoRetencao.OBRA_BLOQUEADA);
+        }
+        if ("PENDENTE".equals(statusObra)) {
+            return Optional.of(MotivoRetencao.OBRA_PENDENTE);
+        }
+        if ("DEPURADA".equals(statusObra) || "DOMINIO_PUBLICO".equals(statusObra)) {
+            throw new PreRequisitosException("Obra não distribuível: " + obra.obraId());
+        }
+        if (!"LIBERADA".equals(statusObra) && !"LIBERADO".equals(statusObra)) {
+            throw new PreRequisitosException("Status de obra desconhecido para distribuição: " + obra.status());
+        }
+        if (!hasText(participacao.associacaoSigla())) {
+            return Optional.of(MotivoRetencao.TITULAR_SEM_ASSOCIACAO);
+        }
+        return Optional.empty();
+    }
+
+    private String normalize(String value) {
+        return value == null ? "" : value.trim().toUpperCase();
+    }
+
+    private boolean hasText(String value) {
+        return value != null && !value.isBlank();
     }
 
     private SubcategoriaConexa resolveSubcategoria(ParticipacaoOwnership participacao) {

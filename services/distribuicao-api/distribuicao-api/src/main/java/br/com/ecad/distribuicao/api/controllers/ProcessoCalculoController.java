@@ -53,13 +53,17 @@ public class ProcessoCalculoController {
             @RequestParam(defaultValue = "20") int size,
             @RequestParam(required = false) String categoria,
             @RequestParam(required = false) UUID titularId,
-            @RequestParam(required = false) UUID obraId) {
+            @RequestParam(required = false) UUID obraId,
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) String motivoRetencao) {
         return ResponseEntity.ok(consultarCalculoProcessoQueryHandler.handle(new ConsultarCalculoProcessoQuery(
                 id,
                 page,
                 size,
                 categoria,
                 titularId,
-                obraId)));
+                obraId,
+                status,
+                motivoRetencao)));
     }
 }

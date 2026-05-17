@@ -4,6 +4,7 @@ import {
   formatCurrency,
   formatDateTime,
   formatDecimal,
+  formatMotivoRetencao,
   formatPercentage,
   formatStatusCredito,
   formatStatusProcesso,
@@ -25,5 +26,8 @@ describe('calculoFormatters', () => {
     expect(formatSubcategoria(null)).toBe('-');
     expect(formatSubcategoria('MUSICO')).toBe('Músico');
     expect(formatStatusCredito('CALCULADO')).toBe('Calculado');
+    expect(formatStatusCredito('RETIDO')).toBe('Retido');
+    expect(formatMotivoRetencao(null)).toBe('-');
+    expect(formatMotivoRetencao('TITULAR_SEM_ASSOCIACAO')).toBe('Titular sem associação');
   });
 });

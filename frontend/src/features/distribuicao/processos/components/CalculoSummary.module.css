@@ -53,7 +53,7 @@
 
 .metrics {
   display: grid;
-  grid-template-columns: repeat(6, minmax(120px, 1fr));
+  grid-template-columns: repeat(4, minmax(140px, 1fr));
   gap: var(--space-3);
 }
 
@@ -86,9 +86,13 @@
   color: var(--color-accent-light);
 }
 
+.metricValueWarning {
+  color: var(--color-warning);
+}
+
 @media (max-width: 1200px) {
   .metrics {
-    grid-template-columns: repeat(3, minmax(140px, 1fr));
+    grid-template-columns: repeat(2, minmax(140px, 1fr));
   }
 }
 

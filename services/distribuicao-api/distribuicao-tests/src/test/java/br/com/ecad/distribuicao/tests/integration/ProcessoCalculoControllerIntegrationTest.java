@@ -275,9 +275,11 @@ class ProcessoCalculoControllerIntegrationTest {
                 List.of(new ObraOwnership(
                         OBRA_ID,
                         "Obra Calculada",
+                        "LIBERADA",
                         List.of(new ParticipacaoOwnership(
                                 TITULAR_AUTORAL_ID,
                                 "Titular Autoral",
+                                "UBC",
                                 CategoriaCredito.AUTORAL,
                                 null,
                                 new BigDecimal("100.0000"))))),

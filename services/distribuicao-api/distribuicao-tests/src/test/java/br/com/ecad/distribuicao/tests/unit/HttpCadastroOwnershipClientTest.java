@@ -170,12 +170,44 @@ class HttpCadastroOwnershipClientTest {
 
         assertThat(snapshot.obras()).hasSize(1);
         assertThat(snapshot.obras().getFirst().obraId()).isEqualTo(OBRA_A_ID);
+        assertThat(snapshot.obras().getFirst().status()).isEqualTo("LIBERADA");
+        assertThat(snapshot.obras().getFirst().titularidades().getFirst().associacaoSigla()).isEqualTo("UBC");
         assertThat(snapshot.obras().getFirst().titularidades().getFirst().categoria()).isEqualTo(CategoriaCredito.AUTORAL);
         assertThat(snapshot.obras().getFirst().titularidades().getFirst().percentual())
                 .isEqualByComparingTo(new BigDecimal("33.333333"));
         assertThat(snapshot.fonogramas()).hasSize(1);
+        assertThat(snapshot.fonogramas().getFirst().status()).isEqualTo("LIBERADO");
+        assertThat(snapshot.fonogramas().getFirst().participacoes().getFirst().associacaoSigla()).isEqualTo("UBC");
         assertThat(snapshot.fonogramas().getFirst().participacoes().getFirst().percentual())
                 .isEqualByComparingTo(new BigDecimal("66.666667"));
+    }
+
+    @Test
+    void buscarOwnership_WithMissingObraStatus_ShouldThrowPreRequisitosException() {
+        server.createContext(SNAPSHOT_PATH, exchange -> respond(exchange, 200, """
+                {
+                  "obras": [
+                    {
+                      "obraId": "%s",
+                      "titulo": "Obra A",
+                      "titularidades": [
+                        {
+                          "titularId": "%s",
+                          "nome": "Autor",
+                          "associacaoSigla": "UBC",
+                          "percentual": 100.0
+                        }
+                      ]
+                    }
+                  ],
+                  "fonogramas": []
+                }
+                """.formatted(OBRA_A_ID, TITULAR_ID)));
+        HttpCadastroOwnershipClient client = new HttpCadastroOwnershipClient(properties, objectMapper, meterRegistry);
+
+        assertThatThrownBy(() -> client.buscarOwnership(Set.of(OBRA_A_ID), Set.of(), null))
+                .isInstanceOf(PreRequisitosException.class)
+                .hasMessageContaining("Obra sem status");
     }
 
     private String validSnapshotBody() {

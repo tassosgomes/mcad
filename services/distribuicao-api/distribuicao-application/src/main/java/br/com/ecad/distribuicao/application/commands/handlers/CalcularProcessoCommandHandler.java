@@ -12,6 +12,7 @@ import br.com.ecad.distribuicao.domain.calculo.CalculadoraCreditos;
 import br.com.ecad.distribuicao.domain.calculo.CalculoCreditosInput;
 import br.com.ecad.distribuicao.domain.calculo.OwnershipSnapshot;
 import br.com.ecad.distribuicao.domain.calculo.ResultadoCalculo;
+import br.com.ecad.distribuicao.domain.entities.Credito;
 import br.com.ecad.distribuicao.domain.entities.OutboxEvent;
 import br.com.ecad.distribuicao.domain.entities.ProcessoDistribuicao;
 import br.com.ecad.distribuicao.domain.entities.SnapshotRol;
@@ -28,6 +29,7 @@ import br.com.ecad.distribuicao.domain.interfaces.SnapshotVerbaRepository;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.DistributionSummary;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
 import java.util.Map;
@@ -44,9 +46,12 @@ public class CalcularProcessoCommandHandler {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(CalcularProcessoCommandHandler.class);
     private static final String EVENT_TYPE = "distribuicao.processo.calculado";
+    private static final String CREDITO_RETIDO_EVENT_TYPE = "distribuicao.credito.retido";
     private static final String CALCULO_DURATION_METRIC = "distribuicao.calculo.duration";
     private static final String GENERATED_CREDITS_METRIC = "distribuicao.calculo.creditos.generated";
     private static final String CALCULATION_FAILURES_METRIC = "distribuicao.calculo.failures";
+    private static final String RETAINED_CREDITS_METRIC = "distribuicao.retencao.creditos.generated";
+    private static final String RETAINED_VALUE_METRIC = "distribuicao.retencao.valor.total";
 
     private static final String ENTITY_TYPE = "ProcessoDistribuicao";
     private static final String SCREEN_ID = "DISTRIBUICAO_PROCESSOS";
@@ -126,13 +131,22 @@ public class CalcularProcessoCommandHandler {
                     resultado.resumo().totalObras(),
                     resultado.resumo().totalPontos(),
                     resultado.resumo().totalCreditos(),
-                    resultado.resumo().valorTotalCalculado());
+                    resultado.resumo().valorTotalCalculado(),
+                    resultado.resumo().totalCreditosRetidos(),
+                    resultado.resumo().valorTotalRetido());
             ProcessoDistribuicao processoSalvo = processoRepository.save(processo);
 
             outboxEventRepository.save(OutboxEvent.criar(
                     EVENT_TYPE,
                     processo.getId().toString(),
                     criarPayloadEvento(processoSalvo, resultado)));
+            resultado.creditos().stream()
+                    .filter(credito -> credito.getMotivoRetencao() != null)
+                    .map(credito -> OutboxEvent.criar(
+                            CREDITO_RETIDO_EVENT_TYPE,
+                            credito.getId().toString(),
+                            criarPayloadCreditoRetido(processoSalvo, credito)))
+                    .forEach(outboxEventRepository::save);
 
             // Auditoria
             var auditCtx = auditContextProvider.current("system");
@@ -145,7 +159,9 @@ public class CalcularProcessoCommandHandler {
                     "totalExecucoes", resultado.resumo().totalExecucoes(),
                     "totalObras", resultado.resumo().totalObras(),
                     "totalCreditos", resultado.resumo().totalCreditos(),
-                    "valorTotalCalculado", resultado.resumo().valorTotalCalculado().toPlainString());
+                    "valorTotalCalculado", resultado.resumo().valorTotalCalculado().toPlainString(),
+                    "totalCreditosRetidos", resultado.resumo().totalCreditosRetidos(),
+                    "valorTotalRetido", resultado.resumo().valorTotalRetido().toPlainString());
             auditClient.publish(auditFactory.userAction(
                     ENTITY_TYPE, entityId,
                     "CALCULAR_PROCESSO", "Calcular processo de distribuição",
@@ -157,6 +173,7 @@ public class CalcularProcessoCommandHandler {
 
             recordDuration(startedAt, "success");
             recordGeneratedCredits(resultado.resumo().totalCreditos());
+            recordRetainedCredits(resultado.creditos());
             logCalculationSuccess(processoSalvo, resultado, elapsedMs(startedAt));
             return CalcularProcessoResponse.from(processoSalvo, resultado.resumo());
         } catch (RuntimeException exception) {
@@ -210,9 +227,33 @@ public class CalcularProcessoCommandHandler {
                     resultado.resumo().totalObras(),
                     resultado.resumo().totalCreditos(),
                     resultado.resumo().valorTotalCalculado(),
+                    resultado.resumo().totalCreditosRetidos(),
+                    resultado.resumo().valorTotalRetido(),
                     processo.getCalculadoEm()));
         } catch (JsonProcessingException exception) {
             throw new PreRequisitosException("Falha ao montar evento de cálculo do processo");
+        }
+    }
+
+    private String criarPayloadCreditoRetido(ProcessoDistribuicao processo, Credito credito) {
+        try {
+            return objectMapper.writeValueAsString(new CreditoRetidoEventPayload(
+                    credito.getId(),
+                    processo.getId(),
+                    processo.getRubricaSigla(),
+                    processo.getPeriodo(),
+                    credito.getTitularId(),
+                    credito.getTitularNome(),
+                    credito.getObraId(),
+                    credito.getObraTitulo(),
+                    credito.getFonogramaId(),
+                    credito.getCategoria().name(),
+                    credito.getSubcategoriaConexa() == null ? null : credito.getSubcategoriaConexa().name(),
+                    credito.getValorCredito(),
+                    credito.getMotivoRetencao().name(),
+                    credito.getRetidoEm()));
+        } catch (JsonProcessingException exception) {
+            throw new PreRequisitosException("Falha ao montar evento de crédito retido");
         }
     }
 
@@ -231,7 +272,7 @@ public class CalcularProcessoCommandHandler {
             ResultadoCalculo resultado,
             long durationMs) {
         LOGGER.info(
-                "distribuicao.calculo.succeeded processoId={} rubricaSigla={} periodo={} totalExecucoes={} totalObras={} totalCreditos={} valorTotalCalculado={} durationMs={}",
+                "distribuicao.calculo.succeeded processoId={} rubricaSigla={} periodo={} totalExecucoes={} totalObras={} totalCreditos={} valorTotalCalculado={} totalCreditosRetidos={} valorTotalRetido={} durationMs={}",
                 processo.getId(),
                 processo.getRubricaSigla(),
                 processo.getPeriodo(),
@@ -239,6 +280,8 @@ public class CalcularProcessoCommandHandler {
                 resultado.resumo().totalObras(),
                 resultado.resumo().totalCreditos(),
                 resultado.resumo().valorTotalCalculado(),
+                resultado.resumo().totalCreditosRetidos(),
+                resultado.resumo().valorTotalRetido(),
                 durationMs);
     }
 
@@ -274,6 +317,22 @@ public class CalcularProcessoCommandHandler {
         Counter.builder(GENERATED_CREDITS_METRIC)
                 .register(meterRegistry)
                 .increment(totalCreditos);
+    }
+
+    private void recordRetainedCredits(java.util.List<Credito> creditos) {
+        creditos.stream()
+                .filter(credito -> credito.getMotivoRetencao() != null)
+                .forEach(credito -> {
+                    String motivo = credito.getMotivoRetencao().name();
+                    Counter.builder(RETAINED_CREDITS_METRIC)
+                            .tag("motivo", motivo)
+                            .register(meterRegistry)
+                            .increment();
+                    DistributionSummary.builder(RETAINED_VALUE_METRIC)
+                            .tag("motivo", motivo)
+                            .register(meterRegistry)
+                            .record(credito.getValorCredito().doubleValue());
+                });
     }
 
     private void recordFailure(String failureType) {
@@ -312,6 +371,25 @@ public class CalcularProcessoCommandHandler {
             int totalObras,
             int totalCreditos,
             java.math.BigDecimal valorTotalCalculado,
+            int totalCreditosRetidos,
+            java.math.BigDecimal valorTotalRetido,
             java.time.Instant calculadoEm) {
+    }
+
+    private record CreditoRetidoEventPayload(
+            UUID creditoId,
+            UUID processoId,
+            String rubricaSigla,
+            String periodo,
+            UUID titularId,
+            String titularNome,
+            UUID obraId,
+            String obraTitulo,
+            UUID fonogramaId,
+            String categoria,
+            String subcategoriaConexa,
+            java.math.BigDecimal valorCredito,
+            String motivoRetencao,
+            java.time.Instant retidoEm) {
     }
 }

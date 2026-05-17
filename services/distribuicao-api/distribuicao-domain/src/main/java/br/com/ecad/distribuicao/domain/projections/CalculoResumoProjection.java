@@ -16,5 +16,7 @@ public record CalculoResumoProjection(
         BigDecimal totalPontos,
         Integer totalCreditos,
         BigDecimal valorTotalCalculado,
+        Integer totalCreditosRetidos,
+        BigDecimal valorTotalRetido,
         Instant calculadoEm) {
 }

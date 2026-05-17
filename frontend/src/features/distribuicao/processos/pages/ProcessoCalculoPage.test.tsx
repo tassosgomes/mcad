@@ -26,6 +26,8 @@ function calculoResponse(overrides: Partial<CalculoProcessoResponse> = {}): Calc
       totalObras: 1,
       totalCreditos: 1,
       valorTotalCalculado: '1000.00',
+      totalCreditosRetidos: 0,
+      valorTotalRetido: '0.00',
       calculadoEm: '2026-05-07T18:10:00Z',
     },
     creditos: {
@@ -44,6 +46,8 @@ function calculoResponse(overrides: Partial<CalculoProcessoResponse> = {}): Calc
           valorCredito: '1000.00',
           pontosObra: '10.000000',
           status: 'CALCULADO',
+          motivoRetencao: null,
+          retidoEm: null,
           criadoEm: '2026-05-07T18:10:00Z',
         },
       ],
@@ -144,6 +148,8 @@ describe('ProcessoCalculoPage', () => {
         totalObras: 0,
         totalCreditos: 0,
         valorTotalCalculado: '0.00',
+        totalCreditosRetidos: 0,
+        valorTotalRetido: '0.00',
         calculadoEm: null,
       },
       creditos: {
@@ -182,6 +188,8 @@ describe('ProcessoCalculoPage', () => {
           totalObras: 0,
           totalCreditos: 0,
           valorTotalCalculado: '0.00',
+          totalCreditosRetidos: 0,
+          valorTotalRetido: '0.00',
           calculadoEm: null,
         },
         creditos: {

@@ -3,6 +3,8 @@ package br.com.ecad.distribuicao.application.queries.handlers;
 import br.com.ecad.distribuicao.application.dto.CalculoProcessoResponse;
 import br.com.ecad.distribuicao.application.queries.ConsultarCalculoProcessoQuery;
 import br.com.ecad.distribuicao.domain.enums.CategoriaCredito;
+import br.com.ecad.distribuicao.domain.enums.MotivoRetencao;
+import br.com.ecad.distribuicao.domain.enums.StatusCredito;
 import br.com.ecad.distribuicao.domain.exceptions.NotFoundException;
 import br.com.ecad.distribuicao.domain.exceptions.PreRequisitosException;
 import br.com.ecad.distribuicao.domain.filters.CreditoFiltro;
@@ -30,6 +32,8 @@ public class ConsultarCalculoProcessoQueryHandler {
         Objects.requireNonNull(query, "query must not be null");
         validatePagination(query.page(), query.size());
         CategoriaCredito categoria = parseCategoria(query.categoria());
+        StatusCredito status = parseStatus(query.status());
+        MotivoRetencao motivoRetencao = parseMotivoRetencao(query.motivoRetencao());
 
         CalculoResumoProjection resumo = creditoRepository.buscarResumo(query.processoId())
                 .orElseThrow(() -> new NotFoundException(
@@ -38,7 +42,9 @@ public class ConsultarCalculoProcessoQueryHandler {
                 query.processoId(),
                 categoria,
                 query.titularId(),
-                query.obraId());
+                query.obraId(),
+                status,
+                motivoRetencao);
 
         return CalculoProcessoResponse.from(
                 resumo,
@@ -63,6 +69,30 @@ public class ConsultarCalculoProcessoQueryHandler {
             return CategoriaCredito.valueOf(categoria.trim().toUpperCase(Locale.ROOT));
         } catch (IllegalArgumentException exception) {
             throw new PreRequisitosException("Categoria de crédito inválida: " + categoria);
+        }
+    }
+
+    private StatusCredito parseStatus(String status) {
+        if (status == null || status.isBlank()) {
+            return null;
+        }
+
+        try {
+            return StatusCredito.valueOf(status.trim().toUpperCase(Locale.ROOT));
+        } catch (IllegalArgumentException exception) {
+            throw new PreRequisitosException("Status de crédito inválido: " + status);
+        }
+    }
+
+    private MotivoRetencao parseMotivoRetencao(String motivoRetencao) {
+        if (motivoRetencao == null || motivoRetencao.isBlank()) {
+            return null;
+        }
+
+        try {
+            return MotivoRetencao.valueOf(motivoRetencao.trim().toUpperCase(Locale.ROOT));
+        } catch (IllegalArgumentException exception) {
+            throw new PreRequisitosException("Motivo de retenção inválido: " + motivoRetencao);
         }
     }
 }

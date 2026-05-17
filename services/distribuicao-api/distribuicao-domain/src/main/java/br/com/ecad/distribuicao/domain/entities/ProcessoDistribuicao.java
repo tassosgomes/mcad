@@ -50,6 +50,12 @@ public class ProcessoDistribuicao {
     @Column(name = "valor_total_calculado", precision = 15, scale = 2)
     private BigDecimal valorTotalCalculado;
 
+    @Column(name = "total_creditos_retidos")
+    private Integer totalCreditosRetidos;
+
+    @Column(name = "valor_total_retido", precision = 15, scale = 2)
+    private BigDecimal valorTotalRetido;
+
     @Column(name = "analista_responsavel", nullable = false, length = 200)
     private String analistaResponsavel;
 
@@ -107,12 +113,32 @@ public class ProcessoDistribuicao {
             int totalObras,
             BigDecimal totalPontos,
             int totalCreditos,
-            BigDecimal valorTotalCalculado) {
+            BigDecimal valorTotalCalculado,
+            int totalCreditosRetidos,
+            BigDecimal valorTotalRetido) {
         marcarCalculado(totalExecucoes);
         this.totalObras = totalObras;
         this.totalPontos = totalPontos;
         this.totalCreditos = totalCreditos;
         this.valorTotalCalculado = valorTotalCalculado;
+        this.totalCreditosRetidos = totalCreditosRetidos;
+        this.valorTotalRetido = valorTotalRetido;
+    }
+
+    public void marcarCalculado(
+            int totalExecucoes,
+            int totalObras,
+            BigDecimal totalPontos,
+            int totalCreditos,
+            BigDecimal valorTotalCalculado) {
+        marcarCalculado(
+                totalExecucoes,
+                totalObras,
+                totalPontos,
+                totalCreditos,
+                valorTotalCalculado,
+                0,
+                BigDecimal.ZERO);
     }
 
     public void aprovar() {
@@ -156,6 +182,8 @@ public class ProcessoDistribuicao {
     public BigDecimal getTotalPontos() { return totalPontos; }
     public Integer getTotalCreditos() { return totalCreditos; }
     public BigDecimal getValorTotalCalculado() { return valorTotalCalculado; }
+    public Integer getTotalCreditosRetidos() { return totalCreditosRetidos; }
+    public BigDecimal getValorTotalRetido() { return valorTotalRetido; }
     public String getAnalistaResponsavel() { return analistaResponsavel; }
     public Instant getCriadoEm() { return criadoEm; }
     public Instant getCalculadoEm() { return calculadoEm; }

@@ -64,6 +64,12 @@ public class JpaCreditoRepository implements CreditoRepository {
         if (filtro.obraId() != null) {
             whereClause.append(" and credito.obraId = :obraId");
         }
+        if (filtro.status() != null) {
+            whereClause.append(" and credito.status = :status");
+        }
+        if (filtro.motivoRetencao() != null) {
+            whereClause.append(" and credito.motivoRetencao = :motivoRetencao");
+        }
 
         TypedQuery<Credito> query = entityManager.createQuery(
                 "select credito from Credito credito "
@@ -97,6 +103,8 @@ public class JpaCreditoRepository implements CreditoRepository {
                             processo.totalPontos,
                             processo.totalCreditos,
                             processo.valorTotalCalculado,
+                            processo.totalCreditosRetidos,
+                            processo.valorTotalRetido,
                             processo.calculadoEm
                         )
                         from ProcessoDistribuicao processo
@@ -118,6 +126,12 @@ public class JpaCreditoRepository implements CreditoRepository {
         }
         if (filtro.obraId() != null) {
             query.setParameter("obraId", filtro.obraId());
+        }
+        if (filtro.status() != null) {
+            query.setParameter("status", filtro.status());
+        }
+        if (filtro.motivoRetencao() != null) {
+            query.setParameter("motivoRetencao", filtro.motivoRetencao());
         }
     }
 }

@@ -9,6 +9,7 @@ import java.util.UUID;
 public record ParticipacaoOwnership(
         UUID titularId,
         String titularNome,
+        String associacaoSigla,
         CategoriaCredito categoria,
         SubcategoriaConexa subcategoriaConexa,
         BigDecimal percentual) {

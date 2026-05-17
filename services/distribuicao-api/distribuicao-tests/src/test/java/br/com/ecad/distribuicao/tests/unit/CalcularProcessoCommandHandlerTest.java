@@ -24,6 +24,7 @@ import br.com.ecad.distribuicao.domain.entities.ProcessoDistribuicao;
 import br.com.ecad.distribuicao.domain.entities.SnapshotRol;
 import br.com.ecad.distribuicao.domain.entities.SnapshotVerba;
 import br.com.ecad.distribuicao.domain.enums.CategoriaCredito;
+import br.com.ecad.distribuicao.domain.enums.MotivoRetencao;
 import br.com.ecad.distribuicao.domain.enums.StatusProcesso;
 import br.com.ecad.distribuicao.domain.enums.SubcategoriaConexa;
 import br.com.ecad.distribuicao.domain.exceptions.NotFoundException;
@@ -179,6 +180,38 @@ class CalcularProcessoCommandHandlerTest {
         assertThat(response.status()).isEqualTo(StatusProcesso.CALCULADO);
         assertThat(response.totalCreditos()).isEqualTo(3);
         assertThat(response.valorTotalCalculado()).isEqualByComparingTo("1000.00");
+        assertThat(response.totalCreditosRetidos()).isZero();
+        assertThat(response.valorTotalRetido()).isEqualByComparingTo("0.00");
+    }
+
+    @Test
+    void handle_WithRetainedCredits_ShouldPersistRetainedOutboxEventsAndMetrics() {
+        givenCalculationWithRetainedCredit();
+        ArgumentCaptor<OutboxEvent> eventCaptor = ArgumentCaptor.forClass(OutboxEvent.class);
+
+        CalcularProcessoResponse response = handler.handle(new CalcularProcessoCommand(
+                PROCESSO_ID,
+                "analista",
+                TOKEN));
+
+        verify(outboxEventRepository, org.mockito.Mockito.times(2)).save(eventCaptor.capture());
+        assertThat(eventCaptor.getAllValues())
+                .extracting(OutboxEvent::getType)
+                .containsExactlyInAnyOrder("distribuicao.processo.calculado", "distribuicao.credito.retido");
+        OutboxEvent retido = eventCaptor.getAllValues().stream()
+                .filter(event -> event.getType().equals("distribuicao.credito.retido"))
+                .findFirst()
+                .orElseThrow();
+        assertThat(retido.getPayload())
+                .contains("\"processoId\":\"" + PROCESSO_ID + "\"")
+                .contains("\"motivoRetencao\":\"TITULAR_SEM_ASSOCIACAO\"");
+        assertThat(response.totalCreditosRetidos()).isEqualTo(1);
+        assertThat(response.valorTotalRetido()).isEqualByComparingTo("1000.00");
+        assertThat(meterRegistry.get("distribuicao.retencao.creditos.generated")
+                        .tag("motivo", MotivoRetencao.TITULAR_SEM_ASSOCIACAO.name())
+                        .counter()
+                        .count())
+                .isEqualTo(1.0);
     }
 
     @Test
@@ -227,6 +260,8 @@ class CalcularProcessoCommandHandlerTest {
                 "totalObras=2",
                 "totalCreditos=3",
                 "valorTotalCalculado=1000.00",
+                "totalCreditosRetidos=0",
+                "valorTotalRetido=0.00",
                 "durationMs=");
         assertThat(output).doesNotContain("Titular Autoral", "Titular Conexo");
     }
@@ -251,6 +286,22 @@ class CalcularProcessoCommandHandlerTest {
         when(snapshotRolRepository.findById(SNAPSHOT_ROL_ID)).thenReturn(Optional.of(snapshotRol(rolPayload)));
         when(snapshotVerbaRepository.findById(SNAPSHOT_VERBA_ID)).thenReturn(Optional.of(snapshotVerba()));
         when(cadastroOwnershipClient.buscarOwnership(any(), any(), any())).thenReturn(ownershipSnapshot());
+        when(creditoRepository.saveAll(any())).thenAnswer(invocation -> invocation.getArgument(0));
+        when(processoRepository.save(any(ProcessoDistribuicao.class))).thenAnswer(invocation -> invocation.getArgument(0));
+    }
+
+    private void givenCalculationWithRetainedCredit() {
+        ProcessoDistribuicao processo = processo(StatusProcesso.CRIADO);
+        when(processoRepository.findById(PROCESSO_ID)).thenReturn(Optional.of(processo));
+        when(snapshotRolRepository.findById(SNAPSHOT_ROL_ID)).thenReturn(Optional.of(snapshotRol(rolPayloadSingleObra())));
+        when(snapshotVerbaRepository.findById(SNAPSHOT_VERBA_ID)).thenReturn(Optional.of(snapshotVerba()));
+        when(cadastroOwnershipClient.buscarOwnership(any(), any(), any())).thenReturn(new OwnershipSnapshot(
+                List.of(new ObraOwnership(
+                        OBRA_A_ID,
+                        "Obra A",
+                        "LIBERADA",
+                        List.of(autoralSemAssociacao(TITULAR_A_ID)))),
+                List.of()));
         when(creditoRepository.saveAll(any())).thenAnswer(invocation -> invocation.getArgument(0));
         when(processoRepository.save(any(ProcessoDistribuicao.class))).thenAnswer(invocation -> invocation.getArgument(0));
     }
@@ -315,15 +366,26 @@ class CalcularProcessoCommandHandlerTest {
     private OwnershipSnapshot ownershipSnapshot() {
         return new OwnershipSnapshot(
                 List.of(
-                        new ObraOwnership(OBRA_A_ID, "Obra A", List.of(autoral(TITULAR_A_ID))),
-                        new ObraOwnership(OBRA_B_ID, "Obra B", List.of(autoral(TITULAR_A_ID)))),
-                List.of(new FonogramaOwnership(FONOGRAMA_ID, OBRA_A_ID, List.of(conexo(TITULAR_B_ID)))));
+                        new ObraOwnership(OBRA_A_ID, "Obra A", "LIBERADA", List.of(autoral(TITULAR_A_ID))),
+                        new ObraOwnership(OBRA_B_ID, "Obra B", "LIBERADA", List.of(autoral(TITULAR_A_ID)))),
+                List.of(new FonogramaOwnership(FONOGRAMA_ID, OBRA_A_ID, "LIBERADO", List.of(conexo(TITULAR_B_ID)))));
     }
 
     private ParticipacaoOwnership autoral(UUID titularId) {
         return new ParticipacaoOwnership(
                 titularId,
                 "Titular Autoral",
+                "UBC",
+                CategoriaCredito.AUTORAL,
+                null,
+                new BigDecimal("100.0000"));
+    }
+
+    private ParticipacaoOwnership autoralSemAssociacao(UUID titularId) {
+        return new ParticipacaoOwnership(
+                titularId,
+                "Titular Autoral",
+                null,
                 CategoriaCredito.AUTORAL,
                 null,
                 new BigDecimal("100.0000"));
@@ -333,6 +395,7 @@ class CalcularProcessoCommandHandlerTest {
         return new ParticipacaoOwnership(
                 titularId,
                 "Titular Conexo",
+                "UBC",
                 CategoriaCredito.CONEXO,
                 SubcategoriaConexa.INTERPRETE,
                 new BigDecimal("100.0000"));

@@ -15,6 +15,7 @@ interface Metric {
   label: string;
   value: string;
   highlight?: boolean;
+  tone?: 'warning';
 }
 
 export function CalculoSummary({ calculo }: CalculoSummaryProps) {
@@ -26,6 +27,8 @@ export function CalculoSummary({ calculo }: CalculoSummaryProps) {
     { label: 'Obras', value: String(resumo.totalObras ?? 0) },
     { label: 'Créditos', value: String(resumo.totalCreditos ?? 0) },
     { label: 'Total calculado', value: formatCurrency(resumo.valorTotalCalculado), highlight: true },
+    { label: 'Créditos retidos', value: String(resumo.totalCreditosRetidos ?? 0), tone: 'warning' },
+    { label: 'Valor retido', value: formatCurrency(resumo.valorTotalRetido), tone: 'warning' },
   ];
 
   return (
@@ -49,7 +52,13 @@ export function CalculoSummary({ calculo }: CalculoSummaryProps) {
         {metrics.map((metric) => (
           <div key={metric.label} className={styles.metric}>
             <span className={styles.metricLabel}>{metric.label}</span>
-            <strong className={metric.highlight ? styles.metricValueHighlight : styles.metricValue}>
+            <strong
+              className={[
+                styles.metricValue,
+                metric.highlight ? styles.metricValueHighlight : '',
+                metric.tone === 'warning' ? styles.metricValueWarning : '',
+              ].join(' ')}
+            >
               {metric.value}
             </strong>
           </div>

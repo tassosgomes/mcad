@@ -181,6 +181,7 @@ public class HttpCadastroOwnershipClient implements CadastroOwnershipClient {
         return new ObraOwnership(
                 obra.obraId(),
                 obra.titulo(),
+                requireText(obra.status(), "Obra sem status no ownership snapshot"),
                 nullToList(obra.titularidades()).stream()
                         .map(this::mapTitularidade)
                         .toList());
@@ -190,6 +191,7 @@ public class HttpCadastroOwnershipClient implements CadastroOwnershipClient {
         return new ParticipacaoOwnership(
                 titularidade.titularId(),
                 titularidade.nome(),
+                titularidade.associacaoSigla(),
                 CategoriaCredito.AUTORAL,
                 null,
                 requirePercentual(titularidade.percentual(), "Titularidade autoral sem percentual"));
@@ -199,6 +201,7 @@ public class HttpCadastroOwnershipClient implements CadastroOwnershipClient {
         return new FonogramaOwnership(
                 fonograma.fonogramaId(),
                 fonograma.obraId(),
+                requireText(fonograma.status(), "Fonograma sem status no ownership snapshot"),
                 nullToList(fonograma.participacoes()).stream()
                         .map(this::mapParticipacao)
                         .toList());
@@ -208,6 +211,7 @@ public class HttpCadastroOwnershipClient implements CadastroOwnershipClient {
         return new ParticipacaoOwnership(
                 participacao.titularId(),
                 participacao.nome(),
+                participacao.associacaoSigla(),
                 CategoriaCredito.CONEXO,
                 mapSubcategoriaConexa(participacao.categoria()),
                 requirePercentual(participacao.percentual(), "Participação conexa sem percentual"));
@@ -228,6 +232,13 @@ public class HttpCadastroOwnershipClient implements CadastroOwnershipClient {
             throw new PreRequisitosException(message);
         }
         return percentual;
+    }
+
+    private String requireText(String value, String message) {
+        if (!hasText(value)) {
+            throw new PreRequisitosException(message);
+        }
+        return value;
     }
 
     private java.util.Optional<String> resolveAuthorizationHeader(String bearerToken) {

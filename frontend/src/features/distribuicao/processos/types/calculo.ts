@@ -4,7 +4,12 @@ export type CategoriaCredito = 'AUTORAL' | 'CONEXO';
 
 export type SubcategoriaConexa = 'INTERPRETE' | 'PRODUTOR' | 'MUSICO';
 
-export type StatusCredito = 'CALCULADO' | 'RETIDO' | 'LIBERADO';
+export type StatusCredito = 'CALCULADO' | 'RETIDO';
+
+export type MotivoRetencao =
+  | 'OBRA_PENDENTE'
+  | 'OBRA_BLOQUEADA'
+  | 'TITULAR_SEM_ASSOCIACAO';
 
 export interface CalculoProcessoResumo {
   verbaLiquida: string;
@@ -13,6 +18,8 @@ export interface CalculoProcessoResumo {
   totalObras: number | null;
   totalCreditos: number | null;
   valorTotalCalculado: string | null;
+  totalCreditosRetidos: number | null;
+  valorTotalRetido: string | null;
   calculadoEm: string | null;
 }
 
@@ -30,6 +37,8 @@ export interface CreditoCalculo {
   valorCredito: string;
   pontosObra: string;
   status: StatusCredito;
+  motivoRetencao: MotivoRetencao | null;
+  retidoEm: string | null;
   criadoEm: string;
 }
 
@@ -65,6 +74,8 @@ export interface CalcularProcessoResponse {
   totalPontos: string;
   totalCreditos: number;
   valorTotalCalculado: string;
+  totalCreditosRetidos: number;
+  valorTotalRetido: string;
   calculadoEm: string;
 }
 
@@ -74,6 +85,8 @@ export interface CalculoProcessoFilters {
   categoria?: CategoriaCredito | '';
   titularId?: string;
   obraId?: string;
+  status?: StatusCredito | '';
+  motivoRetencao?: MotivoRetencao | '';
 }
 
 export interface ProblemDetails {

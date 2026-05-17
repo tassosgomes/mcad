@@ -110,7 +110,7 @@ class CalcularProcessoCommandHandlerIntegrationTest {
 
         ProcessoDistribuicao persisted = entityManager.find(ProcessoDistribuicao.class, processo.getId());
         List<Credito> creditos = creditoRepository.findByProcessoId(
-                        new CreditoFiltro(processo.getId(), null, null, null),
+                        new CreditoFiltro(processo.getId(), null, null, null, null, null),
                         PageRequest.of(0, 10))
                 .getContent();
         Integer outboxCount = jdbcTemplate.queryForObject("""
@@ -145,7 +145,7 @@ class CalcularProcessoCommandHandlerIntegrationTest {
         entityManager.clear();
 
         List<Credito> creditos = creditoRepository.findByProcessoId(
-                        new CreditoFiltro(processo.getId(), null, null, null),
+                        new CreditoFiltro(processo.getId(), null, null, null, null, null),
                         PageRequest.of(0, 10))
                 .getContent();
 
@@ -207,9 +207,11 @@ class CalcularProcessoCommandHandlerIntegrationTest {
                 List.of(new ObraOwnership(
                         OBRA_ID,
                         "Obra Calculada",
+                        "LIBERADA",
                         List.of(new ParticipacaoOwnership(
                                 TITULAR_CALCULADO_ID,
                                 "Titular Calculado",
+                                "UBC",
                                 CategoriaCredito.AUTORAL,
                                 null,
                                 new BigDecimal("100.0000"))))),

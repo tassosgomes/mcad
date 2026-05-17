@@ -19,6 +19,8 @@ const creditos: CreditoCalculo[] = [
     valorCredito: '1000.00',
     pontosObra: '20.000000',
     status: 'CALCULADO',
+    motivoRetencao: null,
+    retidoEm: null,
     criadoEm: '2026-05-07T18:00:00Z',
   },
   {
@@ -34,7 +36,9 @@ const creditos: CreditoCalculo[] = [
     valorObra: '333.30',
     valorCredito: '166.65',
     pontosObra: '10.000000',
-    status: 'CALCULADO',
+    status: 'RETIDO',
+    motivoRetencao: 'OBRA_BLOQUEADA',
+    retidoEm: '2026-05-07T18:01:00Z',
     criadoEm: '2026-05-07T18:01:00Z',
   },
 ];
@@ -55,9 +59,11 @@ describe('CreditosTable', () => {
     expect(autoralRow).not.toBeNull();
     expect(conexoRow).not.toBeNull();
     expect(within(autoralRow as HTMLTableRowElement).getByText('Autoral')).toBeInTheDocument();
-    expect(within(autoralRow as HTMLTableRowElement).getAllByText('-')).toHaveLength(2);
+    expect(within(autoralRow as HTMLTableRowElement).getAllByText('-')).toHaveLength(3);
     expect(within(conexoRow as HTMLTableRowElement).getByText('Conexo')).toBeInTheDocument();
     expect(within(conexoRow as HTMLTableRowElement).getByText('Intérprete')).toBeInTheDocument();
+    expect(within(conexoRow as HTMLTableRowElement).getByText('Retido')).toBeInTheDocument();
+    expect(within(conexoRow as HTMLTableRowElement).getByText('Obra bloqueada')).toBeInTheDocument();
   });
 
   it('renders empty and paginated states', async () => {

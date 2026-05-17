@@ -1,10 +1,12 @@
-import type { CategoriaCredito } from '../types/calculo';
+import type { CategoriaCredito, MotivoRetencao, StatusCredito } from '../types/calculo';
 import styles from './CreditosFilters.module.css';
 
 interface CreditosFiltersValue {
   categoria: CategoriaCredito | '';
   titularId: string;
   obraId: string;
+  status: StatusCredito | '';
+  motivoRetencao: MotivoRetencao | '';
 }
 
 interface CreditosFiltersProps {
@@ -43,6 +45,31 @@ export function CreditosFilters({ value, onChange }: CreditosFiltersProps) {
           onChange={(event) => onChange({ ...value, obraId: event.target.value })}
           placeholder="ID da obra"
         />
+      </label>
+
+      <label className={styles.field}>
+        <span>Status</span>
+        <select
+          value={value.status}
+          onChange={(event) => onChange({ ...value, status: event.target.value as StatusCredito | '' })}
+        >
+          <option value="">Todos</option>
+          <option value="CALCULADO">Calculado</option>
+          <option value="RETIDO">Retido</option>
+        </select>
+      </label>
+
+      <label className={styles.field}>
+        <span>Motivo</span>
+        <select
+          value={value.motivoRetencao}
+          onChange={(event) => onChange({ ...value, motivoRetencao: event.target.value as MotivoRetencao | '' })}
+        >
+          <option value="">Todos</option>
+          <option value="OBRA_PENDENTE">Obra pendente</option>
+          <option value="OBRA_BLOQUEADA">Obra bloqueada</option>
+          <option value="TITULAR_SEM_ASSOCIACAO">Titular sem associação</option>
+        </select>
       </label>
     </form>
   );

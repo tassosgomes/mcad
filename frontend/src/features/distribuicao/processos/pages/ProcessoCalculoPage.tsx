@@ -10,7 +10,13 @@ import { CalculoSummary } from '../components/CalculoSummary';
 import { CreditosFilters } from '../components/CreditosFilters';
 import { CreditosTable } from '../components/CreditosTable';
 import { useCalcularProcesso, useProcessoCalculo } from '../hooks/useProcessoCalculo';
-import type { CalculoProcessoFilters, CategoriaCredito, ProblemDetails } from '../types/calculo';
+import type {
+  CalculoProcessoFilters,
+  CategoriaCredito,
+  MotivoRetencao,
+  ProblemDetails,
+  StatusCredito,
+} from '../types/calculo';
 import styles from './ProcessoCalculoPage.module.css';
 
 const PAGE_SIZE = 20;
@@ -19,12 +25,16 @@ interface UiFilters {
   categoria: CategoriaCredito | '';
   titularId: string;
   obraId: string;
+  status: StatusCredito | '';
+  motivoRetencao: MotivoRetencao | '';
 }
 
 const initialFilters: UiFilters = {
   categoria: '',
   titularId: '',
   obraId: '',
+  status: '',
+  motivoRetencao: '',
 };
 
 function toProblemDetails(error: unknown): ProblemDetails {
@@ -57,6 +67,8 @@ export function ProcessoCalculoPage() {
     categoria: filters.categoria,
     titularId: filters.titularId.trim(),
     obraId: filters.obraId.trim(),
+    status: filters.status,
+    motivoRetencao: filters.motivoRetencao,
   };
 
   const calculoQuery = useProcessoCalculo(processoId, queryFilters);

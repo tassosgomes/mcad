@@ -18,6 +18,8 @@ public record CalcularProcessoResponse(
         BigDecimal totalPontos,
         int totalCreditos,
         BigDecimal valorTotalCalculado,
+        int totalCreditosRetidos,
+        BigDecimal valorTotalRetido,
         Instant calculadoEm) {
 
     public static CalcularProcessoResponse from(
@@ -34,6 +36,8 @@ public record CalcularProcessoResponse(
                 resumo.totalPontos(),
                 resumo.totalCreditos(),
                 resumo.valorTotalCalculado(),
+                resumo.totalCreditosRetidos(),
+                resumo.valorTotalRetido(),
                 processo.getCalculadoEm());
     }
 }
