@@ -10,6 +10,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import br.com.ecad.distribuicao.api.DistribuicaoApiApplication;
 import br.com.ecad.distribuicao.domain.entities.SnapshotRol;
 import br.com.ecad.distribuicao.domain.entities.SnapshotVerba;
+import br.com.ecad.distribuicao.infra.persistence.SpringDataProcessoRepository;
 import br.com.ecad.distribuicao.infra.persistence.SpringDataSnapshotRolRepository;
 import br.com.ecad.distribuicao.infra.persistence.SpringDataSnapshotVerbaRepository;
 import br.org.ecad.audit.sdk.AuditClient;
@@ -70,6 +71,8 @@ class ProcessoControllerIntegrationTest {
     @Autowired ObjectMapper objectMapper;
     @Autowired SpringDataSnapshotRolRepository rolRepository;
     @Autowired SpringDataSnapshotVerbaRepository verbaRepository;
+    @Autowired SpringDataProcessoRepository processoRepository;
+    @Autowired org.springframework.jdbc.core.JdbcTemplate jdbcTemplate;
 
     @MockBean AuditClient auditClient;
     @MockBean JwtDecoder jwtDecoder;
@@ -79,6 +82,13 @@ class ProcessoControllerIntegrationTest {
 
     @BeforeEach
     void setUp() {
+        // Ordem importa: processos referencia snapshots_rol/verba via FK e
+        // outbox_events referencia processos via aggregate_id (sem FK formal,
+        // mas limpamos para nao acumular entre testes). Deletar processos antes
+        // dos snapshots evita ConstraintViolationException no teardown.
+        jdbcTemplate.update("DELETE FROM distribuicao.outbox_events");
+        jdbcTemplate.update("DELETE FROM distribuicao.audit_outbox");
+        processoRepository.deleteAll();
         rolRepository.deleteAll();
         verbaRepository.deleteAll();
     }

@@ -49,12 +49,21 @@ public class JpaCreditoRepository implements CreditoRepository {
         Objects.requireNonNull(filtro, "filtro must not be null");
         Objects.requireNonNull(pageable, "pageable must not be null");
 
-        String whereClause = """
-                where credito.processoId = :processoId
-                  and (:categoria is null or credito.categoria = :categoria)
-                  and (:titularId is null or credito.titularId = :titularId)
-                  and (:obraId is null or credito.obraId = :obraId)
-                """;
+        // WHERE construido condicionalmente para evitar o padrao
+        // ":param is null or x = :param", que quebra quando o driver PostgreSQL
+        // esta configurado com stringtype=unspecified (necessario para INSERTs
+        // jsonb do audit-sdk). Sem tipo explicito, o servidor recusa com
+        // "could not determine data type of parameter $N".
+        StringBuilder whereClause = new StringBuilder("where credito.processoId = :processoId");
+        if (filtro.categoria() != null) {
+            whereClause.append(" and credito.categoria = :categoria");
+        }
+        if (filtro.titularId() != null) {
+            whereClause.append(" and credito.titularId = :titularId");
+        }
+        if (filtro.obraId() != null) {
+            whereClause.append(" and credito.obraId = :obraId");
+        }
 
         TypedQuery<Credito> query = entityManager.createQuery(
                 "select credito from Credito credito "
@@ -100,8 +109,15 @@ public class JpaCreditoRepository implements CreditoRepository {
 
     private void setFiltroParameters(TypedQuery<?> query, CreditoFiltro filtro) {
         query.setParameter("processoId", filtro.processoId());
-        query.setParameter("categoria", filtro.categoria());
-        query.setParameter("titularId", filtro.titularId());
-        query.setParameter("obraId", filtro.obraId());
+        // Bind apenas parametros usados pelo WHERE construido em findByProcessoId.
+        if (filtro.categoria() != null) {
+            query.setParameter("categoria", filtro.categoria());
+        }
+        if (filtro.titularId() != null) {
+            query.setParameter("titularId", filtro.titularId());
+        }
+        if (filtro.obraId() != null) {
+            query.setParameter("obraId", filtro.obraId());
+        }
     }
 }
