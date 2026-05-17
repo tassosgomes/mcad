@@ -69,7 +69,7 @@ O mini-ECAD (mcad) é uma aplicação de demonstração multi-contexto que usa o
 | D03 Arrecadação | gestao-usuarios-musica, gestao-licencas | `done` (backend + frontend + rotas + sidebar implementados; tasks 100% concluídas) |
 | D03 Arrecadação | calculo-verba-liquida | `done` (10/10 tasks; qa_report; migration V13, VerbaService + handlers + recálculo + Outbox) |
 | D03 Arrecadação | estorno-pagamento | `done` (backend + frontend; migration V10, endpoint `POST /pagamentos/{id}/estornar`, VerbaEstornoFlowIT/VerbaLockIT) |
-| D04 Distribuição | sync-rubricas (consumer + snapshot) | `done` (implementado; testes de integração seguem bloqueados por dívida de Testcontainers/Docker) |
+| D04 Distribuição | sync-rubricas (consumer + snapshot) | `done` (implementado; testes de integração verdes após bump Testcontainers 1.21.3 + workaround api.version, commits 0fb21c0/e84764b — task 6.0 fechada) |
 | D04 Distribuição | gestao-processos | `done` (backend + frontend completos; `@RequiresPermission` em todos os endpoints e auditoria via `AuditClient` em todos os handlers de comando; 95 unit tests verdes; 10 IT bloqueados por dívida pré-existente de Testcontainers 1.19.8 / Docker engine 1.44+ — escopo separado) |
 | D04 Distribuição | calculo-creditos | `done` (cálculo ponderado por quantidade/peso, split autoral/conexo, persistência de créditos e evento `distribuicao.processo.calculado`; sem retenção, ajuste ou demonstrativo) |
 | D04 Distribuição | retencao-creditos, liberacao-retidos, ajustes-estorno, demonstrativo-creditos | `planned` |

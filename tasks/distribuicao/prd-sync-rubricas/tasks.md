@@ -31,7 +31,7 @@ Módulo React com API client, página de listagem e integração de roteamento.
 - [x] 3.0 Consumidor RabbitMQ: listener, handler e configuração
 - [x] 4.0 Application + API: queries, controller, security e error handler
 - [x] 5.0 Infraestrutura: Docker Compose, scripts e variáveis de ambiente
-- [ ] 6.0 Testes backend: unitários e integração
+- [x] 6.0 Testes backend: unitários e integração
 - [x] 7.0 Frontend: módulo distribuicao/rubricas
 
 ## Rastreabilidade US → Tasks

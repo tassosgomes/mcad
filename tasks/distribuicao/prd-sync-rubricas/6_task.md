@@ -1,5 +1,5 @@
 ---
-status: in_progress
+status: done
 parallelizable: false
 blocked_by: ["3.0", "4.0"]
 ---
@@ -47,20 +47,20 @@ Implementar testes unitários (Mockito + AssertJ) e testes de integração (Test
 
 ## Subtarefas
 
-- [ ] 6.1 Criar `RubricaEventHandlerTest.java`:
+- [x] 6.1 Criar `RubricaEventHandlerTest.java`:
   - Teste: cria rubrica quando sigla não existe
   - Teste: atualiza rubrica quando sigla já existe
   - Teste: múltiplas chamadas com mesmo payload não duplicam (idempotência)
-- [ ] 6.2 Criar `RubricaQueryHandlerTest.java`:
+- [x] 6.2 Criar `RubricaQueryHandlerTest.java`:
   - Teste: listar retorna lista com N rubricas
   - Teste: listar retorna lista vazia
   - Teste: buscar por sigla existente retorna rubrica
   - Teste: buscar por sigla inexistente lança NotFoundException
-- [ ] 6.3 Criar `RubricaEventListenerIntegrationTest.java` (Testcontainers PostgreSQL + RabbitMQ):
+- [x] 6.3 Criar `RubricaEventListenerIntegrationTest.java` (Testcontainers PostgreSQL + RabbitMQ):
   - Teste: publicar CloudEvent válido → rubrica persistida no PostgreSQL
   - Teste: publicar evento com payload inválido → descartado sem erro
   - Teste: publicar mesmo evento 2x → sem duplicação (idempotência)
-- [ ] 6.4 Criar `RubricaControllerIntegrationTest.java` (Testcontainers PostgreSQL):
+- [x] 6.4 Criar `RubricaControllerIntegrationTest.java` (Testcontainers PostgreSQL):
   - Teste: GET /rubricas retorna 200 com lista
   - Teste: GET /rubricas retorna 200 com [] quando vazio
   - Teste: GET /rubricas/{sigla} retorna 200
@@ -165,8 +165,8 @@ class RubricaEventListenerIntegrationTest {
 
 ## Critérios de Sucesso (Verificáveis)
 
-- [ ] Testes unitários passam: `cd services/distribuicao-api && mvn -pl distribuicao-tests test -Dtest="*Unit*"`
-- [ ] Testes integração passam: `cd services/distribuicao-api && mvn -pl distribuicao-tests test -Dtest="*Integration*"`
-- [ ] Todos os testes passam: `cd services/distribuicao-api && mvn test`
-- [ ] Mínimo 4 testes unitários (handler + query handlers)
-- [ ] Mínimo 5 testes de integração (listener + controller)
+- [x] Testes unitários passam: `cd services/distribuicao-api && mvn -pl distribuicao-tests test -Dtest="*Unit*"`
+- [x] Testes integração passam: `cd services/distribuicao-api && mvn -pl distribuicao-tests test -Dtest="*Integration*"`
+- [x] Todos os testes passam: `cd services/distribuicao-api && mvn test`
+- [x] Mínimo 4 testes unitários (handler + query handlers)
+- [x] Mínimo 5 testes de integração (listener + controller)
