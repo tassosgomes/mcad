@@ -20,6 +20,8 @@ public record CalcularProcessoResponse(
         BigDecimal valorTotalCalculado,
         int totalCreditosRetidos,
         BigDecimal valorTotalRetido,
+        int totalCreditosRetidosLiberados,
+        BigDecimal valorTotalRetidosLiberados,
         Instant calculadoEm) {
 
     public static CalcularProcessoResponse from(
@@ -38,6 +40,10 @@ public record CalcularProcessoResponse(
                 resumo.valorTotalCalculado(),
                 resumo.totalCreditosRetidos(),
                 resumo.valorTotalRetido(),
+                processo.getTotalCreditosRetidosLiberados() == null ? 0 : processo.getTotalCreditosRetidosLiberados(),
+                processo.getValorTotalRetidosLiberados() == null
+                        ? BigDecimal.ZERO
+                        : processo.getValorTotalRetidosLiberados(),
                 processo.getCalculadoEm());
     }
 }

@@ -21,17 +21,26 @@ import br.com.ecad.distribuicao.application.commands.handlers.AprovarProcessoCom
 import br.com.ecad.distribuicao.application.commands.handlers.CancelarProcessoCommandHandler;
 import br.com.ecad.distribuicao.application.commands.handlers.FinalizarProcessoCommandHandler;
 import br.com.ecad.distribuicao.application.dto.ProcessoResponse;
+import br.com.ecad.distribuicao.application.services.CreditoRetidoLiberacaoService;
+import br.com.ecad.distribuicao.application.services.CreditoRetidoLiberacaoService.ResultadoLiberacaoRetidos;
+import br.com.ecad.distribuicao.domain.entities.Credito;
+import br.com.ecad.distribuicao.domain.entities.CreditoLiberacao;
 import br.com.ecad.distribuicao.domain.entities.ProcessoDistribuicao;
+import br.com.ecad.distribuicao.domain.enums.CategoriaCredito;
+import br.com.ecad.distribuicao.domain.enums.MotivoRetencao;
 import br.com.ecad.distribuicao.domain.enums.StatusProcesso;
 import br.com.ecad.distribuicao.domain.exceptions.NotFoundException;
 import br.com.ecad.distribuicao.domain.exceptions.PreRequisitosException;
 import br.com.ecad.distribuicao.domain.exceptions.TransicaoInvalidaException;
 import br.com.ecad.distribuicao.domain.interfaces.OutboxEventWriter;
+import br.com.ecad.distribuicao.domain.interfaces.CreditoRepository;
 import br.com.ecad.distribuicao.domain.interfaces.ProcessoRepository;
 import br.org.ecad.audit.contract.AuditEvent;
 import br.org.ecad.audit.sdk.AuditClient;
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
@@ -45,9 +54,13 @@ import org.mockito.junit.jupiter.MockitoExtension;
 class TransicoesCommandHandlerTest {
 
     private static final UUID PROCESSO_ID = UUID.fromString("00000000-0000-0000-0000-000000000001");
+    private static final UUID PROCESSO_ORIGEM_ID = UUID.fromString("00000000-0000-0000-0000-000000000011");
+    private static final UUID CREDITO_ID = UUID.fromString("00000000-0000-0000-0000-000000000021");
     private static final String AUTOR = "analista@ecad.org";
 
     @Mock private ProcessoRepository processoRepository;
+    @Mock private CreditoRepository creditoRepository;
+    @Mock private CreditoRetidoLiberacaoService creditoRetidoLiberacaoService;
     @Mock private OutboxEventWriter outboxEventWriter;
     @Mock private AuditClient auditClient;
     @Mock private AuditContextProvider auditContextProvider;
@@ -62,14 +75,22 @@ class TransicoesCommandHandlerTest {
         aprovarHandler = new AprovarProcessoCommandHandler(
                 processoRepository, outboxEventWriter, auditClient, auditContextProvider, auditEventFactory);
         finalizarHandler = new FinalizarProcessoCommandHandler(
-                processoRepository, outboxEventWriter, auditClient, auditContextProvider, auditEventFactory);
+                processoRepository, creditoRepository, creditoRetidoLiberacaoService,
+                outboxEventWriter, auditClient, auditContextProvider, auditEventFactory);
         cancelarHandler = new CancelarProcessoCommandHandler(
-                processoRepository, outboxEventWriter, auditClient, auditContextProvider, auditEventFactory);
+                processoRepository, creditoRetidoLiberacaoService,
+                outboxEventWriter, auditClient, auditContextProvider, auditEventFactory);
 
         // Lenient stubs: not all tests reach the audit code (e.g. exception paths)
         org.mockito.Mockito.lenient().when(auditContextProvider.current(AUTOR)).thenReturn(auditContext());
         org.mockito.Mockito.lenient().when(auditEventFactory.userAction(any(), any(), any())).thenReturn(mockAuditEvent());
         org.mockito.Mockito.lenient().when(auditEventFactory.dataChange(any(), any())).thenReturn(mockAuditEvent());
+        org.mockito.Mockito.lenient()
+                .when(creditoRetidoLiberacaoService.efetivarLiberacoes(any(), any()))
+                .thenReturn(ResultadoLiberacaoRetidos.empty());
+        org.mockito.Mockito.lenient()
+                .when(creditoRetidoLiberacaoService.cancelarLiberacoesPrevistas(any(), any()))
+                .thenReturn(0);
     }
 
     // === APROVAR TESTS ===
@@ -162,6 +183,47 @@ class TransicoesCommandHandlerTest {
         assertThat(changeCaptor.getValue().operation()).isEqualTo(ProcessoAuditOperation.FINALIZE);
     }
 
+    @Test
+    void finalizar_ComLiberacoesPrevistas_ShouldPublishCreditoLiberadoEvent() {
+        ProcessoDistribuicao processo = criarProcessoAprovado();
+        ProcessoDistribuicao origem = criarProcessoOrigemFinalizado();
+        Credito credito = creditoRetido();
+        CreditoLiberacao liberacao = CreditoLiberacao.prevista(
+                credito,
+                processo,
+                Instant.parse("2026-05-17T10:00:00Z"));
+        credito.liberar(PROCESSO_ID, Instant.parse("2026-05-17T12:00:00Z"));
+        when(processoRepository.findById(PROCESSO_ID)).thenReturn(Optional.of(processo));
+        when(processoRepository.findById(PROCESSO_ORIGEM_ID)).thenReturn(Optional.of(origem));
+        when(processoRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+        when(creditoRetidoLiberacaoService.efetivarLiberacoes(any(), any()))
+                .thenReturn(new ResultadoLiberacaoRetidos(
+                        List.of(liberacao),
+                        List.of(),
+                        1,
+                        new BigDecimal("400.00")));
+        when(creditoRepository.findById(CREDITO_ID)).thenReturn(Optional.of(credito));
+
+        finalizarHandler.handle(new FinalizarProcessoCommand(PROCESSO_ID, AUTOR));
+
+        ArgumentCaptor<String> eventTypeCaptor = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<Object> payloadCaptor = ArgumentCaptor.forClass(Object.class);
+        verify(outboxEventWriter, times(3)).addEvent(eventTypeCaptor.capture(), any(), payloadCaptor.capture());
+        assertThat(eventTypeCaptor.getAllValues()).contains("distribuicao.credito.liberado");
+        Object payload = payloadCaptor.getAllValues().get(eventTypeCaptor.getAllValues()
+                .indexOf("distribuicao.credito.liberado"));
+        assertThat(payload).isInstanceOf(Map.class);
+        @SuppressWarnings("unchecked")
+        Map<String, Object> payloadMap = (Map<String, Object>) payload;
+        assertThat(payloadMap)
+                .containsEntry("creditoId", CREDITO_ID.toString())
+                .containsEntry("processoOrigemId", PROCESSO_ORIGEM_ID.toString())
+                .containsEntry("processoLiberacaoId", PROCESSO_ID.toString())
+                .containsEntry("periodoOrigem", "2026-02")
+                .containsEntry("periodoLiberacao", "2026-03")
+                .containsEntry("motivoRetencaoOriginal", "TITULAR_SEM_ASSOCIACAO");
+    }
+
     // === CANCELAR TESTS ===
 
     @Test
@@ -235,6 +297,37 @@ class TransicoesCommandHandlerTest {
         var p = criarProcessoAprovado();
         p.finalizar();
         return p;
+    }
+
+    private ProcessoDistribuicao criarProcessoOrigemFinalizado() {
+        var p = ProcessoDistribuicao.criar("RADIO", "2026-02", BigDecimal.valueOf(93000), AUTOR,
+                UUID.randomUUID(), UUID.randomUUID());
+        setField(p, "id", PROCESSO_ORIGEM_ID);
+        p.marcarCalculado(100);
+        p.aprovar();
+        p.finalizar();
+        return p;
+    }
+
+    private Credito creditoRetido() {
+        Credito credito = Credito.retido(
+                PROCESSO_ORIGEM_ID,
+                UUID.fromString("00000000-0000-0000-0000-000000000031"),
+                "Maria Compositora",
+                UUID.fromString("00000000-0000-0000-0000-000000000041"),
+                "Meu Bem Querer",
+                null,
+                CategoriaCredito.AUTORAL,
+                null,
+                new BigDecimal("100.000000"),
+                new BigDecimal("400.00"),
+                new BigDecimal("400.00"),
+                new BigDecimal("10.000000"),
+                MotivoRetencao.TITULAR_SEM_ASSOCIACAO,
+                Instant.parse("2026-05-16T10:00:00Z"),
+                Instant.parse("2026-05-16T10:00:00Z"));
+        setField(credito, "id", CREDITO_ID);
+        return credito;
     }
 
     private AuditContext auditContext() {

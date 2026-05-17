@@ -1,17 +1,28 @@
 package br.com.ecad.distribuicao.application.queries.handlers;
 
 import br.com.ecad.distribuicao.application.dto.CalculoProcessoResponse;
+import br.com.ecad.distribuicao.application.dto.CalculoProcessoResponse.RetidoLiberadoItemResponse;
+import br.com.ecad.distribuicao.application.dto.CalculoProcessoResponse.RetidosLiberadosResponse;
 import br.com.ecad.distribuicao.application.queries.ConsultarCalculoProcessoQuery;
+import br.com.ecad.distribuicao.domain.entities.Credito;
+import br.com.ecad.distribuicao.domain.entities.CreditoLiberacao;
+import br.com.ecad.distribuicao.domain.entities.ProcessoDistribuicao;
 import br.com.ecad.distribuicao.domain.enums.CategoriaCredito;
 import br.com.ecad.distribuicao.domain.enums.MotivoRetencao;
 import br.com.ecad.distribuicao.domain.enums.StatusCredito;
 import br.com.ecad.distribuicao.domain.exceptions.NotFoundException;
 import br.com.ecad.distribuicao.domain.exceptions.PreRequisitosException;
 import br.com.ecad.distribuicao.domain.filters.CreditoFiltro;
+import br.com.ecad.distribuicao.domain.interfaces.CreditoLiberacaoRepository;
 import br.com.ecad.distribuicao.domain.interfaces.CreditoRepository;
+import br.com.ecad.distribuicao.domain.interfaces.ProcessoRepository;
 import br.com.ecad.distribuicao.domain.projections.CalculoResumoProjection;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Objects;
+import java.util.UUID;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,9 +33,18 @@ public class ConsultarCalculoProcessoQueryHandler {
     private static final int MAX_PAGE_SIZE = 100;
 
     private final CreditoRepository creditoRepository;
+    private final CreditoLiberacaoRepository creditoLiberacaoRepository;
+    private final ProcessoRepository processoRepository;
 
-    public ConsultarCalculoProcessoQueryHandler(CreditoRepository creditoRepository) {
+    public ConsultarCalculoProcessoQueryHandler(
+            CreditoRepository creditoRepository,
+            CreditoLiberacaoRepository creditoLiberacaoRepository,
+            ProcessoRepository processoRepository) {
         this.creditoRepository = Objects.requireNonNull(creditoRepository, "creditoRepository must not be null");
+        this.creditoLiberacaoRepository = Objects.requireNonNull(
+                creditoLiberacaoRepository,
+                "creditoLiberacaoRepository must not be null");
+        this.processoRepository = Objects.requireNonNull(processoRepository, "processoRepository must not be null");
     }
 
     @Transactional(readOnly = true)
@@ -46,9 +66,31 @@ public class ConsultarCalculoProcessoQueryHandler {
                 status,
                 motivoRetencao);
 
+        RetidosLiberadosResponse retidosLiberados = buscarRetidosLiberados(query.processoId());
+
         return CalculoProcessoResponse.from(
                 resumo,
+                retidosLiberados,
                 creditoRepository.findByProcessoId(filtro, PageRequest.of(query.page(), query.size())));
+    }
+
+    private RetidosLiberadosResponse buscarRetidosLiberados(UUID processoId) {
+        List<CreditoLiberacao> liberacoes = creditoLiberacaoRepository.findByProcessoLiberacaoId(processoId);
+        Map<UUID, ProcessoDistribuicao> processosOrigem = new HashMap<>();
+        List<RetidoLiberadoItemResponse> items = liberacoes.stream()
+                .map(liberacao -> {
+                    Credito credito = creditoRepository.findById(liberacao.getCreditoRetidoId())
+                            .orElseThrow(() -> new NotFoundException(
+                                    "Crédito retido não encontrado: " + liberacao.getCreditoRetidoId()));
+                    ProcessoDistribuicao processoOrigem = processosOrigem.computeIfAbsent(
+                            liberacao.getProcessoOrigemId(),
+                            id -> processoRepository.findById(id)
+                                    .orElseThrow(() -> new NotFoundException(
+                                            "Processo de origem não encontrado: " + id)));
+                    return RetidoLiberadoItemResponse.from(liberacao, credito, processoOrigem);
+                })
+                .toList();
+        return RetidosLiberadosResponse.from(items);
     }
 
     private void validatePagination(int page, int size) {

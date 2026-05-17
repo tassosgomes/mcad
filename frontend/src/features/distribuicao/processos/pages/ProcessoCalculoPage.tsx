@@ -9,6 +9,7 @@ import { usePermissions } from '@shared/authz';
 import { CalculoSummary } from '../components/CalculoSummary';
 import { CreditosFilters } from '../components/CreditosFilters';
 import { CreditosTable } from '../components/CreditosTable';
+import { RetidosLiberadosTable } from '../components/RetidosLiberadosTable';
 import { useCalcularProcesso, useProcessoCalculo } from '../hooks/useProcessoCalculo';
 import type {
   CalculoProcessoFilters,
@@ -111,6 +112,8 @@ export function ProcessoCalculoPage() {
   }
 
   const calculo = calculoQuery.data;
+  const retidosTitle = calculo.status === 'FINALIZADO' ? 'Retidos liberados' : 'Retidos a liberar';
+  const hasRetidosLiberados = calculo.retidosLiberados.items.length > 0;
 
   return (
     <div className={styles.page}>
@@ -171,6 +174,19 @@ export function ProcessoCalculoPage() {
       )}
 
       <CalculoSummary calculo={calculo} />
+
+      {hasRetidosLiberados && (
+        <section className={styles.reviewSection} aria-labelledby="retidos-liberados-title">
+          <div className={styles.sectionHeader}>
+            <div>
+              <h2 id="retidos-liberados-title">{retidosTitle}</h2>
+              <p>{calculo.retidosLiberados.total} crédito(s) · {calculo.periodo}</p>
+            </div>
+          </div>
+
+          <RetidosLiberadosTable items={calculo.retidosLiberados.items} />
+        </section>
+      )}
 
       <section className={styles.reviewSection} aria-labelledby="creditos-title">
         <div className={styles.sectionHeader}>

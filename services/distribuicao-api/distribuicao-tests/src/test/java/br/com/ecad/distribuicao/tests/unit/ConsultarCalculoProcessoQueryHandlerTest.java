@@ -17,7 +17,9 @@ import br.com.ecad.distribuicao.domain.enums.StatusCredito;
 import br.com.ecad.distribuicao.domain.enums.StatusProcesso;
 import br.com.ecad.distribuicao.domain.exceptions.PreRequisitosException;
 import br.com.ecad.distribuicao.domain.filters.CreditoFiltro;
+import br.com.ecad.distribuicao.domain.interfaces.CreditoLiberacaoRepository;
 import br.com.ecad.distribuicao.domain.interfaces.CreditoRepository;
+import br.com.ecad.distribuicao.domain.interfaces.ProcessoRepository;
 import br.com.ecad.distribuicao.domain.projections.CalculoResumoProjection;
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -43,11 +45,23 @@ class ConsultarCalculoProcessoQueryHandlerTest {
     @Mock
     private CreditoRepository creditoRepository;
 
+    @Mock
+    private CreditoLiberacaoRepository creditoLiberacaoRepository;
+
+    @Mock
+    private ProcessoRepository processoRepository;
+
     private ConsultarCalculoProcessoQueryHandler handler;
 
     @BeforeEach
     void setUp() {
-        handler = new ConsultarCalculoProcessoQueryHandler(creditoRepository);
+        handler = new ConsultarCalculoProcessoQueryHandler(
+                creditoRepository,
+                creditoLiberacaoRepository,
+                processoRepository);
+        org.mockito.Mockito.lenient()
+                .when(creditoLiberacaoRepository.findByProcessoLiberacaoId(PROCESSO_ID))
+                .thenReturn(List.of());
     }
 
     @Test
@@ -123,6 +137,8 @@ class ConsultarCalculoProcessoQueryHandlerTest {
                 new BigDecimal("10.000000"),
                 2,
                 new BigDecimal("1000.00"),
+                0,
+                BigDecimal.ZERO,
                 0,
                 BigDecimal.ZERO,
                 Instant.parse("2026-05-07T10:30:00Z"));

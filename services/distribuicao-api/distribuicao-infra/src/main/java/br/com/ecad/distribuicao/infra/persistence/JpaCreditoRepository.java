@@ -5,6 +5,7 @@ import br.com.ecad.distribuicao.domain.filters.CreditoFiltro;
 import br.com.ecad.distribuicao.domain.interfaces.CreditoRepository;
 import br.com.ecad.distribuicao.domain.projections.CalculoResumoProjection;
 import jakarta.persistence.EntityManager;
+import jakarta.persistence.LockModeType;
 import jakarta.persistence.TypedQuery;
 import java.util.List;
 import java.util.Objects;
@@ -34,6 +35,17 @@ public class JpaCreditoRepository implements CreditoRepository {
                 .createQuery("delete from Credito credito where credito.processoId = :processoId")
                 .setParameter("processoId", processoId)
                 .executeUpdate();
+    }
+
+    @Override
+    public Optional<Credito> findById(UUID creditoId) {
+        return Optional.ofNullable(entityManager.find(Credito.class, creditoId));
+    }
+
+    @Override
+    public Optional<Credito> findByIdForUpdate(UUID creditoId) {
+        Credito credito = entityManager.find(Credito.class, creditoId, LockModeType.PESSIMISTIC_WRITE);
+        return Optional.ofNullable(credito);
     }
 
     @Override
@@ -105,6 +117,8 @@ public class JpaCreditoRepository implements CreditoRepository {
                             processo.valorTotalCalculado,
                             processo.totalCreditosRetidos,
                             processo.valorTotalRetido,
+                            processo.totalCreditosRetidosLiberados,
+                            processo.valorTotalRetidosLiberados,
                             processo.calculadoEm
                         )
                         from ProcessoDistribuicao processo

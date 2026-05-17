@@ -4,6 +4,8 @@ import br.com.ecad.distribuicao.application.audit.AuditContextProvider;
 import br.com.ecad.distribuicao.application.audit.GenericAuditEventFactory;
 import br.com.ecad.distribuicao.application.commands.CalcularProcessoCommand;
 import br.com.ecad.distribuicao.application.dto.CalcularProcessoResponse;
+import br.com.ecad.distribuicao.application.services.CreditoRetidoLiberacaoService;
+import br.com.ecad.distribuicao.application.services.CreditoRetidoLiberacaoService.ResultadoLiberacaoRetidos;
 import br.com.ecad.distribuicao.application.services.ParsedRol;
 import br.com.ecad.distribuicao.application.services.RolPayloadParser;
 import br.org.ecad.audit.contract.DataAction;
@@ -32,6 +34,8 @@ import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.DistributionSummary;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
+import java.time.Instant;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
@@ -62,6 +66,7 @@ public class CalcularProcessoCommandHandler {
     private final SnapshotVerbaRepository snapshotVerbaRepository;
     private final CadastroOwnershipClient cadastroOwnershipClient;
     private final CreditoRepository creditoRepository;
+    private final CreditoRetidoLiberacaoService creditoRetidoLiberacaoService;
     private final OutboxEventRepository outboxEventRepository;
     private final RolPayloadParser rolPayloadParser;
     private final ObjectMapper objectMapper;
@@ -77,6 +82,7 @@ public class CalcularProcessoCommandHandler {
             SnapshotVerbaRepository snapshotVerbaRepository,
             CadastroOwnershipClient cadastroOwnershipClient,
             CreditoRepository creditoRepository,
+            CreditoRetidoLiberacaoService creditoRetidoLiberacaoService,
             OutboxEventRepository outboxEventRepository,
             RolPayloadParser rolPayloadParser,
             ObjectMapper objectMapper,
@@ -89,6 +95,9 @@ public class CalcularProcessoCommandHandler {
         this.snapshotVerbaRepository = Objects.requireNonNull(snapshotVerbaRepository, "snapshotVerbaRepository must not be null");
         this.cadastroOwnershipClient = Objects.requireNonNull(cadastroOwnershipClient, "cadastroOwnershipClient must not be null");
         this.creditoRepository = Objects.requireNonNull(creditoRepository, "creditoRepository must not be null");
+        this.creditoRetidoLiberacaoService = Objects.requireNonNull(
+                creditoRetidoLiberacaoService,
+                "creditoRetidoLiberacaoService must not be null");
         this.outboxEventRepository = Objects.requireNonNull(outboxEventRepository, "outboxEventRepository must not be null");
         this.rolPayloadParser = Objects.requireNonNull(rolPayloadParser, "rolPayloadParser must not be null");
         this.objectMapper = Objects.requireNonNull(objectMapper, "objectMapper must not be null");
@@ -124,8 +133,11 @@ public class CalcularProcessoCommandHandler {
                     parsedRol.execucoes(),
                     ownershipSnapshot));
 
+            creditoRetidoLiberacaoService.cancelarLiberacoesPrevistas(processo.getId(), Instant.now());
             creditoRepository.deleteByProcessoId(processo.getId());
             creditoRepository.saveAll(resultado.creditos());
+            ResultadoLiberacaoRetidos resultadoLiberacao =
+                    creditoRetidoLiberacaoService.preverLiberacoes(processo, command.bearerToken());
             processo.marcarCalculado(
                     resultado.resumo().totalExecucoes(),
                     resultado.resumo().totalObras(),
@@ -133,13 +145,15 @@ public class CalcularProcessoCommandHandler {
                     resultado.resumo().totalCreditos(),
                     resultado.resumo().valorTotalCalculado(),
                     resultado.resumo().totalCreditosRetidos(),
-                    resultado.resumo().valorTotalRetido());
+                    resultado.resumo().valorTotalRetido(),
+                    resultadoLiberacao.total(),
+                    resultadoLiberacao.valorTotal());
             ProcessoDistribuicao processoSalvo = processoRepository.save(processo);
 
             outboxEventRepository.save(OutboxEvent.criar(
                     EVENT_TYPE,
                     processo.getId().toString(),
-                    criarPayloadEvento(processoSalvo, resultado)));
+                    criarPayloadEvento(processoSalvo, resultado, resultadoLiberacao)));
             resultado.creditos().stream()
                     .filter(credito -> credito.getMotivoRetencao() != null)
                     .map(credito -> OutboxEvent.criar(
@@ -151,17 +165,19 @@ public class CalcularProcessoCommandHandler {
             // Auditoria
             var auditCtx = auditContextProvider.current("system");
             var entityId = processoSalvo.getId().toString();
-            Map<String, Object> after = Map.of(
-                    "id", entityId,
-                    "rubricaSigla", processoSalvo.getRubricaSigla(),
-                    "periodo", processoSalvo.getPeriodo(),
-                    "status", processoSalvo.getStatus().name(),
-                    "totalExecucoes", resultado.resumo().totalExecucoes(),
-                    "totalObras", resultado.resumo().totalObras(),
-                    "totalCreditos", resultado.resumo().totalCreditos(),
-                    "valorTotalCalculado", resultado.resumo().valorTotalCalculado().toPlainString(),
-                    "totalCreditosRetidos", resultado.resumo().totalCreditosRetidos(),
-                    "valorTotalRetido", resultado.resumo().valorTotalRetido().toPlainString());
+            Map<String, Object> after = new LinkedHashMap<>();
+            after.put("id", entityId);
+            after.put("rubricaSigla", processoSalvo.getRubricaSigla());
+            after.put("periodo", processoSalvo.getPeriodo());
+            after.put("status", processoSalvo.getStatus().name());
+            after.put("totalExecucoes", resultado.resumo().totalExecucoes());
+            after.put("totalObras", resultado.resumo().totalObras());
+            after.put("totalCreditos", resultado.resumo().totalCreditos());
+            after.put("valorTotalCalculado", resultado.resumo().valorTotalCalculado().toPlainString());
+            after.put("totalCreditosRetidos", resultado.resumo().totalCreditosRetidos());
+            after.put("valorTotalRetido", resultado.resumo().valorTotalRetido().toPlainString());
+            after.put("totalRetidosALiberar", resultadoLiberacao.total());
+            after.put("valorTotalRetidosALiberar", resultadoLiberacao.valorTotal().toPlainString());
             auditClient.publish(auditFactory.userAction(
                     ENTITY_TYPE, entityId,
                     "CALCULAR_PROCESSO", "Calcular processo de distribuição",
@@ -174,7 +190,7 @@ public class CalcularProcessoCommandHandler {
             recordDuration(startedAt, "success");
             recordGeneratedCredits(resultado.resumo().totalCreditos());
             recordRetainedCredits(resultado.creditos());
-            logCalculationSuccess(processoSalvo, resultado, elapsedMs(startedAt));
+            logCalculationSuccess(processoSalvo, resultado, resultadoLiberacao, elapsedMs(startedAt));
             return CalcularProcessoResponse.from(processoSalvo, resultado.resumo());
         } catch (RuntimeException exception) {
             recordDuration(startedAt, "failure");
@@ -216,7 +232,10 @@ public class CalcularProcessoCommandHandler {
                 .orElseThrow(() -> new PreRequisitosException("Snapshot de Verba do processo não foi encontrado"));
     }
 
-    private String criarPayloadEvento(ProcessoDistribuicao processo, ResultadoCalculo resultado) {
+    private String criarPayloadEvento(
+            ProcessoDistribuicao processo,
+            ResultadoCalculo resultado,
+            ResultadoLiberacaoRetidos resultadoLiberacao) {
         try {
             return objectMapper.writeValueAsString(new ProcessoCalculadoEventPayload(
                     processo.getId(),
@@ -229,6 +248,8 @@ public class CalcularProcessoCommandHandler {
                     resultado.resumo().valorTotalCalculado(),
                     resultado.resumo().totalCreditosRetidos(),
                     resultado.resumo().valorTotalRetido(),
+                    resultadoLiberacao.total(),
+                    resultadoLiberacao.valorTotal(),
                     processo.getCalculadoEm()));
         } catch (JsonProcessingException exception) {
             throw new PreRequisitosException("Falha ao montar evento de cálculo do processo");
@@ -270,9 +291,10 @@ public class CalcularProcessoCommandHandler {
     private void logCalculationSuccess(
             ProcessoDistribuicao processo,
             ResultadoCalculo resultado,
+            ResultadoLiberacaoRetidos resultadoLiberacao,
             long durationMs) {
         LOGGER.info(
-                "distribuicao.calculo.succeeded processoId={} rubricaSigla={} periodo={} totalExecucoes={} totalObras={} totalCreditos={} valorTotalCalculado={} totalCreditosRetidos={} valorTotalRetido={} durationMs={}",
+                "distribuicao.calculo.succeeded processoId={} rubricaSigla={} periodo={} totalExecucoes={} totalObras={} totalCreditos={} valorTotalCalculado={} totalCreditosRetidos={} valorTotalRetido={} totalCreditosRetidosLiberados={} valorTotalRetidosLiberados={} durationMs={}",
                 processo.getId(),
                 processo.getRubricaSigla(),
                 processo.getPeriodo(),
@@ -282,6 +304,8 @@ public class CalcularProcessoCommandHandler {
                 resultado.resumo().valorTotalCalculado(),
                 resultado.resumo().totalCreditosRetidos(),
                 resultado.resumo().valorTotalRetido(),
+                resultadoLiberacao.total(),
+                resultadoLiberacao.valorTotal(),
                 durationMs);
     }
 
@@ -373,6 +397,8 @@ public class CalcularProcessoCommandHandler {
             java.math.BigDecimal valorTotalCalculado,
             int totalCreditosRetidos,
             java.math.BigDecimal valorTotalRetido,
+            int totalCreditosRetidosLiberados,
+            java.math.BigDecimal valorTotalRetidosLiberados,
             java.time.Instant calculadoEm) {
     }
 

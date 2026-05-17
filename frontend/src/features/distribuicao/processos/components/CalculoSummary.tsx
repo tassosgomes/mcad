@@ -15,11 +15,12 @@ interface Metric {
   label: string;
   value: string;
   highlight?: boolean;
-  tone?: 'warning';
+  tone?: 'warning' | 'success';
 }
 
 export function CalculoSummary({ calculo }: CalculoSummaryProps) {
   const { resumo } = calculo;
+  const isFinalizado = calculo.status === 'FINALIZADO';
   const metrics: Metric[] = [
     { label: 'Verba Líquida', value: formatCurrency(resumo.verbaLiquida), highlight: true },
     { label: 'Execuções', value: String(resumo.totalExecucoes ?? 0) },
@@ -29,6 +30,16 @@ export function CalculoSummary({ calculo }: CalculoSummaryProps) {
     { label: 'Total calculado', value: formatCurrency(resumo.valorTotalCalculado), highlight: true },
     { label: 'Créditos retidos', value: String(resumo.totalCreditosRetidos ?? 0), tone: 'warning' },
     { label: 'Valor retido', value: formatCurrency(resumo.valorTotalRetido), tone: 'warning' },
+    {
+      label: isFinalizado ? 'Créditos liberados' : 'Créditos a liberar',
+      value: String(resumo.totalCreditosRetidosLiberados ?? 0),
+      tone: isFinalizado ? 'success' : 'warning',
+    },
+    {
+      label: isFinalizado ? 'Valor liberado' : 'Valor a liberar',
+      value: formatCurrency(resumo.valorTotalRetidosLiberados),
+      tone: isFinalizado ? 'success' : 'warning',
+    },
   ];
 
   return (
@@ -57,6 +68,7 @@ export function CalculoSummary({ calculo }: CalculoSummaryProps) {
                 styles.metricValue,
                 metric.highlight ? styles.metricValueHighlight : '',
                 metric.tone === 'warning' ? styles.metricValueWarning : '',
+                metric.tone === 'success' ? styles.metricValueSuccess : '',
               ].join(' ')}
             >
               {metric.value}

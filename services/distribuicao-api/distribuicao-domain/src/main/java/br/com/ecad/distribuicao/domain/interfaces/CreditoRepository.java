@@ -13,6 +13,10 @@ public interface CreditoRepository {
 
     void deleteByProcessoId(UUID processoId);
 
+    Optional<Credito> findById(UUID creditoId);
+
+    Optional<Credito> findByIdForUpdate(UUID creditoId);
+
     List<Credito> saveAll(List<Credito> creditos);
 
     Page<Credito> findByProcessoId(CreditoFiltro filtro, Pageable pageable);

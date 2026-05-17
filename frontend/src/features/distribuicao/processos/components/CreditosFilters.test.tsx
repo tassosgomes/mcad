@@ -61,4 +61,21 @@ describe('CreditosFilters', () => {
       motivoRetencao: 'TITULAR_SEM_ASSOCIACAO',
     });
   });
+
+  it('offers liberated credit status as a filter option', async () => {
+    const onChange = vi.fn();
+    const user = userEvent.setup();
+
+    render(<ControlledFilters onChange={onChange} />);
+
+    await user.selectOptions(screen.getByLabelText('Status'), 'LIBERADO');
+
+    expect(onChange).toHaveBeenLastCalledWith({
+      categoria: '',
+      titularId: '',
+      obraId: '',
+      status: 'LIBERADO',
+      motivoRetencao: '',
+    });
+  });
 });

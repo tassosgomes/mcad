@@ -13,6 +13,8 @@ import br.com.ecad.distribuicao.application.audit.GenericAuditEventFactory;
 import br.com.ecad.distribuicao.application.commands.CalcularProcessoCommand;
 import br.com.ecad.distribuicao.application.commands.handlers.CalcularProcessoCommandHandler;
 import br.com.ecad.distribuicao.application.dto.CalcularProcessoResponse;
+import br.com.ecad.distribuicao.application.services.CreditoRetidoLiberacaoService;
+import br.com.ecad.distribuicao.application.services.CreditoRetidoLiberacaoService.ResultadoLiberacaoRetidos;
 import br.com.ecad.distribuicao.application.services.RolPayloadParser;
 import br.com.ecad.distribuicao.domain.calculo.FonogramaOwnership;
 import br.com.ecad.distribuicao.domain.calculo.ObraOwnership;
@@ -86,6 +88,9 @@ class CalcularProcessoCommandHandlerTest {
     private CreditoRepository creditoRepository;
 
     @Mock
+    private CreditoRetidoLiberacaoService creditoRetidoLiberacaoService;
+
+    @Mock
     private OutboxEventRepository outboxEventRepository;
 
     @Mock
@@ -110,6 +115,7 @@ class CalcularProcessoCommandHandlerTest {
                 snapshotVerbaRepository,
                 cadastroOwnershipClient,
                 creditoRepository,
+                creditoRetidoLiberacaoService,
                 outboxEventRepository,
                 new RolPayloadParser(objectMapper),
                 objectMapper,
@@ -117,6 +123,12 @@ class CalcularProcessoCommandHandlerTest {
                 auditClient,
                 auditFactory,
                 auditContextProvider);
+        org.mockito.Mockito.lenient()
+                .when(creditoRetidoLiberacaoService.preverLiberacoes(any(), any()))
+                .thenReturn(ResultadoLiberacaoRetidos.empty());
+        org.mockito.Mockito.lenient()
+                .when(creditoRetidoLiberacaoService.cancelarLiberacoesPrevistas(any(), any()))
+                .thenReturn(0);
     }
 
     @Test

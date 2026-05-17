@@ -56,6 +56,12 @@ public class ProcessoDistribuicao {
     @Column(name = "valor_total_retido", precision = 15, scale = 2)
     private BigDecimal valorTotalRetido;
 
+    @Column(name = "total_creditos_retidos_liberados")
+    private Integer totalCreditosRetidosLiberados;
+
+    @Column(name = "valor_total_retidos_liberados", precision = 15, scale = 2)
+    private BigDecimal valorTotalRetidosLiberados;
+
     @Column(name = "analista_responsavel", nullable = false, length = 200)
     private String analistaResponsavel;
 
@@ -116,6 +122,28 @@ public class ProcessoDistribuicao {
             BigDecimal valorTotalCalculado,
             int totalCreditosRetidos,
             BigDecimal valorTotalRetido) {
+        marcarCalculado(
+                totalExecucoes,
+                totalObras,
+                totalPontos,
+                totalCreditos,
+                valorTotalCalculado,
+                totalCreditosRetidos,
+                valorTotalRetido,
+                0,
+                BigDecimal.ZERO);
+    }
+
+    public void marcarCalculado(
+            int totalExecucoes,
+            int totalObras,
+            BigDecimal totalPontos,
+            int totalCreditos,
+            BigDecimal valorTotalCalculado,
+            int totalCreditosRetidos,
+            BigDecimal valorTotalRetido,
+            int totalCreditosRetidosLiberados,
+            BigDecimal valorTotalRetidosLiberados) {
         marcarCalculado(totalExecucoes);
         this.totalObras = totalObras;
         this.totalPontos = totalPontos;
@@ -123,6 +151,8 @@ public class ProcessoDistribuicao {
         this.valorTotalCalculado = valorTotalCalculado;
         this.totalCreditosRetidos = totalCreditosRetidos;
         this.valorTotalRetido = valorTotalRetido;
+        this.totalCreditosRetidosLiberados = totalCreditosRetidosLiberados;
+        this.valorTotalRetidosLiberados = valorTotalRetidosLiberados;
     }
 
     public void marcarCalculado(
@@ -148,18 +178,26 @@ public class ProcessoDistribuicao {
     }
 
     public void finalizar() {
+        finalizar(Instant.now());
+    }
+
+    public void finalizar(Instant finalizadoEm) {
         validarTransicao(StatusProcesso.APROVADO, StatusProcesso.FINALIZADO);
         this.status = StatusProcesso.FINALIZADO;
-        this.finalizadoEm = Instant.now();
+        this.finalizadoEm = finalizadoEm;
     }
 
     public void cancelar(String justificativa) {
+        cancelar(justificativa, Instant.now());
+    }
+
+    public void cancelar(String justificativa, Instant canceladoEm) {
         if (this.status == StatusProcesso.FINALIZADO) {
             throw new TransicaoInvalidaException("Processo finalizado não pode ser cancelado");
         }
         this.status = StatusProcesso.CANCELADO;
         this.justificativaCancelamento = justificativa;
-        this.canceladoEm = Instant.now();
+        this.canceladoEm = canceladoEm;
     }
 
     private void validarTransicao(StatusProcesso esperado, StatusProcesso destino) {
@@ -184,6 +222,8 @@ public class ProcessoDistribuicao {
     public BigDecimal getValorTotalCalculado() { return valorTotalCalculado; }
     public Integer getTotalCreditosRetidos() { return totalCreditosRetidos; }
     public BigDecimal getValorTotalRetido() { return valorTotalRetido; }
+    public Integer getTotalCreditosRetidosLiberados() { return totalCreditosRetidosLiberados; }
+    public BigDecimal getValorTotalRetidosLiberados() { return valorTotalRetidosLiberados; }
     public String getAnalistaResponsavel() { return analistaResponsavel; }
     public Instant getCriadoEm() { return criadoEm; }
     public Instant getCalculadoEm() { return calculadoEm; }

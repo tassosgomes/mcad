@@ -56,6 +56,7 @@ export function CreditosFilters({ value, onChange }: CreditosFiltersProps) {
           <option value="">Todos</option>
           <option value="CALCULADO">Calculado</option>
           <option value="RETIDO">Retido</option>
+          <option value="LIBERADO">Liberado</option>
         </select>
       </label>
 

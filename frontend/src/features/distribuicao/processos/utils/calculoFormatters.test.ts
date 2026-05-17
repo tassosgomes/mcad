@@ -7,6 +7,7 @@ import {
   formatMotivoRetencao,
   formatPercentage,
   formatStatusCredito,
+  formatStatusLiberacao,
   formatStatusProcesso,
   formatSubcategoria,
 } from './calculoFormatters';
@@ -22,11 +23,15 @@ describe('calculoFormatters', () => {
   it('formats date and enum labels', () => {
     expect(formatDateTime(null)).toBe('Aguardando cálculo');
     expect(formatStatusProcesso('CRIADO')).toBe('Criado');
+    expect(formatStatusProcesso('FINALIZADO')).toBe('Finalizado');
     expect(formatCategoria('AUTORAL')).toBe('Autoral');
     expect(formatSubcategoria(null)).toBe('-');
     expect(formatSubcategoria('MUSICO')).toBe('Músico');
     expect(formatStatusCredito('CALCULADO')).toBe('Calculado');
     expect(formatStatusCredito('RETIDO')).toBe('Retido');
+    expect(formatStatusCredito('LIBERADO')).toBe('Liberado');
+    expect(formatStatusLiberacao('PREVISTA')).toBe('Previsto');
+    expect(formatStatusLiberacao('EFETIVADA')).toBe('Liberado');
     expect(formatMotivoRetencao(null)).toBe('-');
     expect(formatMotivoRetencao('TITULAR_SEM_ASSOCIACAO')).toBe('Titular sem associação');
   });

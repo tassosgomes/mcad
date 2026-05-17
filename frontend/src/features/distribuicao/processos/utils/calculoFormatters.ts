@@ -2,6 +2,7 @@ import type {
   CategoriaCredito,
   MotivoRetencao,
   StatusCredito,
+  StatusLiberacaoCredito,
   StatusProcesso,
   SubcategoriaConexa,
 } from '../types/calculo';
@@ -56,6 +57,7 @@ export function formatStatusProcesso(status: StatusProcesso): string {
     CRIADO: 'Criado',
     CALCULADO: 'Calculado',
     APROVADO: 'Aprovado',
+    FINALIZADO: 'Finalizado',
     CANCELADO: 'Cancelado',
   };
 
@@ -89,6 +91,17 @@ export function formatStatusCredito(status: StatusCredito): string {
   const labels: Record<StatusCredito, string> = {
     CALCULADO: 'Calculado',
     RETIDO: 'Retido',
+    LIBERADO: 'Liberado',
+  };
+
+  return labels[status] ?? status;
+}
+
+export function formatStatusLiberacao(status: StatusLiberacaoCredito): string {
+  const labels: Record<StatusLiberacaoCredito, string> = {
+    PREVISTA: 'Previsto',
+    EFETIVADA: 'Liberado',
+    CANCELADA: 'Cancelado',
   };
 
   return labels[status] ?? status;

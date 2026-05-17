@@ -1,10 +1,17 @@
-export type StatusProcesso = 'CRIADO' | 'CALCULADO' | 'APROVADO' | 'CANCELADO';
+export type StatusProcesso =
+  | 'CRIADO'
+  | 'CALCULADO'
+  | 'APROVADO'
+  | 'FINALIZADO'
+  | 'CANCELADO';
 
 export type CategoriaCredito = 'AUTORAL' | 'CONEXO';
 
 export type SubcategoriaConexa = 'INTERPRETE' | 'PRODUTOR' | 'MUSICO';
 
-export type StatusCredito = 'CALCULADO' | 'RETIDO';
+export type StatusCredito = 'CALCULADO' | 'RETIDO' | 'LIBERADO';
+
+export type StatusLiberacaoCredito = 'PREVISTA' | 'EFETIVADA' | 'CANCELADA';
 
 export type MotivoRetencao =
   | 'OBRA_PENDENTE'
@@ -20,6 +27,8 @@ export interface CalculoProcessoResumo {
   valorTotalCalculado: string | null;
   totalCreditosRetidos: number | null;
   valorTotalRetido: string | null;
+  totalCreditosRetidosLiberados: number | null;
+  valorTotalRetidosLiberados: string | null;
   calculadoEm: string | null;
 }
 
@@ -39,7 +48,36 @@ export interface CreditoCalculo {
   status: StatusCredito;
   motivoRetencao: MotivoRetencao | null;
   retidoEm: string | null;
+  liberadoEm: string | null;
+  processoLiberacaoId: string | null;
   criadoEm: string;
+}
+
+export interface RetidoLiberadoItem {
+  liberacaoId: string;
+  creditoId: string;
+  processoOrigemId: string;
+  processoLiberacaoId: string;
+  periodoOrigem: string;
+  status: StatusLiberacaoCredito;
+  titularId: string;
+  titularNome: string;
+  obraId: string;
+  obraTitulo: string;
+  fonogramaId: string | null;
+  categoria: CategoriaCredito;
+  subcategoriaConexa: SubcategoriaConexa | null;
+  valorLiberado: string;
+  motivoRetencaoOriginal: MotivoRetencao;
+  retidoEm: string;
+  avaliadoEm: string;
+  efetivadoEm: string | null;
+}
+
+export interface RetidosLiberadosResponse {
+  items: RetidoLiberadoItem[];
+  total: number;
+  valorTotal: string;
 }
 
 export interface PaginationMetadata {
@@ -60,6 +98,7 @@ export interface CalculoProcessoResponse {
   rubricaSigla: string;
   periodo: string;
   resumo: CalculoProcessoResumo;
+  retidosLiberados: RetidosLiberadosResponse;
   creditos: CreditosPaginados;
 }
 
@@ -76,6 +115,8 @@ export interface CalcularProcessoResponse {
   valorTotalCalculado: string;
   totalCreditosRetidos: number;
   valorTotalRetido: string;
+  totalCreditosRetidosLiberados: number;
+  valorTotalRetidosLiberados: string;
   calculadoEm: string;
 }
 

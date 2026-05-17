@@ -17,7 +17,14 @@ const calculo: CalculoProcessoResponse = {
     valorTotalCalculado: '987.65',
     totalCreditosRetidos: 2,
     valorTotalRetido: '123.45',
+    totalCreditosRetidosLiberados: 1,
+    valorTotalRetidosLiberados: '50.00',
     calculadoEm: '2026-05-07T18:10:00Z',
+  },
+  retidosLiberados: {
+    items: [],
+    total: 0,
+    valorTotal: '0.00',
   },
   creditos: {
     items: [],
@@ -41,6 +48,8 @@ describe('CalculoSummary', () => {
     expect(screen.getByText('R$ 987,65')).toBeInTheDocument();
     expect(screen.getByText('Créditos retidos')).toBeInTheDocument();
     expect(screen.getByText('R$ 123,45')).toBeInTheDocument();
+    expect(screen.getByText('Créditos a liberar')).toBeInTheDocument();
+    expect(screen.getByText('R$ 50,00')).toBeInTheDocument();
     expect(screen.getByText('40,00')).toBeInTheDocument();
   });
 });

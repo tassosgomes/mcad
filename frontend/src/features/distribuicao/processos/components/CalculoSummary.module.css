@@ -90,6 +90,10 @@
   color: var(--color-warning);
 }
 
+.metricValueSuccess {
+  color: var(--color-success);
+}
+
 @media (max-width: 1200px) {
   .metrics {
     grid-template-columns: repeat(2, minmax(140px, 1fr));

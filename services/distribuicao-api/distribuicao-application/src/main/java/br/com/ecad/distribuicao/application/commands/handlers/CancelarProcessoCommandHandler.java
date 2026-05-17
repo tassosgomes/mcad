@@ -8,12 +8,14 @@ import br.com.ecad.distribuicao.application.audit.ProcessoAuditOperation;
 import br.com.ecad.distribuicao.application.audit.ProcessoSnapshot;
 import br.com.ecad.distribuicao.application.commands.CancelarProcessoCommand;
 import br.com.ecad.distribuicao.application.dto.ProcessoResponse;
+import br.com.ecad.distribuicao.application.services.CreditoRetidoLiberacaoService;
 import br.com.ecad.distribuicao.domain.entities.ProcessoDistribuicao;
 import br.com.ecad.distribuicao.domain.exceptions.NotFoundException;
 import br.com.ecad.distribuicao.domain.exceptions.PreRequisitosException;
 import br.com.ecad.distribuicao.domain.interfaces.OutboxEventWriter;
 import br.com.ecad.distribuicao.domain.interfaces.ProcessoRepository;
 import br.org.ecad.audit.sdk.AuditClient;
+import java.time.Instant;
 import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,6 +30,7 @@ public class CancelarProcessoCommandHandler {
     private static final int JUSTIFICATIVA_MIN_LENGTH = 10;
 
     private final ProcessoRepository processoRepository;
+    private final CreditoRetidoLiberacaoService creditoRetidoLiberacaoService;
     private final OutboxEventWriter outboxEventWriter;
     private final AuditClient auditClient;
     private final AuditContextProvider auditContextProvider;
@@ -35,11 +38,13 @@ public class CancelarProcessoCommandHandler {
 
     public CancelarProcessoCommandHandler(
             ProcessoRepository processoRepository,
+            CreditoRetidoLiberacaoService creditoRetidoLiberacaoService,
             OutboxEventWriter outboxEventWriter,
             AuditClient auditClient,
             AuditContextProvider auditContextProvider,
             ProcessoAuditEventFactory auditEventFactory) {
         this.processoRepository = processoRepository;
+        this.creditoRetidoLiberacaoService = creditoRetidoLiberacaoService;
         this.outboxEventWriter = outboxEventWriter;
         this.auditClient = auditClient;
         this.auditContextProvider = auditContextProvider;
@@ -60,7 +65,9 @@ public class CancelarProcessoCommandHandler {
         // Capturar before ANTES de mutar
         ProcessoSnapshot antes = ProcessoSnapshot.from(processo);
 
-        processo.cancelar(cmd.justificativa());
+        Instant canceladoEm = Instant.now();
+        processo.cancelar(cmd.justificativa(), canceladoEm);
+        creditoRetidoLiberacaoService.cancelarLiberacoesPrevistas(processo.getId(), canceladoEm);
         processo = processoRepository.save(processo);
 
         outboxEventWriter.addEvent(EVENT_TYPE, processo.getId().toString(), buildPayload(processo));

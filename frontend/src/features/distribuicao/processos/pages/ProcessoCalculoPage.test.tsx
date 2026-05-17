@@ -28,7 +28,14 @@ function calculoResponse(overrides: Partial<CalculoProcessoResponse> = {}): Calc
       valorTotalCalculado: '1000.00',
       totalCreditosRetidos: 0,
       valorTotalRetido: '0.00',
+      totalCreditosRetidosLiberados: 0,
+      valorTotalRetidosLiberados: '0.00',
       calculadoEm: '2026-05-07T18:10:00Z',
+    },
+    retidosLiberados: {
+      items: [],
+      total: 0,
+      valorTotal: '0.00',
     },
     creditos: {
       items: [
@@ -48,6 +55,8 @@ function calculoResponse(overrides: Partial<CalculoProcessoResponse> = {}): Calc
           status: 'CALCULADO',
           motivoRetencao: null,
           retidoEm: null,
+          liberadoEm: null,
+          processoLiberacaoId: null,
           criadoEm: '2026-05-07T18:10:00Z',
         },
       ],
@@ -138,6 +147,50 @@ describe('ProcessoCalculoPage', () => {
     expect(screen.getByText('Obra Inicial')).toBeInTheDocument();
   });
 
+  it('renders retained credits planned for release in a separate section', async () => {
+    const base = calculoResponse();
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(jsonResponse(calculoResponse({
+      resumo: {
+        ...base.resumo,
+        totalCreditosRetidosLiberados: 1,
+        valorTotalRetidosLiberados: '400.00',
+      },
+      retidosLiberados: {
+        total: 1,
+        valorTotal: '400.00',
+        items: [
+          {
+            liberacaoId: 'liberacao-1',
+            creditoId: 'credito-retido-1',
+            processoOrigemId: 'processo-origem',
+            processoLiberacaoId: processoId,
+            periodoOrigem: '2026-03',
+            status: 'PREVISTA',
+            titularId: '11111111-1111-1111-1111-111111111111',
+            titularNome: 'Maria Compositora',
+            obraId: '22222222-2222-2222-2222-222222222222',
+            obraTitulo: 'Meu Bem Querer',
+            fonogramaId: null,
+            categoria: 'AUTORAL',
+            subcategoriaConexa: null,
+            valorLiberado: '400.00',
+            motivoRetencaoOriginal: 'TITULAR_SEM_ASSOCIACAO',
+            retidoEm: '2026-05-17T14:30:00Z',
+            avaliadoEm: '2026-06-10T18:30:00Z',
+            efetivadoEm: null,
+          },
+        ],
+      },
+    })));
+
+    renderRoute([CALCULAR_PERMISSION]);
+
+    expect(await screen.findByRole('heading', { name: /retidos a liberar/i })).toBeInTheDocument();
+    expect(screen.getByText('Maria Compositora')).toBeInTheDocument();
+    expect(screen.getByText('Meu Bem Querer')).toBeInTheDocument();
+    expect(screen.getAllByText('R$ 400,00').length).toBeGreaterThan(0);
+  });
+
   it('does not render an enabled calculate action for consultants', async () => {
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(jsonResponse(calculoResponse({
       status: 'CRIADO',
@@ -150,6 +203,8 @@ describe('ProcessoCalculoPage', () => {
         valorTotalCalculado: '0.00',
         totalCreditosRetidos: 0,
         valorTotalRetido: '0.00',
+        totalCreditosRetidosLiberados: 0,
+        valorTotalRetidosLiberados: '0.00',
         calculadoEm: null,
       },
       creditos: {
@@ -190,6 +245,8 @@ describe('ProcessoCalculoPage', () => {
           valorTotalCalculado: '0.00',
           totalCreditosRetidos: 0,
           valorTotalRetido: '0.00',
+          totalCreditosRetidosLiberados: 0,
+          valorTotalRetidosLiberados: '0.00',
           calculadoEm: null,
         },
         creditos: {

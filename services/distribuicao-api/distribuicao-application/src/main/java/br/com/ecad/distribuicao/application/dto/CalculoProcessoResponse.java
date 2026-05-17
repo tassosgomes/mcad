@@ -1,9 +1,12 @@
 package br.com.ecad.distribuicao.application.dto;
 
 import br.com.ecad.distribuicao.domain.entities.Credito;
+import br.com.ecad.distribuicao.domain.entities.CreditoLiberacao;
+import br.com.ecad.distribuicao.domain.entities.ProcessoDistribuicao;
 import br.com.ecad.distribuicao.domain.enums.CategoriaCredito;
 import br.com.ecad.distribuicao.domain.enums.MotivoRetencao;
 import br.com.ecad.distribuicao.domain.enums.StatusCredito;
+import br.com.ecad.distribuicao.domain.enums.StatusLiberacaoCredito;
 import br.com.ecad.distribuicao.domain.enums.StatusProcesso;
 import br.com.ecad.distribuicao.domain.enums.SubcategoriaConexa;
 import br.com.ecad.distribuicao.domain.projections.CalculoResumoProjection;
@@ -19,10 +22,18 @@ public record CalculoProcessoResponse(
         String rubricaSigla,
         String periodo,
         CalculoResumoResponse resumo,
+        RetidosLiberadosResponse retidosLiberados,
         CreditosPaginadosResponse creditos) {
 
     public static CalculoProcessoResponse from(
             CalculoResumoProjection resumo,
+            Page<Credito> creditos) {
+        return from(resumo, RetidosLiberadosResponse.empty(), creditos);
+    }
+
+    public static CalculoProcessoResponse from(
+            CalculoResumoProjection resumo,
+            RetidosLiberadosResponse retidosLiberados,
             Page<Credito> creditos) {
         return new CalculoProcessoResponse(
                 resumo.processoId(),
@@ -30,6 +41,7 @@ public record CalculoProcessoResponse(
                 resumo.rubricaSigla(),
                 resumo.periodo(),
                 CalculoResumoResponse.from(resumo),
+                retidosLiberados,
                 CreditosPaginadosResponse.from(creditos));
     }
 
@@ -42,6 +54,8 @@ public record CalculoProcessoResponse(
             BigDecimal valorTotalCalculado,
             Integer totalCreditosRetidos,
             BigDecimal valorTotalRetido,
+            Integer totalCreditosRetidosLiberados,
+            BigDecimal valorTotalRetidosLiberados,
             Instant calculadoEm) {
 
         private static CalculoResumoResponse from(CalculoResumoProjection resumo) {
@@ -54,7 +68,72 @@ public record CalculoProcessoResponse(
                     resumo.valorTotalCalculado(),
                     resumo.totalCreditosRetidos(),
                     resumo.valorTotalRetido(),
+                    resumo.totalCreditosRetidosLiberados(),
+                    resumo.valorTotalRetidosLiberados(),
                     resumo.calculadoEm());
+        }
+    }
+
+    public record RetidosLiberadosResponse(
+            List<RetidoLiberadoItemResponse> items,
+            int total,
+            BigDecimal valorTotal) {
+
+        public static RetidosLiberadosResponse empty() {
+            return new RetidosLiberadosResponse(List.of(), 0, BigDecimal.ZERO);
+        }
+
+        public static RetidosLiberadosResponse from(List<RetidoLiberadoItemResponse> items) {
+            BigDecimal valorTotal = items.stream()
+                    .map(RetidoLiberadoItemResponse::valorLiberado)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+            return new RetidosLiberadosResponse(items, items.size(), valorTotal);
+        }
+    }
+
+    public record RetidoLiberadoItemResponse(
+            UUID liberacaoId,
+            UUID creditoId,
+            UUID processoOrigemId,
+            UUID processoLiberacaoId,
+            String periodoOrigem,
+            StatusLiberacaoCredito status,
+            UUID titularId,
+            String titularNome,
+            UUID obraId,
+            String obraTitulo,
+            UUID fonogramaId,
+            CategoriaCredito categoria,
+            SubcategoriaConexa subcategoriaConexa,
+            BigDecimal valorLiberado,
+            MotivoRetencao motivoRetencaoOriginal,
+            Instant retidoEm,
+            Instant avaliadoEm,
+            Instant efetivadoEm) {
+
+        public static RetidoLiberadoItemResponse from(
+                CreditoLiberacao liberacao,
+                Credito credito,
+                ProcessoDistribuicao processoOrigem) {
+            return new RetidoLiberadoItemResponse(
+                    liberacao.getId(),
+                    credito.getId(),
+                    liberacao.getProcessoOrigemId(),
+                    liberacao.getProcessoLiberacaoId(),
+                    processoOrigem.getPeriodo(),
+                    liberacao.getStatus(),
+                    credito.getTitularId(),
+                    credito.getTitularNome(),
+                    credito.getObraId(),
+                    credito.getObraTitulo(),
+                    credito.getFonogramaId(),
+                    credito.getCategoria(),
+                    credito.getSubcategoriaConexa(),
+                    liberacao.getValorLiberado(),
+                    liberacao.getMotivoRetencaoOriginal(),
+                    credito.getRetidoEm(),
+                    liberacao.getAvaliadoEm(),
+                    liberacao.getEfetivadoEm());
         }
     }
 
@@ -91,6 +170,8 @@ public record CalculoProcessoResponse(
             StatusCredito status,
             MotivoRetencao motivoRetencao,
             Instant retidoEm,
+            Instant liberadoEm,
+            UUID processoLiberacaoId,
             Instant criadoEm) {
 
         private static CreditoItemResponse from(Credito credito) {
@@ -110,6 +191,8 @@ public record CalculoProcessoResponse(
                     credito.getStatus(),
                     credito.getMotivoRetencao(),
                     credito.getRetidoEm(),
+                    credito.getLiberadoEm(),
+                    credito.getProcessoLiberacaoId(),
                     credito.getCriadoEm());
         }
     }

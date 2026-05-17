@@ -85,6 +85,12 @@ public class ProcessoAuditEventFactory {
         map.put("status", snapshot.status() == null ? null : snapshot.status().name());
         map.put("verbaLiquida", snapshot.verbaLiquida() == null ? null : snapshot.verbaLiquida().toPlainString());
         map.put("totalExecucoes", snapshot.totalExecucoes());
+        map.put("totalRetidosLiberados", snapshot.totalCreditosRetidosLiberados());
+        map.put(
+                "valorTotalRetidosLiberados",
+                snapshot.valorTotalRetidosLiberados() == null
+                        ? null
+                        : snapshot.valorTotalRetidosLiberados().toPlainString());
         map.put("justificativaCancelamento", snapshot.justificativaCancelamento());
         map.put("criadoEm", snapshot.criadoEm() == null ? null : snapshot.criadoEm().toString());
         map.put("calculadoEm", snapshot.calculadoEm() == null ? null : snapshot.calculadoEm().toString());

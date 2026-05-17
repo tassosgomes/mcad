@@ -4,6 +4,7 @@ import br.com.ecad.distribuicao.domain.enums.CategoriaCredito;
 import br.com.ecad.distribuicao.domain.enums.MotivoRetencao;
 import br.com.ecad.distribuicao.domain.enums.StatusCredito;
 import br.com.ecad.distribuicao.domain.enums.SubcategoriaConexa;
+import br.com.ecad.distribuicao.domain.exceptions.TransicaoInvalidaException;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -71,6 +72,12 @@ public class Credito {
     @Column(name = "retido_em")
     private Instant retidoEm;
 
+    @Column(name = "liberado_em")
+    private Instant liberadoEm;
+
+    @Column(name = "processo_liberacao_id")
+    private UUID processoLiberacaoId;
+
     @Column(name = "criado_em", nullable = false)
     private Instant criadoEm;
 
@@ -108,6 +115,8 @@ public class Credito {
         credito.status = StatusCredito.CALCULADO;
         credito.motivoRetencao = null;
         credito.retidoEm = null;
+        credito.liberadoEm = null;
+        credito.processoLiberacaoId = null;
         credito.criadoEm = Objects.requireNonNull(criadoEm, "criadoEm must not be null");
         return credito;
     }
@@ -146,6 +155,17 @@ public class Credito {
         credito.motivoRetencao = Objects.requireNonNull(motivoRetencao, "motivoRetencao must not be null");
         credito.retidoEm = Objects.requireNonNull(retidoEm, "retidoEm must not be null");
         return credito;
+    }
+
+    public void liberar(UUID processoLiberacaoId, Instant liberadoEm) {
+        if (this.status != StatusCredito.RETIDO) {
+            throw new TransicaoInvalidaException("Apenas crédito retido pode ser liberado");
+        }
+        this.status = StatusCredito.LIBERADO;
+        this.processoLiberacaoId = Objects.requireNonNull(
+                processoLiberacaoId,
+                "processoLiberacaoId must not be null");
+        this.liberadoEm = Objects.requireNonNull(liberadoEm, "liberadoEm must not be null");
     }
 
     public UUID getId() {
@@ -210,6 +230,14 @@ public class Credito {
 
     public Instant getRetidoEm() {
         return retidoEm;
+    }
+
+    public Instant getLiberadoEm() {
+        return liberadoEm;
+    }
+
+    public UUID getProcessoLiberacaoId() {
+        return processoLiberacaoId;
     }
 
     public Instant getCriadoEm() {

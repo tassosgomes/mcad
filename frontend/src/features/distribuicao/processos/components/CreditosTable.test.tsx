@@ -21,6 +21,8 @@ const creditos: CreditoCalculo[] = [
     status: 'CALCULADO',
     motivoRetencao: null,
     retidoEm: null,
+    liberadoEm: null,
+    processoLiberacaoId: null,
     criadoEm: '2026-05-07T18:00:00Z',
   },
   {
@@ -39,6 +41,8 @@ const creditos: CreditoCalculo[] = [
     status: 'RETIDO',
     motivoRetencao: 'OBRA_BLOQUEADA',
     retidoEm: '2026-05-07T18:01:00Z',
+    liberadoEm: null,
+    processoLiberacaoId: null,
     criadoEm: '2026-05-07T18:01:00Z',
   },
 ];
