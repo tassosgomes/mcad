@@ -171,3 +171,127 @@ if (filtro.Codigo.HasValue)
 ---
 
 *Tech Spec Backend gerada.*
+
+---
+
+## Apêndice — Implementação Real no Backend (2026-05-19)
+
+Este apêndice documenta o que foi encontrado implementado em `services/cadastro-api`. A especificação original acima permanece preservada como plano; os itens abaixo descrevem o estado efetivo do código.
+
+### Banco de Dados e EF Core
+
+| Item | Implementação real |
+|------|--------------------|
+| Migration | `4-Infra/Cadastro.Infra/Data/Migrations/20260403190454_AddCodigo_CampoCodigo.cs` |
+| Sequences | `cadastro.seq_associacoes_codigo` começa em 8; `seq_titulares_codigo`, `seq_obras_codigo` e `seq_fonogramas_codigo` começam em 1. |
+| Colunas | `Codigo bigint not null` em `cadastro.associacoes`, `cadastro.titulares`, `cadastro.obras_musicais` e `cadastro.fonogramas`, todas com `defaultValueSql: nextval(...)`. |
+| Índices únicos | `uq_associacoes_codigo`, `uq_titulares_codigo`, `uq_obras_codigo`, `uq_fonogramas_codigo`. |
+| Down migration | Remove índices, colunas e sequences criadas. |
+| Model snapshot | `CadastroDbContextModelSnapshot.cs` reflete `Codigo`, defaults, índices únicos e seed das associações. |
+
+Diferença em relação à spec planejada: para Associações, a migration não cria a sequence em 1 para depois executar `RESTART WITH 8`; ela já cria `seq_associacoes_codigo` com `START WITH 8`.
+
+### Entidades e Configurations
+
+Implementado:
+
+| Entidade | Campo |
+|----------|-------|
+| `Associacao` | `public long Codigo { get; private set; }` |
+| `Titular` | `public long Codigo { get; private set; }` |
+| `ObraMusical` | `public long Codigo { get; private set; }` |
+| `Fonograma` | `public long Codigo { get; private set; }` |
+
+Configurations implementadas:
+
+| Arquivo | Implementação |
+|---------|---------------|
+| `AssociacaoConfiguration.cs` | `HasDefaultValueSql("nextval('cadastro.seq_associacoes_codigo')")`, `ValueGeneratedOnAdd()`, índice único `uq_associacoes_codigo`, seed via `AssociacaoSeed.GetSeedData()`. |
+| `TitularConfiguration.cs` | Default sequence, `ValueGeneratedOnAdd()` e índice único `uq_titulares_codigo`. |
+| `ObraMusicalConfiguration.cs` | Default sequence, `ValueGeneratedOnAdd()` e índice único `uq_obras_codigo`. |
+| `FonogramaConfiguration.cs` | Default sequence, `ValueGeneratedOnAdd()` e índice único `uq_fonogramas_codigo`. |
+
+Seed real:
+
+- `AssociacaoSeed.GetSeedData()` retorna objetos anônimos com `Codigo = 1L` a `7L`.
+- A entidade `Associacao` não expõe setter público; o seed usa `HasData` com objeto anônimo.
+
+### Responses e Mapeamentos
+
+Implementado com `Codigo`:
+
+| Response | Observação |
+|----------|------------|
+| `AssociacaoResponse` | Inclui `Id`, `Codigo`, `Sigla`, `Nome`, `Cnpj`. |
+| `TitularResponse` | Inclui `Codigo` e `AssociacaoResumoResponse` também inclui `Codigo`. |
+| `ObraResponse` | Inclui `Codigo`. |
+| `FonogramaResponse` | Inclui `Codigo`; `ObraResumoResponse` também inclui `Codigo`. |
+| `TitularResumoResponse` | Inclui `Codigo`, usado em titularidades e participações. |
+| `FonogramaResumoResponse` | Inclui `Codigo`, usado em listagens resumidas/por obra. |
+| `DepuracaoResponse` | Retorna `ObraDepurada` e `NovaObra` como `ObraResponse`, portanto ambas com `Codigo`. |
+| `DepuracaoFonogramaResponse` | Retorna `FonogramaDepurado` e `NovoFonograma` como `FonogramaResponse`, portanto ambos com `Codigo`. |
+
+Os handlers de status e escrita também retornam responses com `Codigo` quando mapeiam `ObraResponse` ou `FonogramaResponse`.
+
+### Filtros e Endpoints
+
+Implementado:
+
+| Entidade | Query/filter | Repositório |
+|----------|--------------|-------------|
+| Titular | `ListarTitularesQuery(long? Codigo)`, endpoint aceita `[FromQuery] long? codigo` | `TitularRepository.ListarAsync` aplica `t.Codigo == filtro.Codigo.Value`. |
+| Obra | `ListarObrasQuery(long? Codigo)` via `[AsParameters]` | `ObraRepository.ListarAsync` aplica `o.Codigo == filtro.Codigo.Value`. |
+| Fonograma | `ListarFonogramasQuery(long? Codigo)` via `[AsParameters]` | `FonogramaRepository.ListarAsync` aplica `f.Codigo == filtro.Codigo.Value`. |
+
+Não há endpoint de busca por `codigo` para Associações; elas são listadas com seus códigos e buscadas por UUID no detalhe.
+
+### Ordenação
+
+Estado real:
+
+- `sort=codigo` e `sort=-codigo` não são tratados nos repositórios.
+- `TitularRepository` aceita `nome`, `associacao`, `status` e descendentes via prefixo `-`; fallback: `Nome`.
+- `ObraRepository` aceita `titulo`, `iswc`, `status`, `tipo`, `atualizadoem` e descendentes; fallback: `Titulo`.
+- `FonogramaRepository` normaliza `campo,direção` para `campo_direção` e aceita `isrc`, `obra`, `status`, `pais`; fallback: `Isrc`.
+- Defaults continuam `nome`, `titulo` e `isrc`; código DESC como default não foi implementado.
+
+### Depuração
+
+Obras:
+
+- `DepurarObraCommandHandler` busca a obra original, exige status `Liberado`, cria `novaObra` via `ObraMusical.Criar`, marca a original com `obraOriginal.Depurar(novaObra.Id)`, copia titularidades autorais, registra evento de outbox e retorna `DepuracaoResponse`.
+- O código da obra original permanece o mesmo; o código da nova obra vem da sequence ao salvar.
+
+Fonogramas:
+
+- `DepurarFonogramaCommandHandler` busca o fonograma original, exige status `Liberado`, valida unicidade do novo ISRC, cria `novoFonograma` via `Fonograma.Criar`, marca o original com `original.Depurar(novoFonograma.Id)`, registra evento de outbox e retorna `DepuracaoFonogramaResponse`.
+- O código do fonograma original permanece o mesmo; o código do novo fonograma vem da sequence ao salvar.
+
+### Auditoria e Eventos
+
+Implementação observada além da spec original:
+
+- `TitularAuditEventFactory`, `ObraAuditEventFactory` e `FonogramaAuditEventFactory` incluem `codigo` nos mapas de auditoria.
+- Os eventos de outbox de criação/depuração continuam usando UUIDs como `subject` e IDs de relação; os payloads de outbox de domínio não usam `codigo` como chave.
+- Em fluxos de criação, os eventos de auditoria são montados antes de `SaveChangesAsync`; portanto, se o evento for serializado antes do EF preencher o valor gerado pelo banco, o `codigo` no snapshot de criação pode refletir o valor CLR inicial até a entidade ser recarregada. Os responses HTTP recarregados/mapeados após o save retornam o código corretamente.
+
+### Testes Encontrados
+
+Arquivo específico: `5-Tests/Cadastro.IntegrationTests/CodigoIntegrationTests.cs`.
+
+Coberto:
+
+- `POST /titulares` retorna código maior que zero.
+- Segundo titular recebe código maior que o primeiro.
+- `GET /titulares?codigo={codigo}` retorna exatamente o titular esperado.
+- `GET /titulares?codigo=999999` retorna lista vazia.
+- `PUT /titulares/{id}` mantém o mesmo código.
+- Depuração de obra mantém o código original na obra depurada e gera código maior na nova obra.
+
+Não encontrado como teste dedicado:
+
+- Seed de Associações com códigos 1 a 7.
+- Código em criação, edição e depuração de Fonograma.
+- Filtro por código em Obras e Fonogramas.
+- Ordenação por código.
+- Garantia de que requests com campo `codigo` são ignorados explicitamente.

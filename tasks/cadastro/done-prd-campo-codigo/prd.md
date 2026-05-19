@@ -186,3 +186,37 @@ Todas as questões foram resolvidas. PRD pronto para Tech Spec.
 ---
 
 *PRD gerado com a skill `criador-prd-v2`.*
+
+---
+
+## Apêndice — Estado Implementado no Código (2026-05-19)
+
+Este apêndice registra o comportamento encontrado no código após a implementação. O conteúdo original do PRD acima permanece como baseline de produto; as informações abaixo refletem o estado real observado em `services/cadastro-api` e `frontend/src/features/cadastro`.
+
+### Escopo entregue
+
+| Área | Estado real |
+|------|-------------|
+| Campo `codigo` nas entidades principais | Implementado em Associação, Titular, Obra Musical e Fonograma como `long`/BIGINT gerado pelo banco. |
+| Sequences e unicidade | Implementado por migration `20260403190454_AddCodigo_CampoCodigo`: 4 sequences PostgreSQL, 4 colunas `Codigo` `bigint not null`, defaults com `nextval(...)` e 4 índices únicos. |
+| Seed de associações | Implementado com códigos fixos 1 a 7. A sequence de associações já nasce em 8, em vez de nascer em 1 e reiniciar depois. |
+| Código em responses | Implementado nas respostas principais e resumos usados por titulares, associações, obras, fonogramas, titularidades, participações e depuração. |
+| Requests read-only | Implementado por ausência de `codigo` nos DTOs/commands de criação e edição. O UUID continua sendo usado nos paths e nas operações internas. |
+| Busca por código | Implementada em Titulares, Obras e Fonogramas como filtro exato via query param `codigo`. |
+| Exibição frontend | Implementada nas tabelas e detalhes principais: código aparece como primeira coluna ou título de detalhe com prefixo `#` e estilo monoespaçado. |
+| Depuração | Implementada para Obras e Fonogramas: a entidade original mantém seu código e passa para status depurado/depurada; a nova entidade é criada com novo UUID e recebe novo código pela sequence. |
+
+### Divergências e pendências observadas
+
+| Requisito | Estado real |
+|-----------|-------------|
+| RF-20 — Ordenação por código server-side | Parcial. O frontend permite clicar na coluna Código e envia `sort=codigo`/`sort=-codigo`, mas os repositórios backend ainda não tratam esse sort e caem no fallback. |
+| RF-21 — Ordenação default por código DESC | Não implementado. Os defaults atuais continuam `nome` para Titulares, `titulo` para Obras e `isrc` para Fonogramas. |
+| RF-13 — UUID oculto da interface | Atendido nas telas principais de cadastro, mas há superfícies de auditoria/histórico que ainda exibem `entityId` técnico e aceitam “UUID ou código da entidade”. |
+| Testes automatizados | Cobertura específica existe para criação/edição/filtro de Titular com código e depuração de Obra com novo código. Não foi encontrada cobertura dedicada para seed 1-7 de Associações, código de Fonograma, ordenação por código ou comportamento visual do frontend. |
+
+### Observações de contrato
+
+- Os paths continuam usando UUID (`/api/v1/titulares/{id}`, `/api/v1/obras/{id}`, `/api/v1/fonogramas/{id}`).
+- O `codigo` é identificador visual e de busca exata, não substitui PK, FKs ou routing.
+- As referências de depuração no frontend ainda navegam por UUID, mas exibem o código da nova entidade quando ela é carregada.

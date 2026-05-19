@@ -133,3 +133,114 @@ A sidebar usa paths com labels fixos ("Associações", "Titulares", etc.) — se
 ---
 
 *Tech Spec Frontend gerada.*
+
+---
+
+## Apêndice — Implementação Real no Frontend (2026-05-19)
+
+Este apêndice descreve o estado encontrado em `frontend/src/features/cadastro`. A especificação original acima permanece preservada; os itens abaixo registram o comportamento efetivo da UI e dos tipos TypeScript.
+
+### Types e Contratos no Frontend
+
+Implementado:
+
+| Arquivo | Estado real |
+|---------|-------------|
+| `associacoes/types/associacao.ts` | `Associacao` inclui `codigo: number`. |
+| `titulares/types/titular.ts` | `Titular`, `AssociacaoResumo` e `TitularFiltros` incluem `codigo`. |
+| `obras/types/obra.ts` | `ObraMusical` e `ObraFiltros` incluem `codigo`; `DepuracaoResponse` usa `obraDepurada` e `novaObra` completos. |
+| `fonogramas/types/fonograma.ts` | `Fonograma`, `FonogramaResumo` e `FonogramaFiltros` incluem `codigo`. |
+| `titularidades/types/titularidade.ts` | `TitularResumo` inclui `codigo`. |
+| `participacoes/types/participacao.ts` | `TitularResumo` inclui `codigo`. |
+
+Divergências de contrato observadas:
+
+- `DepuracaoFonogramaResponse` no frontend está tipado como resposta achatada (`fonogramaOriginalId`, `novoFonogramaId`, `novoIsrcFormatado`), mas o backend implementado retorna `fonogramaDepurado` e `novoFonograma` completos. Isso afeta a navegação pós-depuração, que hoje usa `response.novoFonogramaId`.
+- `FonogramaListResponse.data` no frontend está tipado como `FonogramaResumo[]`, enquanto o backend retorna `IEnumerable<FonogramaResponse>`. A UI usa um subconjunto compatível, incluindo `codigo`, mas o tipo não espelha o contrato real.
+- O tipo `Fonograma.obra` no frontend contém apenas `id` e `titulo`; o backend também envia `codigo` no `ObraResumoResponse`.
+
+### API Client
+
+Implementado:
+
+| API | Estado real |
+|-----|-------------|
+| `titularesApi.getTitulares` | Envia `codigo` como query param quando `filtros.codigo` está preenchido. |
+| `obrasApi.getObras` | Envia `codigo` como query param quando `filtros.codigo` está preenchido. |
+| `fonogramasApi.getFonogramas` | Envia `codigo` como query param quando `filtros.codigo` está preenchido. |
+
+Observação: o envio usa condição truthy (`if (filtros.codigo)`), o que é suficiente para os códigos reais gerados (> 0), mas não enviaria `codigo=0`.
+
+### Tabelas e Exibição Visual
+
+Implementado com coluna “Código” e prefixo `#`:
+
+| Tela/componente | Estado real |
+|-----------------|-------------|
+| `AssociacoesTable.tsx` | Código como primeira coluna, monoespaçado. |
+| `TitularesTable.tsx` | Código como primeira coluna, monoespaçado, sort button para `codigo`. |
+| `ObrasTable.tsx` | Código como primeira coluna, monoespaçado, sort button para `codigo`. |
+| `FonogramasTable.tsx` | Código como primeira coluna, monoespaçado, sort button para `codigo`. |
+| `TitularidadesTable.tsx` | Código do titular aparece na primeira coluna. |
+| `ParticipacoesTable.tsx` | Código do titular aparece na primeira coluna. |
+| `ObraFonogramasSection.tsx` | Código do fonograma aparece na tabela de fonogramas da obra. |
+
+Parcial:
+
+- As listagens principais mostram controle visual de ordenação por código, mas o backend ainda não implementa `sort=codigo`/`sort=-codigo`; o resultado real cai no fallback server-side.
+- Os defaults de UI continuam `nome` para Titulares, `titulo` para Obras e `isrc` para Fonogramas; não há default `codigo DESC`.
+- Em linhas depuradas, as tabelas mostram links textuais como “ver nova versão”/“ver ativo”; o código da entidade substituta aparece nos banners de detalhe, não necessariamente na linha da listagem.
+
+### PageHeaders e Detalhes
+
+Implementado:
+
+| Tela | Estado real |
+|------|-------------|
+| `TitularEditPage.tsx` | `PageHeader` usa `Titular #${titular.codigo}`. |
+| `ObraDetailPage.tsx` | `PageHeader` usa `Obra #${obra.codigo}`. |
+| `FonogramaDetailPage.tsx` | `PageHeader` usa `Fonograma #${fonograma.codigo}`. |
+| Associações | Não há detalhe individual; a listagem mostra o código. |
+
+Os UUIDs continuam sendo usados internamente em rotas, hooks, query keys, ações de tabela e navegação.
+
+### Filtros por Código
+
+Implementado:
+
+| Componente | Estado real |
+|------------|-------------|
+| `TitularesFilters.tsx` | Input `type="number"` com debounce de 300 ms, parse via `parseInt`, atualiza `codigo` e reseta `page` para 1. |
+| `ObrasFilters.tsx` | Input `type="number"` com debounce de 300 ms, parse via `parseInt`, atualiza `codigo` e reseta `page` para 1. |
+| `FonogramasFilters.tsx` | Input `type="number"` com debounce de 400 ms, parse via `parseInt`, atualiza `codigo` e reseta `page` para 1. |
+
+Não há validação customizada além de `type="number"` e `parseInt`; entradas inválidas viram `undefined`.
+
+### Banners e Depuração
+
+Implementado:
+
+| Componente | Estado real |
+|------------|-------------|
+| `DepuracaoBanner.tsx` | Recebe `obraDepuradaParaId`, carrega a nova obra com `useObra` e exibe `#${novaObra.codigo}` quando disponível. |
+| `FonogramaDepuracaoBanner.tsx` | Recebe `fonogramaDepuradoParaId`, carrega o novo fonograma com `useFonograma` e exibe `#${novoFonograma.codigo}` quando disponível. |
+| `DepuracaoModal.tsx` | Após depurar obra, navega para `res.novaObra.id`, alinhado ao backend real. |
+| `FonogramaDepuracaoModal.tsx` | Após depurar fonograma, navega para `response.novoFonogramaId`; isto diverge do backend real, que retorna `novoFonograma.id` dentro de objeto aninhado. |
+
+### UUID na Interface
+
+Estado real:
+
+- Nas telas principais de cadastro, o UUID não é usado como identificador visual; o código aparece com prefixo `#`.
+- O UUID ainda é usado nos links e rotas internas, como esperado.
+- Superfícies de auditoria/histórico fora da tela principal de cadastro ainda exibem `entityId` técnico em modal/filtros de auditoria. Portanto, a regra “UUID não visível em nenhuma parte da interface” não está completamente satisfeita no app como um todo.
+
+### Testes Frontend Observados
+
+Não foram encontrados testes frontend específicos para:
+
+- Renderização de `#codigo` em tabelas e PageHeaders.
+- Filtro de código enviando query param correto.
+- Banner de depuração mostrando código da nova obra/fonograma.
+- Ordenação por código ou default `codigo DESC`.
+- Contrato real de `DepuracaoFonogramaResponse`.
