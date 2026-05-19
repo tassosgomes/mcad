@@ -212,3 +212,47 @@ Todas as questões foram resolvidas no auth-plan.md. PRD pronto.
 ---
 
 *PRD gerado. Para Tech Specs, use `techspec-creator`.*
+
+---
+
+## Atualizacao de Implementacao — 2026-05-19
+
+Esta secao registra o estado efetivamente implementado no codigo, sem substituir o PRD original acima.
+
+### Estado Atual Implementado
+
+| Area | Implementacao observada |
+|------|--------------------------|
+| Provedor OIDC | A implementacao atual esta configurada para Logto/OIDC generico via `OIDC_AUTHORITY` e `OIDC_AUDIENCE`; nao ha dependencia de SDK Keycloak no frontend. |
+| Frontend | Usa `oidc-client-ts` com Authorization Code + PKCE, armazenamento em memoria (`InMemoryWebStorage`), silent renew e rotas `/callback`, `/silent-callback` e `/logout`. |
+| Backend Cadastro | `cadastro-api` continua em .NET 8 Minimal API e valida JWT Bearer com `Microsoft.AspNetCore.Authentication.JwtBearer`. |
+| Autorizacao | A autorizacao efetiva nao usa apenas policies locais `read`/`write`; ela foi evoluida para permissoes finas via `Ecad.Authz.AspNetCore`/`Ecad.Authz.Sdk` e ecad-authz. |
+| BFF | O `services/bff` expoe `/api/me` e `/api/me/permissions`, consulta `ecad-authz` em `/v1/me/authorization-context`, repassa o Bearer token e cacheia o contexto por `sub`. |
+| UI por perfil | A UI agora esconde ou bloqueia acoes por permissao efetiva (`can`, `hasAny`, `hasAll`) e nao somente por role local. |
+
+### Modelo Efetivo de Acesso
+
+O conceito de "Consultor le e Analista escreve" permanece valido, mas foi materializado como papeis e permissoes no ecad-authz:
+
+- `cadastro.default.consultor`: possui permissoes de leitura/listagem/visualizacao/busca/historico do Cadastro.
+- `cadastro.default.analista`: herda o conjunto de leitura e adiciona permissoes de criacao, edicao, exclusao, depuracao, ISWC, dominio publico, participacoes e transicoes de status.
+- O catalogo de Cadastro possui 41 permissoes no formato `cadastro:default:<recurso>:<acao>`, declarado em `services/cadastro-api/1-Services/Cadastro.API/Authorization/CadastroPermissions.cs` e seedado por `seeds/mcad/cadastro.permissions.json`.
+
+### Diferencas Relevantes em Relacao ao Planejado
+
+- O claim de roles implementado e `roles` flat, compativel com Logto; o mapeamento `realm_access.roles` planejado para Keycloak nao e o caminho efetivo atual.
+- O `useAuth()` implementado expoe `user`, `isAuthenticated`, `isLoggingOut`, `roles`, `login()`, `logout()` e `getToken()`. Ele nao expoe `hasRole(role)`.
+- O controle de acesso do frontend foi separado em dois niveis:
+  - Autenticacao: `ProtectedRoute`.
+  - Autorizacao por permissao: `PermissionsProvider`, `RequirePermission` e `Can`.
+- O backend aplica `RequireCadastroPermission(permission, authEnabled)` por endpoint. Quando `AUTH_ENABLED=false`, os endpoints ficam anonimos; quando `AUTH_ENABLED=true`, a autenticacao JWT e a decisao do ecad-authz sao obrigatorias.
+- O frontend usa configuracao runtime em `window.RUNTIME_ENV` (`frontend/public/runtime-env.template.js`), nao apenas variaveis `VITE_*` em build time.
+
+### Criterios Ja Cobertos por Testes
+
+- Sem token em endpoints protegidos retorna `401`.
+- Token autenticado com decisao negada pelo AuthZ retorna `403`.
+- Token autenticado com decisao permitida retorna `200` para leitura.
+- Consultor sem permissao de criacao recebe `403` em `POST /api/v1/titulares`.
+- Analista com permissao recebe `201` em `POST /api/v1/titulares`.
+- O catalogo de Cadastro e validado com 41 permissoes `cadastro:default:*`.

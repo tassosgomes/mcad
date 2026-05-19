@@ -177,3 +177,134 @@ builder.Services.AddCors(options =>
 ---
 
 *Tech Spec Backend gerada.*
+
+---
+
+## Atualizacao de Implementacao — 2026-05-19
+
+Esta secao descreve o backend como esta implementado hoje no codigo. O conteudo original acima permanece como historico da especificacao planejada.
+
+### Arquitetura Implementada
+
+| Componente | Estado no codigo |
+|------------|------------------|
+| API | `.NET 8` Minimal API em `services/cadastro-api/1-Services/Cadastro.API`. |
+| Autenticacao | `Microsoft.AspNetCore.Authentication.JwtBearer` configurado em `Program.cs` quando `AUTH_ENABLED != false`. |
+| OIDC | `OIDC_AUTHORITY` e obrigatorio com auth ligado; `OIDC_AUDIENCE` defaulta para `https://api.mcad.local`. |
+| Claims | `LogtoClaimsTransformation` mapeia claim flat `roles` para `ClaimTypes.Role` e expande `scope` espaco-separado em claims individuais. |
+| Autorizacao | `Ecad.Authz.AspNetCore`/`Ecad.Authz.Sdk` via `AddEcadAuthz(builder.Configuration)`. |
+| Toggle dev | `AUTH_ENABLED=false` desabilita autenticacao/autorizacao fina, loga warning e faz `RequireCadastroPermission` aplicar `AllowAnonymous()`. |
+| Publico | `/health` e publico; Swagger e AsyncAPI ficam antes da auth/explicitamente anonimos. |
+
+### Fluxo de Autenticacao
+
+1. `DotEnvLoader` carrega `.env` procurando a partir do diretorio atual e de `AppContext.BaseDirectory`, sem sobrescrever variaveis ja existentes.
+2. Com `AUTH_ENABLED=true`, `Program.cs` registra `JwtBearerDefaults.AuthenticationScheme`.
+3. O JWT e validado contra `Authority`, `Audience`, `ValidIssuer` e `ValidAudiences`; `MapInboundClaims=false`.
+4. `LogtoClaimsTransformation` clona o principal antes de mutar, evitando concorrencia sobre `ClaimsPrincipal` cacheado.
+5. `UseAuthentication()` roda antes de `UseAuthorization()`.
+
+### Fluxo de Autorizacao Fina
+
+A implementacao final substitui policies locais `read`/`write` por permissoes explicitas:
+
+```csharp
+builder.Services.AddEcadAuthz(builder.Configuration);
+builder.Services.Configure<EcadAuthzOptions>(options => options.Enabled = authEnabled && options.Enabled);
+```
+
+Cada endpoint chama:
+
+```csharp
+.RequireCadastroPermission(CadastroPermissions.ObraCriar, authEnabled)
+```
+
+Quando `authEnabled=true`, a extensao delega para `RequirePermission(permission)` do SDK. Quando `authEnabled=false`, aplica `AllowAnonymous()`.
+
+### Catalogo de Permissoes
+
+O catalogo efetivo fica em `CadastroPermissions.cs` e possui 41 permissoes, tambem declaradas em `seeds/mcad/cadastro.permissions.json`.
+
+| Grupo | Exemplos de permissoes |
+|-------|------------------------|
+| Associacao | `cadastro:default:associacao:listar`, `cadastro:default:associacao:visualizar` |
+| Titular | `listar`, `visualizar`, `buscar`, `criar`, `editar`, `excluir` |
+| Obra | `listar`, `visualizar`, `criar`, `editar`, `excluir`, `gerar-iswc`, `depurar`, `dp` |
+| Titularidade | `listar`, `buscar`, `adicionar`, `editar`, `remover` |
+| Fonograma | `listar`, `visualizar`, `listar-por-obra`, `criar`, `editar`, `excluir`, `depurar` |
+| Participacao | `listar`, `adicionar`, `ajustar`, `remover`, `calcular` |
+| Status | historico, liberar/bloquear/desbloquear obra e fonograma |
+
+### Mapeamento Atual de Endpoints
+
+| Endpoint | Permissao aplicada |
+|----------|--------------------|
+| `GET /api/v1/associacoes` | `AssociacaoListar` |
+| `GET /api/v1/associacoes/{id}` | `AssociacaoVisualizar` |
+| `GET /api/v1/titulares` | `TitularListar` |
+| `GET /api/v1/titulares/{id}` | `TitularVisualizar` |
+| `GET /api/v1/titulares/busca` | `TitularidadeBuscar` |
+| `POST /api/v1/titulares` | `TitularCriar` |
+| `PUT /api/v1/titulares/{id}` | `TitularEditar` |
+| `DELETE /api/v1/titulares/{id}` | `TitularExcluir` |
+| `GET /api/v1/obras` | `ObraListar` |
+| `GET /api/v1/obras/{id}` | `ObraVisualizar` |
+| `POST /api/v1/obras` | `ObraCriar` |
+| `PUT /api/v1/obras/{id}` | `ObraEditar` |
+| `DELETE /api/v1/obras/{id}` | `ObraExcluir` |
+| `POST /api/v1/obras/{id}/iswc` | `ObraGerarIswc` |
+| `POST /api/v1/obras/{id}/depurar` | `ObraDepurar` |
+| `PUT /api/v1/obras/{id}/dominio-publico` | `ObraDominioPublico` |
+| `POST /api/v1/obras/{id}/liberar` | `StatusLiberarObra` |
+| `POST /api/v1/obras/{id}/bloquear` | `StatusBloquearObra` |
+| `POST /api/v1/obras/{id}/desbloquear` | `StatusDesbloquearObra` |
+| `GET /api/v1/obras/{id}/historico-bloqueios` | `StatusVisualizarHistoricoObra` |
+| `GET /api/v1/obras/{obraId}/titularidades` | `TitularidadeListar` |
+| `POST /api/v1/obras/{obraId}/titularidades` | `TitularidadeAdicionar` |
+| `PUT /api/v1/obras/{obraId}/titularidades/{id}` | `TitularidadeEditar` |
+| `DELETE /api/v1/obras/{obraId}/titularidades/{id}` | `TitularidadeRemover` |
+| `GET /api/v1/fonogramas` | `FonogramaListar` |
+| `GET /api/v1/fonogramas/{id}` | `FonogramaVisualizar` |
+| `GET /api/v1/obras/{obraId}/fonogramas` | `FonogramaListarPorObra` |
+| `POST /api/v1/fonogramas` | `FonogramaCriar` |
+| `PUT /api/v1/fonogramas/{id}` | `FonogramaEditar` |
+| `PATCH /api/v1/fonogramas/{id}/url-audio` | `FonogramaEditar` |
+| `DELETE /api/v1/fonogramas/{id}` | `FonogramaExcluir` |
+| `POST /api/v1/fonogramas/{id}/depurar` | `FonogramaDepurar` |
+| `POST /api/v1/fonogramas/{id}/liberar` | `StatusLiberarFonograma` |
+| `POST /api/v1/fonogramas/{id}/bloquear` | `StatusBloquearFonograma` |
+| `POST /api/v1/fonogramas/{id}/desbloquear` | `StatusDesbloquearFonograma` |
+| `GET /api/v1/fonogramas/{id}/historico-bloqueios` | `StatusVisualizarHistoricoFonograma` |
+| `GET /api/v1/fonogramas/{fonogramaId}/participacoes` | `ParticipacaoListar` |
+| `POST /api/v1/fonogramas/{fonogramaId}/participacoes` | `ParticipacaoAdicionar` |
+| `PUT /api/v1/fonogramas/{fonogramaId}/participacoes/{id}` | `ParticipacaoAjustar` |
+| `DELETE /api/v1/fonogramas/{fonogramaId}/participacoes/{id}` | `ParticipacaoRemover` |
+| `POST /api/v1/fonogramas/{fonogramaId}/participacoes/calcular` | `ParticipacaoCalcular` |
+| `GET /api/v1/busca` | `ObraListar` |
+| `POST /api/v1/distribuicao/ownership-snapshot` | `TitularidadeListar` |
+
+### Papeis Seedados
+
+`seeds/mcad/roles.json` define:
+
+- `cadastro.default.consultor`: conjunto de leitura do Cadastro.
+- `cadastro.default.analista`: leitura + escrita/operacoes do Cadastro.
+
+Esses papeis sao usados pelo ecad-authz para calcular o contexto efetivo de permissoes. A API de Cadastro nao decide escrita por nome de role; ela pergunta ao ecad-authz se o token atual possui a permissao exigida pelo endpoint.
+
+### Testes Implementados
+
+| Teste | Cobertura |
+|-------|-----------|
+| `AuthEndpointsTests` | 401 sem token, 403 quando AuthZ nega, 200 quando AuthZ permite, consultor bloqueado em POST, analista cria titular. |
+| `CadastroPermissions_Catalog_HasExpectedShape` | Garante 41 permissoes `cadastro:default:*` sem duplicidade. |
+| `KeycloakClaimsTransformationTests` | Apesar do nome legado, testa `LogtoClaimsTransformation` com claim flat `roles`. |
+| `PermissionAuthorizationHandlerTests` | Valida chamada ao `IEcadAuthzClient` com permissao e Bearer token. |
+| `HttpEcadAuthzClientTests` | Valida decisao permitida e fallback negado por indisponibilidade remota. |
+
+### Divergencias do Plano Original
+
+- O arquivo de transformacao ainda se chama `KeycloakClaimsTransformation.cs`, mas a classe efetiva e `LogtoClaimsTransformation`.
+- O backend nao usa policies `read`/`write`; usa autorizacao por permissao exata.
+- A claim efetiva de roles e `roles`, nao `realm_access.roles`.
+- A decisao final de acesso vem do ecad-authz, nao de roles locais no `ClaimsPrincipal`.

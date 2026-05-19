@@ -293,3 +293,138 @@ export function App() {
 ---
 
 *Tech Spec Frontend gerada.*
+
+---
+
+## Atualizacao de Implementacao — 2026-05-19
+
+Esta secao descreve o frontend como esta implementado hoje no codigo. O conteudo original acima permanece como historico da especificacao planejada.
+
+### Estrutura Efetiva
+
+| Area | Arquivos principais |
+|------|---------------------|
+| OIDC/Auth | `frontend/src/shared/auth/authConfig.ts`, `AuthProvider.tsx`, `AuthContext.tsx`, `useAuth.ts` |
+| Rotas de auth | `CallbackPage.tsx`, `SilentCallbackPage.tsx`, `LoggedOutPage.tsx`, `ProtectedRoute.tsx`, `authorizedRoutes.ts` |
+| Autorizacao UX | `frontend/src/shared/authz/PermissionsProvider.tsx`, `usePermissions.ts`, `Can.tsx`, `permissionsApi.ts` |
+| Guard de rota por permissao | `frontend/src/shared/auth/RequirePermission.tsx` |
+| Fetch autenticado | `frontend/src/shared/services/authenticatedFetch.ts` e clients por dominio |
+| Config runtime | `frontend/src/shared/config/runtimeConfig.ts` e `frontend/public/runtime-env.template.js` |
+
+### Configuracao OIDC Implementada
+
+`authConfig.ts` usa `oidc-client-ts` com:
+
+- `authority`, `client_id`, `audience`, redirects e post-logout vindos de `window.RUNTIME_ENV`.
+- `response_type: 'code'`.
+- `scope: 'openid profile roles access write'`.
+- `resource` enviado em `extraQueryParams` e `extraTokenParams`, necessario para o Logto emitir access token JWT com audiencia da API.
+- `automaticSilentRenew: true`.
+- `userStore` com `InMemoryWebStorage`, mantendo tokens fora de `localStorage`/`sessionStorage`.
+- `silent_redirect_uri` resolvido para `/silent-callback`.
+
+### AuthProvider e useAuth
+
+O contexto implementado expoe:
+
+```ts
+{
+  user,
+  isAuthenticated,
+  isLoggingOut,
+  roles,
+  login,
+  logout,
+  getToken
+}
+```
+
+Observacoes:
+
+- `roles` vem de `user.profile.roles` e e usado para exibicao no header e para escolher uma rota inicial apos callback.
+- Nao ha `hasRole(role)` no contexto implementado.
+- `AuthProvider` registra o token provider em todos os clients: Cadastro, Identificacao, Arrecadacao, Distribuicao, Auditoria e AuthZ.
+- Em `401`, `authenticatedFetch` chama um handler global que tenta `signinSilent()`. Se a renovacao falhar e nao houver logout em andamento, inicia novo login redirect.
+- `logout()` marca `auth.logout_in_progress` em `sessionStorage`, remove `returnUrl` e chama `signoutRedirect()`.
+
+### Autorizacao por Permissoes
+
+A autorizacao de interface foi implementada sobre permissoes efetivas, nao sobre checagem direta de roles:
+
+- `PermissionsProvider` usa React Query e chama `/api/me/permissions` quando o usuario esta autenticado.
+- `permissionsApi.ts` envia `Authorization: Bearer <token>` para o BFF.
+- O BFF retorna `{ subjectId, permissions, version }` e pode expor `X-Authz-Version`.
+- `usePermissions()` expoe `can(permission)`, `hasAny(permissions)`, `hasAll(permissions)`, `reload()`, `permissions`, `version`, `isLoading` e `error`.
+- `Can` renderiza filhos condicionalmente para elementos pontuais.
+- `RequirePermission` protege rotas e exibe `PermissionDeniedFallback` quando o usuario nao tem permissao.
+- `401` ao buscar permissoes dispara logout e limpa o cache de permissoes.
+
+### Rotas Protegidas
+
+O roteador atual possui:
+
+- `/callback`: processa `signinRedirectCallback()` e redireciona para `returnUrl` ou rota padrao por role.
+- `/silent-callback`: processa `signinSilentCallback()`.
+- `/logout`: limpa estado OIDC local e oferece novo login.
+- `/`: protegido por `ProtectedRoute`.
+- `/cadastro/*`: exige `cadastro:default:associacao:listar`.
+- `/identificacao/*`: exige `identificacao:default:captacao:listar`.
+- `/arrecadacao/*`: exige `arrecadacao:default:cliente:listar`.
+- `/distribuicao/*`: exige uma das permissoes de leitura de rubricas ou processos.
+- `/auditoria/*`, `/autorizacao/*` e `/copiloto`: exigem conjuntos especificos de permissoes via `anyOf`.
+
+### Gating de Acoes no Cadastro
+
+As telas de Cadastro consultam `usePermissions()` e escondem acoes com base em permissoes especificas:
+
+| Tela/componente | Permissoes usadas |
+|-----------------|-------------------|
+| `TitularesPage` | `titular:criar`, `titular:editar`, `titular:excluir` |
+| `TitularForm` | `titular:criar` ou `titular:editar` |
+| `ObrasPage` | `obra:criar`, `obra:editar`, `obra:excluir` |
+| `ObraDetailPage` | `obra:editar`, `obra:excluir`, `status:liberar-obra`, `status:bloquear-obra`, `status:desbloquear-obra` |
+| `ObraForm` | `obra:criar` ou `obra:editar` |
+| `FonogramasPage` | `fonograma:criar`, `fonograma:editar`, `fonograma:excluir` |
+| `FonogramaDetailPage` | `fonograma:editar`, `fonograma:excluir`, status de fonograma |
+| `FonogramaForm` | `fonograma:criar` ou `fonograma:editar` |
+| `TitularidadesSection` | `titularidade:adicionar` |
+| `ParticipacoesSection` | `participacao:adicionar` |
+
+As strings completas seguem o formato `cadastro:default:<recurso>:<acao>`.
+
+### BFF e Permissoes Efetivas
+
+O frontend nao consulta o ecad-authz diretamente para `/me`; ele chama o BFF:
+
+- `GET /api/me`: retorna identidade basica (`subjectId`, `name`, `email`).
+- `GET /api/me/permissions`: retorna permissoes efetivas e versao.
+- O BFF consulta `AUTHZ_BASE_URL/v1/me/authorization-context`, repassando o Bearer token.
+- Em producao, `permissionsApi.ts` deriva a origem do BFF a partir de `AUTHZ_API_BASE_URL`; em desenvolvimento usa caminho relativo.
+
+### Header e UX de Sessao
+
+`Header.tsx` mostra nome do usuario, badge de papel e botao de logout. Os labels implementados cobrem:
+
+- `analista-cadastro`, `consultor`
+- `analista-identificacao`, `consultor-identificacao`
+- `analista-arrecadacao`, `consultor-arrecadacao`
+- `analista-distribuicao`
+
+Quando nenhum papel conhecido e encontrado, exibe `Usuario autenticado`.
+
+### Testes Implementados
+
+| Teste | Cobertura |
+|-------|-----------|
+| `RequirePermission.test.tsx` | Regras `permission`, `anyOf`, `allOf`, fallback e loading. |
+| `Can.test.tsx` | Renderizacao condicional por permissao. |
+| `usePermissions.test.tsx` | Estado de permissoes, `can`, `hasAny`, `hasAll`. |
+| `permissionsApi.test.ts` | Chamada ao BFF, parse de permissao, `X-Authz-Version` e tratamento de erro. |
+| `authzRolesApi.test.ts` | Clients autenticados do modulo AuthZ via `/api/authz/v1`. |
+
+### Divergencias do Plano Original
+
+- A configuracao final usa `window.RUNTIME_ENV` em vez de depender apenas de `VITE_*`.
+- A autorizacao da UI nao usa `hasRole`; usa permissoes efetivas vindas do BFF/ecad-authz.
+- Existem paginas adicionais de sessao (`/logout`, `/silent-callback`) e utilitario de limpeza de estado OIDC.
+- O token provider foi generalizado para varios clients de API, nao apenas `apiClient.ts` do Cadastro.
