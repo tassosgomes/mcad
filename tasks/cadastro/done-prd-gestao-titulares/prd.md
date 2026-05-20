@@ -233,3 +233,40 @@ Todas as questões foram resolvidas. PRD pronto para Tech Spec.
 ---
 
 *PRD gerado com a skill `flow-prd-creator`. Para gerar a Especificação Técnica, use a skill `techspec-creator` fornecendo este PRD, o `vision.md` e o `domain.md` como contexto.*
+
+---
+
+## Adendo - Analise do Codigo Implementado (2026-05-20)
+
+Esta secao foi apendada apos analise do codigo atual. Ela nao altera a escrita original do PRD; registra apenas o estado observado da implementacao.
+
+### Estado Atual da Feature
+
+| Aspecto | Estado observado |
+|---------|------------------|
+| Status funcional | Implementado como feature `done`, com CRUD backend, telas frontend, tarefas marcadas como concluidas e evidencias de QA consolidadas |
+| Validacao QA | `qa-evidence/qa_report_consolidated.md` registra 39/39 cenarios aprovados em 2026-04-08, incluindo cadastro PF/PJ, filtros, edicao, visualizacao e exclusao |
+| Backend | Implementado em `services/cadastro-api` com Clean Architecture, CQRS, Value Objects, EF Core, PostgreSQL e Minimal APIs |
+| Frontend | Implementado em `frontend/src/features/cadastro/titulares` com React, TanStack Query, componentes compartilhados e rotas de listagem/criacao/edicao |
+
+### Atualizacoes Funcionais Observadas
+
+| Item | Atualizacao apendada |
+|------|----------------------|
+| Codigo sequencial | Titulares possuem campo `Codigo` numerico sequencial, retornado na API, exibido na listagem e usado como filtro exato por `codigo` |
+| Autenticacao e autorizacao | Apesar do nao-objetivo original, a implementacao atual usa JWT/OIDC quando `AUTH_ENABLED=true` e permissoes granulares `cadastro:default:titular:*` para listar, visualizar, criar, editar e excluir |
+| Perfil Consultor | O comportamento read-only deixou de ser apenas controle visual por role no frontend: a API aplica permissoes quando auth esta habilitada, e a UI oculta acoes conforme `usePermissions()` |
+| Auditoria | Criacao, atualizacao e exclusao de titulares publicam eventos de auditoria de acao do usuario e mudanca de dados via `ITitularAuditPublisher` |
+| Evento de dominio | A criacao registra `cadastro.titular.criado` na outbox transacional, incluindo `titularId`, `nome`, `tipo` e documento formatado |
+| Busca para vinculos | Existe endpoint complementar `GET /api/v1/titulares/busca` para autocomplete usado por titularidades autorais e participacoes conexas |
+| Exclusao com vinculos | A protecao de exclusao verifica efetivamente `titularidades_autorais` e `participacoes_conexas`, pois as tabelas downstream ja existem |
+| Retorno de associacao | O resumo de associacao no titular inclui tambem `codigo`, alem de `id`, `sigla` e `nome` |
+| Comportamento de rota invalida | GET com string que nao e UUID em `/api/v1/titulares/{id}` retorna 404 por nao casar com a constraint `{id:guid}`; o QA registra aceite do PO para esse comportamento |
+
+### Pontos de Alinhamento Futuro
+
+| Ponto | Observacao |
+|-------|------------|
+| Ordenacao por codigo | O frontend exibe header clicavel para ordenar por `codigo`, mas o backend nao trata `codigo`/`-codigo` no switch de ordenacao de `TitularRepository`; hoje a API cai no fallback por nome |
+| CAE/IPI no frontend | O backend aceita CAE/IPI como texto opcional de 1 a 20 caracteres, mas o formulario atual mascara o campo para digitos no formato `000.000.000`, removendo caracteres nao numericos antes do envio |
+| Escopo original de auth/audit | O PRD original marcava autenticacao/autorizacao real e historico de alteracoes como fora de escopo; a base atual implementou esses aspectos de forma transversal posteriormente |

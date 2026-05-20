@@ -720,3 +720,54 @@ Vitest + React Testing Library + MSW para componentes e hooks.
 ---
 
 *Tech Spec Frontend gerada com a skill `flow-techspec-creator`. Para gerar as tarefas de implementação, use a skill `flow-task-creator` fornecendo este arquivo e o `techspec.md` (backend) como contexto.*
+
+---
+
+## Adendo - Analise do Codigo Implementado (2026-05-20)
+
+Esta secao foi apendada apos analise do codigo atual. Ela nao altera a especificacao original; registra o estado real do frontend e os pontos de alinhamento encontrados.
+
+### Arquivos Relevantes Observados
+
+| Area | Caminhos principais |
+|------|---------------------|
+| Feature | `frontend/src/features/cadastro/titulares` |
+| API client | `frontend/src/features/cadastro/titulares/api/titularesApi.ts`, `frontend/src/shared/services/apiClient.ts` |
+| Paginas | `TitularesPage.tsx`, `TitularCreatePage.tsx`, `TitularEditPage.tsx` |
+| Componentes | `TitularesTable.tsx`, `TitularesFilters.tsx`, `TitularForm.tsx`, `DeleteTitularModal.tsx` |
+| Utils | `cpfValidator.ts`, `cnpjValidator.ts`, `documentFormatter.ts` |
+| Integracao | `frontend/src/features/cadastro/index.tsx`, `frontend/src/shared/components/layout/sidebar/Sidebar.tsx` |
+
+### Diferencas e Acrescimos na Implementacao Frontend
+
+| Tema | Estado implementado |
+|------|---------------------|
+| Codigo sequencial | O tipo `Titular` inclui `codigo`; a tabela exibe `#codigo`, a tela de edicao usa `Titular #codigo`, e os filtros aceitam busca por codigo |
+| Filtro por codigo | `TitularesFilters` possui campo numerico debounced para `codigo`, enviado por `titularesApi.ts` como query param |
+| Authz na UI | `TitularesPage` e `TitularForm` usam `usePermissions()` para condicionar criacao, edicao e exclusao conforme `cadastro:default:titular:*` |
+| Cliente autenticado | `apiClient.ts` usa `createAuthenticatedFetchClient()` e `setAuthTokenProvider`, nao apenas `fetch` simples |
+| Historico de auditoria | `TitularesTable` inclui `RowAuditHistoryButton` para abrir historico de auditoria por titular |
+| Rotas | As rotas `/cadastro/titulares`, `/cadastro/titulares/novo` e `/cadastro/titulares/:id/editar` estao registradas em `features/cadastro/index.tsx` |
+| Toasts | Criacao, atualizacao e exclusao exibem feedback por `useToast`; erros 409 e 422 de criacao recebem mensagens especificas |
+| Invalidacao de cache | Mutations invalidam `['titulares']`; atualizacao tambem invalida `['titulares', id]` |
+| Campo CAE/IPI | O formulario mascara CAE/IPI como `000.000.000` e envia apenas digitos ou `null` |
+
+### Pontos de Atencao Tecnica
+
+| Ponto | Detalhe |
+|-------|---------|
+| Ordenacao por codigo | A tabela permite clicar em `CODIGO` e envia `sort=codigo` ou `sort=-codigo`, mas o backend atual nao implementa esses casos no switch de ordenacao |
+| Permissao de exclusao | `TitularesPage` calcula `canWrite = canEdit || canDelete` para exibir acoes; isso pode mostrar botao de exclusao para usuario que tenha apenas editar ou botao de edicao para usuario que tenha apenas excluir, porque ambos ficam dentro do mesmo bloco `canWrite` |
+| CAE/IPI | A UI restringe CAE/IPI a 9 digitos formatados, enquanto o backend aceita texto de 1 a 20 caracteres; se CAE/IPI precisar suportar valores alfanumericos, o formulario deve ser ajustado |
+| Tipo do submit | `TitularFormProps.onSubmit` esta tipado como `any`, apesar de os payloads internos serem `CriarTitularRequest` e `AtualizarTitularRequest` |
+| Modo consultor | Usuarios sem permissao de escrita nao veem acoes de salvar no formulario; as paginas de criacao/edicao ainda podem renderizar campos, mas sem botao de submit |
+
+### Mapeamento Adicional PRD -> Frontend
+
+| Requisito ou comportamento | Implementacao observada |
+|----------------------------|-------------------------|
+| Codigo sequencial | `Titular.codigo`, coluna `CODIGO`, filtro por codigo e titulo de edicao |
+| Consultor read-only | `usePermissions()` oculta botao "Novo Titular" e acoes de escrita quando a permissao nao existe |
+| Auditoria | `RowAuditHistoryButton` por linha da tabela |
+| CNPJ alfanumerico | `cnpjValidator.ts` usa modulo 11 com ASCII-48 e `formatCnpj()` aceita letras nas 12 primeiras posicoes |
+| Documento imutavel | `TitularForm` desabilita tipo e documento em modo edicao |

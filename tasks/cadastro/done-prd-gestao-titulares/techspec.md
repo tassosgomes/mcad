@@ -662,3 +662,65 @@ Conforme `api-contract.yaml`. Resumo:
 ---
 
 *Tech Spec gerada com a skill `flow-techspec-creator`. Para gerar as tarefas de implementação, use a skill `flow-task-creator` fornecendo este arquivo como contexto.*
+
+---
+
+## Adendo - Analise do Codigo Implementado (2026-05-20)
+
+Esta secao foi apendada apos analise do codigo atual. Ela nao altera a especificacao original; registra o estado real da implementacao e os pontos tecnicos que divergiram ou foram adicionados depois.
+
+### Arquivos Relevantes Observados
+
+| Area | Caminhos principais |
+|------|---------------------|
+| API | `services/cadastro-api/1-Services/Cadastro.API/Endpoints/TitularEndpoints.cs` |
+| Application | `services/cadastro-api/2-Application/Cadastro.Application/Titulares/Commands`, `Queries`, `Responses` |
+| Domain | `services/cadastro-api/3-Domain/Cadastro.Domain/Entities/Titular.cs`, `ValueObjects/Cpf.cs`, `ValueObjects/Cnpj.cs`, `ValueObjects/CaeIpi.cs`, `Interfaces/ITitularRepository.cs` |
+| Infra | `services/cadastro-api/4-Infra/Cadastro.Infra/Repositories/TitularRepository.cs`, `Data/Configurations/TitularConfiguration.cs`, migrations `20260330161039_AddTitulares` e `20260403190454_AddCodigo_CampoCodigo` |
+| Testes | `services/cadastro-api/5-Tests/Cadastro.UnitTests/Titulares`, `ValueObjects`, `Cadastro.IntegrationTests/TitularEndpointsTests.cs` |
+
+### Diferencas e Acrescimos na Implementacao Backend
+
+| Tema | Estado implementado |
+|------|---------------------|
+| Codigo sequencial | A entidade `Titular` possui `Codigo` (`long`) gerado por `cadastro.seq_titulares_codigo`, com indice unico `uq_titulares_codigo`. O campo aparece em `TitularResponse`, `AssociacaoResumoResponse` tambem inclui `Codigo`, e `ListarTitularesQuery`/`TitularFiltro` aceitam filtro `Codigo` |
+| Endpoints com auth opcional | `MapTitularEndpoints(this WebApplication app, bool authEnabled)` aplica `RequireCadastroPermission(...)`; quando `AUTH_ENABLED=false`, as rotas usam `AllowAnonymous()` |
+| Permissoes | As rotas usam `cadastro:default:titular:listar`, `visualizar`, `criar`, `editar` e `excluir` via `CadastroPermissions` |
+| Registro de servicos | `Program.cs` registra repositorios, dispatcher, handlers via Scrutor, validators, outbox, RabbitMQ, worker de outbox, consumer de identidade, authz SDK e auditoria |
+| Outbox de dominio | `CriarTitularCommandHandler` chama `IOutboxEventWriter.AddEvent("cadastro.titular.criado", ...)` antes de `SaveChangesAsync`, mantendo o evento na mesma transacao do cadastro |
+| Auditoria transversal | `CriarTitularCommandHandler`, `AtualizarTitularCommandHandler` e `ExcluirTitularCommandHandler` publicam auditoria via `ITitularAuditPublisher`, com eventos `USER_ACTION` e `DATA_CHANGE` |
+| Atualizacao com tracking | `ITitularRepository` ganhou `GetByIdForUpdateAsync`; o handler de atualizacao usa entidade rastreada para persistir corretamente mudancas em `AssociacaoId` |
+| Consulta de documento | `TitularRepository` usa `Database.SqlQuery<T>` parametrizado para unicidade, filtro por documento e autocomplete, porque o LINQ do EF Core nao traduz acesso a `Cpf.Valor`/`Cnpj.Valor` apos `HasConversion` |
+| Autocomplete | `GET /api/v1/titulares/busca` fica mapeado em `TitularidadeEndpoints` e usa `BuscarTitularesQuery` com `q` e `limit`; a permissao aplicada e `cadastro:default:titularidade:buscar` |
+| Exclusao protegida | `PossuiVinculosAsync` consulta `TitularidadesAutorais` e `ParticipacoesConexas`; a protecao deixou de ser placeholder porque F04/F06 ja possuem tabelas reais |
+| ProblemDetails | `GlobalExceptionHandler` cobre `NotFoundException`, `ConflictException`, `StatusConflictException`, `ValidationException`, `DomainException`, `ExternalServiceException`, `DepuracaoNecessariaException` e `PreRequisitosException` |
+| Migrations | `AddTitulares` cria tabela, indices parciais de CPF/CNPJ, `pg_trgm`, check constraint tipo-documento e indice GIN em nome; `AddCodigo_CampoCodigo` adiciona codigo sequencial a titulares e demais cadastros |
+
+### Estado do Contrato de API Observado
+
+| Endpoint | Observacao de implementacao |
+|----------|-----------------------------|
+| `GET /api/v1/titulares` | Aceita `page`, `size`, `sort`, `codigo`, `nome`, `documento`, `associacaoId`, `status` |
+| `POST /api/v1/titulares` | Cria PF/PJ, valida shape por FluentValidation, valida documento por Value Object, verifica associacao e unicidade |
+| `GET /api/v1/titulares/{id:guid}` | Retorna 200 com associacao aninhada ou 404 via `NotFoundException`; strings nao UUID retornam 404 por constraint de rota |
+| `PUT /api/v1/titulares/{id:guid}` | Atualiza nome, nacionalidade, associacao, status e CAE/IPI; tipo e documento permanecem fora do command |
+| `DELETE /api/v1/titulares/{id:guid}` | Retorna 204 se sem vinculos; retorna 409 se houver titularidades autorais ou participacoes conexas |
+| `GET /api/v1/titulares/busca` | Endpoint adicional para autocomplete de vinculos, buscando por nome ou documento |
+
+### Pontos de Atencao Tecnica
+
+| Ponto | Detalhe |
+|-------|---------|
+| Ordenacao por codigo | `ListarTitularesQuery` aceita `sort`, e o frontend envia `codigo`/`-codigo`, mas `TitularRepository.ListarAsync` ainda nao trata esses valores no switch; a API cai no fallback de ordenacao por nome |
+| Normalizacao de documento | A busca por documento normaliza caracteres nao alfanumericos e compara em uppercase contra `Cpf` e `Cnpj`, o que atende CPF numerico e CNPJ alfanumerico |
+| Status no validator | `AtualizarTitularCommandValidator` aceita `ATIVO`, `FALECIDO` e `TRANSFERINDO`; o parse final usa `Enum.Parse<StatusTitular>(..., ignoreCase: true)` |
+| CAE/IPI | O backend aceita `CaeIpi` como texto aparado de 1 a 20 caracteres; a restricao mais forte de mascara numerica ocorre apenas no frontend atual |
+| Contrato legado | Alguns documentos no diretorio ainda mencionam auth retroativa ou caminhos antigos `tasks/prd-gestao-titulares`; o codigo atual esta em `tasks/cadastro/done-prd-gestao-titulares` e auth ja esta aplicado quando habilitado |
+
+### Validacao Observada
+
+| Fonte | Resultado |
+|-------|-----------|
+| `tasks.md` | 15 tarefas marcadas como concluidas |
+| QA consolidado | 39/39 cenarios aprovados, incluindo revalidacao de bugs de edicao de associacao, UUID zero e mensagens 404 em portugues |
+| Testes de codigo | Existem testes unitarios para handlers e Value Objects, alem de testes de integracao de endpoints de titulares |
