@@ -232,3 +232,41 @@ Todas as questões foram resolvidas. PRD pronto para API Contract e Tech Spec.
 ---
 
 *PRD gerado com a skill `flow-prd-creator`.*
+
+---
+
+## Adendo de Atualização Pós-Análise do Código (2026-05-20)
+
+Este adendo preserva a escrita original e registra apenas o comportamento observado no código atual.
+
+### Status Atual Observado
+
+| Área | Estado observado |
+|------|------------------|
+| Domínio | `StatusObra.Bloqueado` e `StatusFonograma.Bloqueado` existem; obras e fonogramas têm métodos de liberar, bloquear e desbloquear; fonogramas têm `urlAudio` e `bloqueioJustificativa`. |
+| Backend/API | Endpoints de liberar, bloquear, desbloquear e histórico foram implementados dentro de `ObraEndpoints` e `FonogramaEndpoints`. Fonograma também tem `PATCH /api/v1/fonogramas/{id}/url-audio`. |
+| Frontend | `ObraDetailPage` e `FonogramaDetailPage` exibem botões contextuais por permissão, modal de bloqueio, banner de bloqueio, checklist de pendências e histórico. `FonogramaForm` exibe o campo "URL do Áudio". |
+| Rastreabilidade | Bloqueios e desbloqueios gravam `historico_bloqueios`; a resposta principal retorna `bloqueioJustificativa`. |
+| Autorização | As ações usam permissões granulares `cadastro:default:status:*` no backend, frontend e seeds de permissões/papéis. |
+| Eventos e auditoria | Liberação e bloqueio de obra/fonograma registram eventos no outbox; liberar, bloquear e desbloquear também publicam auditoria. |
+
+### Atualizações Funcionais Relevantes
+
+- O código atual adicionou publicação de eventos para liberação e bloqueio, embora o texto original liste eventos como fora de escopo.
+- `urlAudio` pode ser atualizado pelo `PUT /fonogramas/{id}` e também pelo endpoint dedicado `PATCH /fonogramas/{id}/url-audio`.
+- Fonograma BLOQUEADO não pode editar `urlAudio`; essa restrição está coerente com RF-30, mesmo sendo mais explícita que RF-22/RF-23.
+- A validação de URL continua sendo essencialmente de presença para liberação; o backend não valida formato de URL. O frontend usa `input type="url"`, mas a garantia de domínio/API permanece "texto não vazio" para liberação.
+- A visibilidade dos botões é governada por permissões específicas, não apenas por perfil fixo de Analista/Consultor.
+
+### Divergências e Pendências Observadas
+
+| Item | Observação |
+|------|------------|
+| Liberação manual de obra | `ObterIswcCommandHandler` ainda chama `obra.AtribuirIswc(iswc)`, e `AtribuirIswc` muda a obra para LIBERADO. Isso mantém um caminho de liberação automática ao obter ISWC, sem passar pelo botão `Liberar` e sem executar o checklist completo de `ValidadorLiberacaoObra`. |
+| RF-20 | O retorno automático de fonograma para PENDENTE_VALIDACAO está implementado ao remover participação calculada, mas não foi observado de forma consistente nos fluxos de adicionar ou ajustar participação. |
+| Botão Liberar no fonograma | A tela de detalhe mostra "Liberar" para fonograma não liberado, não depurado e não bloqueado; portanto pode aparecer também em PENDENTE_VALIDACAO. O backend bloqueia a ação com 409 quando não está em PENDENTE_DOCUMENTACAO. |
+| Cobertura de testes | Há testes unitários de domínio e integração parcial, mas não foi encontrado teste dedicado para `ValidadorLiberacaoFonograma` nem suíte de integração cobrindo todos os endpoints de status. |
+
+### Decisão de Produto Atualizada
+
+Para considerar F07 plenamente aderente ao PRD original, o fluxo de obtenção de ISWC deve deixar de liberar a obra automaticamente ou o PRD deve aceitar explicitamente esse caminho alternativo. Sem essa decisão, a regra "liberação sempre manual" permanece parcialmente divergente do código atual.

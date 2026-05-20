@@ -436,3 +436,65 @@ CREATE INDEX ix_historico_entidade ON cadastro.historico_bloqueios ("EntidadeTip
 ---
 
 *Tech Spec gerada. Para tech spec frontend ou tasks, use as skills correspondentes.*
+
+---
+
+## Adendo Técnico Pós-Análise do Código (2026-05-20)
+
+Este adendo preserva a escrita original e documenta o estado efetivo encontrado no código.
+
+### Implementação Efetiva
+
+| Camada | Implementação observada |
+|--------|--------------------------|
+| Domínio | `ObraMusical` contém `BloqueioJustificativa`, `Liberar`, `Bloquear` e `Desbloquear`; `Fonograma` contém `UrlAudio`, `BloqueioJustificativa`, `DefinirUrlAudio`, `Liberar`, `Bloquear`, `Desbloquear`, `TransicionarParaPendenteDocumentacao` e `RetornarParaPendenteValidacao`. |
+| Validação de liberação | `ValidadorLiberacaoObra` valida título, tipo, ISWC e soma de titularidades; `ValidadorLiberacaoFonograma` valida ISRC, soma de conexos, obra LIBERADA e `UrlAudio`. Falhas geram `PreRequisitosException` e resposta 422 com `pendencias`. |
+| Infra/EF | `HistoricoBloqueioConfiguration`, `HistoricoBloqueioRepository`, `DbSet<HistoricoBloqueio>`, colunas `BloqueioJustificativa`/`UrlAudio`, checks de status e migration `20260401173745_AddControleStatus` existem. |
+| API | Não há `StatusEndpoints.cs`; os endpoints foram incorporados a `ObraEndpoints` e `FonogramaEndpoints`. |
+| Authz | Cada endpoint de status exige permissão específica em `CadastroPermissions` e os seeds incluem `cadastro:default:status:*`. |
+| Eventos | `LiberarObraCommand`, `BloquearObraCommand`, `LiberarFonogramaCommand` e `BloquearFonogramaCommand` registram eventos no outbox. Desbloqueios gravam histórico e auditoria, mas não evento de domínio no outbox. |
+| Auditoria | Operações `Release`, `Block` e `Unblock` foram adicionadas para obras e fonogramas. Existe operação `SetUrlAudio`, mas o handler dedicado de URL não publica auditoria no código atual. |
+| Frontend | Components compartilhados de status, banner, modal, checklist e histórico existem; hooks de obra/fonograma invalidam cache e atualizam query data. |
+
+### Endpoints Reais
+
+| Recurso | Método/rota | Observação |
+|---------|-------------|------------|
+| Obra | `POST /api/v1/obras/{id}/liberar` | Retorna `ObraResponse`; exige `status=PENDENTE`; 422 para checklist incompleto. |
+| Obra | `POST /api/v1/obras/{id}/bloquear` | Body `{ justificativa }`; valida 10 a 500 caracteres. |
+| Obra | `POST /api/v1/obras/{id}/desbloquear` | Retorna para PENDENTE e limpa justificativa. |
+| Obra | `GET /api/v1/obras/{id}/historico-bloqueios` | Retorna histórico em ordem decrescente de `DataHora`. |
+| Fonograma | `POST /api/v1/fonogramas/{id}/liberar` | Exige `status=PENDENTE_DOCUMENTACAO`; 422 para checklist incompleto. |
+| Fonograma | `POST /api/v1/fonogramas/{id}/bloquear` | Body `{ justificativa }`; valida 10 a 500 caracteres. |
+| Fonograma | `POST /api/v1/fonogramas/{id}/desbloquear` | Retorna para PENDENTE_VALIDACAO e limpa justificativa. |
+| Fonograma | `GET /api/v1/fonogramas/{id}/historico-bloqueios` | Retorna histórico em ordem decrescente de `DataHora`. |
+| Fonograma | `PATCH /api/v1/fonogramas/{id}/url-audio` | Endpoint adicional para definir/remover URL de áudio; aceita `{ url }` com limite de 500 caracteres. |
+
+### Diferenças Técnicas em Relação ao Plano Original
+
+- `StatusEndpoints.cs` planejado foi substituído por endpoints adicionados aos arquivos já existentes de obras e fonogramas.
+- `urlAudio` foi integrado tanto no update geral do fonograma quanto em command/endpoint dedicado (`DefinirUrlAudioCommand`).
+- `AtualizarFonogramaCommandValidator` não valida o tamanho de `UrlAudio`; o limite de 500 caracteres está garantido no endpoint dedicado e no banco.
+- `Fonograma.DefinirUrlAudio` bloqueia alteração em LIBERADO, DEPURADO e BLOQUEADO.
+- `Fonograma.PodeSerExcluido` inclui BLOQUEADO, então um fonograma bloqueado pode ser excluído pelo domínio se as demais regras permitirem.
+- `CalcularPercentuaisCommandHandler` chama `TransicionarParaPendenteDocumentacao` após cálculo bem-sucedido. `RemoverParticipacaoCommandHandler` retorna para PENDENTE_VALIDACAO quando remove participação que tinha percentual calculado.
+- `AdicionarParticipacaoCommandHandler` marca percentuais desatualizados quando já havia cálculo anterior, mas não retorna o status para PENDENTE_VALIDACAO. `AjustarPercentualCommandHandler` não marca desatualização nem retorna status.
+- O fluxo antigo de ISWC permanece ativo: `ObterIswcCommandHandler` chama `AtribuirIswc`, que muda a obra para LIBERADO e grava evento `cadastro.obra.liberada`. Isso conflita com a premissa técnica de liberação exclusivamente manual por `LiberarObraCommand`.
+
+### Cobertura de Testes Observada
+
+| Tipo | Cobertura encontrada |
+|------|----------------------|
+| Unitários domínio | `ObraMusicalTests`, `FonogramaTests` cobrem transições principais, bloqueio/desbloqueio e `DefinirUrlAudio`. |
+| Unitários validadores | Existe `ValidadorLiberacaoObraTests`; não foi encontrado teste dedicado para `ValidadorLiberacaoFonograma`. |
+| Unitários handlers | Há cobertura parcial para `CalcularPercentuaisCommandHandler` e `AtualizarFonogramaCommandHandler`; não foi encontrada suíte dedicada para todos os commands de status. |
+| Integração | `ObraEndpointsTests` cobre retorno de justificativa em obra bloqueada; `FonogramaEndpointsTests` cobre CRUD básico, mas não cobre liberar/bloquear/desbloquear/histórico de fonograma. |
+| Frontend | Não foram encontrados testes específicos para os componentes ou fluxos de Controle de Status no frontend. |
+
+### Recomendações Técnicas
+
+1. Decidir se `ObterIswcCommandHandler` deve parar de liberar obra automaticamente. Se a regra de liberação manual prevalecer, `AtribuirIswc` deve apenas preencher `Iswc` e manter `Status=Pendente`.
+2. Completar RF-20 nos handlers de adicionar e ajustar participação, garantindo retorno para PENDENTE_VALIDACAO quando a soma ficar inconsistente ou percentuais ficarem desatualizados.
+3. Restringir a visibilidade do botão "Liberar" de fonograma no frontend para PENDENTE_DOCUMENTACAO, alinhando UI ao backend.
+4. Adicionar validação de tamanho para `UrlAudio` no `AtualizarFonogramaCommandValidator`.
+5. Criar testes para `ValidadorLiberacaoFonograma`, commands de status, endpoints de fonograma e componentes frontend de bloqueio/liberação.
