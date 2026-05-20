@@ -427,3 +427,93 @@ return await _context.TitularidadesAutorais.AnyAsync(t => t.TitularId == titular
 ---
 
 *Tech Spec gerada. Para tech spec frontend ou tasks, use as skills correspondentes.*
+
+---
+
+## Atualização Pós-Análise de Código
+
+> Anexo acrescentado após análise da implementação. O conteúdo original acima foi preservado sem alteração.
+
+### Inventário Implementado Observado
+
+| Camada | Artefatos observados |
+|--------|----------------------|
+| Domain | `ParticipacaoConexa`, `CategoriaConexo`, `CalculadoraConexos`, `IParticipacaoRepository`, extensão de `Fonograma.PercentuaisDesatualizados` |
+| Application | Commands/handlers de adicionar, ajustar, remover e calcular; query `ListarParticipacoesQueryHandler`; DTOs `ParticipacoesResponse` e `ParticipacaoItemResponse` |
+| Infra | `ParticipacaoConexaConfiguration`, `ParticipacaoRepository`, migration `20260401131139_AddParticipacoesConexas`, `DbSet<ParticipacaoConexa>` e bloqueio de exclusão de titular com participação conexa |
+| API | `ParticipacaoEndpoints` mapeado no `Program.cs` com cinco rotas sob `/api/v1/fonogramas/{fonogramaId}/participacoes` |
+| Authz | Permissões `cadastro:default:participacao:listar`, `adicionar`, `ajustar`, `remover` e `calcular` |
+| Auditoria | `ParticipacaoAuditEventFactory`, `IParticipacaoAuditPublisher` e eventos para add/adjust/remove/calculate |
+| Frontend | Feature `features/cadastro/participacoes` com API client, hooks React Query, formulário, tabela, botão de cálculo, badge de desatualização e modal de recálculo |
+| Integrações | `LiberarFonogramaCommandHandler` valida conexos antes da liberação; `ObterOwnershipSnapshotQueryHandler` expõe participações para Distribuição |
+| Testes | Unit tests de cálculo/entidade/handlers e integration tests em `Cadastro.IntegrationTests/ParticipacaoEndpointsTests.cs` |
+
+### Endpoints e Contratos Implementados
+
+| Método | Rota | Handler | Observação |
+|--------|------|---------|------------|
+| GET | `/api/v1/fonogramas/{fonogramaId}/participacoes` | `ListarParticipacoesQueryHandler` | Retorna lista, soma nullable, `somaCalculada` e `percentuaisDesatualizados` |
+| POST | `/api/v1/fonogramas/{fonogramaId}/participacoes` | `AdicionarParticipacaoCommandHandler` | Cria participação com percentual nulo; rejeita duplicata titular + categoria |
+| PUT | `/api/v1/fonogramas/{fonogramaId}/participacoes/{id}` | `AjustarPercentualCommandHandler` | Ajusta percentual individual; músico executante é rejeitado pelo domínio |
+| DELETE | `/api/v1/fonogramas/{fonogramaId}/participacoes/{id}` | `RemoverParticipacaoCommandHandler` | Remove participação e marca percentuais desatualizados quando havia cálculo |
+| POST | `/api/v1/fonogramas/{fonogramaId}/participacoes/calcular` | `CalcularPercentuaisCommandHandler` | Executa `CalculadoraConexos`, marca percentuais atualizados e transiciona para `PENDENTE_DOCUMENTACAO` |
+
+### Detalhes Técnicos Confirmados
+
+| Tema | Implementação atual |
+|------|---------------------|
+| Categoria | Conversão EF grava `INTERPRETE`, `PRODUTOR_FONOGRAFICO` e `MUSICO_EXECUTANTE` em `VARCHAR(25)` |
+| Precisão | `Percentual` é nullable e configurado como `DECIMAL(8,4)` |
+| Ordenação da listagem | Repositório ordena participações calculadas primeiro, depois percentual descendente e nome do titular |
+| Busca de titulares | Frontend reutiliza `/titulares/busca?q=...&limit=...` no autocomplete |
+| Read-only | UI bloqueia escrita quando usuário não tem permissão ou fonograma está `DEPURADO` |
+| LIBERADO | Handlers de add/adjust/remove/calculate lançam `DepuracaoNecessariaException` |
+| DEPURADO | Handlers lançam `DomainException("Fonogramas depurados não podem ser alterados")` |
+| Recálculo | Confirmação fica no frontend; backend sempre recalcula quando o endpoint é chamado |
+| Liberação | `ValidadorLiberacaoFonograma` exige soma conexa exatamente `100.0000m` |
+| Distribuição | `GetByFonogramaIdsAsync` busca participações com titular e associação para montar snapshot de ownership |
+
+### Deltas em Relação à Tech Spec Original
+
+| Ponto | Delta observado |
+|-------|-----------------|
+| Cópia na depuração | A spec previa novo fonograma com participações copiadas; QA e código indicam que o novo fonograma nasce sem participações |
+| Status pós-cálculo | O cálculo também chama `fonograma.TransicionarParaPendenteDocumentacao()`, comportamento não detalhado na spec original |
+| Status pós-remoção | Remover uma participação calculada chama `fonograma.RetornarParaPendenteValidacao()` quando marca desatualização |
+| Validação RN-13 no PUT | `AjustarPercentualCommandHandler` não valida soma da fatia de intérpretes/produtores; a proteção efetiva antes de liberar é a soma total no `LiberarFonogramaCommandHandler` |
+| Indicador por fatia | Frontend implementa `SomaIndicator` total e badge de desatualização; não foi identificado indicador específico por fatia |
+| Auditoria | A implementação adicionou cobertura de auditoria para participação conexa, não prevista no inventário original |
+| Authz | A implementação adicionou permissões granulares de participação, não previstas na primeira tech spec |
+| Snapshot Distribuição | A implementação integrou participação conexa ao snapshot de ownership para consumo por Distribuição |
+
+### Dívidas Técnicas e Riscos
+
+| Risco | Evidência | Recomendação |
+|-------|-----------|--------------|
+| FK sombra `FonogramaId1` | A migration `20260403182402_SyncModel` adiciona coluna nullable `FonogramaId1` em `participacoes_conexas`; o snapshot mostra relacionamento adicional com `WithMany("ParticipacoesConexas")` | Ajustar `ParticipacaoConexaConfiguration` para usar `.WithMany(f => f.ParticipacoesConexas)` no relacionamento principal e gerar migration de correção |
+| Navegação inversa não pareada | `Fonograma.ParticipacoesConexas` existe, mas a configuração atual usa `.WithMany()` no relacionamento de `ParticipacaoConexa.Fonograma` | Parear explicitamente a navegação para evitar modelo EF duplicado |
+| RN-13 parcial | Backend aceita ajuste individual que pode deixar soma total ou fatia inválida até nova correção manual | Se RN-13 for obrigatório no momento do ajuste, implementar validação transacional por fatia no handler |
+| Depuração sem cópia | Comportamento implementado diverge do RF-27 original | Decidir se o produto mantém o novo fluxo ou se deve copiar participações para o novo fonograma |
+
+### Evidências de Teste e QA
+
+| Fonte | Cobertura |
+|-------|-----------|
+| `CalculadoraConexosTests.cs` | Com músico, sem músico, dueto, três músicos, quatro músicos, três intérpretes, one-man-band e composições inválidas |
+| `ParticipacaoEndpointsTests.cs` | Duplicata, cálculo completo, cálculo com músico, ajuste, rejeição de músico, remoção, bloqueio de exclusão de titular vinculado e titular com categorias diferentes |
+| `qa-evidence/qa_report_consolidated.md` | 5/5 tasks PASS, 34/34 cenários PASS, incluindo composição, cálculo, ajuste, recálculo e depuração |
+
+### Arquivos Relevantes para Manutenção
+
+| Finalidade | Caminho |
+|------------|---------|
+| Entidade | `services/cadastro-api/3-Domain/Cadastro.Domain/Entities/ParticipacaoConexa.cs` |
+| Cálculo | `services/cadastro-api/3-Domain/Cadastro.Domain/Services/CalculadoraConexos.cs` |
+| Configuração EF | `services/cadastro-api/4-Infra/Cadastro.Infra/Data/Configurations/ParticipacaoConexaConfiguration.cs` |
+| Repositório | `services/cadastro-api/4-Infra/Cadastro.Infra/Repositories/ParticipacaoRepository.cs` |
+| Endpoints | `services/cadastro-api/1-Services/Cadastro.API/Endpoints/ParticipacaoEndpoints.cs` |
+| Handlers | `services/cadastro-api/2-Application/Cadastro.Application/Participacoes/Commands/` |
+| Query de listagem | `services/cadastro-api/2-Application/Cadastro.Application/Participacoes/Queries/ListarParticipacoesQueryHandler.cs` |
+| UI principal | `frontend/src/features/cadastro/participacoes/components/ParticipacoesSection.tsx` |
+| Tabela e inline edit | `frontend/src/features/cadastro/participacoes/components/ParticipacoesTable.tsx` |
+| Integração Fonograma | `frontend/src/features/cadastro/fonogramas/pages/FonogramaDetailPage.tsx` |

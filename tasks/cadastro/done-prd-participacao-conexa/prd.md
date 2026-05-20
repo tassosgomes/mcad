@@ -237,3 +237,73 @@ Todas as questões foram resolvidas. PRD pronto para API Contract e Tech Spec.
 ---
 
 *PRD gerado com a skill `flow-prd-creator`.*
+
+---
+
+## Atualização Pós-Análise de Código
+
+> Anexo acrescentado após análise da implementação. O conteúdo original acima foi preservado sem alteração.
+
+### Status Observado
+
+| Item | Situação observada no código |
+|------|------------------------------|
+| Implementação backend | Implementada em `services/cadastro-api` com entidade, cálculo de domínio, repositório, comandos, query e endpoints |
+| Implementação frontend | Implementada em `frontend/src/features/cadastro/participacoes` e integrada à `FonogramaDetailPage` na seção "Direitos Conexos" |
+| Testes automatizados | Há testes unitários para entidade, cálculo e handlers, além de testes de integração dos endpoints |
+| Evidência QA | Relatório consolidado em `qa-evidence/qa_report_consolidated.md` com 5/5 tasks PASS e 34/34 cenários PASS em API/DB |
+
+### Comportamento Implementado Confirmado
+
+| Área | Atualização |
+|------|-------------|
+| Endpoints | Foram disponibilizados `GET`, `POST`, `PUT`, `DELETE` e `POST /calcular` sob `/api/v1/fonogramas/{fonogramaId}/participacoes` |
+| Permissões | As operações usam permissões granulares: listar, adicionar, ajustar, remover e calcular participações |
+| Composição | O mesmo titular pode acumular categorias diferentes no mesmo fonograma; duplicidade de titular + categoria retorna conflito |
+| Percentual pendente | Participação recém-adicionada permanece com `percentual=null`; a resposta retorna `somaCalculada=false` e `somaPercentual=null` enquanto houver percentual pendente |
+| Cálculo | O backend calcula 43,7/41,7/14,6 quando há músico executante, 50/50 quando não há músico, e aplica truncamento a 4 casas com diferença no primeiro item da fatia |
+| Recálculo | O frontend exibe modal de confirmação quando já há percentuais calculados; o backend recalcula sobrescrevendo os percentuais anteriores |
+| Desatualização | Ao adicionar participante após cálculo ou remover participante calculado, `percentuaisDesatualizados=true` é retornado para a UI |
+| Status do fonograma | Calcular percentuais transiciona o fonograma de `PENDENTE_VALIDACAO` para `PENDENTE_DOCUMENTACAO`; remover participação calculada retorna para `PENDENTE_VALIDACAO` |
+| Liberação | A liberação de fonograma valida soma conexa igual a `100.0000`, obra vinculada liberada, ISRC e URL de áudio |
+| Distribuição | A feature alimenta o snapshot de ownership consumido por Distribuição via `ObterOwnershipSnapshotQueryHandler` |
+| Auditoria | Adição, ajuste, remoção e cálculo de participação conexa publicam eventos de auditoria para `ParticipacaoConexa` |
+
+### Ajustes de Escopo Observados
+
+| Ponto | Atualização |
+|-------|-------------|
+| Depuração de LIBERADO | Operações de participação em fonograma `LIBERADO` retornam `DEPURACAO_NECESSARIA`. A criação efetiva do novo fonograma continua concentrada no endpoint de depuração de F05 |
+| Novo fonograma depurado | A evidência QA mostra que o novo fonograma criado pela depuração inicia em `PENDENTE_VALIDACAO` sem copiar participações do original; o analista precisa cadastrar as participações no novo fonograma |
+| Body de depuração | `POST /fonogramas/{id}/depurar` exige body com ISRC, país de origem e datas, por reutilizar o contrato de F05 |
+| Serialização de percentuais | A API pode serializar `43.7` em vez de `43.7000`; a persistência mantém `DECIMAL(8,4)` no banco |
+
+### Lacunas ou Pontos de Atenção
+
+| Requisito original | Situação observada |
+|--------------------|--------------------|
+| RF-20/RF-21 — validar soma da fatia de intérpretes/produtores no ajuste manual | A análise do handler de ajuste não encontrou validação de soma por fatia no momento do `PUT`; o backend valida intervalo `0.0001..100`, bloqueia músico e a liberação barra soma total diferente de 100 |
+| RF-22 — indicador visual de soma por fatia | A UI implementa indicador de soma total com `SomaIndicator`; não foi identificado indicador separado para fechamento de fatia de intérpretes ou produtores |
+| RF-27 — novo fonograma com participações copiadas com alterações | A evidência QA documenta comportamento diferente: o novo fonograma depurado nasce sem participações copiadas |
+
+### Critérios de Aceitação Atualizados
+
+| Critério | Evidência atual |
+|----------|-----------------|
+| Montar composição | PASS nos testes QA de composição, incluindo mesmo titular com categorias distintas e bloqueio de duplicata |
+| Calcular percentuais | PASS em cenários com músico, sem músico, dueto, três músicos e composição incompleta |
+| Ajustar percentuais | PASS para intérprete/produtor e rejeição de músico |
+| Recalcular | PASS com descarte de ajustes manuais e recomposição igualitária |
+| Depuração | PASS para bloqueio das operações em LIBERADO e confirmação do fluxo via endpoint de depuração |
+
+### Rastreabilidade de Código
+
+| Responsabilidade | Artefato principal |
+|------------------|--------------------|
+| Entidade | `services/cadastro-api/3-Domain/Cadastro.Domain/Entities/ParticipacaoConexa.cs` |
+| Cálculo | `services/cadastro-api/3-Domain/Cadastro.Domain/Services/CalculadoraConexos.cs` |
+| Endpoints | `services/cadastro-api/1-Services/Cadastro.API/Endpoints/ParticipacaoEndpoints.cs` |
+| Liberação do fonograma | `services/cadastro-api/2-Application/Cadastro.Application/Status/Commands/LiberarFonogramaCommand.cs` |
+| Snapshot Distribuição | `services/cadastro-api/2-Application/Cadastro.Application/Distribuicao/Queries/ObterOwnershipSnapshotQueryHandler.cs` |
+| UI | `frontend/src/features/cadastro/participacoes/components/ParticipacoesSection.tsx` |
+| Integração na página | `frontend/src/features/cadastro/fonogramas/pages/FonogramaDetailPage.tsx` |
