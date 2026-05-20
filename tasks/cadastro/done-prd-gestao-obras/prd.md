@@ -297,3 +297,47 @@ Todas as questões foram resolvidas. PRD pronto para API Contract e Tech Spec.
 ---
 
 *PRD gerado com a skill `flow-prd-creator`. Para gerar a Especificação Técnica, use a skill `techspec-creator` fornecendo este PRD, o `vision.md` e o `domain.md` como contexto.*
+
+---
+
+## Atualização Apensada - Alinhamento com Código Implementado
+
+> Esta seção foi apendada após análise do código implementado. O conteúdo original acima permanece como referência histórica do PRD planejado.
+
+### Status Atual do Produto
+
+A feature F03 está implementada no backend `services/cadastro-api` e no frontend `frontend/src/features/cadastro/obras`, com CRUD de obras, listagem paginada, detalhe, criação, edição, exclusão, obtenção de ISWC, depuração, domínio público, liberação, bloqueio/desbloqueio, histórico de bloqueios, autorização por permissões granulares, auditoria e eventos assíncronos.
+
+### Incrementos de Produto Identificados no Código
+
+| Item | Atualização |
+|------|-------------|
+| Código da obra | Toda obra possui `codigo` sequencial, gerado no banco por `cadastro.seq_obras_codigo`. A UI usa este valor como identificador humano, exibindo "Obra #codigo" no detalhe e coluna "CÓDIGO" na listagem. |
+| Filtro por código | A listagem aceita filtro numérico `codigo`, além dos filtros já previstos por título, ISWC, tipo, status e gênero. |
+| Liberação explícita | Existe ação de liberação em `POST /api/v1/obras/{id}/liberar`, com checklist de pré-requisitos: título, tipo, ISWC e soma de titularidades igual a `100.0000%`. Quando há pendências, a API retorna 422 com a lista de itens não atendidos e a UI exibe o checklist. |
+| Bloqueio e desbloqueio | Obras PENDENTES ou LIBERADAS podem ser bloqueadas com justificativa de 10 a 500 caracteres. Obras BLOQUEADAS exibem banner com justificativa e podem ser desbloqueadas. Obras DEPURADAS não podem ser bloqueadas. |
+| Histórico de bloqueios | A tela de detalhe exibe histórico de bloqueios/desbloqueios da obra, obtido por `GET /api/v1/obras/{id}/historico-bloqueios`. |
+| Domínio público | A UI implementa toggle de domínio público na área "Propriedades". Ao marcar, o status muda para DOMINIO_PUBLICO; ao desmarcar, retorna para LIBERADO se houver ISWC ou PENDENTE se não houver. |
+| ISWC | No código atual, obter ISWC também atribui status LIBERADO à obra e publica evento de obra liberada. A chamada externa usa a base configurável `ISWC_BASE_URL` e faz POST para o caminho `api/iswc`. |
+| Depuração por título | Alterar título de obra LIBERADA gera erro 409 com código `DEPURACAO_NECESSARIA`; a UI abre modal de confirmação e, ao confirmar, navega para a nova obra. |
+| Depuração por titulares | Adicionar, editar ou remover titularidade em obra LIBERADA também gera `DEPURACAO_NECESSARIA`; a UI reaproveita o modal de depuração da obra. |
+| Titularidades na depuração | Ao depurar, a implementação cria nova obra PENDENTE e copia as titularidades autorais da obra original para a nova obra. Fonogramas não são copiados. |
+| Exclusão | A exclusão é impedida para obras DEPURADAS e para obras com vínculos de titularidades ou fonogramas. |
+| Auditoria | A listagem exibe botão de histórico de auditoria por linha e o backend registra auditoria para criar, atualizar, excluir, obter ISWC, depurar, domínio público, liberar, bloquear e desbloquear. |
+| Eventos de domínio | Ações relevantes geram eventos transacionais via outbox: `cadastro.obra.liberada`, `cadastro.obra.bloqueada`, `cadastro.obra.dominio-publico` e `cadastro.obra.depurada`. |
+| Permissões | As ações são controladas por permissões granulares: `cadastro:default:obra:listar`, `visualizar`, `criar`, `editar`, `excluir`, `gerar-iswc`, `depurar`, `dp` e permissões de status para liberar, bloquear, desbloquear e visualizar histórico. |
+
+### Atualizações de Experiência do Usuário
+
+- A página de listagem mostra código, título/subtítulo, tipo, gênero, ISWC, status, ação de auditoria e ações de edição/exclusão conforme permissões.
+- A página de detalhe agrega dados da obra, seção de ISWC, titularidades autorais, fonogramas vinculados, propriedades de domínio público, ações de status, checklist de liberação, banner de bloqueio, banner de depuração e histórico de bloqueios.
+- O botão "Obter ISWC" fica disponível somente para usuários com escrita, obra PENDENTE, sem ISWC e com titularidades existentes.
+- O consultor continua com acesso de leitura quando não possui permissões de escrita, sem botões de criação/alteração.
+
+### Divergências e Pontos de Atenção
+
+- O PRD original indica que a obra permanece PENDENTE até validação completa; o código atual muda para LIBERADO no método `AtribuirIswc`, logo a obtenção de ISWC já libera a obra. O endpoint explícito de liberação também existe e valida pré-requisitos, mas o fluxo de estados precisa ser harmonizado.
+- O PRD original especifica envio de todos os titulares autorais para a API de ISWC; o handler atual envia apenas titulares com categoria `Autor` no campo `authors`, embora a seleção da associação considere a titularidade de maior percentual.
+- A UI envia ordenação por `codigo` ao clicar na coluna, mas o repositório backend ainda não trata `sort=codigo`; nesse caso, a ordenação cai no padrão por título.
+- A mensagem de bloqueio de exclusão cita titularidades, embora a validação também bloqueie exclusão quando há fonogramas vinculados.
+- O backend rejeita edição de obra BLOQUEADA; a tela de detalhe exibe banner e ações de desbloqueio, mas o formulário local ainda não marca BLOQUEADO como somente leitura de forma própria.

@@ -434,3 +434,122 @@ CREATE INDEX ix_obras_depurada_para ON cadastro.obras_musicais ("ObraDepuradaPar
 ---
 
 *Tech Spec gerada com a skill `flow-techspec-creator`. Para gerar a tech spec do frontend, use a skill `techspec-creator`. Para gerar tasks, use `flow-task-creator`.*
+
+---
+
+## Atualização Apensada - Alinhamento com Código Implementado
+
+> Esta seção foi apendada após análise do código implementado. O conteúdo original acima permanece como referência histórica da especificação planejada.
+
+### Componentes Implementados Além do Spec Original
+
+| Área | Arquivos/Componentes | Observação |
+|------|----------------------|------------|
+| Código sequencial | `ObraMusical.Codigo`, `ObraMusicalConfiguration`, migration `20260403190454_AddCodigo_CampoCodigo` | Usa sequence `cadastro.seq_obras_codigo`, índice único `uq_obras_codigo` e exposição em `ObraResponse`. |
+| Controle de status | `Status/Commands/LiberarObraCommand.cs`, `BloquearObraCommand.cs`, `DesbloquearObraCommand.cs` | Ações separadas para liberar, bloquear e desbloquear obra. |
+| Histórico de bloqueio | `HistoricoBloqueio`, `IHistoricoBloqueioRepository`, `HistoricoBloqueiosQuery` | Registra ações `BLOQUEIO` e `DESBLOQUEIO` para entidade `OBRA`. |
+| Pré-requisitos de liberação | `ValidadorLiberacaoObra`, `PreRequisito`, `PreRequisitosException` | Retorna 422 estruturado com `pendencias`. |
+| Eventos assíncronos | `OutboxEvent`, `OutboxEventWriter`, `OutboxPublisherWorker`, `CadastroChannels` | Publica eventos no exchange `cadastro.events` em formato CloudEvents 1.0. |
+| Auditoria | `ObraAuditPublisher`, `ObraAuditEventFactory`, `ObraAuditOperation`, `EfAuditOutboxClient` | Registra trilha de auditoria transacional para operações de obra. |
+| Frontend | `frontend/src/features/cadastro/obras/**` | Implementa listagem, filtros, detalhe, formulário, ISWC, depuração, domínio público, status, histórico e integração com titularidades/fonogramas. |
+
+### Modelo de Dados Efetivo
+
+`ObraMusical` possui os campos previstos no spec original e também:
+
+- `Codigo: long`: identificador sequencial humano, gerado no banco.
+- `BloqueioJustificativa: string?`: justificativa ativa de bloqueio.
+- `TitularidadesAutorais: ICollection<TitularidadeAutoral>`: navegação usada por busca e integrações de titularidade.
+
+O banco possui:
+
+- sequence `cadastro.seq_obras_codigo`;
+- índice único `uq_obras_codigo`;
+- coluna `BloqueioJustificativa` em `cadastro.obras_musicais`;
+- tabela `cadastro.historico_bloqueios`;
+- tabelas de outbox transacional e audit outbox.
+
+### API Efetiva de Obras
+
+| Método | Rota | Handler | Permissão |
+|--------|------|---------|-----------|
+| GET | `/api/v1/obras` | `ListarObrasQueryHandler` | `cadastro:default:obra:listar` |
+| POST | `/api/v1/obras` | `CriarObraCommandHandler` | `cadastro:default:obra:criar` |
+| GET | `/api/v1/obras/{id}` | `GetObraByIdQueryHandler` | `cadastro:default:obra:visualizar` |
+| PUT | `/api/v1/obras/{id}` | `AtualizarObraCommandHandler` | `cadastro:default:obra:editar` |
+| DELETE | `/api/v1/obras/{id}` | `ExcluirObraCommandHandler` | `cadastro:default:obra:excluir` |
+| POST | `/api/v1/obras/{id}/iswc` | `ObterIswcCommandHandler` | `cadastro:default:obra:gerar-iswc` |
+| POST | `/api/v1/obras/{id}/depurar` | `DepurarObraCommandHandler` | `cadastro:default:obra:depurar` |
+| PUT | `/api/v1/obras/{id}/dominio-publico` | `AlterarDominioPublicoCommandHandler` | `cadastro:default:obra:dp` |
+| POST | `/api/v1/obras/{id}/liberar` | `LiberarObraCommandHandler` | `cadastro:default:status:liberar-obra` |
+| POST | `/api/v1/obras/{id}/bloquear` | `BloquearObraCommandHandler` | `cadastro:default:status:bloquear-obra` |
+| POST | `/api/v1/obras/{id}/desbloquear` | `DesbloquearObraCommandHandler` | `cadastro:default:status:desbloquear-obra` |
+| GET | `/api/v1/obras/{id}/historico-bloqueios` | `HistoricoBloqueiosQueryHandler` | `cadastro:default:status:visualizar-historico-obra` |
+
+### Contratos de Request/Response Efetivos
+
+`ObraResponse` retorna:
+
+- `id`, `codigo`, `titulo`, `subtitulo`, `tipo`, `genero`, `iswc`, `status`, `dominioPublico`, `obraDepuradaParaId`, `criadoEm`, `atualizadoEm`, `bloqueioJustificativa`.
+
+`ObraFiltro` e `ListarObrasQuery` aceitam:
+
+- `page`, `size`, `sort`, `codigo`, `titulo`, `iswc`, `tipo`, `status`, `genero`.
+
+Ordenações implementadas no repositório:
+
+- `titulo`, `-titulo`, `iswc`, `-iswc`, `status`, `-status`, `tipo`, `-tipo`, `atualizadoem`, `-atualizadoem`.
+
+### Regras de Negócio Efetivas
+
+| Fluxo | Implementação atual |
+|-------|---------------------|
+| Criar | Valida título, tipo e tamanho de campos; cria obra PENDENTE, sem ISWC, com auditoria `Create`. |
+| Atualizar | Se obra LIBERADA e título mudou, lança `DepuracaoNecessariaException` com code `DEPURACAO_NECESSARIA`; domínio rejeita DEPURADA, DOMINIO_PUBLICO e BLOQUEADO. |
+| Obter ISWC | Exige status PENDENTE e ao menos uma titularidade. Envia autores distintos com categoria `Autor`; associação vem da titularidade de maior percentual, com fallback `UNKNOWN`. Após retorno, valida unicidade, atribui ISWC, muda status para LIBERADO, publica `cadastro.obra.liberada` e registra auditoria `ObtainIswc`. |
+| Depurar | Exige obra LIBERADA. Cria nova obra PENDENTE, copia titularidades autorais, marca original como DEPURADA com `ObraDepuradaParaId`, publica `cadastro.obra.depurada` e registra auditoria da obra original e da nova obra. |
+| Domínio público | Rejeita DEPURADA. Ao marcar, status vira DOMINIO_PUBLICO; ao desmarcar, volta para LIBERADO se houver ISWC ou PENDENTE se não houver. Publica `cadastro.obra.dominio-publico`. |
+| Excluir | Rejeita DEPURADA e obras com titularidades ou fonogramas. Registra auditoria `Delete`. |
+| Liberar | Exige PENDENTE e valida título, tipo, ISWC e soma de titularidades igual a `100.0000%`. Retorna 422 com `pendencias` quando houver pré-requisito não atendido. |
+| Bloquear | Rejeita DEPURADA e BLOQUEADO. Exige justificativa de 10 a 500 caracteres, salva justificativa ativa, registra histórico, publica `cadastro.obra.bloqueada` e audita `Block`. |
+| Desbloquear | Exige BLOQUEADO. Retorna status para PENDENTE, limpa justificativa, registra histórico e audita `Unblock`. Não há evento outbox específico de desbloqueio no código atual. |
+
+### Integração ISWC Efetiva
+
+- A URL base é configurável por `ISWC_BASE_URL`; valor padrão: `https://iswc.tasso.dev.br/`.
+- O serviço faz `POST api/iswc` relativo à base configurada.
+- Timeout HTTP: 10 segundos.
+- Resiliência: `AddTransientHttpErrorPolicy(p => p.RetryAsync(2))`.
+- A resposta usada pelo domínio é apenas `iswc`; demais campos da resposta externa não são consumidos.
+
+### Frontend Efetivo
+
+| Tela/Componente | Função |
+|-----------------|--------|
+| `ObrasPage` | Listagem paginada, filtros, ação "Nova Obra", tabela, paginação e exclusão modal. |
+| `ObrasFilters` | Filtros por título, código, ISWC, tipo, status e gênero com debounce para campos texto/número. |
+| `ObrasTable` | Exibe código, título/subtítulo, tipo, gênero, ISWC, status, botão de auditoria, editar e excluir. |
+| `ObraCreatePage` | Criação de obra e retorno para listagem filtrada pelo título criado. |
+| `ObraDetailPage` | Agrega formulário, ISWC, titularidades, fonogramas, propriedades, ações de status, banners, checklist, histórico e modais. |
+| `IswcSection` | Exibe ISWC e botão "Obter ISWC" condicionado a status PENDENTE, ausência de ISWC, titularidades e permissão de escrita. |
+| `DepuracaoModal` | Confirma depuração e navega para a nova obra. |
+| `DominioPublicoToggle` | Alterna domínio público conforme permissão. |
+| `DepuracaoBanner` | Exibe link para nova versão com código quando disponível. |
+| `ChecklistPreRequisitos` | Exibe pendências retornadas por `PreRequisitosException`. |
+| `HistoricoBloqueios` | Lista ações de bloqueio/desbloqueio. |
+
+### Testes Existentes Relacionados
+
+- Unitários de obras: `CriarObraCommandHandlerTests`, `AtualizarObraCommandHandlerTests`, `ObterIswcCommandHandlerTests`, `DepurarObraCommandHandlerTests`, `AlterarDominioPublicoCommandHandlerTests`, `ExcluirObraCommandHandlerTests`, `ObraMusicalTests`.
+- Unitários de status: `ValidadorLiberacaoObraTests`.
+- Integração: `ObraEndpointsTests`, `OutboxEventosIntegrationTests`, `CodigoIntegrationTests`, `TitularidadeEndpointsTests`.
+- E2E/frontend em evidências da task: `qa-evidence/**` com cenários de criação, listagem/busca, edição, ISWC, domínio público, depuração e exclusão.
+
+### Divergências Técnicas e Débitos
+
+- `ObrasTable` permite ordenar por `codigo`, mas `ObraRepository.ListarAsync` não possui casos `codigo` e `-codigo`; o backend cai na ordenação padrão por título.
+- `ObterIswcCommandHandler` exige qualquer titularidade, mas envia para `authors` somente titulares com categoria `Autor`; se a obra tiver titularidades sem Autor, a lista enviada pode ficar vazia.
+- `ObraMusical.AtribuirIswc` muda status para LIBERADO, enquanto `LiberarObraCommand` também existe e exige obra PENDENTE com ISWC. O desenho de estados precisa decidir se a liberação é automática na obtenção de ISWC ou se deve ser uma ação posterior.
+- A mensagem de conflito em `ExcluirObraCommandHandler` cita titularidades, embora `PossuiVinculosAsync` também verifique fonogramas.
+- `ObraForm` marca DEPURADA e DOMINIO_PUBLICO como somente leitura; BLOQUEADO é rejeitado no domínio, mas não está incluído na regra local de read-only do formulário.
+- O evento de desbloqueio não possui canal/outbox próprio, embora haja histórico e auditoria da ação.
