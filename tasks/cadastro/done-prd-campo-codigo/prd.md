@@ -220,3 +220,31 @@ Este apêndice registra o comportamento encontrado no código após a implementa
 - Os paths continuam usando UUID (`/api/v1/titulares/{id}`, `/api/v1/obras/{id}`, `/api/v1/fonogramas/{id}`).
 - O `codigo` é identificador visual e de busca exata, não substitui PK, FKs ou routing.
 - As referências de depuração no frontend ainda navegam por UUID, mas exibem o código da nova entidade quando ela é carregada.
+
+---
+
+## Apêndice — Revalidação do Código Atual (2026-05-20)
+
+Esta revalidação foi feita sobre o código atual e apenas complementa os registros anteriores, sem alterar o baseline do PRD.
+
+### Confirmações mantidas
+
+| Área | Estado revalidado |
+|------|-------------------|
+| Identificador de negócio | `codigo` continua implementado em Associação, Titular, Obra Musical e Fonograma. |
+| Busca exata por código | Titulares, Obras e Fonogramas continuam aceitando `codigo` nas listagens e aplicando filtro exato no backend. |
+| Código em responses | Responses principais de cadastro, resumos e respostas de depuração continuam carregando `Codigo`/`codigo`. |
+| UUID técnico | Paths, relações, eventos de domínio e navegação interna continuam baseados em UUID. |
+
+### Atualizações e riscos observados
+
+| Requisito | Atualização |
+|-----------|-------------|
+| RF-13 — UUID oculto da interface | A ressalva ficou mais ampla: as tabelas de cadastro agora usam `RowAuditHistoryButton` em Associações, Titulares, Obras, Fonogramas, Titularidades e Participações. Para usuários com permissão de auditoria, o modal `RowAuditHistoryModal` exibe o `entityId` bruto no cabeçalho, expondo o UUID dentro das próprias telas de cadastro. |
+| RF-19 — Referência à nova entidade depurada | Obras seguem alinhadas: o frontend navega por `res.novaObra.id` e banners carregam/exibem `#codigo`. Fonogramas têm divergência de contrato: o backend retorna `novoFonograma.id` dentro de `DepuracaoFonogramaResponse`, mas o frontend espera `response.novoFonogramaId`; a navegação pós-depuração de fonograma pode falhar ou apontar para `undefined`. |
+| RF-20 — Ordenação por código server-side | Continua pendente. As tabelas enviam `sort=codigo` e `sort=-codigo`, mas os repositórios backend ainda não ordenam por `Codigo`. |
+| RF-21 — Default por código DESC | Continua pendente. Os defaults seguem `nome`, `titulo` e `isrc`. |
+
+### Fora do escopo confirmado
+
+- A busca geral `/api/v1/busca` continua orientada a título, ISWC, ISRC e participantes; ela não expõe nem pesquisa pelo `codigo` de negócio. Isso permanece coerente com o não-objetivo de não criar busca cross-entity por código.

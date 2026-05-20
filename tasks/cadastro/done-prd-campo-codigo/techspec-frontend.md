@@ -244,3 +244,34 @@ Não foram encontrados testes frontend específicos para:
 - Banner de depuração mostrando código da nova obra/fonograma.
 - Ordenação por código ou default `codigo DESC`.
 - Contrato real de `DepuracaoFonogramaResponse`.
+
+---
+
+## Apêndice — Revalidação Frontend do Código Atual (2026-05-20)
+
+Esta seção foi adicionada após nova leitura do código atual em `frontend/src/features/cadastro` e componentes de auditoria consumidos por essas telas. Ela apenas complementa o conteúdo já existente.
+
+### Pontos confirmados
+
+| Área | Estado atual |
+|------|--------------|
+| Código visual | Tabelas, PageHeaders e banners continuam exibindo `#codigo` nas superfícies principais de Titulares, Obras e Fonogramas. |
+| Filtro por código | `titularesApi`, `obrasApi` e `fonogramasApi` continuam enviando `codigo` quando o filtro está preenchido. |
+| Ordenação visual | `TitularesTable`, `ObrasTable` e `FonogramasTable` continuam oferecendo sort na coluna Código e enviam `codigo`/`-codigo` ao estado da listagem. |
+
+### Divergências e riscos atualizados
+
+| Item | Detalhe |
+|------|---------|
+| UUID visível via histórico | `RowAuditHistoryButton` está presente em `AssociacoesTable`, `TitularesTable`, `ObrasTable`, `FonogramasTable`, `TitularidadesTable` e `ParticipacoesTable`. Quando o usuário tem permissão de auditoria, `RowAuditHistoryModal` exibe `<strong>{entityId}</strong>`, que recebe o UUID técnico da linha. |
+| Depuração de fonograma | `FonogramaDepuracaoModal.tsx` navega para `response.novoFonogramaId`, mas o backend retorna `novoFonograma.id` dentro de objeto aninhado. O tipo `DepuracaoFonogramaResponse` em `fonograma.ts` continua achatado e incompatível com o contrato real. |
+| Resumo de obra no fonograma | `Fonograma.obra` e `FonogramaResumo.obra` seguem tipados só com `id` e `titulo`, apesar de o backend enviar também `codigo` em `ObraResumoResponse`. |
+| Ordenação por código | A UI envia `sort=codigo`/`sort=-codigo`, mas o backend ainda não interpreta esses valores; o indicador visual de sort pode não corresponder à ordenação real. |
+| Query param `codigo=0` | Os clients continuam usando condição truthy (`if (filtros.codigo)`), então não enviam zero. Como os códigos reais começam em 1, isso não afeta o fluxo nominal. |
+
+### Ajustes recomendados a partir da revalidação
+
+- Atualizar `DepuracaoFonogramaResponse` no frontend para `{ fonogramaDepurado: Fonograma; novoFonograma: Fonograma }`.
+- Alterar a navegação pós-depuração de fonograma para `response.novoFonograma.id`.
+- Decidir se o modal de histórico deve exibir `#codigo`/label de negócio em vez do UUID quando aberto a partir das telas de cadastro.
+- Só manter o sort visual por Código como comportamento final depois que o backend tratar `codigo` e `-codigo`.

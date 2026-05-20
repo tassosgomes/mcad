@@ -295,3 +295,33 @@ Não encontrado como teste dedicado:
 - Filtro por código em Obras e Fonogramas.
 - Ordenação por código.
 - Garantia de que requests com campo `codigo` são ignorados explicitamente.
+
+---
+
+## Apêndice — Revalidação Backend do Código Atual (2026-05-20)
+
+Esta seção foi adicionada após nova leitura do código atual em `services/cadastro-api`. Ela complementa, sem reescrever, a tech spec e o apêndice anterior.
+
+### Pontos confirmados
+
+| Área | Estado atual |
+|------|--------------|
+| Entidades, EF e migration | O estado descrito no apêndice anterior permanece válido: `Codigo` existe nas 4 entidades, com defaults por sequence e índices únicos. |
+| Listagens por código | `TitularRepository`, `ObraRepository` e `FonogramaRepository` aplicam `Where(... Codigo == filtro.Codigo.Value)` antes da contagem e paginação. |
+| Responses de Fonograma | `ListarFonogramasHandler`, `GetFonogramaByIdQuery`, comandos de escrita/status e `ListarFonogramasPorObraQuery` continuam incluindo `Codigo`; `ObraResumoResponse` também inclui código da obra. |
+| Depuração de Fonograma | `DepuracaoFonogramaResponse` é aninhado: `FonogramaResponse FonogramaDepurado` e `FonogramaResponse NovoFonograma`. O endpoint retorna `201 Created` com location `/api/v1/fonogramas/{result.NovoFonograma.Id}`. |
+
+### Pendências técnicas revalidadas
+
+| Item | Detalhe |
+|------|---------|
+| Ordenação por código | `TitularRepository` não trata `codigo`/`-codigo`; `ObraRepository` não trata `codigo`/`-codigo`; `FonogramaRepository` normaliza apenas formato `campo,direção` para `campo_direção` e não trata `codigo`, `codigo_desc` ou `-codigo`. |
+| Defaults de ordenação | `ListarTitularesQuery` segue com `Sort = "nome"`, `ListarObrasQuery` com `Sort = "titulo"` e `ListarFonogramasQuery` com `Sort = "isrc"`. |
+| Busca geral | `BuscaCadastroQueryHandler` e `ResultadoBuscaDto` não carregam `Codigo` e os métodos `BuscarAsync` de Obras/Fonogramas não pesquisam pelo código de negócio. |
+| Cobertura de teste | Não foi encontrado teste novo além de `CodigoIntegrationTests.cs`; continuam sem cobertura dedicada os cenários de código em Fonograma, filtros por código em Obras/Fonogramas, seed 1-7 de Associações e ordenação por código. |
+
+### Contrato backend que deve orientar o frontend
+
+- Para depuração de obra, o contrato permanece `DepuracaoResponse(ObraDepurada, NovaObra)`.
+- Para depuração de fonograma, o contrato real é `DepuracaoFonogramaResponse(FonogramaDepurado, NovoFonograma)`.
+- Consumidores frontend devem ler o UUID da nova entidade em `response.novoFonograma.id` quando o JSON estiver serializado em camelCase, não em `response.novoFonogramaId`.
