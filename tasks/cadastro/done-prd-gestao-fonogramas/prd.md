@@ -243,3 +243,51 @@ Todas as questões foram resolvidas. PRD pronto para API Contract e Tech Spec.
 ---
 
 *PRD gerado com a skill `flow-prd-creator`. Para gerar a Especificação Técnica, use a skill `techspec-creator`.*
+
+---
+
+## Apêndice — Atualização Pós-Implementação
+
+Esta seção foi acrescentada após análise do código existente e não substitui nem reescreve o PRD original acima.
+
+### Estado Implementado Observado
+
+A feature F05 está implementada no backend e no frontend:
+
+- Backend em `services/cadastro-api` com entidade `Fonograma`, Value Object `Isrc`, repositório, migrations, endpoints REST, permissões, auditoria e eventos de domínio via outbox.
+- Frontend em `frontend/src/features/cadastro/fonogramas` com listagem, criação, detalhe, edição, depuração, ações de status, histórico de bloqueios, URL de áudio e seção de fonogramas dentro da tela de obra.
+- Permissões seedadas em `seeds/mcad/cadastro.permissions.json` e papéis atualizados em `seeds/mcad/roles.json`.
+- Integração com Identificação já consulta fonogramas por ID e exige fonograma `LIBERADO` para resolução de pendências quando um fonograma é informado.
+
+### Atualizações Funcionais Derivadas do Código
+
+| ID | Atualização |
+|----|-------------|
+| RF-A01 | Fonograma possui `codigo` sequencial legível além do `id` UUID. O código aparece em respostas, listagens e seção de fonogramas da obra. |
+| RF-A02 | A listagem aceita filtro adicional por `codigo` e continua aceitando filtros por ISRC, obra, status e país. |
+| RF-A03 | O ciclo de status efetivo inclui `BLOQUEADO`, além de `PENDENTE_VALIDACAO`, `PENDENTE_DOCUMENTACAO`, `LIBERADO` e `DEPURADO`. |
+| RF-A04 | Fonograma pode ser bloqueado com justificativa e desbloqueado posteriormente. O desbloqueio retorna o fonograma para `PENDENTE_VALIDACAO` e limpa a justificativa. |
+| RF-A05 | Bloqueios e desbloqueios geram histórico consultável em `/api/v1/fonogramas/{id}/historico-bloqueios`. |
+| RF-A06 | Fonograma possui `urlAudio` opcional. A URL pode ser definida enquanto o fonograma não estiver `LIBERADO`, `DEPURADO` ou `BLOQUEADO`. |
+| RF-A07 | A liberação de fonograma está implementada por `POST /api/v1/fonogramas/{id}/liberar` e exige status `PENDENTE_DOCUMENTACAO`. |
+| RF-A08 | Para liberar, o fonograma precisa atender aos pré-requisitos: ISRC presente, soma de participações conexas igual a `100.0000%`, obra vinculada `LIBERADA` e URL de áudio preenchida. |
+| RF-A09 | A exclusão efetiva é permitida para `PENDENTE_VALIDACAO`, `PENDENTE_DOCUMENTACAO` e `BLOQUEADO`. `LIBERADO` e `DEPURADO` continuam bloqueados para exclusão. |
+| RF-A10 | Participações conexas já estão integradas à tela de detalhe do fonograma e às regras de liberação. A gestão delas saiu do papel de dependência futura e passou a influenciar o fluxo real de F05. |
+| RF-A11 | A depuração publica evento `cadastro.fonograma.depurado`; a liberação publica `cadastro.fonograma.liberado`; o bloqueio publica `cadastro.fonograma.bloqueado`. |
+| RF-A12 | As ações de criar, atualizar, excluir, depurar, liberar, bloquear e desbloquear fonogramas publicam eventos de auditoria de ação do usuário e/ou alteração de dados. |
+
+### Regras de Negócio Consolidadas no Código
+
+- `PENDENTE_VALIDACAO` continua sendo o status inicial de criação.
+- `LIBERADO` só é alcançado por fluxo explícito de liberação, a partir de `PENDENTE_DOCUMENTACAO`, quando todos os pré-requisitos forem atendidos.
+- `DEPURADO` permanece imutável e não pode ser editado ou bloqueado.
+- `BLOQUEADO` não pode ser editado, não permite alteração de URL de áudio e pode ser excluído.
+- Alteração de ISRC em fonograma `LIBERADO` continua exigindo depuração.
+- Alterações de país e datas em fonograma `LIBERADO` continuam permitidas sem depuração, desde que o ISRC não mude.
+- A obra vinculada continua imutável.
+
+### Pendências de Alinhamento de Produto e Contrato
+
+- O texto original mantém participações conexas, liberação de status e URL de áudio fora do escopo de F05, mas o código atual já incorpora esses pontos. A documentação passa a registrar esse acréscimo sem remover o escopo original.
+- O contrato e o frontend devem ficar alinhados para o retorno de depuração: o backend retorna `fonogramaDepurado` e `novoFonograma`; parte do frontend espera campos planos como `novoFonogramaId`.
+- A listagem no frontend usa alguns parâmetros e formatos de ordenação que não coincidem integralmente com o backend atual; isso deve ser tratado como ajuste técnico para evitar filtros/ordenação silenciosamente ignorados.

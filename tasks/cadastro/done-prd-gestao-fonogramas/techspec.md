@@ -361,3 +361,139 @@ CREATE INDEX ix_fonogramas_depurado_para ON cadastro.fonogramas ("FonogramaDepur
 ---
 
 *Tech Spec gerada. Para tech spec frontend ou tasks, use as skills correspondentes.*
+
+---
+
+## Apêndice — Atualização de Implementação Observada no Código
+
+Esta seção foi acrescentada após análise do código existente e não substitui nem reescreve a Tech Spec original acima.
+
+### Inventário Real de Artefatos
+
+| Área | Artefatos observados |
+|------|----------------------|
+| Domínio | `Fonograma`, `Isrc`, `StatusFonograma`, `IFonogramaRepository`, `ValidadorLiberacaoFonograma` |
+| Application/F05 | Commands `Criar`, `Atualizar`, `Excluir`, `Depurar`; queries `Listar`, `GetById`, `ListarPorObra`; responses de lista, resumo, obra e depuração |
+| Application/Status | `LiberarFonogramaCommand`, `BloquearFonogramaCommand`, `DesbloquearFonogramaCommand`, `DefinirUrlAudioCommand`, histórico de bloqueios e pré-requisitos |
+| Infra | `FonogramaConfiguration`, `FonogramaRepository`, `CadastroDbContext.Fonogramas`, migrations `AddFonogramas`, `AddParticipacoesConexas`, `AddControleStatus`, `AddCodigo_CampoCodigo` |
+| API | `FonogramaEndpoints` com CRUD, depuração, sub-resource por obra, liberação, bloqueio, desbloqueio, histórico e URL de áudio |
+| Frontend | `frontend/src/features/cadastro/fonogramas` com páginas, componentes, hooks, API client, validação/formatação ISRC e integração em `ObraDetailPage` |
+| Autorização | Permissões `cadastro:default:fonograma:*` e `cadastro:default:status:*fonograma` em seeds |
+| Auditoria/Eventos | `FonogramaAuditEventFactory`, `FonogramaAuditOperation`, outbox para `cadastro.fonograma.liberado`, `cadastro.fonograma.bloqueado`, `cadastro.fonograma.depurado`, schemas AsyncAPI/eventos |
+| Testes | Unitários de VO, entidade e handlers de F05; integração parcial de endpoints de CRUD/listagem |
+
+### Modelo Atual de Domínio
+
+O modelo atual de `Fonograma` contém campos além da especificação inicial:
+
+- `Codigo`: `long` sequencial gerado por `cadastro.seq_fonogramas_codigo`, com índice único `uq_fonogramas_codigo`.
+- `UrlAudio`: `VARCHAR(500)` opcional.
+- `BloqueioJustificativa`: `VARCHAR(500)` opcional.
+- `PercentuaisDesatualizados`: `bool`, adicionado junto com participações conexas.
+- `ParticipacoesConexas`: navegação para a tabela `cadastro.participacoes_conexas`.
+
+`StatusFonograma` possui cinco estados efetivos:
+
+```csharp
+PendenteValidacao,
+PendenteDocumentacao,
+Liberado,
+Bloqueado,
+Depurado
+```
+
+A constraint atual de banco para `cadastro.fonogramas.Status` aceita `PENDENTE_VALIDACAO`, `PENDENTE_DOCUMENTACAO`, `LIBERADO`, `BLOQUEADO` e `DEPURADO`.
+
+### Contrato REST Efetivo
+
+| Método | Rota | Handler/Command | Permissão |
+|--------|------|-----------------|-----------|
+| `GET` | `/api/v1/fonogramas` | `ListarFonogramasQuery` | `cadastro:default:fonograma:listar` |
+| `POST` | `/api/v1/fonogramas` | `CriarFonogramaCommand` | `cadastro:default:fonograma:criar` |
+| `GET` | `/api/v1/fonogramas/{id}` | `GetFonogramaByIdQuery` | `cadastro:default:fonograma:visualizar` |
+| `PUT` | `/api/v1/fonogramas/{id}` | `AtualizarFonogramaCommand` | `cadastro:default:fonograma:editar` |
+| `DELETE` | `/api/v1/fonogramas/{id}` | `ExcluirFonogramaCommand` | `cadastro:default:fonograma:excluir` |
+| `POST` | `/api/v1/fonogramas/{id}/depurar` | `DepurarFonogramaCommand` | `cadastro:default:fonograma:depurar` |
+| `GET` | `/api/v1/obras/{obraId}/fonogramas` | `ListarFonogramasPorObraQuery` | `cadastro:default:fonograma:listar-por-obra` |
+| `POST` | `/api/v1/fonogramas/{id}/liberar` | `LiberarFonogramaCommand` | `cadastro:default:status:liberar-fonograma` |
+| `POST` | `/api/v1/fonogramas/{id}/bloquear` | `BloquearFonogramaCommand` | `cadastro:default:status:bloquear-fonograma` |
+| `POST` | `/api/v1/fonogramas/{id}/desbloquear` | `DesbloquearFonogramaCommand` | `cadastro:default:status:desbloquear-fonograma` |
+| `GET` | `/api/v1/fonogramas/{id}/historico-bloqueios` | `HistoricoBloqueiosQuery("FONOGRAMA", id)` | `cadastro:default:status:visualizar-historico-fonograma` |
+| `PATCH` | `/api/v1/fonogramas/{id}/url-audio` | `DefinirUrlAudioCommand` | `cadastro:default:fonograma:editar` |
+
+### DTOs e Filtros Atuais
+
+`FonogramaResponse` retorna:
+
+- `id`
+- `codigo`
+- `isrc`
+- `isrcFormatado`
+- `obra` com `id`, `codigo`, `titulo`, `status`
+- `paisOrigem`
+- `dataGravacao`
+- `dataLancamento`
+- `status`
+- `fonogramaDepuradoParaId`
+- `criadoEm`
+- `atualizadoEm`
+- `urlAudio`
+- `bloqueioJustificativa`
+
+`FonogramaFiltro` e `ListarFonogramasQuery` aceitam `codigo`, `isrc`, `obraId`, `obraTitulo`, `status`, `pais`, `page`, `size` e `sort`. O repositório normaliza ordenação no formato `campo,direcao` para `campo_direcao` e implementa ordenação por `isrc`, `obra`, `status` e `pais`.
+
+`DepuracaoFonogramaResponse` retorna objetos completos:
+
+```json
+{
+  "fonogramaDepurado": { "...": "FonogramaResponse" },
+  "novoFonograma": { "...": "FonogramaResponse" }
+}
+```
+
+### Regras Técnicas Acrescidas
+
+- `Fonograma.PodeSerExcluido` permite exclusão em `PendenteValidacao`, `PendenteDocumentacao` e `Bloqueado`.
+- `Fonograma.DefinirUrlAudio` rejeita alteração de URL quando o status é `Liberado`, `Depurado` ou `Bloqueado`.
+- `Fonograma.Liberar` só permite transição de `PendenteDocumentacao` para `Liberado`.
+- `ValidadorLiberacaoFonograma` exige ISRC, soma conexa `100.0000m`, obra `Liberado` e URL de áudio preenchida.
+- `BloquearFonogramaCommand` exige justificativa entre 10 e 500 caracteres, grava `HistoricoBloqueio` e publica outbox `cadastro.fonograma.bloqueado`.
+- `DesbloquearFonogramaCommand` grava histórico de desbloqueio e retorna o status para `PendenteValidacao`.
+- `DepurarFonogramaCommand` publica outbox `cadastro.fonograma.depurado` e eventos de auditoria para o registro original e o novo registro.
+- `LiberarFonogramaCommand` publica outbox `cadastro.fonograma.liberado` e evento de auditoria `LIBERAR_FONOGRAMA`.
+- `GlobalExceptionHandler` retorna `ProblemDetails` com extension `code = DEPURACAO_NECESSARIA` para depuração obrigatória e resposta customizada de pré-requisitos em `422`.
+
+### Integrações Frontend Observadas
+
+- Rotas: `/cadastro/fonogramas`, `/cadastro/fonogramas/novo`, `/cadastro/fonogramas/:id`.
+- Menu lateral expõe "Fonogramas" dentro de Cadastro.
+- Listagem mostra `codigo`, ISRC, obra, país, status, lançamento e botão de histórico de auditoria por linha.
+- Criação aceita `obraId` via query string (`/cadastro/fonogramas/novo?obraId={id}`) e pré-preenche a obra quando acionada pela tela de obra.
+- Detalhe integra ações de liberar, bloquear, desbloquear, histórico de bloqueios, banner de bloqueio, checklist de pré-requisitos, banner de depuração e `ParticipacoesSection`.
+- A tela de obra renderiza `ObraFonogramasSection`, com lista por obra e navegação para detalhe do fonograma.
+
+### Pendências Técnicas de Alinhamento
+
+| Item | Observação | Impacto |
+|------|------------|---------|
+| Retorno de depuração no frontend | `DepuracaoFonogramaResponse` do frontend espera `fonogramaOriginalId`, `novoFonogramaId` e `novoIsrcFormatado`, mas o backend retorna `fonogramaDepurado` e `novoFonograma`. | Navegação pós-depuração pode usar `undefined` para o novo ID. |
+| Filtro por obra no frontend | `fonogramasApi.ts` envia `obra` quando há `obraTitulo`; o backend espera `obraTitulo`. | Filtro por título da obra pode ser ignorado. |
+| Ordenação frontend/backend | A tabela alterna `-campo`; o backend entende `campo_desc` ou `campo,desc`. A tabela também oferece sort por `codigo`, não implementado no repository. | Ordenação descendente e ordenação por código podem cair no default por ISRC. |
+| Status no frontend | Alguns mapas de badge usam chaves `Pendente_Validacao`, `Liberado`, etc., enquanto o backend retorna `PENDENTE_VALIDACAO`, `LIBERADO`, etc. | Badge pode ficar sem variante visual em respostas reais. |
+| Tipo de lista no frontend | `FonogramaListResponse.data` está tipado como `FonogramaResumo[]`, mas o backend retorna `FonogramaResponse[]`. | Dados extras existem, mas o tipo não representa o contrato real. |
+| `urlAudio` no tipo de atualização | O formulário envia `urlAudio`, o endpoint aceita, mas `AtualizarFonogramaRequest` no frontend não declara o campo. | Tipo TypeScript fica defasado em relação ao payload real. |
+| Auditoria de URL de áudio | Existe operação `SetUrlAudio`, mas `DefinirUrlAudioCommandHandler` não publica auditoria. | Alterações via endpoint dedicado podem não aparecer na trilha de auditoria esperada. |
+| Integração de status nos testes | Testes de integração de `LIBERADO`, `DEPURADO`, bloqueio/liberação e pré-requisitos são majoritariamente unitários ou não cobrem o endpoint completo. | Risco residual em wiring HTTP, serialização e resposta de erro. |
+
+### Atualização do Mapeamento PRD → Implementação
+
+| Requisito/Atualização | Implementação atual |
+|-----------------------|---------------------|
+| RF-A01/RF-A02 (`codigo`) | `Fonograma.Codigo`, migration `AddCodigo_CampoCodigo`, `FonogramaResponse.Codigo`, filtro `Codigo` |
+| RF-A03/RF-A04/RF-A05 (`BLOQUEADO`) | `StatusFonograma.Bloqueado`, métodos `Bloquear`/`Desbloquear`, commands de status, `HistoricoBloqueio` |
+| RF-A06 (`urlAudio`) | `Fonograma.UrlAudio`, `DefinirUrlAudio`, `PATCH /url-audio`, campo no formulário frontend |
+| RF-A07/RF-A08 (liberação) | `LiberarFonogramaCommand`, `ValidadorLiberacaoFonograma`, `PreRequisitosException` |
+| RF-A09 (exclusão de bloqueado) | `Fonograma.PodeSerExcluido` inclui `Bloqueado` |
+| RF-A10 (conexos integrados) | `ParticipacaoConexa`, `ParticipacoesSection`, soma de conexos na liberação |
+| RF-A11 (eventos outbox) | `IOutboxEventWriter.AddEvent` nos commands de depuração, liberação e bloqueio |
+| RF-A12 (auditoria) | `FonogramaAuditPublisher`, `FonogramaAuditEventFactory`, `FonogramaAuditOperation` |
