@@ -1,15 +1,21 @@
 # identity-sync-api
 
-Recebe webhooks do Logto e publica eventos internos de identidade no RabbitMQ.
+Sincroniza periodicamente os usuários e papéis do Logto para o `ecad-authz` via RabbitMQ.
 
-## Endpoint
+Faz polling na Management API do Logto a cada N minutos, monta um snapshot
+por usuário (incluindo roles atribuídas) e publica eventos no exchange
+`identity.events`. O `ecad-authz` consome a fila `authz.identity.users` e faz
+upsert na tabela `users` (idempotente por `idp_subject` = `logtoUserId`).
 
-- `POST /webhooks/logto`
-- Header obrigatório: `logto-signature-sha-256`
-- Assinatura: HMAC SHA-256 hexadecimal do corpo bruto usando `LOGTO_WEBHOOK_SYNC_KEY`
-- `POST /sync/logto/users`
-- Header obrigatório: `x-sync-admin-token`
-- Uso operacional para backfill dos usuários já existentes no Logto
+## Endpoints
+
+- `GET /health/live` — liveness.
+- `GET /health/ready` — verifica conexão com RabbitMQ.
+- `GET /sync/status` — último resultado do scheduler (`startedAt`, `durationMs`, `fetched`, `published`, `error`).
+- `POST /sync/logto/users` — dispara um sync imediato (manual).
+  - Header obrigatório: `x-sync-admin-token: $IDENTITY_SYNC_ADMIN_TOKEN`.
+  - Quando o scheduler está habilitado, esta chamada compartilha o mesmo mutex,
+    evitando execuções concorrentes.
 
 ## Eventos publicados
 
@@ -19,57 +25,89 @@ Exchange topic: `identity.events`
 - `identity.user.suspended`
 - `identity.user.deleted`
 
-## Backfill de usuários do Logto
+> O sync atual só produz `upserted` (com `isSuspended: true|false`). Detecção de
+> deleção por diff entre Logto e a tabela local não está implementada — usuários
+> removidos do Logto continuarão existindo no `ecad-authz` até receberem
+> tratamento manual ou um evento `User.Deleted` por outra via.
 
-O backfill publica eventos `identity.user.upserted` para usuários que já existem no Logto. Ele deve ser executado depois do deploy da `identity-sync-api` e do `ecad-authz` com o consumer de eventos habilitado.
+## Variáveis de ambiente
 
-Fluxo:
+Obrigatórias:
 
-1. A `identity-sync-api` busca os usuários atuais na Logto Management API.
-2. Para cada usuário, busca as roles atribuídas no Logto.
-3. Publica um evento `identity.user.upserted` no exchange `identity.events`.
-4. O `ecad-authz` consome o evento pela fila `authz.identity.users`.
-5. O `ecad-authz` cria ou atualiza a linha local em `users`, usando `logtoUserId` como `idp_subject`.
+- `LOGTO_M2M_CLIENT_ID`
+- `LOGTO_M2M_CLIENT_SECRET`
+- `LOGTO_MANAGEMENT_API`
 
-Comando:
+Recomendadas:
+
+- `IDENTITY_SYNC_ADMIN_TOKEN` — protege o `POST /sync/logto/users`.
+- `RABBITMQ_URL` (ou `RABBITMQ_HOST`/`RABBITMQ_PORT`/`RABBITMQ_USER`/`RABBITMQ_PASSWORD`/`RABBITMQ_VHOST`).
+
+Opcionais:
+
+- `IDENTITY_SYNC_PORT` ou `PORT` (default `5300`).
+- `IDENTITY_SYNC_HOST` ou `HOST` (default `0.0.0.0`).
+- `IDENTITY_EVENTS_EXCHANGE` (default `identity.events`).
+- `IDENTITY_SYNC_SCHEDULER_ENABLED` (default `true`).
+- `IDENTITY_SYNC_INTERVAL_MS` (default `300000` — 5 minutos).
+- `IDENTITY_SYNC_ON_STARTUP` (default `true`).
+- `LOGTO_PAGE_SIZE` (default `100`, máximo `100`).
+- `REQUEST_BODY_LIMIT_BYTES` (default `1048576`).
+
+## Operação
+
+### Bootstrap inicial
 
 ```bash
 curl -X POST "https://mcad-identity-sync.tasso.dev.br/sync/logto/users" \
   -H "x-sync-admin-token: ${IDENTITY_SYNC_ADMIN_TOKEN}"
 ```
 
-Resposta esperada:
+Resposta:
+
+```json
+{ "received": true, "published": 8, "fetched": 8, "skipped": 0, "durationMs": 421 }
+```
+
+### Inspeção
+
+```bash
+curl https://mcad-identity-sync.tasso.dev.br/sync/status
+```
+
+Resposta:
 
 ```json
 {
-  "received": true,
-  "published": 8
+  "schedulerEnabled": true,
+  "intervalMs": 300000,
+  "lastRun": {
+    "startedAt": "2026-05-19T03:00:00.000Z",
+    "finishedAt": "2026-05-19T03:00:00.421Z",
+    "durationMs": 421,
+    "fetched": 8,
+    "published": 8,
+    "skipped": 0,
+    "error": null
+  }
 }
 ```
 
-Pré-requisitos:
+### Pré-requisitos no `ecad-authz`
 
-- `IDENTITY_SYNC_ADMIN_TOKEN` configurado na `identity-sync-api`.
-- `LOGTO_M2M_CLIENT_ID`, `LOGTO_M2M_CLIENT_SECRET` e `LOGTO_MANAGEMENT_API` configurados na `identity-sync-api`.
-- RabbitMQ acessível pela `identity-sync-api` e pelo `ecad-authz`.
-- `ecad-authz` consumindo `IDENTITY_EVENTS_EXCHANGE=identity.events`, `IDENTITY_EVENTS_QUEUE=authz.identity.users` e `IDENTITY_EVENTS_ROUTING_KEY=identity.user.*`.
+Consumer ativo da fila `authz.identity.users`, bindada no exchange
+`identity.events` com routing key `identity.user.*`.
 
-O endpoint é idempotente do ponto de vista operacional: publicar o backfill mais de uma vez não deve duplicar usuários no `ecad-authz`, porque o upsert usa `idp_subject` único. As atribuições de papel também são ignoradas quando já existe uma atribuição ativa equivalente.
+Variáveis: `IDENTITY_EVENTS_EXCHANGE=identity.events`,
+`IDENTITY_EVENTS_QUEUE=authz.identity.users`,
+`IDENTITY_EVENTS_ROUTING_KEY=identity.user.*`.
 
-Use o backfill quando:
+## Notas
 
-- a integração de eventos foi ativada depois dos usuários já terem sido criados no Logto;
-- uma fila foi recriada e eventos antigos foram perdidos;
-- for necessário reconciliar o `ecad-authz` com o estado atual do Logto.
-
-## Variáveis
-
-- `IDENTITY_SYNC_PORT` ou `PORT` (default `5300`)
-- `IDENTITY_SYNC_HOST` ou `HOST` (default `0.0.0.0`)
-- `LOGTO_WEBHOOK_SYNC_KEY`
-- `IDENTITY_SYNC_ADMIN_TOKEN`
-- `LOGTO_M2M_CLIENT_ID`
-- `LOGTO_M2M_CLIENT_SECRET`
-- `LOGTO_MANAGEMENT_API`
-- `RABBITMQ_URL` ou `RABBITMQ_HOST`/`RABBITMQ_PORT`/`RABBITMQ_USER`/`RABBITMQ_PASSWORD`/`RABBITMQ_VHOST`
-- `IDENTITY_EVENTS_EXCHANGE` (default `identity.events`)
+- A Management API do Logto tem rate limit. 5 minutos × ~N users (1 chamada de
+  list + N de roles) costuma ser confortável para centenas de usuários.
+- Webhook do Logto **não é mais consumido** — sincronização passou a ser por
+  polling, pois `User.Created` e `User.Data.Updated` não carregam roles e
+  exigiriam fetch adicional via Management API mesmo no caminho de webhook.
+- `LOGTO_PAGE_SIZE` controla o tamanho de página do `GET /api/users` (máx. 100,
+  limite da Management API).

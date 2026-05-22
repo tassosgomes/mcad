@@ -1,23 +1,26 @@
-import { createHmac } from 'node:crypto';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import type { IdentitySyncConfig } from './config.js';
 import type { IdentityUserEvent } from './events.js';
 import type { LogtoUser, LogtoUserImporter } from './logto.js';
 import type { IdentityEventPublisher } from './publisher.js';
+import { createSyncScheduler } from './scheduler.js';
 import { buildServer } from './server.js';
 
 const config: IdentitySyncConfig = {
   host: '127.0.0.1',
   port: 0,
-  webhookSigningKey: 'test-signing-key',
   syncAdminToken: 'sync-token',
-  logtoM2mClientId: null,
-  logtoM2mClientSecret: null,
-  logtoManagementApi: null,
+  logtoM2mClientId: 'm2m-id',
+  logtoM2mClientSecret: 'm2m-secret',
+  logtoManagementApi: 'https://logto.test/api',
   rabbitMqUrl: 'amqp://guest:guest@localhost:5672/',
   exchangeName: 'identity.events',
   requestBodyLimitBytes: 1024 * 1024,
+  schedulerEnabled: false,
+  syncIntervalMs: 5 * 60 * 1000,
+  syncOnStartup: false,
+  logtoPageSize: 100,
 };
 
 class MemoryPublisher implements IdentityEventPublisher {
@@ -42,92 +45,11 @@ class MemoryLogtoImporter implements LogtoUserImporter {
   }
 }
 
-test('accepts signed Logto webhook and publishes identity event', async () => {
-  const publisher = new MemoryPublisher();
-  const server = await buildServer(config, publisher);
-  const payload = {
-    hookId: 'hook_123',
-    event: 'User.Data.Updated',
-    createdAt: '2026-05-08T12:00:00.000Z',
-    user: {
-      id: 'logto-user-1',
-      username: 'analista_arrecadacao',
-      name: 'Analista Arrecadacao',
-      primaryEmail: 'analista@mcad.dev',
-      avatar: 'https://example.test/avatar.png',
-      roles: [{ name: 'analista-arrecadacao' }],
-      isSuspended: false,
-    },
-  };
-  const body = JSON.stringify(payload);
-
-  const response = await server.inject({
-    method: 'POST',
-    url: '/webhooks/logto',
-    headers: {
-      'content-type': 'application/json',
-      'logto-signature-sha-256': sign(body),
-    },
-    payload: body,
-  });
-
-  assert.equal(response.statusCode, 202);
-  assert.equal(publisher.events.length, 1);
-  assert.equal(publisher.events[0]?.eventType, 'identity.user.upserted');
-  assert.equal(publisher.events[0]?.user.logtoUserId, 'logto-user-1');
-  assert.equal(publisher.events[0]?.user.displayName, 'Analista Arrecadacao');
-  assert.deepEqual(publisher.events[0]?.user.roles, ['analista-arrecadacao']);
-
-  await server.close();
-});
-
-test('rejects webhook with invalid signature', async () => {
-  const publisher = new MemoryPublisher();
-  const server = await buildServer(config, publisher);
-
-  const response = await server.inject({
-    method: 'POST',
-    url: '/webhooks/logto',
-    headers: {
-      'content-type': 'application/json',
-      'logto-signature-sha-256': 'bad-signature',
-    },
-    payload: JSON.stringify({ event: 'PostSignIn', user: { id: 'u1' } }),
-  });
-
-  assert.equal(response.statusCode, 401);
-  assert.equal(publisher.events.length, 0);
-
-  await server.close();
-});
-
-test('maps suspended and deleted Logto events to dedicated identity events', async () => {
-  const publisher = new MemoryPublisher();
-  const server = await buildServer(config, publisher);
-
-  for (const payload of [
-    { event: 'User.SuspensionStatus.Updated', user: { id: 'u1', isSuspended: true } },
-    { event: 'User.Deleted', userId: 'u2' },
-  ]) {
-    const body = JSON.stringify(payload);
-    await server.inject({
-      method: 'POST',
-      url: '/webhooks/logto',
-      headers: {
-        'content-type': 'application/json',
-        'logto-signature-sha-256': sign(body),
-      },
-      payload: body,
-    });
-  }
-
-  assert.deepEqual(publisher.events.map((event) => event.eventType), [
-    'identity.user.suspended',
-    'identity.user.deleted',
-  ]);
-
-  await server.close();
-});
+const silentLogger = {
+  info() {},
+  warn() {},
+  error() {},
+};
 
 test('syncs current Logto users and publishes identity events', async () => {
   const publisher = new MemoryPublisher();
@@ -141,14 +63,12 @@ test('syncs current Logto users and publishes identity events', async () => {
       isSuspended: false,
     },
   ]);
-  const server = await buildServer(config, publisher, importer);
+  const server = await buildServer(config, { publisher, logtoUsers: importer });
 
   const response = await server.inject({
     method: 'POST',
     url: '/sync/logto/users',
-    headers: {
-      'x-sync-admin-token': 'sync-token',
-    },
+    headers: { 'x-sync-admin-token': 'sync-token' },
   });
 
   assert.equal(response.statusCode, 202);
@@ -159,14 +79,14 @@ test('syncs current Logto users and publishes identity events', async () => {
   await server.close();
 });
 
-test('rejects Logto user sync without admin token', async () => {
+test('rejects manual sync without admin token', async () => {
   const publisher = new MemoryPublisher();
-  const server = await buildServer(config, publisher, new MemoryLogtoImporter([]));
-
-  const response = await server.inject({
-    method: 'POST',
-    url: '/sync/logto/users',
+  const server = await buildServer(config, {
+    publisher,
+    logtoUsers: new MemoryLogtoImporter([]),
   });
+
+  const response = await server.inject({ method: 'POST', url: '/sync/logto/users' });
 
   assert.equal(response.statusCode, 401);
   assert.equal(publisher.events.length, 0);
@@ -174,6 +94,86 @@ test('rejects Logto user sync without admin token', async () => {
   await server.close();
 });
 
-function sign(body: string): string {
-  return createHmac('sha256', config.webhookSigningKey).update(Buffer.from(body)).digest('hex');
-}
+test('manual sync delegates to scheduler when present (mutex shared)', async () => {
+  const publisher = new MemoryPublisher();
+  const importer = new MemoryLogtoImporter([
+    {
+      id: 'logto-user-2',
+      username: 'consultor_dev',
+      name: 'Consultor Dev',
+      primaryEmail: 'consultor.dev@mcad.local',
+      roles: [],
+      isSuspended: false,
+    },
+  ]);
+  const scheduler = createSyncScheduler(importer, publisher, {
+    intervalMs: 60_000,
+    runOnStartup: false,
+    logger: silentLogger,
+  });
+  const server = await buildServer(config, {
+    publisher,
+    logtoUsers: importer,
+    scheduler,
+  });
+
+  const response = await server.inject({
+    method: 'POST',
+    url: '/sync/logto/users',
+    headers: { 'x-sync-admin-token': 'sync-token' },
+  });
+  assert.equal(response.statusCode, 202);
+  assert.equal(scheduler.lastResult()?.published, 1);
+
+  const status = await server.inject({ method: 'GET', url: '/sync/status' });
+  assert.equal(status.statusCode, 200);
+  assert.equal(status.json().schedulerEnabled, true);
+  assert.equal(status.json().lastRun.published, 1);
+
+  await scheduler.stop();
+  await server.close();
+});
+
+test('sync/status with no scheduler returns disabled', async () => {
+  const publisher = new MemoryPublisher();
+  const server = await buildServer(config, {
+    publisher,
+    logtoUsers: new MemoryLogtoImporter([]),
+  });
+
+  const response = await server.inject({ method: 'GET', url: '/sync/status' });
+
+  assert.equal(response.statusCode, 200);
+  assert.equal(response.json().schedulerEnabled, false);
+  assert.equal(response.json().lastRun, null);
+
+  await server.close();
+});
+
+test('maps suspended Logto users to dedicated identity events', async () => {
+  const publisher = new MemoryPublisher();
+  const importer = new MemoryLogtoImporter([
+    {
+      id: 'logto-user-3',
+      username: 'usuario_suspenso',
+      name: 'Suspenso',
+      primaryEmail: 'suspenso@mcad.dev',
+      isSuspended: true,
+      roles: [],
+    },
+  ]);
+  const server = await buildServer(config, { publisher, logtoUsers: importer });
+
+  await server.inject({
+    method: 'POST',
+    url: '/sync/logto/users',
+    headers: { 'x-sync-admin-token': 'sync-token' },
+  });
+
+  assert.equal(publisher.events[0]?.user.isSuspended, true);
+  // Sync sempre usa User.Data.Updated como evento-fonte → upserted é o eventType.
+  // O consumer no ecad-authz traduz isSuspended=true para UserStatus.INACTIVE.
+  assert.equal(publisher.events[0]?.eventType, 'identity.user.upserted');
+
+  await server.close();
+});

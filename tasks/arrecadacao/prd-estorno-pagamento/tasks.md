@@ -17,11 +17,11 @@ Implementacao do estorno de pagamento: 1 endpoint backend, extensao de entidade 
 
 ## Tarefas
 
-- [ ] 1.0 Migration V9: colunas de estorno no pagamento
-- [ ] 2.0 Domain: atualizar Pagamento.estornar() + VerbaService interface + exception + testes
-- [ ] 3.0 Application: EstornarPagamentoCommand + Handler + DTO + testes
-- [ ] 4.0 API: endpoint POST /estornar + GlobalExceptionHandler + testes integracao
-- [ ] 5.0 Frontend: types + API + hook + modal + extensao detail page
+- [x] 1.0 Migration V9: colunas de estorno no pagamento
+- [x] 2.0 Domain: atualizar Pagamento.estornar() + VerbaService interface + exception + testes
+- [x] 3.0 Application: EstornarPagamentoCommand + Handler + DTO + testes
+- [x] 4.0 API: endpoint POST /estornar + GlobalExceptionHandler + testes integracao
+- [x] 5.0 Frontend: types + API + hook + modal + extensao detail page
 
 ## Rastreabilidade US -> Tasks
 

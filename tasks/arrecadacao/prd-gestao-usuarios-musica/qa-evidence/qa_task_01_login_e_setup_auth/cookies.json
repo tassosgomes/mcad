@@ -1,0 +1,72 @@
+[
+  {
+    "name": "_interaction_resume",
+    "value": "MXhA_2fXy5UAYeVlzGjbP",
+    "domain": "9lcinu.logto.app",
+    "path": "/oidc/auth/MXhA_2fXy5UAYeVlzGjbP",
+    "expires": 1779036243.074159,
+    "httpOnly": true,
+    "secure": true,
+    "sameSite": "Lax"
+  },
+  {
+    "name": "_interaction_resume.sig",
+    "value": "WQed7NR-ZYLgTF33JVzbAlIeJAQ",
+    "domain": "9lcinu.logto.app",
+    "path": "/oidc/auth/MXhA_2fXy5UAYeVlzGjbP",
+    "expires": 1779036243.074191,
+    "httpOnly": true,
+    "secure": true,
+    "sameSite": "Lax"
+  },
+  {
+    "name": "_logto",
+    "value": "{\"appId\":\"b0o8w18syrv95gd2o3kee\"}",
+    "domain": "9lcinu.logto.app",
+    "path": "/",
+    "expires": -1,
+    "httpOnly": false,
+    "secure": true,
+    "sameSite": "Lax"
+  },
+  {
+    "name": "_interaction",
+    "value": "{\"b0o8w18syrv95gd2o3kee\":\"yX1XLG457wghoUauak8Lz\",\"_legacy\":\"yX1XLG457wghoUauak8Lz\"}",
+    "domain": "9lcinu.logto.app",
+    "path": "/",
+    "expires": 1779036246.885308,
+    "httpOnly": true,
+    "secure": true,
+    "sameSite": "Lax"
+  },
+  {
+    "name": "_interaction.sig",
+    "value": "TV5W0CKnH0rS_wMLdcIwXqzlZUA",
+    "domain": "9lcinu.logto.app",
+    "path": "/",
+    "expires": 1779036246.88536,
+    "httpOnly": true,
+    "secure": true,
+    "sameSite": "Lax"
+  },
+  {
+    "name": "_session",
+    "value": "iIZPfvScKmuw_IOz-5luD",
+    "domain": "9lcinu.logto.app",
+    "path": "/",
+    "expires": 1780242249.113692,
+    "httpOnly": true,
+    "secure": true,
+    "sameSite": "Lax"
+  },
+  {
+    "name": "_session.sig",
+    "value": "Wt0jK43KLfmZYNcdpjqJREgvuxc",
+    "domain": "9lcinu.logto.app",
+    "path": "/",
+    "expires": 1780242249.113761,
+    "httpOnly": true,
+    "secure": true,
+    "sameSite": "Lax"
+  }
+]

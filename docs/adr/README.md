@@ -14,16 +14,16 @@ Convenções:
 | Nº | Título | Status | Data |
 |---|---|---|---|
 | [0001](./0001-authn-logto-authz-ecad-authz.md) | Separação entre Autenticação (Logto) e Autorização Fina (ecad-authz) | Accepted | 2026-05-14 |
-| [0002](./0002-permission-naming-convention.md) | Convenção de Naming para Permissões (`dominio:recurso:acao`) | Accepted (com exceção) | 2026-05-14 |
+| [0002](./0002-permission-naming-convention.md) | Convenção de Naming para Permissões (`dominio:area:recurso:acao`) | Accepted (final, 4 segmentos uniformes) | 2026-05-14 |
 | [0003](./0003-backend-authoritative-authorization.md) | Backend como Fonte Autoritativa de Autorização | Accepted | 2026-05-14 |
 | [0004](./0004-bff-permissions-for-ux.md) | BFF Expõe `/api/me` e `/api/me/permissions` para UX | Accepted | 2026-05-14 |
 | [0005](./0005-dotnet-authz-sdk.md) | SDK .NET Próprio para o ecad-authz | Accepted | 2026-05-14 |
 
 ## Decisões abertas / futuras ADRs
 
-- **Reconciliação 3 vs 4 segmentos** — depende da decisão sobre o `authz-spring-boot-starter` (manter `arrecadacao:default:...` ou ajustar o starter). Candidata a ADR 0006.
 - **Escopo `ASSOCIATION`** — autorização condicionada a associação do usuário (ex.: analista vê só obras da sua associação). Mudará a assinatura das permissões e a chamada ao ecad-authz. Candidata a ADR 0007.
-- **Catálogo `distribuicao:*`** — quando o domínio Distribuição sair de "planned", deve haver ADR ou aditivo cobrindo seu catálogo de permissões.
+- **Admin UI via BFF** — avaliar substituir chamadas diretas do frontend ao `ecad-authz` por rotas `/api/authz/*` no BFF.
+- **Distribuição em produção** — validar/aplicar o catálogo `distribuicao:default:*` no ambiente alvo quando o serviço for promovido.
 
 ## Como propor uma nova ADR
 

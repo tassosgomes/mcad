@@ -1,0 +1,123 @@
+{
+  "session": {
+    "created_at": "2026-05-17T12:37:00Z",
+    "prd_path": "mcad/tasks/arrecadacao/prd-gestao-usuarios-musica/prd.md",
+    "techspec_path": "mcad/tasks/arrecadacao/prd-gestao-usuarios-musica/techspec.md",
+    "api_contract_path": "mcad/tasks/arrecadacao/prd-gestao-usuarios-musica/api-contract.md",
+    "openapi_spec_path": "mcad/tasks/arrecadacao/prd-gestao-usuarios-musica/api-contract.yaml",
+    "orchestrator_version": "1.0",
+    "feature_id": "F02",
+    "feature_name": "Gestão de Usuários de Música",
+    "domain": "arrecadacao"
+  },
+  "scope": {
+    "user_stories_in_scope": [
+      { "task_id": "qa_task_01", "slug": "login_e_setup_auth", "description": "Pré-requisito de auth — login UI e captura de token/cookie para reuso nos cURLs" },
+      { "task_id": "qa_task_02", "slug": "cadastrar_usuario_musica", "description": "HU-01 — Cadastrar Usuário de Música (RF-01, RF-02, RF-03, RF-06, RF-07)" },
+      { "task_id": "qa_task_03", "slug": "busca_cep_viacep", "description": "HU-02 — Busca de endereço por CEP (RF-08, RF-09, RF-10) — frontend-only" },
+      { "task_id": "qa_task_04", "slug": "editar_usuario_musica", "description": "HU-03 — Editar Usuário de Música (RF-04) — CNPJ imutável" },
+      { "task_id": "qa_task_05", "slug": "inativar_reativar", "description": "HU-04 + HU-05 — Inativar e Reativar com justificativa (RF-11, RF-12, RF-13)" },
+      { "task_id": "qa_task_06", "slug": "historico_status", "description": "HU-07 — Histórico de status (RF-14)" },
+      { "task_id": "qa_task_07", "slug": "listagem_filtros_paginacao", "description": "HU-06 — Listagem, filtros, paginação, busca por ID (RF-16, RF-17, RF-18, RF-19)" }
+    ],
+    "excluded": [
+      { "id": "HU-08", "reason": "Pertence a F03 (Gestão de Licenças), não a F02" },
+      { "id": "RBAC-CONSULTOR", "reason": "Decisão do usuário — não há credencial de Consultor disponível para testar 403 em escrita" },
+      { "id": "DB-VALIDATION", "reason": "Decisão do usuário — confiança nos retornos da API; banco PostgreSQL não acessível diretamente do ambiente de QA" },
+      { "id": "CNPJ-RECEITA", "reason": "Não-objetivo do PRD — apenas validação algorítmica local (módulo 11)" },
+      { "id": "CEP-REVERSO", "reason": "Não-objetivo do PRD" },
+      { "id": "VIACEP-BACKEND", "reason": "Não-objetivo do PRD — ViaCEP é frontend-only" }
+    ]
+  },
+  "environment": {
+    "frontend_base_url": "https://mcad.tasso.dev.br",
+    "bff_base_url": "https://mcad-bff.tasso.dev.br",
+    "arrecadacao_api_base_url": "https://mcad-arrecadacao.tasso.dev.br/api/v1",
+    "auth": {
+      "enabled": true,
+      "type": "bearer_via_ui_login",
+      "strategy": "Playwright faz login na UI; cookie/token de sessão é reaproveitado nos cURLs",
+      "credentials_env_file": "/home/tsgomes/.cache/qa-mcad-f02/credentials.env",
+      "credentials_env": {
+        "username_var": "QA_USERNAME",
+        "password_var": "QA_PASSWORD"
+      },
+      "expected_roles": ["analista-arrecadacao"]
+    }
+  },
+  "database": {
+    "enabled": false,
+    "type": null,
+    "reason": "Out of scope per user decision"
+  },
+  "report": {
+    "formats": ["markdown"],
+    "output_dir": "mcad/tasks/arrecadacao/prd-gestao-usuarios-musica/qa-evidence"
+  },
+  "execution": {
+    "tasks": [
+      {
+        "id": "qa_task_01",
+        "slug": "login_e_setup_auth",
+        "description": "Login UI + captura de token/cookie",
+        "type": ["ui"],
+        "depends_on": [],
+        "can_run_parallel_with": []
+      },
+      {
+        "id": "qa_task_02",
+        "slug": "cadastrar_usuario_musica",
+        "description": "HU-01 Cadastrar — happy path UI/API + CNPJ inválido + CNPJ duplicado + validações",
+        "type": ["ui", "api"],
+        "depends_on": ["qa_task_01"],
+        "can_run_parallel_with": []
+      },
+      {
+        "id": "qa_task_03",
+        "slug": "busca_cep_viacep",
+        "description": "HU-02 ViaCEP — frontend-only",
+        "type": ["ui"],
+        "depends_on": ["qa_task_01"],
+        "can_run_parallel_with": ["qa_task_04", "qa_task_05", "qa_task_07"]
+      },
+      {
+        "id": "qa_task_04",
+        "slug": "editar_usuario_musica",
+        "description": "HU-03 Editar — CNPJ imutável",
+        "type": ["ui", "api"],
+        "depends_on": ["qa_task_02"],
+        "can_run_parallel_with": ["qa_task_03", "qa_task_05", "qa_task_07"]
+      },
+      {
+        "id": "qa_task_05",
+        "slug": "inativar_reativar",
+        "description": "HU-04 + HU-05 Inativar/Reativar com justificativa",
+        "type": ["ui", "api"],
+        "depends_on": ["qa_task_02"],
+        "can_run_parallel_with": ["qa_task_03", "qa_task_04", "qa_task_07"]
+      },
+      {
+        "id": "qa_task_06",
+        "slug": "historico_status",
+        "description": "HU-07 Histórico — depende de transições feitas em qa_task_05",
+        "type": ["ui", "api"],
+        "depends_on": ["qa_task_05"],
+        "can_run_parallel_with": []
+      },
+      {
+        "id": "qa_task_07",
+        "slug": "listagem_filtros_paginacao",
+        "description": "HU-06 Listagem, filtros, paginação, busca por ID",
+        "type": ["ui", "api"],
+        "depends_on": ["qa_task_02"],
+        "can_run_parallel_with": ["qa_task_03", "qa_task_04", "qa_task_05"]
+      }
+    ],
+    "phases": [
+      { "phase": 1, "mode": "sequential", "tasks": ["qa_task_01"] },
+      { "phase": 2, "mode": "sequential", "tasks": ["qa_task_02"] },
+      { "phase": 3, "mode": "parallel", "tasks": ["qa_task_03", "qa_task_04", "qa_task_05", "qa_task_07"] },
+      { "phase": 4, "mode": "sequential", "tasks": ["qa_task_06"] }
+    ]
+  }
+}

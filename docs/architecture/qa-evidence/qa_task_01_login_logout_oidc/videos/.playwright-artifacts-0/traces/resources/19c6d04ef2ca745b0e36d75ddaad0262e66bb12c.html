@@ -1,0 +1,13 @@
+<!-- https://github.com/panva/node-oidc-provider/blob/main/docs/README.md#logoutsource -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sign Out</title>
+</head>
+<body onload="document.getElementById('op.logoutForm').submit();">
+  <form id="op.logoutForm" method="post" action="https://9lcinu.logto.app/oidc/session/end/confirm"><input type="hidden" name="xsrf" value="5c7520342ca57999c302b089fc8e830d8fb781e9a8b7c600"/></form>
+  <input type="hidden" form="op.logoutForm" value="yes" name="logout" />
+</body>
+</html>

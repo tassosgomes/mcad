@@ -1,0 +1,10 @@
+preferred_username: analista_cadastro
+email: analista_cadastro@mcad.dev
+name: Analista Cadastro
+sub: jpuoee8f7rq3
+iss: https://9lcinu.logto.app/oidc
+aud: "https://api.mcad.local"
+exp: 2026-05-17T16:44:12.000Z
+scope: access write
+client_id: b0o8w18syrv95gd2o3kee
+roles: ["analista-cadastro"]

@@ -6,7 +6,7 @@
 **Responsável:** a definir
 **Status:** `in-progress`
 **Fase do Roadmap:** Fase 3 — Distribuição
-**Última revisão:** 2026-05-17
+**Última revisão:** 2026-05-20
 
 ---
 
@@ -51,7 +51,7 @@ Sem um processo estruturado de distribuição, não há como transformar a verba
 | Crédito | Valor calculado e atribuído a um titular específico dentro de um processo de distribuição. Detalhado por obra/fonograma, categoria e percentual aplicado. | titular_id, obra_id, fonograma_id (opcional), categoria (AUTORAL/CONEXO), subcategoria conexa (INTERPRETE/PRODUTOR/MUSICO), percentual aplicado, valor bruto da obra, valor do crédito, status (CALCULADO/RETIDO/LIBERADO), motivo de retenção, data de retenção, data/processo de liberação | pertence a: Processo de Distribuição; referencia: Titular, Obra, Fonograma (Cadastro) |
 | Crédito Retido | Crédito bloqueado por pendência cadastral. Permanece retido até que a pendência seja resolvida no Cadastro e um novo processo de distribuição libere-o. | motivo (OBRA_PENDENTE/OBRA_BLOQUEADA/TITULAR_SEM_ASSOCIACAO), data de retenção, última reavaliação, data de liberação (quando aplicável) | especialização de: Crédito |
 | Liberação de Crédito Retido | Registro do ciclo de liberação de um crédito retido em processo futuro. A previsão é criada no cálculo; a efetivação acontece apenas na finalização; cancelamento preserva o crédito original retido. | crédito retido, processo de origem, processo de liberação, status (PREVISTA/EFETIVADA/CANCELADA), valor liberado, motivo original, avaliado_em, efetivado_em, cancelado_em | vincula: Crédito Retido e Processo de Distribuição |
-| Ajuste | Correção de créditos gerada por estorno de pagamento na Arrecadação após a distribuição já ter sido calculada. Aplicado no próximo processo de distribuição da mesma rubrica+período. | rubrica, período, valor do estorno, processo de origem, processo de aplicação | planejado; ainda não implementado |
+| Ajuste | Correção de créditos gerada por estorno de pagamento na Arrecadação após a distribuição já ter sido calculada. Aplicado no próximo processo elegível da mesma rubrica, preservando o período afetado como período de origem. | rubrica, período de origem, valor bruto estornado, valor líquido do ajuste, processo de origem, processo de aplicação | PRD pronto; ainda não implementado |
 | Demonstrativo | Relatório consolidado por titular — equivalente a um "holerite" de direitos autorais. Detalha todos os créditos e débitos (ajustes) do titular em um processo, incluindo retidos recém-liberados. | titular_id, processo_id, créditos detalhados (obra, categoria, percentual, valor), retidos liberados, ajustes, valor total | planejado; ainda não implementado |
 | Rubrica (cópia local) | Cópia local da rubrica mantida pelo domínio Arrecadação. Sincronizada via eventos para evitar acoplamento HTTP runtime. | sigla, nome, exige classificação | sincronizada via: eventos `arrecadacao.rubrica.criada`/`atualizada` |
 
@@ -80,7 +80,7 @@ CANCELADO  CANCELADO  CANCELADO
 | F03 | Cálculo de Créditos | Core do domínio. Cruza verba líquida com Rol ponderado (quantidade × peso), aplica split 66,67% autoral / 33,33% conexo, distribui dentro de cada parte usando percentuais do Cadastro. Processo idempotente. | Must Have | `done` | Implementado no código; sem PRD dedicado |
 | F04 | Retenção de Créditos | Identificar e reter créditos quando a obra está PENDENTE/BLOQUEADA ou o titular não tem associação vinculada. Registrar motivo da retenção. | Must Have | `done` | `tasks/distribuicao/prd-retencao-creditos/prd.md` |
 | F05 | Liberação de Créditos Retidos | Na execução de um novo processo, verificar se pendências de créditos retidos anteriores foram resolvidas no Cadastro e liberar os créditos correspondentes. Informação visível no demonstrativo. | Must Have | `done` | `tasks/distribuicao/prd-liberacao-creditos-retidos/prd.md` |
-| F06 | Ajustes por Estorno | Consumir evento `arrecadacao.pagamento.estornado` e registrar ajuste a ser aplicado no próximo processo de distribuição da rubrica+período afetado. | Must Have | `planned` | — |
+| F06 | Ajustes por Estorno | Consumir evento `arrecadacao.pagamento.estornado` e registrar ajuste a ser aplicado no próximo processo elegível da mesma rubrica, mantendo rubrica+período afetados como origem do ajuste. | Must Have | `prd-ready` | `tasks/distribuicao/prd-ajustes-estorno/prd.md` |
 | F07 | Demonstrativo de Créditos | Gerar demonstrativo por titular — "holerite" detalhando créditos por obra, categoria, percentual e valor. Inclui retidos liberados e ajustes por estorno. Consulta por titular e por processo. | Must Have | `planned` | — |
 
 **Prioridades (MoSCoW):** `Must Have` · `Should Have` · `Could Have` · `Won't Have`
@@ -127,7 +127,7 @@ CANCELADO  CANCELADO  CANCELADO
 | RN-04 | A subdivisão da parte conexa segue os percentuais do Cadastro: com músico executante → 43,7% intérprete / 41,7% produtor / 14,6% músicos (÷ N igualitário); sem músico → 50% intérprete / 50% produtor | Regulamento de Distribuição |
 | RN-05 | Crédito é retido quando a obra está com status PENDENTE ou BLOQUEADA, ou quando o titular não possui associação vinculada | Regulamento de Distribuição |
 | RN-06 | Créditos retidos são liberados na próxima execução do processo de distribuição, quando a pendência cadastral tiver sido resolvida. A liberação aparece no demonstrativo do titular | Regulamento de Distribuição |
-| RN-07 | Estorno de pagamento na Arrecadação (evento `arrecadacao.pagamento.estornado`) após distribuição já calculada gera um ajuste a ser aplicado no próximo processo de distribuição da mesma rubrica+período | Consistência entre domínios |
+| RN-07 | Estorno de pagamento na Arrecadação (evento `arrecadacao.pagamento.estornado`) após distribuição já calculada gera ajuste a ser aplicado no próximo processo elegível da mesma rubrica, preservando o período afetado como período de origem | Consistência entre domínios |
 | RN-08 | O processo de distribuição é idempotente — reprocessar o mesmo Rol de Execuções não pode gerar créditos duplicados | Requisito técnico de integridade |
 | RN-09 | Valores monetários e percentuais utilizam tipos decimais de alta precisão (Decimal/Money). Nunca float/double | Requisito técnico de integridade |
 | RN-10 | Cada processo de distribuição opera sobre exatamente 1 rubrica + 1 período. Não há distribuição multi-rubrica no mesmo processo | Simplificação para PoC |
@@ -172,7 +172,7 @@ CANCELADO  CANCELADO  CANCELADO
 - Lacuna conhecida: `distribuicao.rol.processado` hoje envia o id do snapshot como `captacaoId`; Identificação espera o id da captação original.
 - Lacuna conhecida: `distribuicao.processo.iniciado` não é publicado, embora Arrecadação já tenha consumer para travar verba no início.
 - Lacuna conhecida: reprocessamento de eventos de Rol/Verba para snapshots existentes ainda não atualiza o snapshot; a implementação apenas registra log/no-op.
-- Lacuna conhecida: ajustes por estorno e demonstrativos ainda não existem na codebase.
+- Lacuna conhecida: ajustes por estorno já possui PRD em `tasks/distribuicao/prd-ajustes-estorno/prd.md`, mas ainda não existe na codebase; demonstrativos ainda não existem na codebase.
 
 ---
 
@@ -208,7 +208,7 @@ CANCELADO  CANCELADO  CANCELADO
 - [x] ~~Estorno pós-distribuição?~~ → Resolvido: gera ajuste no próximo processo (RN-07)
 - [x] ~~Demonstrativo: formato?~~ → Resolvido: holerite por titular com detalhamento completo
 
-As decisões funcionais principais estão resolvidas. As próximas lacunas documentadas para PRD/implementação são ajustes por estorno, demonstrativos e correções de contrato de integração.
+As decisões funcionais principais estão resolvidas. As próximas lacunas de implementação são ajustes por estorno, demonstrativos e correções de contrato de integração.
 
 ---
 

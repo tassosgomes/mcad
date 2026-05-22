@@ -1,5 +1,5 @@
 ---
-status: pending
+status: done
 parallelizable: false
 blocked_by: ["1.0"]
 ---
@@ -47,12 +47,12 @@ Estender a entidade Pagamento com 3 novos campos JPA (justificativaEstorno, esto
 
 ## Subtarefas
 
-- [ ] 2.1 Adicionar 3 campos JPA + getters a Pagamento
-- [ ] 2.2 Atualizar `estornar()` com nova assinatura e guards
-- [ ] 2.3 Criar `VerbaService` interface (validarLockParaEstorno, recalcularVerba)
-- [ ] 2.4 Criar `VerbaEmDistribuicaoException`
-- [ ] 2.5 Atualizar PagamentoTest (testes existentes usam estornar() sem args — atualizar)
-- [ ] 2.6 Adicionar testes: justificativa curta/longa throws, autor null throws, campos preenchidos corretamente
+- [x] 2.1 Adicionar 3 campos JPA + getters a Pagamento
+- [x] 2.2 Atualizar `estornar()` com nova assinatura e guards
+- [x] 2.3 Criar `VerbaService` interface (validarLockParaEstorno, recalcularVerba)
+- [x] 2.4 Criar `VerbaEmDistribuicaoException`
+- [x] 2.5 Atualizar PagamentoTest (testes existentes usam estornar() sem args — atualizar)
+- [x] 2.6 Adicionar testes: justificativa curta/longa throws, autor null throws, campos preenchidos corretamente
 
 ## Detalhes de Implementacao
 

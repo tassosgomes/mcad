@@ -51,7 +51,7 @@ O mini-ECAD (mcad) é uma aplicação de demonstração multi-contexto que usa o
 
 **Status possíveis:** `planned` · `in-progress` · `done` · `out-of-scope`
 
-### Status por feature (PRD) — snapshot 2026-05-17
+### Status por feature (PRD) — snapshot 2026-05-20
 
 | Domínio | PRD | Status |
 |---|---|---|
@@ -74,7 +74,8 @@ O mini-ECAD (mcad) é uma aplicação de demonstração multi-contexto que usa o
 | D04 Distribuição | calculo-creditos | `done` (cálculo ponderado por quantidade/peso, split autoral/conexo, persistência de créditos e evento `distribuicao.processo.calculado`; sem retenção, ajuste ou demonstrativo) |
 | D04 Distribuição | retencao-creditos | `done` (créditos `RETIDO`, motivos `OBRA_PENDENTE`/`OBRA_BLOQUEADA`/`TITULAR_SEM_ASSOCIACAO`, evento `distribuicao.credito.retido`) |
 | D04 Distribuição | liberacao-retidos | `done` (liberações `PREVISTA` no cálculo, `EFETIVADA` na finalização, `CANCELADA` no cancelamento, evento `distribuicao.credito.liberado`) |
-| D04 Distribuição | ajustes-estorno, demonstrativo-creditos | `planned` |
+| D04 Distribuição | ajustes-estorno | `prd-ready` |
+| D04 Distribuição | demonstrativo-creditos | `planned` |
 
 > Fonte: auditoria cruzando `tasks/**/prd-*` e código em `services/{cadastro,identificacao,arrecadacao,distribuicao}-api/`.
 
@@ -249,6 +250,7 @@ Analytics     ──consome de──→ Todos os domínios (eventos de todos os 
 | 1.7 | 2026-05-16 | Entrega de F02 (D04) gestao-processos | PRD revisado e implementado fim a fim alinhado ao novo padrão consolidado pela migração authz (encerrada em 2026-05-15): **permissionamento** via `authz-spring-boot-starter` com `@RequiresPermission("distribuicao:default:processo:<acao>")` em 4 segmentos (ADR 0002/0003), `permissions.yaml` com 9 keys e catálogo em `docs/authz/catalog/distribuicao.md`; migração legacy de `RubricaController` e `ProcessoCalculoController` (`@PreAuthorize` removido). **Auditoria** obrigatória via `audit-sdk` — `ProcessoAuditEventFactory` produz `userAction` + `dataChange` para cada operação (CREATE/CALCULATE/APPROVE/FINALIZE/CANCEL) na mesma transação do comando. Backend: 5 commands + 3 queries + `ProcessoController` (8 endpoints), Outbox de domínio, event consumers Rol/Verba. Frontend: módulo `features/distribuicao/processos` completo com gate de UI por permission via BFF (ADR 0004). 95 unit tests verdes; 10 integration tests bloqueados por dívida pré-existente de infra (Testcontainers 1.19.8 incompatível com Docker engine 1.44+ — afeta também IT legados do mesmo módulo). Próximo bloqueio em D04 é fechar a task 6.0 de `sync-rubricas` (mesma dívida de Testcontainers) ou avançar para o núcleo da Fase 3 (cálculo de créditos / split / retenção / demonstrativo — ainda sem PRD). |
 | 1.8 | 2026-05-16 | Auditoria de coerência codebase/docs | Documentação alinhada ao estado real da codebase: D01, D02 e D03 marcados como `done`; D04 mantido `in-progress` com F01/F02/F03 implementadas e retenção/liberação/ajustes/demonstrativos planejados. Registradas lacunas de contrato entre eventos, período, lock de verba e payload de `distribuicao.rol.processado`. |
 | 1.9 | 2026-05-17 | Entrega de F05 (D04) liberação de retidos | Distribuição sincronizada com implementação de retenção/liberação: F04 e F05 promovidas para `done`. F05 adiciona `CreditoLiberacao`, histórico de reavaliação, status `LIBERADO`, previsão no cálculo, efetivação na finalização, cancelamento de previsões, evento `distribuicao.credito.liberado` e UI de retidos a liberar/liberados. Ajustes por estorno e demonstrativos permanecem `planned`. |
+| 1.10 | 2026-05-20 | PRD de F06 (D04) ajustes por estorno | Criado PRD `tasks/distribuicao/prd-ajustes-estorno/prd.md` para consumir `arrecadacao.pagamento.estornado`, registrar ajustes idempotentes, calcular valor líquido de compensação e aplicar ajustes como débitos em processo futuro. Status de `ajustes-estorno` promovido para `prd-ready`; demonstrativos permanecem `planned`. |
 
 ---
 

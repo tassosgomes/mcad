@@ -33,7 +33,7 @@ export interface IdentityUserEvent {
 
 type UnknownRecord = Record<string, unknown>;
 
-export function normalizeLogtoWebhook(payload: unknown, rawBody: Buffer): IdentityUserEvent | null {
+export function buildIdentityEvent(payload: unknown, rawBody: Buffer): IdentityUserEvent | null {
   if (!isRecord(payload)) {
     throw new Error('Webhook payload must be a JSON object');
   }

@@ -1,0 +1,167 @@
+{
+  "session": {
+    "created_at": "2026-05-20T02:11:18Z",
+    "prd_path": "mcad/docs/architecture/auth-plan.md",
+    "techspec_path": "mcad/docs/migracao-authz/guia-operacional.md",
+    "orchestrator_version": "1.0"
+  },
+  "scope": {
+    "user_stories_in_scope": [
+      {
+        "task_id": "qa_task_01",
+        "slug": "login_logout_oidc",
+        "description": "Validar login, callback OIDC/PKCE, uso de Bearer token e logout nos perfis de teste."
+      },
+      {
+        "task_id": "qa_task_02",
+        "slug": "bff_me_permissions",
+        "description": "Validar endpoints do BFF /api/me e /api/me/permissions, incluindo header X-Authz-Version e erro 401 sem token."
+      },
+      {
+        "task_id": "qa_task_03",
+        "slug": "cadastro_permissoes",
+        "description": "Validar autorizacao fina de Cadastro para analista e consultor."
+      },
+      {
+        "task_id": "qa_task_04",
+        "slug": "identificacao_permissoes",
+        "description": "Validar autorizacao fina de Identificacao para analista e consultor."
+      },
+      {
+        "task_id": "qa_task_05",
+        "slug": "arrecadacao_permissoes",
+        "description": "Validar autorizacao fina de Arrecadacao para analista e consultor."
+      },
+      {
+        "task_id": "qa_task_06",
+        "slug": "distribuicao_permissoes",
+        "description": "Validar autorizacao fina de Distribuicao para analista e consultor."
+      },
+      {
+        "task_id": "qa_task_07",
+        "slug": "revogacao_expiracao_401",
+        "description": "Validar comportamento em 401, token expirado ou sessao invalida quando viavel sem alterar dados de producao."
+      }
+    ],
+    "excluded": [
+      {
+        "id": "db_validation",
+        "reason": "Validacao direta em banco nao incluida nesta rodada."
+      },
+      {
+        "id": "code_fixes",
+        "reason": "Sessao de QA deve apenas reportar achados, sem corrigir codigo."
+      },
+      {
+        "id": "destructive_data_changes",
+        "reason": "Ambiente testado e o deploy publicado; nao executar alteracoes destrutivas."
+      }
+    ]
+  },
+  "environment": {
+    "base_url": "https://mcad.tasso.dev.br",
+    "auth": {
+      "enabled": true,
+      "type": "bearer",
+      "token_endpoint": null,
+      "credentials_env": {
+        "password_var": "QA_SHARED_PASSWORD",
+        "analista_cadastro_username_var": "QA_ANALISTA_CADASTRO_USERNAME",
+        "analista_distribuicao_username_var": "QA_ANALISTA_DISTRIBUICAO_USERNAME",
+        "analista_identificacao_username_var": "QA_ANALISTA_IDENTIFICACAO_USERNAME",
+        "analista_arrecadacao_username_var": "QA_ANALISTA_ARRECADACAO_USERNAME",
+        "consultor_cadastro_username_var": "QA_CONSULTOR_CADASTRO_USERNAME",
+        "consultor_distribuicao_username_var": "QA_CONSULTOR_DISTRIBUICAO_USERNAME",
+        "consultor_identificacao_username_var": "QA_CONSULTOR_IDENTIFICACAO_USERNAME",
+        "consultor_arrecadacao_username_var": "QA_CONSULTOR_ARRECADACAO_USERNAME"
+      }
+    }
+  },
+  "database": {
+    "enabled": false,
+    "type": "none",
+    "connection_string_env": null,
+    "docker_image": null
+  },
+  "report": {
+    "formats": ["markdown"],
+    "output_dir": "mcad/docs/architecture/qa-evidence"
+  },
+  "execution": {
+    "tasks": [
+      {
+        "id": "qa_task_01",
+        "slug": "login_logout_oidc",
+        "description": "Login, callback OIDC/PKCE, Bearer token e logout.",
+        "type": ["ui", "api"],
+        "depends_on": [],
+        "can_run_parallel_with": []
+      },
+      {
+        "id": "qa_task_02",
+        "slug": "bff_me_permissions",
+        "description": "BFF /api/me e /api/me/permissions.",
+        "type": ["api"],
+        "depends_on": ["qa_task_01"],
+        "can_run_parallel_with": []
+      },
+      {
+        "id": "qa_task_03",
+        "slug": "cadastro_permissoes",
+        "description": "Autorizacao fina no dominio Cadastro.",
+        "type": ["ui", "api"],
+        "depends_on": ["qa_task_01", "qa_task_02"],
+        "can_run_parallel_with": ["qa_task_04", "qa_task_05", "qa_task_06"]
+      },
+      {
+        "id": "qa_task_04",
+        "slug": "identificacao_permissoes",
+        "description": "Autorizacao fina no dominio Identificacao.",
+        "type": ["ui", "api"],
+        "depends_on": ["qa_task_01", "qa_task_02"],
+        "can_run_parallel_with": ["qa_task_03", "qa_task_05", "qa_task_06"]
+      },
+      {
+        "id": "qa_task_05",
+        "slug": "arrecadacao_permissoes",
+        "description": "Autorizacao fina no dominio Arrecadacao.",
+        "type": ["ui", "api"],
+        "depends_on": ["qa_task_01", "qa_task_02"],
+        "can_run_parallel_with": ["qa_task_03", "qa_task_04", "qa_task_06"]
+      },
+      {
+        "id": "qa_task_06",
+        "slug": "distribuicao_permissoes",
+        "description": "Autorizacao fina no dominio Distribuicao.",
+        "type": ["ui", "api"],
+        "depends_on": ["qa_task_01", "qa_task_02"],
+        "can_run_parallel_with": ["qa_task_03", "qa_task_04", "qa_task_05"]
+      },
+      {
+        "id": "qa_task_07",
+        "slug": "revogacao_expiracao_401",
+        "description": "Comportamento em 401, expiracao ou sessao invalida.",
+        "type": ["ui", "api"],
+        "depends_on": ["qa_task_02"],
+        "can_run_parallel_with": []
+      }
+    ],
+    "phases": [
+      {
+        "phase": 1,
+        "mode": "sequential",
+        "tasks": ["qa_task_01", "qa_task_02"]
+      },
+      {
+        "phase": 2,
+        "mode": "parallel",
+        "tasks": ["qa_task_03", "qa_task_04", "qa_task_05", "qa_task_06"]
+      },
+      {
+        "phase": 3,
+        "mode": "sequential",
+        "tasks": ["qa_task_07"]
+      }
+    ]
+  }
+}

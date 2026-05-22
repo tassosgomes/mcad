@@ -4,8 +4,8 @@
 > `arrecadacao-api` via `authz-spring-boot-starter`. Origem dos nomes:
 > `services/arrecadacao-api/arrecadacao-api/src/main/resources/permissions.yaml`.
 > Regra geral dos papéis (PRD §5.2):
-> * `arrecadacao.consultor` — leitura / consulta / exportação.
-> * `arrecadacao.analista` — herda do consultor e adiciona escrita / mudança de status / processamento.
+> * `arrecadacao.default.consultor` — leitura / consulta / exportação.
+> * `arrecadacao.default.analista` — herda do consultor e adiciona escrita / mudança de status / processamento.
 
 > **Formato das chaves**: 4 segmentos `dominio:area:recurso:acao`, com `area=default`,
 > padrão uniforme em todo o mcad (cadastro, identificacao, arrecadacao e — futuro —
@@ -19,52 +19,52 @@
 
 | Permissão | Descrição | Método | Endpoint | Papel inicial |
 |---|---|---|---|---|
-| `arrecadacao:default:cliente:listar` | Lista paginada e filtrada de usuários de música | GET | `/api/v1/usuarios-musica` | arrecadacao.consultor |
-| `arrecadacao:default:cliente:visualizar` | Detalha um usuário de música | GET | `/api/v1/usuarios-musica/{id}` | arrecadacao.consultor |
-| `arrecadacao:default:cliente:visualizar` | Lista histórico de status do usuário de música | GET | `/api/v1/usuarios-musica/{id}/historico-status` | arrecadacao.consultor |
-| `arrecadacao:default:cliente:criar` | Cadastra novo usuário de música | POST | `/api/v1/usuarios-musica` | arrecadacao.analista |
-| `arrecadacao:default:cliente:editar` | Atualiza dados cadastrais do usuário de música | PUT | `/api/v1/usuarios-musica/{id}` | arrecadacao.analista |
-| `arrecadacao:default:cliente:editar` | Inativa o usuário de música | POST | `/api/v1/usuarios-musica/{id}/inativar` | arrecadacao.analista |
-| `arrecadacao:default:cliente:editar` | Reativa o usuário de música | POST | `/api/v1/usuarios-musica/{id}/ativar` | arrecadacao.analista |
+| `arrecadacao:default:cliente:listar` | Lista paginada e filtrada de usuários de música | GET | `/api/v1/usuarios-musica` | arrecadacao.default.consultor |
+| `arrecadacao:default:cliente:visualizar` | Detalha um usuário de música | GET | `/api/v1/usuarios-musica/{id}` | arrecadacao.default.consultor |
+| `arrecadacao:default:cliente:visualizar` | Lista histórico de status do usuário de música | GET | `/api/v1/usuarios-musica/{id}/historico-status` | arrecadacao.default.consultor |
+| `arrecadacao:default:cliente:criar` | Cadastra novo usuário de música | POST | `/api/v1/usuarios-musica` | arrecadacao.default.analista |
+| `arrecadacao:default:cliente:editar` | Atualiza dados cadastrais do usuário de música | PUT | `/api/v1/usuarios-musica/{id}` | arrecadacao.default.analista |
+| `arrecadacao:default:cliente:editar` | Inativa o usuário de música | POST | `/api/v1/usuarios-musica/{id}/inativar` | arrecadacao.default.analista |
+| `arrecadacao:default:cliente:editar` | Reativa o usuário de música | POST | `/api/v1/usuarios-musica/{id}/ativar` | arrecadacao.default.analista |
 
 ## Contrato / Licença
 
 | Permissão | Descrição | Método | Endpoint | Papel inicial |
 |---|---|---|---|---|
-| `arrecadacao:default:contrato:listar` | Lista paginada e filtrada de licenças | GET | `/api/v1/licencas` | arrecadacao.consultor |
-| `arrecadacao:default:contrato:visualizar` | Detalha uma licença | GET | `/api/v1/licencas/{id}` | arrecadacao.consultor |
-| `arrecadacao:default:contrato:visualizar` | Lista histórico de status da licença | GET | `/api/v1/licencas/{id}/historico-status` | arrecadacao.consultor |
-| `arrecadacao:default:contrato:criar` | Cria nova licença | POST | `/api/v1/licencas` | arrecadacao.analista |
-| `arrecadacao:default:contrato:editar` | Suspende uma licença | POST | `/api/v1/licencas/{id}/suspender` | arrecadacao.analista |
-| `arrecadacao:default:contrato:editar` | Reativa uma licença | POST | `/api/v1/licencas/{id}/reativar` | arrecadacao.analista |
-| `arrecadacao:default:contrato:cancelar` | Encerra uma licença | POST | `/api/v1/licencas/{id}/encerrar` | arrecadacao.analista |
+| `arrecadacao:default:contrato:listar` | Lista paginada e filtrada de licenças | GET | `/api/v1/licencas` | arrecadacao.default.consultor |
+| `arrecadacao:default:contrato:visualizar` | Detalha uma licença | GET | `/api/v1/licencas/{id}` | arrecadacao.default.consultor |
+| `arrecadacao:default:contrato:visualizar` | Lista histórico de status da licença | GET | `/api/v1/licencas/{id}/historico-status` | arrecadacao.default.consultor |
+| `arrecadacao:default:contrato:criar` | Cria nova licença | POST | `/api/v1/licencas` | arrecadacao.default.analista |
+| `arrecadacao:default:contrato:editar` | Suspende uma licença | POST | `/api/v1/licencas/{id}/suspender` | arrecadacao.default.analista |
+| `arrecadacao:default:contrato:editar` | Reativa uma licença | POST | `/api/v1/licencas/{id}/reativar` | arrecadacao.default.analista |
+| `arrecadacao:default:contrato:cancelar` | Encerra uma licença | POST | `/api/v1/licencas/{id}/encerrar` | arrecadacao.default.analista |
 
 ## Cobrança / UDA / Rubricas
 
 | Permissão | Descrição | Método | Endpoint | Papel inicial |
 |---|---|---|---|---|
-| `arrecadacao:default:cobranca:listar` | Consulta valor vigente da UDA | GET | `/api/v1/uda/vigente` | arrecadacao.consultor |
-| `arrecadacao:default:cobranca:listar` | Lista histórico de UDAs | GET | `/api/v1/uda/historico` | arrecadacao.consultor |
-| `arrecadacao:default:cobranca:listar` | Lista rubricas disponíveis | GET | `/api/v1/rubricas` | arrecadacao.consultor |
-| `arrecadacao:default:cobranca:emitir` | Ajusta valor da UDA com data de vigência | POST | `/api/v1/uda` | arrecadacao.analista |
+| `arrecadacao:default:cobranca:listar` | Consulta valor vigente da UDA | GET | `/api/v1/uda/vigente` | arrecadacao.default.consultor |
+| `arrecadacao:default:cobranca:listar` | Lista histórico de UDAs | GET | `/api/v1/uda/historico` | arrecadacao.default.consultor |
+| `arrecadacao:default:cobranca:listar` | Lista rubricas disponíveis | GET | `/api/v1/rubricas` | arrecadacao.default.consultor |
+| `arrecadacao:default:cobranca:emitir` | Ajusta valor da UDA com data de vigência | POST | `/api/v1/uda` | arrecadacao.default.analista |
 
 ## Pagamento
 
 | Permissão | Descrição | Método | Endpoint | Papel inicial |
 |---|---|---|---|---|
-| `arrecadacao:default:pagamento:listar` | Lista paginada e filtrada de pagamentos | GET | `/api/v1/pagamentos` | arrecadacao.consultor |
-| `arrecadacao:default:pagamento:visualizar` | Detalha um pagamento | GET | `/api/v1/pagamentos/{id}` | arrecadacao.consultor |
-| `arrecadacao:default:pagamento:conciliar` | Registra novo pagamento associado a uma licença | POST | `/api/v1/pagamentos` | arrecadacao.analista |
-| `arrecadacao:default:pagamento:estornar` | Estorna pagamento confirmado, com justificativa | POST | `/api/v1/pagamentos/{id}/estornar` | arrecadacao.analista |
+| `arrecadacao:default:pagamento:listar` | Lista paginada e filtrada de pagamentos | GET | `/api/v1/pagamentos` | arrecadacao.default.consultor |
+| `arrecadacao:default:pagamento:visualizar` | Detalha um pagamento | GET | `/api/v1/pagamentos/{id}` | arrecadacao.default.consultor |
+| `arrecadacao:default:pagamento:conciliar` | Registra novo pagamento associado a uma licença | POST | `/api/v1/pagamentos` | arrecadacao.default.analista |
+| `arrecadacao:default:pagamento:estornar` | Estorna pagamento confirmado, com justificativa | POST | `/api/v1/pagamentos/{id}/estornar` | arrecadacao.default.analista |
 
 ## Relatórios / Verbas
 
 | Permissão | Descrição | Método | Endpoint | Papel inicial |
 |---|---|---|---|---|
-| `arrecadacao:default:relatorio:visualizar` | Lista paginada de verbas por rubrica/período/status | GET | `/api/v1/verbas` | arrecadacao.consultor |
-| `arrecadacao:default:relatorio:visualizar` | Agrega verbas por rubrica no intervalo informado | GET | `/api/v1/verbas/agregado-por-rubrica` | arrecadacao.consultor |
-| `arrecadacao:default:relatorio:visualizar` | Detalha uma verba específica | GET | `/api/v1/verbas/{rubricaSigla}/{periodo}` | arrecadacao.consultor |
-| `arrecadacao:default:relatorio:exportar` | Reservada para o futuro endpoint de exportação | — | — | arrecadacao.consultor |
+| `arrecadacao:default:relatorio:visualizar` | Lista paginada de verbas por rubrica/período/status | GET | `/api/v1/verbas` | arrecadacao.default.consultor |
+| `arrecadacao:default:relatorio:visualizar` | Agrega verbas por rubrica no intervalo informado | GET | `/api/v1/verbas/agregado-por-rubrica` | arrecadacao.default.consultor |
+| `arrecadacao:default:relatorio:visualizar` | Detalha uma verba específica | GET | `/api/v1/verbas/{rubricaSigla}/{periodo}` | arrecadacao.default.consultor |
+| `arrecadacao:default:relatorio:exportar` | Reservada para o futuro endpoint de exportação | — | — | arrecadacao.default.consultor |
 
 ## Observações operacionais
 

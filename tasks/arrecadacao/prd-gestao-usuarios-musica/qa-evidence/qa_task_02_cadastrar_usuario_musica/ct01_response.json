@@ -1,0 +1,24 @@
+{
+  "id": "0d877019-4916-49e6-bc46-0defcdb5e0b6",
+  "razaoSocial": "QA F02 CT01 1779032913 Servicos Ltda",
+  "nomeFantasia": "QA CT01",
+  "cnpjValor": "99790329130021",
+  "cnpjFormatado": "99.790.329/1300-21",
+  "endereco": {
+    "cep": "01001000",
+    "logradouro": "Praça da Sé",
+    "numero": "100",
+    "complemento": "Sala 1A",
+    "bairro": "Sé",
+    "cidade": "São Paulo",
+    "uf": "SP"
+  },
+  "contato": {
+    "nomeResponsavel": "Tester Auto CT01",
+    "telefone": "(11) 99999-0001",
+    "email": "qa-ct01-1779032913@example.com"
+  },
+  "status": "ATIVO",
+  "criadoEm": "2026-05-17T15:49:39.623917979Z",
+  "atualizadoEm": "2026-05-17T15:49:39.623917979Z"
+}

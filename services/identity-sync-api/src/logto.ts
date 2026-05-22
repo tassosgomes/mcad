@@ -13,19 +13,48 @@ export interface LogtoUserImporter {
   getUser?(userId: string): Promise<LogtoUser | null>;
 }
 
+export interface LogtoManagementClientOptions {
+  pageSize?: number;
+}
+
 export class LogtoManagementClient implements LogtoUserImporter {
+  private readonly pageSize: number;
+
   constructor(
     private readonly managementApi: string,
     private readonly clientId: string,
     private readonly clientSecret: string,
-  ) {}
+    options: LogtoManagementClientOptions = {},
+  ) {
+    const pageSize = options.pageSize ?? 100;
+    if (!Number.isInteger(pageSize) || pageSize <= 0 || pageSize > 100) {
+      throw new Error('pageSize must be an integer between 1 and 100');
+    }
+    this.pageSize = pageSize;
+  }
 
   async listUsers(): Promise<LogtoUser[]> {
     const token = await this.getToken();
-    const users = await this.api<LogtoUser[]>('/users?limit=100', token);
+    const collected: LogtoUser[] = [];
+    let page = 1;
+
+    while (true) {
+      const batch = await this.api<LogtoUser[]>(
+        `/users?page=${page}&page_size=${this.pageSize}`,
+        token,
+      );
+      if (batch.length === 0) {
+        break;
+      }
+      collected.push(...batch);
+      if (batch.length < this.pageSize) {
+        break;
+      }
+      page++;
+    }
 
     return Promise.all(
-      users.map(async (user) => ({
+      collected.map(async (user) => ({
         ...user,
         roles: await this.api<Array<{ name?: string | null }>>(
           `/users/${encodeURIComponent(user.id)}/roles`,

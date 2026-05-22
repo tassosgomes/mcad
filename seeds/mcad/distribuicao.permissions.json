@@ -1,0 +1,18 @@
+{
+  "service": "distribuicao-api",
+  "domain": "distribuicao",
+  "area": "default",
+  "version": "1.0.0",
+  "permissions": [
+    { "key": "distribuicao:default:rubrica:listar", "displayName": "Listar rubricas", "description": "Lista as rubricas sincronizadas a partir da Arrecadação.", "resource": "rubrica", "action": "listar" },
+    { "key": "distribuicao:default:rubrica:visualizar", "displayName": "Visualizar rubrica", "description": "Detalhe de uma rubrica específica.", "resource": "rubrica", "action": "visualizar" },
+
+    { "key": "distribuicao:default:processo:listar", "displayName": "Listar processos", "description": "Lista paginada de processos de distribuição; também usado pelo endpoint /disponiveis.", "resource": "processo", "action": "listar" },
+    { "key": "distribuicao:default:processo:visualizar", "displayName": "Visualizar processo", "description": "Detalhes de um processo de distribuição e seu resumo de cálculo.", "resource": "processo", "action": "visualizar" },
+    { "key": "distribuicao:default:processo:criar", "displayName": "Criar processo", "description": "Cria um novo processo de distribuição para uma combinação rubrica+período.", "resource": "processo", "action": "criar" },
+    { "key": "distribuicao:default:processo:calcular", "displayName": "Calcular processo", "description": "Dispara o cálculo de créditos (transição CRIADO → CALCULADO).", "resource": "processo", "action": "calcular" },
+    { "key": "distribuicao:default:processo:aprovar", "displayName": "Aprovar processo", "description": "Aprova o cálculo (transição CALCULADO → APROVADO).", "resource": "processo", "action": "aprovar" },
+    { "key": "distribuicao:default:processo:finalizar", "displayName": "Finalizar processo", "description": "Finaliza o processo (APROVADO → FINALIZADO; irreversível).", "resource": "processo", "action": "finalizar" },
+    { "key": "distribuicao:default:processo:cancelar", "displayName": "Cancelar processo", "description": "Cancela o processo a partir de qualquer estado exceto FINALIZADO; exige justificativa.", "resource": "processo", "action": "cancelar" }
+  ]
+}

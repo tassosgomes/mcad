@@ -1,0 +1,743 @@
+[
+  {
+    "ts": 1779032641087,
+    "dir": ">",
+    "method": "GET",
+    "url": "https://mcad.tasso.dev.br/",
+    "authHeader": null
+  },
+  {
+    "ts": 1779032641371,
+    "dir": "<",
+    "status": 200,
+    "url": "https://mcad.tasso.dev.br/"
+  },
+  {
+    "ts": 1779032641377,
+    "dir": ">",
+    "method": "GET",
+    "url": "https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500;600&display=swap",
+    "authHeader": null
+  },
+  {
+    "ts": 1779032641378,
+    "dir": ">",
+    "method": "GET",
+    "url": "https://mcad.tasso.dev.br/runtime-env.js",
+    "authHeader": null
+  },
+  {
+    "ts": 1779032641378,
+    "dir": ">",
+    "method": "GET",
+    "url": "https://mcad.tasso.dev.br/assets/index-Ba960Adg.js",
+    "authHeader": null
+  },
+  {
+    "ts": 1779032641378,
+    "dir": ">",
+    "method": "GET",
+    "url": "https://mcad.tasso.dev.br/assets/index-DYKvq-Si.css",
+    "authHeader": null
+  },
+  {
+    "ts": 1779032641396,
+    "dir": "<",
+    "status": 200,
+    "url": "https://mcad.tasso.dev.br/assets/index-DYKvq-Si.css"
+  },
+  {
+    "ts": 1779032641438,
+    "dir": "<",
+    "status": 200,
+    "url": "https://mcad.tasso.dev.br/assets/index-Ba960Adg.js"
+  },
+  {
+    "ts": 1779032641554,
+    "dir": "<",
+    "status": 200,
+    "url": "https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500;600&display=swap"
+  },
+  {
+    "ts": 1779032641593,
+    "dir": "<",
+    "status": 200,
+    "url": "https://mcad.tasso.dev.br/runtime-env.js"
+  },
+  {
+    "ts": 1779032641644,
+    "dir": ">",
+    "method": "GET",
+    "url": "https://9lcinu.logto.app/oidc/.well-known/openid-configuration",
+    "authHeader": null
+  },
+  {
+    "ts": 1779032642465,
+    "dir": "<",
+    "status": 200,
+    "url": "https://9lcinu.logto.app/oidc/.well-known/openid-configuration"
+  },
+  {
+    "ts": 1779032642474,
+    "dir": ">",
+    "method": "GET",
+    "url": "https://9lcinu.logto.app/oidc/auth?client_id=b0o8w18syrv95gd2o3kee&redirect_uri=https%3A%2F%2Fmcad.tasso.dev.br%2Fcallback&response_type=code&scope=openid+profile+roles+access+write&state=2387ac870a4a46c1a7b9df5072657e41&code_challenge=lF2IsTUA6Y9exnM2reaM88nmfPA6Pt2AI-wHd5wV97A&code_challenge_method=S256&resource=https%3A%2F%2Fapi.mcad.local",
+    "authHeader": null
+  },
+  {
+    "ts": 1779032643076,
+    "dir": "<",
+    "status": 303,
+    "url": "https://9lcinu.logto.app/oidc/auth?client_id=b0o8w18syrv95gd2o3kee&redirect_uri=https%3A%2F%2Fmcad.tasso.dev.br%2Fcallback&response_type=code&scope=openid+profile+roles+access+write&state=2387ac870a4a46c1a7b9df5072657e41&code_challenge=lF2IsTUA6Y9exnM2reaM88nmfPA6Pt2AI-wHd5wV97A&code_challenge_method=S256&resource=https%3A%2F%2Fapi.mcad.local"
+  },
+  {
+    "ts": 1779032643076,
+    "dir": ">",
+    "method": "GET",
+    "url": "https://9lcinu.logto.app/sign-in?app_id=b0o8w18syrv95gd2o3kee",
+    "authHeader": null
+  },
+  {
+    "ts": 1779032643591,
+    "dir": "<",
+    "status": 200,
+    "url": "https://9lcinu.logto.app/sign-in?app_id=b0o8w18syrv95gd2o3kee"
+  },
+  {
+    "ts": 1779032643642,
+    "dir": ">",
+    "method": "GET",
+    "url": "https://9lcinu.logto.app/assets/index-BURxkdLH.js",
+    "authHeader": null
+  },
+  {
+    "ts": 1779032643642,
+    "dir": ">",
+    "method": "GET",
+    "url": "https://9lcinu.logto.app/assets/vendors-CTiWub0Y.js",
+    "authHeader": null
+  },
+  {
+    "ts": 1779032643643,
+    "dir": ">",
+    "method": "GET",
+    "url": "https://9lcinu.logto.app/assets/react-BBrIezR4.js",
+    "authHeader": null
+  },
+  {
+    "ts": 1779032643643,
+    "dir": ">",
+    "method": "GET",
+    "url": "https://9lcinu.logto.app/assets/core-js-BG6hByr2.js",
+    "authHeader": null
+  },
+  {
+    "ts": 1779032643643,
+    "dir": ">",
+    "method": "GET",
+    "url": "https://9lcinu.logto.app/assets/i18next-Cej3yobB.js",
+    "authHeader": null
+  },
+  {
+    "ts": 1779032643643,
+    "dir": ">",
+    "method": "GET",
+    "url": "https://9lcinu.logto.app/assets/phrases-en-B8P368_B.js",
+    "authHeader": null
+  },
+  {
+    "ts": 1779032643643,
+    "dir": ">",
+    "method": "GET",
+    "url": "https://9lcinu.logto.app/assets/libphonenumber-js-DZoXvTe2.js",
+    "authHeader": null
+  },
+  {
+    "ts": 1779032643643,
+    "dir": ">",
+    "method": "GET",
+    "url": "https://9lcinu.logto.app/assets/vendors-B73veG7L.css",
+    "authHeader": null
+  },
+  {
+    "ts": 1779032643643,
+    "dir": ">",
+    "method": "GET",
+    "url": "https://9lcinu.logto.app/assets/index-DQ_M9VE0.css",
+    "authHeader": null
+  },
+  {
+    "ts": 1779032643854,
+    "dir": "<",
+    "status": 200,
+    "url": "https://9lcinu.logto.app/assets/vendors-B73veG7L.css"
+  },
+  {
+    "ts": 1779032643904,
+    "dir": "<",
+    "status": 200,
+    "url": "https://9lcinu.logto.app/assets/index-BURxkdLH.js"
+  },
+  {
+    "ts": 1779032643928,
+    "dir": "<",
+    "status": 200,
+    "url": "https://9lcinu.logto.app/assets/vendors-CTiWub0Y.js"
+  },
+  {
+    "ts": 1779032643969,
+    "dir": "<",
+    "status": 200,
+    "url": "https://9lcinu.logto.app/assets/react-BBrIezR4.js"
+  },
+  {
+    "ts": 1779032643976,
+    "dir": "<",
+    "status": 200,
+    "url": "https://9lcinu.logto.app/assets/i18next-Cej3yobB.js"
+  },
+  {
+    "ts": 1779032643996,
+    "dir": "<",
+    "status": 200,
+    "url": "https://9lcinu.logto.app/assets/libphonenumber-js-DZoXvTe2.js"
+  },
+  {
+    "ts": 1779032644241,
+    "dir": "<",
+    "status": 200,
+    "url": "https://9lcinu.logto.app/assets/index-DQ_M9VE0.css"
+  },
+  {
+    "ts": 1779032644292,
+    "dir": "<",
+    "status": 200,
+    "url": "https://9lcinu.logto.app/assets/phrases-en-B8P368_B.js"
+  },
+  {
+    "ts": 1779032644295,
+    "dir": "<",
+    "status": 200,
+    "url": "https://9lcinu.logto.app/assets/core-js-BG6hByr2.js"
+  },
+  {
+    "ts": 1779032645097,
+    "dir": ">",
+    "method": "PUT",
+    "url": "https://9lcinu.logto.app/api/experience",
+    "authHeader": null
+  },
+  {
+    "ts": 1779032645663,
+    "dir": "<",
+    "status": 204,
+    "url": "https://9lcinu.logto.app/api/experience"
+  },
+  {
+    "ts": 1779032645663,
+    "dir": ">",
+    "method": "POST",
+    "url": "https://9lcinu.logto.app/api/experience/verification/password",
+    "authHeader": null
+  },
+  {
+    "ts": 1779032646353,
+    "dir": "<",
+    "status": 200,
+    "url": "https://9lcinu.logto.app/api/experience/verification/password"
+  },
+  {
+    "ts": 1779032646353,
+    "dir": ">",
+    "method": "POST",
+    "url": "https://9lcinu.logto.app/api/experience/identification",
+    "authHeader": null
+  },
+  {
+    "ts": 1779032646864,
+    "dir": "<",
+    "status": 204,
+    "url": "https://9lcinu.logto.app/api/experience/identification"
+  },
+  {
+    "ts": 1779032646864,
+    "dir": ">",
+    "method": "POST",
+    "url": "https://9lcinu.logto.app/api/experience/submit",
+    "authHeader": null
+  },
+  {
+    "ts": 1779032647376,
+    "dir": "<",
+    "status": 200,
+    "url": "https://9lcinu.logto.app/api/experience/submit"
+  },
+  {
+    "ts": 1779032647376,
+    "dir": ">",
+    "method": "GET",
+    "url": "https://9lcinu.logto.app/oidc/auth/MXhA_2fXy5UAYeVlzGjbP",
+    "authHeader": null
+  },
+  {
+    "ts": 1779032647888,
+    "dir": "<",
+    "status": 303,
+    "url": "https://9lcinu.logto.app/oidc/auth/MXhA_2fXy5UAYeVlzGjbP"
+  },
+  {
+    "ts": 1779032647888,
+    "dir": ">",
+    "method": "GET",
+    "url": "https://9lcinu.logto.app/consent?app_id=b0o8w18syrv95gd2o3kee",
+    "authHeader": null
+  },
+  {
+    "ts": 1779032648504,
+    "dir": "<",
+    "status": 302,
+    "url": "https://9lcinu.logto.app/consent?app_id=b0o8w18syrv95gd2o3kee"
+  },
+  {
+    "ts": 1779032648504,
+    "dir": ">",
+    "method": "GET",
+    "url": "https://9lcinu.logto.app/oidc/auth/yX1XLG457wghoUauak8Lz",
+    "authHeader": null
+  },
+  {
+    "ts": 1779032649115,
+    "dir": "<",
+    "status": 303,
+    "url": "https://9lcinu.logto.app/oidc/auth/yX1XLG457wghoUauak8Lz"
+  },
+  {
+    "ts": 1779032649116,
+    "dir": ">",
+    "method": "GET",
+    "url": "https://mcad.tasso.dev.br/callback?code=uLOLHmbIr14Eg_JckR6z7w6Swkzo4wn7bpEBfNOFbVj&state=2387ac870a4a46c1a7b9df5072657e41&iss=https%3A%2F%2F9lcinu.logto.app%2Foidc",
+    "authHeader": null
+  },
+  {
+    "ts": 1779032649428,
+    "dir": "<",
+    "status": 200,
+    "url": "https://mcad.tasso.dev.br/callback?code=uLOLHmbIr14Eg_JckR6z7w6Swkzo4wn7bpEBfNOFbVj&state=2387ac870a4a46c1a7b9df5072657e41&iss=https%3A%2F%2F9lcinu.logto.app%2Foidc"
+  },
+  {
+    "ts": 1779032649465,
+    "dir": ">",
+    "method": "GET",
+    "url": "https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500;600&display=swap",
+    "authHeader": null
+  },
+  {
+    "ts": 1779032649466,
+    "dir": ">",
+    "method": "GET",
+    "url": "https://mcad.tasso.dev.br/runtime-env.js",
+    "authHeader": null
+  },
+  {
+    "ts": 1779032649470,
+    "dir": ">",
+    "method": "GET",
+    "url": "https://mcad.tasso.dev.br/assets/index-Ba960Adg.js",
+    "authHeader": null
+  },
+  {
+    "ts": 1779032649471,
+    "dir": ">",
+    "method": "GET",
+    "url": "https://mcad.tasso.dev.br/assets/index-DYKvq-Si.css",
+    "authHeader": null
+  },
+  {
+    "ts": 1779032649471,
+    "dir": "<",
+    "status": 200,
+    "url": "https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500;600&display=swap"
+  },
+  {
+    "ts": 1779032649478,
+    "dir": "<",
+    "status": 200,
+    "url": "https://mcad.tasso.dev.br/assets/index-DYKvq-Si.css"
+  },
+  {
+    "ts": 1779032649494,
+    "dir": "<",
+    "status": 200,
+    "url": "https://mcad.tasso.dev.br/assets/index-Ba960Adg.js"
+  },
+  {
+    "ts": 1779032649733,
+    "dir": "<",
+    "status": 200,
+    "url": "https://mcad.tasso.dev.br/runtime-env.js"
+  },
+  {
+    "ts": 1779032649791,
+    "dir": ">",
+    "method": "GET",
+    "url": "https://9lcinu.logto.app/oidc/.well-known/openid-configuration",
+    "authHeader": null
+  },
+  {
+    "ts": 1779032649791,
+    "dir": "<",
+    "status": 200,
+    "url": "https://9lcinu.logto.app/oidc/.well-known/openid-configuration"
+  },
+  {
+    "ts": 1779032649792,
+    "dir": ">",
+    "method": "POST",
+    "url": "https://9lcinu.logto.app/oidc/token",
+    "authHeader": null
+  },
+  {
+    "ts": 1779032650713,
+    "dir": "<",
+    "status": 200,
+    "url": "https://9lcinu.logto.app/oidc/token"
+  },
+  {
+    "ts": 1779032650724,
+    "dir": ">",
+    "method": "GET",
+    "url": "https://mcad-bff.tasso.dev.br/api/me/permissions",
+    "authHeader": "Bearer eyJhbGciOiJFUzM4NCIsInR..."
+  },
+  {
+    "ts": 1779032650756,
+    "dir": ">",
+    "method": "GET",
+    "url": "https://fonts.gstatic.com/s/dmsans/v17/rP2Hp2ywxg089UriCZOIHQ.woff2",
+    "authHeader": null
+  },
+  {
+    "ts": 1779032650756,
+    "dir": ">",
+    "method": "GET",
+    "url": "https://fonts.gstatic.com/s/ibmplexsans/v23/zYXzKVElMYYaJe8bpLHnCwDKr932-G7dytD-Dmu1syxeKYY.woff2",
+    "authHeader": null
+  },
+  {
+    "ts": 1779032650871,
+    "dir": "<",
+    "status": 200,
+    "url": "https://fonts.gstatic.com/s/ibmplexsans/v23/zYXzKVElMYYaJe8bpLHnCwDKr932-G7dytD-Dmu1syxeKYY.woff2"
+  },
+  {
+    "ts": 1779032650874,
+    "dir": "<",
+    "status": 200,
+    "url": "https://fonts.gstatic.com/s/dmsans/v17/rP2Hp2ywxg089UriCZOIHQ.woff2"
+  },
+  {
+    "ts": 1779032651678,
+    "dir": "<",
+    "status": 200,
+    "url": "https://mcad-bff.tasso.dev.br/api/me/permissions"
+  },
+  {
+    "ts": 1779032651693,
+    "dir": ">",
+    "method": "GET",
+    "url": "https://mcad.tasso.dev.br/assets/index-BxIMED9u.js",
+    "authHeader": null
+  },
+  {
+    "ts": 1779032651693,
+    "dir": ">",
+    "method": "GET",
+    "url": "https://mcad.tasso.dev.br/assets/PageHeader-BUbhUbFv.js",
+    "authHeader": null
+  },
+  {
+    "ts": 1779032651693,
+    "dir": ">",
+    "method": "GET",
+    "url": "https://mcad.tasso.dev.br/assets/PageHeader-G5wki55S.css",
+    "authHeader": null
+  },
+  {
+    "ts": 1779032651693,
+    "dir": ">",
+    "method": "GET",
+    "url": "https://mcad.tasso.dev.br/assets/Table-Du_txNoe.js",
+    "authHeader": null
+  },
+  {
+    "ts": 1779032651693,
+    "dir": ">",
+    "method": "GET",
+    "url": "https://mcad.tasso.dev.br/assets/Table-DMwbHdxP.css",
+    "authHeader": null
+  },
+  {
+    "ts": 1779032651693,
+    "dir": ">",
+    "method": "GET",
+    "url": "https://mcad.tasso.dev.br/assets/Select-DtYntKbI.js",
+    "authHeader": null
+  },
+  {
+    "ts": 1779032651693,
+    "dir": ">",
+    "method": "GET",
+    "url": "https://mcad.tasso.dev.br/assets/useAuditEntityTimeline-HN01BN3o.js",
+    "authHeader": null
+  },
+  {
+    "ts": 1779032651693,
+    "dir": ">",
+    "method": "GET",
+    "url": "https://mcad.tasso.dev.br/assets/useAuditEntityTimeline-Bbj0byyS.css",
+    "authHeader": null
+  },
+  {
+    "ts": 1779032651693,
+    "dir": ">",
+    "method": "GET",
+    "url": "https://mcad.tasso.dev.br/assets/Pagination-CSFy-m5w.js",
+    "authHeader": null
+  },
+  {
+    "ts": 1779032651693,
+    "dir": ">",
+    "method": "GET",
+    "url": "https://mcad.tasso.dev.br/assets/Pagination-DPZ6alyH.css",
+    "authHeader": null
+  },
+  {
+    "ts": 1779032651693,
+    "dir": ">",
+    "method": "GET",
+    "url": "https://mcad.tasso.dev.br/assets/Select-C0tmvfj9.css",
+    "authHeader": null
+  },
+  {
+    "ts": 1779032651696,
+    "dir": ">",
+    "method": "GET",
+    "url": "https://mcad.tasso.dev.br/assets/useMutation-mMQOZzb9.js",
+    "authHeader": null
+  },
+  {
+    "ts": 1779032651696,
+    "dir": ">",
+    "method": "GET",
+    "url": "https://mcad.tasso.dev.br/assets/pencil-0-TMgHZe.js",
+    "authHeader": null
+  },
+  {
+    "ts": 1779032651696,
+    "dir": ">",
+    "method": "GET",
+    "url": "https://mcad.tasso.dev.br/assets/trash-2-BEpknA-9.js",
+    "authHeader": null
+  },
+  {
+    "ts": 1779032651696,
+    "dir": ">",
+    "method": "GET",
+    "url": "https://mcad.tasso.dev.br/assets/FormField-BsMCjzkB.js",
+    "authHeader": null
+  },
+  {
+    "ts": 1779032651696,
+    "dir": ">",
+    "method": "GET",
+    "url": "https://mcad.tasso.dev.br/assets/FormField-DsxlpXdf.css",
+    "authHeader": null
+  },
+  {
+    "ts": 1779032651696,
+    "dir": ">",
+    "method": "GET",
+    "url": "https://mcad.tasso.dev.br/assets/arrow-left-5Z6fpRUU.js",
+    "authHeader": null
+  },
+  {
+    "ts": 1779032651696,
+    "dir": ">",
+    "method": "GET",
+    "url": "https://mcad.tasso.dev.br/assets/loader-circle-C_K0S_Zp.js",
+    "authHeader": null
+  },
+  {
+    "ts": 1779032651696,
+    "dir": ">",
+    "method": "GET",
+    "url": "https://mcad.tasso.dev.br/assets/Autocomplete-wnAk_u6S.js",
+    "authHeader": null
+  },
+  {
+    "ts": 1779032651696,
+    "dir": ">",
+    "method": "GET",
+    "url": "https://mcad.tasso.dev.br/assets/Autocomplete-VrQf2Asd.css",
+    "authHeader": null
+  },
+  {
+    "ts": 1779032651696,
+    "dir": ">",
+    "method": "GET",
+    "url": "https://mcad.tasso.dev.br/assets/index-Crq3cRMa.css",
+    "authHeader": null
+  },
+  {
+    "ts": 1779032651718,
+    "dir": "<",
+    "status": 200,
+    "url": "https://mcad.tasso.dev.br/assets/PageHeader-G5wki55S.css"
+  },
+  {
+    "ts": 1779032651718,
+    "dir": "<",
+    "status": 200,
+    "url": "https://mcad.tasso.dev.br/assets/PageHeader-BUbhUbFv.js"
+  },
+  {
+    "ts": 1779032651733,
+    "dir": "<",
+    "status": 200,
+    "url": "https://mcad.tasso.dev.br/assets/Table-DMwbHdxP.css"
+  },
+  {
+    "ts": 1779032651742,
+    "dir": "<",
+    "status": 200,
+    "url": "https://mcad.tasso.dev.br/assets/Table-Du_txNoe.js"
+  },
+  {
+    "ts": 1779032651742,
+    "dir": "<",
+    "status": 200,
+    "url": "https://mcad.tasso.dev.br/assets/Select-C0tmvfj9.css"
+  },
+  {
+    "ts": 1779032651745,
+    "dir": "<",
+    "status": 200,
+    "url": "https://mcad.tasso.dev.br/assets/useAuditEntityTimeline-Bbj0byyS.css"
+  },
+  {
+    "ts": 1779032651764,
+    "dir": "<",
+    "status": 200,
+    "url": "https://mcad.tasso.dev.br/assets/Pagination-DPZ6alyH.css"
+  },
+  {
+    "ts": 1779032651764,
+    "dir": "<",
+    "status": 200,
+    "url": "https://mcad.tasso.dev.br/assets/Autocomplete-wnAk_u6S.js"
+  },
+  {
+    "ts": 1779032651764,
+    "dir": "<",
+    "status": 200,
+    "url": "https://mcad.tasso.dev.br/assets/Select-DtYntKbI.js"
+  },
+  {
+    "ts": 1779032651769,
+    "dir": "<",
+    "status": 200,
+    "url": "https://mcad.tasso.dev.br/assets/FormField-DsxlpXdf.css"
+  },
+  {
+    "ts": 1779032651769,
+    "dir": "<",
+    "status": 200,
+    "url": "https://mcad.tasso.dev.br/assets/Autocomplete-VrQf2Asd.css"
+  },
+  {
+    "ts": 1779032651769,
+    "dir": "<",
+    "status": 200,
+    "url": "https://mcad.tasso.dev.br/assets/index-Crq3cRMa.css"
+  },
+  {
+    "ts": 1779032651770,
+    "dir": "<",
+    "status": 200,
+    "url": "https://mcad.tasso.dev.br/assets/FormField-BsMCjzkB.js"
+  },
+  {
+    "ts": 1779032651774,
+    "dir": "<",
+    "status": 200,
+    "url": "https://mcad.tasso.dev.br/assets/pencil-0-TMgHZe.js"
+  },
+  {
+    "ts": 1779032651775,
+    "dir": "<",
+    "status": 200,
+    "url": "https://mcad.tasso.dev.br/assets/useAuditEntityTimeline-HN01BN3o.js"
+  },
+  {
+    "ts": 1779032651776,
+    "dir": "<",
+    "status": 200,
+    "url": "https://mcad.tasso.dev.br/assets/Pagination-CSFy-m5w.js"
+  },
+  {
+    "ts": 1779032651778,
+    "dir": "<",
+    "status": 200,
+    "url": "https://mcad.tasso.dev.br/assets/useMutation-mMQOZzb9.js"
+  },
+  {
+    "ts": 1779032651778,
+    "dir": "<",
+    "status": 200,
+    "url": "https://mcad.tasso.dev.br/assets/index-BxIMED9u.js"
+  },
+  {
+    "ts": 1779032651778,
+    "dir": "<",
+    "status": 200,
+    "url": "https://mcad.tasso.dev.br/assets/trash-2-BEpknA-9.js"
+  },
+  {
+    "ts": 1779032651787,
+    "dir": "<",
+    "status": 200,
+    "url": "https://mcad.tasso.dev.br/assets/arrow-left-5Z6fpRUU.js"
+  },
+  {
+    "ts": 1779032651787,
+    "dir": "<",
+    "status": 200,
+    "url": "https://mcad.tasso.dev.br/assets/loader-circle-C_K0S_Zp.js"
+  },
+  {
+    "ts": 1779032651992,
+    "dir": ">",
+    "method": "GET",
+    "url": "https://mcad-bff.tasso.dev.br/api/cadastro/v1/associacoes",
+    "authHeader": "Bearer eyJhbGciOiJFUzM4NCIsInR..."
+  },
+  {
+    "ts": 1779032652804,
+    "dir": "<",
+    "status": 200,
+    "url": "https://mcad-bff.tasso.dev.br/api/cadastro/v1/associacoes"
+  },
+  {
+    "ts": 1779032652829,
+    "dir": ">",
+    "method": "GET",
+    "url": "https://fonts.gstatic.com/s/jetbrainsmono/v24/tDbv2o-flEEny0FZhsfKu5WU4zr3E_BX0PnT8RD8yKwBNntkaToggR7BYRbKPxDcwg.woff2",
+    "authHeader": null
+  },
+  {
+    "ts": 1779032652843,
+    "dir": "<",
+    "status": 200,
+    "url": "https://fonts.gstatic.com/s/jetbrainsmono/v24/tDbv2o-flEEny0FZhsfKu5WU4zr3E_BX0PnT8RD8yKwBNntkaToggR7BYRbKPxDcwg.woff2"
+  }
+]

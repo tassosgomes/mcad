@@ -163,5 +163,36 @@
       "arrecadacao:default:relatorio:visualizar",
       "arrecadacao:default:relatorio:exportar"
     ]
+  },
+  {
+    "key": "distribuicao.default.consultor",
+    "displayName": "Consultor Distribuição",
+    "description": "Acesso somente leitura ao módulo de Distribuição (rubricas e processos de distribuição).",
+    "domain": "distribuicao",
+    "area": "default",
+    "permissionKeys": [
+      "distribuicao:default:rubrica:listar",
+      "distribuicao:default:rubrica:visualizar",
+      "distribuicao:default:processo:listar",
+      "distribuicao:default:processo:visualizar"
+    ]
+  },
+  {
+    "key": "distribuicao.default.analista",
+    "displayName": "Analista Distribuição",
+    "description": "Acesso de leitura e operação ao módulo de Distribuição. Herda permissões do consultor e adiciona criação, cálculo, aprovação, finalização e cancelamento de processos.",
+    "domain": "distribuicao",
+    "area": "default",
+    "permissionKeys": [
+      "distribuicao:default:rubrica:listar",
+      "distribuicao:default:rubrica:visualizar",
+      "distribuicao:default:processo:listar",
+      "distribuicao:default:processo:visualizar",
+      "distribuicao:default:processo:criar",
+      "distribuicao:default:processo:calcular",
+      "distribuicao:default:processo:aprovar",
+      "distribuicao:default:processo:finalizar",
+      "distribuicao:default:processo:cancelar"
+    ]
   }
 ]

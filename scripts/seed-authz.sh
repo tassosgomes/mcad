@@ -110,8 +110,8 @@ if [[ "${DRY_RUN}" -eq 0 && -z "${AUTHZ_ADMIN_TOKEN}" ]]; then
   exit 1
 fi
 
-if [[ -n "${ONLY_SERVICE}" && ! "${ONLY_SERVICE}" =~ ^(cadastro|identificacao|arrecadacao)$ ]]; then
-  log_err "--service deve ser um de: cadastro, identificacao, arrecadacao"
+if [[ -n "${ONLY_SERVICE}" && ! "${ONLY_SERVICE}" =~ ^(cadastro|identificacao|arrecadacao|distribuicao)$ ]]; then
+  log_err "--service deve ser um de: cadastro, identificacao, arrecadacao, distribuicao"
   exit 2
 fi
 
@@ -473,7 +473,7 @@ main() {
   # Etapa 1: catálogos
   if [[ "${SKIP_CATALOGS}" -eq 0 ]]; then
     log_head "Etapa 1/3 — Catálogos de permissões"
-    local services=(cadastro identificacao arrecadacao)
+    local services=(cadastro identificacao arrecadacao distribuicao)
     if [[ -n "${ONLY_SERVICE}" ]]; then
       services=("${ONLY_SERVICE}")
     fi

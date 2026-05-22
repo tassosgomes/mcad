@@ -6,7 +6,8 @@
     "roleKeys": [
       "cadastro.default.consultor",
       "identificacao.default.consultor",
-      "arrecadacao.default.consultor"
+      "arrecadacao.default.consultor",
+      "distribuicao.default.consultor"
     ]
   },
   {
@@ -16,7 +17,8 @@
     "roleKeys": [
       "cadastro.default.analista",
       "identificacao.default.analista",
-      "arrecadacao.default.analista"
+      "arrecadacao.default.analista",
+      "distribuicao.default.analista"
     ]
   },
   {

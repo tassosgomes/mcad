@@ -1,0 +1,1260 @@
+openapi: 3.1.0
+
+info:
+  title: "Distribuição API — Ajustes por Estorno"
+  description: |
+    API para consulta operacional de ajustes por estorno e extensão da visão de cálculo
+    de processos de distribuição com débitos gerados por pagamentos estornados na Arrecadação.
+
+    **Contrato gerado a partir do PRD:** `tasks/distribuicao/prd-ajustes-estorno/prd.md`
+    **Data de geração:** 2026-05-20
+
+    ## Premissas Adotadas
+    - Autenticação JWT Bearer via Keycloak (Authorization Code + PKCE)
+    - Autorização via ecad-authz (`@RequiresPermission`)
+    - Endpoints de ajustes são somente leitura para usuários
+    - Registro de ajustes acontece por consumo do evento `arrecadacao.pagamento.estornado`
+    - Aplicação/efetivação de ajustes ocorre nos endpoints existentes de processo
+    - Valores monetários HTTP como number, seguindo contratos de Distribuição já existentes
+    - Valores monetários em eventos como string decimal, seguindo schemas assíncronos
+    - Erros seguem RFC 7807 (ProblemDetails)
+    - Campos JSON em camelCase
+    - Paths em português, plural, kebab-case onde aplicável
+  version: "1.0.0"
+  contact:
+    name: "Time de Plataforma ECAD"
+
+servers:
+  - url: http://localhost:5004/api/v1
+    description: Desenvolvimento local (distribuicao-api)
+
+security:
+  - BearerAuth: []
+
+tags:
+  - name: Ajustes por Estorno
+    description: "Consulta de ajustes gerados a partir de pagamentos estornados na Arrecadação"
+  - name: Processos
+    description: "Consulta da visão de cálculo com totais e linhas de ajustes por estorno"
+
+x-events:
+  consumes:
+    - type: arrecadacao.pagamento.estornado
+      schema: "#/components/schemas/ArrecadacaoPagamentoEstornadoEvent"
+      sourceSchema: "infra/schemas/v1/ArrecadacaoPagamentoEstornado.json"
+  produces:
+    - type: distribuicao.ajuste.estorno.registrado
+      schema: "#/components/schemas/DistribuicaoAjusteEstornoRegistradoEvent"
+    - type: distribuicao.ajuste.estorno.aplicado
+      schema: "#/components/schemas/DistribuicaoAjusteEstornoAplicadoEvent"
+
+paths:
+
+  /ajustes-estorno:
+    get:
+      summary: Listar ajustes por estorno
+      description: |
+        Retorna lista paginada de ajustes/eventos de estorno registrados na Distribuição.
+        A listagem é read-only e combina filtros por rubrica, período de origem,
+        status e pagamento estornado.
+      operationId: listarAjustesEstorno
+      tags:
+        - Ajustes por Estorno
+      parameters:
+        - name: page
+          in: query
+          description: Número da página (começa em 1)
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+            example: 1
+        - name: size
+          in: query
+          description: Itens por página (máximo 100)
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+            example: 20
+        - name: sort
+          in: query
+          description: "Ordenação (campo:direção). Campos: recebidoEm, estornadoEm, periodoOrigem, rubrica, status"
+          schema:
+            type: string
+            default: "recebidoEm:desc"
+            example: "estornadoEm:desc"
+        - name: rubrica
+          in: query
+          description: Filtrar por sigla da rubrica
+          schema:
+            type: string
+            maxLength: 20
+            example: "RADIO"
+        - name: periodoOrigem
+          in: query
+          description: Filtrar por período de origem do estorno (YYYY-MM)
+          schema:
+            type: string
+            pattern: "^\\d{4}-\\d{2}$"
+            example: "2026-03"
+        - name: status
+          in: query
+          description: Status separados por vírgula
+          schema:
+            type: string
+            example: "PENDENTE_APLICACAO,PREVISTO"
+        - name: pagamentoId
+          in: query
+          description: Filtrar por pagamento estornado
+          schema:
+            type: string
+            format: uuid
+            example: "7d1b7a52-64be-4a3b-a0a7-2d54c9a16c02"
+      responses:
+        "200":
+          description: Lista paginada de ajustes por estorno
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AjusteEstornoListResponse"
+              example:
+                items:
+                  - id: "4f8f7f3e-5a63-4c8e-97b8-c6f6b595b1dd"
+                    eventId: "74f36d49-01f8-4726-a839-621a22954ec0"
+                    pagamentoId: "7d1b7a52-64be-4a3b-a0a7-2d54c9a16c02"
+                    licencaId: "b9e9b9b8-3434-43dd-bf3d-600698de6b8f"
+                    rubrica:
+                      sigla: "RADIO"
+                      nome: "Rádio AM/FM"
+                    periodoOrigem: "2026-03"
+                    valorEstornadoBruto: 1000.00
+                    valorAjusteLiquido: 850.00
+                    valorAplicado: null
+                    status: "PENDENTE_APLICACAO"
+                    processoOrigemId: "f47ac10b-58cc-4372-a567-0e02b2c3d479"
+                    processoAplicacaoId: null
+                    justificativa: "Pagamento registrado em duplicidade"
+                    estornadoPor: "analista.arrecadacao@ecad.org.br"
+                    estornadoEm: "2026-05-20T10:00:00Z"
+                    recebidoEm: "2026-05-20T10:00:05Z"
+                    previstoEm: null
+                    aplicadoEm: null
+                metadata:
+                  page: 1
+                  size: 20
+                  total: 1
+                  totalPages: 1
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+      x-permission: "distribuicao:default:ajuste:listar"
+      x-frontend-notes: |
+        Tabela read-only com filtros por rubrica, período de origem, status e pagamento.
+        Badges para status: PENDENTE_APLICACAO, PREVISTO, APLICADO,
+        IGNORADO_SEM_DISTRIBUICAO, PROCESSO_CRIADO_DESATUALIZADO e ERRO_INTEGRIDADE.
+        Valores de `valorAplicado` devem ser exibidos como débito quando negativos.
+      x-backend-notes: |
+        Filtrar por status com split por vírgula. Ordenação padrão recebidoEm DESC.
+        Não retornar payloadOriginal na listagem.
+
+  /ajustes-estorno/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: ID local do ajuste por estorno
+        schema:
+          type: string
+          format: uuid
+          example: "4f8f7f3e-5a63-4c8e-97b8-c6f6b595b1dd"
+
+    get:
+      summary: Buscar ajuste por estorno por ID
+      description: |
+        Retorna detalhe operacional do ajuste, incluindo payload original do evento,
+        processo de origem, processo de aplicação, histórico de estados e linhas
+        financeiras previstas/aplicadas.
+      operationId: buscarAjusteEstornoPorId
+      tags:
+        - Ajustes por Estorno
+      responses:
+        "200":
+          description: Ajuste encontrado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AjusteEstornoDetalhe"
+              example:
+                id: "4f8f7f3e-5a63-4c8e-97b8-c6f6b595b1dd"
+                eventId: "74f36d49-01f8-4726-a839-621a22954ec0"
+                pagamentoId: "7d1b7a52-64be-4a3b-a0a7-2d54c9a16c02"
+                licencaId: "b9e9b9b8-3434-43dd-bf3d-600698de6b8f"
+                rubrica:
+                  sigla: "RADIO"
+                  nome: "Rádio AM/FM"
+                periodoOrigem: "2026-03"
+                valorEstornadoBruto: 1000.00
+                valorAjusteLiquido: 850.00
+                valorAplicado: -850.00
+                status: "PREVISTO"
+                processoOrigemId: "f47ac10b-58cc-4372-a567-0e02b2c3d479"
+                processoAplicacaoId: "d2e3f4a5-6789-4abc-def1-234567890123"
+                justificativa: "Pagamento registrado em duplicidade"
+                estornadoPor: "analista.arrecadacao@ecad.org.br"
+                estornadoEm: "2026-05-20T10:00:00Z"
+                recebidoEm: "2026-05-20T10:00:05Z"
+                previstoEm: "2026-05-20T12:00:00Z"
+                aplicadoEm: null
+                processoOrigem:
+                  id: "f47ac10b-58cc-4372-a567-0e02b2c3d479"
+                  rubrica:
+                    sigla: "RADIO"
+                    nome: "Rádio AM/FM"
+                  periodo: "2026-03"
+                  status: "FINALIZADO"
+                processoAplicacao:
+                  id: "d2e3f4a5-6789-4abc-def1-234567890123"
+                  rubrica:
+                    sigla: "RADIO"
+                    nome: "Rádio AM/FM"
+                  periodo: "2026-04"
+                  status: "CALCULADO"
+                historicoAplicacao:
+                  - status: "PENDENTE_APLICACAO"
+                    processoId: null
+                    ocorridoEm: "2026-05-20T10:00:05Z"
+                    observacao: "Ajuste criado a partir do evento de estorno"
+                  - status: "PREVISTO"
+                    processoId: "d2e3f4a5-6789-4abc-def1-234567890123"
+                    ocorridoEm: "2026-05-20T12:00:00Z"
+                    observacao: "Selecionado no cálculo do processo RADIO/2026-04"
+                linhas:
+                  - id: "1dbf8f1d-5d68-4db3-bb8f-8cb4c3b54b11"
+                    ajusteId: "4f8f7f3e-5a63-4c8e-97b8-c6f6b595b1dd"
+                    processoOrigemId: "f47ac10b-58cc-4372-a567-0e02b2c3d479"
+                    processoAplicacaoId: "d2e3f4a5-6789-4abc-def1-234567890123"
+                    creditoOrigemId: "8a4b2ef8-6d31-4e3e-a671-29b2f654ca60"
+                    titularId: "31be2647-01bb-44d0-a9c7-3e086bd16045"
+                    titularNome: "Maria Silva"
+                    obraId: "17de4c6c-b7d1-4d59-9e65-f71d71048d21"
+                    obraTitulo: "Canção Exemplo"
+                    fonogramaId: null
+                    categoria: "AUTOR"
+                    subcategoriaConexa: null
+                    valorCreditoOrigem: 600.00
+                    valorAjuste: -510.00
+                payloadOriginal:
+                  specversion: "1.0"
+                  id: "74f36d49-01f8-4726-a839-621a22954ec0"
+                  source: "urn:arrecadacao-api"
+                  type: "arrecadacao.pagamento.estornado"
+                  subject: "7d1b7a52-64be-4a3b-a0a7-2d54c9a16c02"
+                  time: "2026-05-20T10:00:00Z"
+                  datacontenttype: "application/json"
+                  data:
+                    pagamentoId: "7d1b7a52-64be-4a3b-a0a7-2d54c9a16c02"
+                    licencaId: "b9e9b9b8-3434-43dd-bf3d-600698de6b8f"
+                    rubricaSigla: "RADIO"
+                    periodo: "2026-03"
+                    quantidadeUdas: "10.000000"
+                    valorEstornado: "1000.00"
+                    justificativa: "Pagamento registrado em duplicidade"
+                    estornadoPor: "analista.arrecadacao@ecad.org.br"
+                    estornadoEm: "2026-05-20T10:00:00Z"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+      x-permission: "distribuicao:default:ajuste:visualizar"
+      x-frontend-notes: |
+        Usar em drawer/página de detalhe. Exibir justificativa completa e payload original em área técnica recolhível.
+        Se `status = ERRO_INTEGRIDADE`, exibir alerta operacional.
+      x-backend-notes: |
+        `payloadOriginal` deve ser o CloudEvent persistido no consumo, sem enriquecimento por chamada HTTP à Arrecadação.
+
+  /processos/{id}/calculo:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: ID único do processo de distribuição
+        schema:
+          type: string
+          format: uuid
+          example: "d2e3f4a5-6789-4abc-def1-234567890123"
+
+    get:
+      summary: Consultar cálculo do processo com ajustes por estorno
+      description: |
+        Retorna a visão de cálculo do processo. A F06 adiciona os campos
+        `resumo.totalAjustesEstorno`, `resumo.valorTotalAjustesEstorno`
+        e a seção `ajustesEstorno`.
+
+        Os créditos positivos do processo atual continuam calculados sobre
+        a verba líquida do processo. Ajustes por estorno entram em seção financeira
+        separada e com valores negativos.
+      operationId: consultarCalculoProcesso
+      tags:
+        - Processos
+      responses:
+        "200":
+          description: Visão de cálculo do processo
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProcessoCalculoResponse"
+              example:
+                processoId: "d2e3f4a5-6789-4abc-def1-234567890123"
+                rubrica:
+                  sigla: "RADIO"
+                  nome: "Rádio AM/FM"
+                periodo: "2026-04"
+                status: "CALCULADO"
+                resumo:
+                  verbaLiquida: 10000.00
+                  totalCreditos: 120
+                  valorTotalCreditos: 10000.00
+                  totalCreditosRetidos: 3
+                  valorTotalCreditosRetidos: 250.00
+                  totalRetidosLiberados: 2
+                  valorTotalRetidosLiberados: 1250.00
+                  totalAjustesEstorno: 1
+                  valorTotalAjustesEstorno: -850.00
+                  valorLiquidoDemonstravel: 10400.00
+                ajustesEstorno:
+                  - ajusteId: "4f8f7f3e-5a63-4c8e-97b8-c6f6b595b1dd"
+                    pagamentoId: "7d1b7a52-64be-4a3b-a0a7-2d54c9a16c02"
+                    licencaId: "b9e9b9b8-3434-43dd-bf3d-600698de6b8f"
+                    periodoOrigem: "2026-03"
+                    processoOrigemId: "f47ac10b-58cc-4372-a567-0e02b2c3d479"
+                    status: "PREVISTO"
+                    justificativa: "Pagamento registrado em duplicidade"
+                    valorEstornadoBruto: 1000.00
+                    valorAjusteLiquido: 850.00
+                    valorAplicado: -850.00
+                    totalLinhas: 2
+                    linhas:
+                      - id: "1dbf8f1d-5d68-4db3-bb8f-8cb4c3b54b11"
+                        ajusteId: "4f8f7f3e-5a63-4c8e-97b8-c6f6b595b1dd"
+                        processoOrigemId: "f47ac10b-58cc-4372-a567-0e02b2c3d479"
+                        processoAplicacaoId: "d2e3f4a5-6789-4abc-def1-234567890123"
+                        creditoOrigemId: "8a4b2ef8-6d31-4e3e-a671-29b2f654ca60"
+                        titularId: "31be2647-01bb-44d0-a9c7-3e086bd16045"
+                        titularNome: "Maria Silva"
+                        obraId: "17de4c6c-b7d1-4d59-9e65-f71d71048d21"
+                        obraTitulo: "Canção Exemplo"
+                        fonogramaId: null
+                        categoria: "AUTOR"
+                        subcategoriaConexa: null
+                        valorCreditoOrigem: 600.00
+                        valorAjuste: -510.00
+                      - id: "c0215d6f-5878-4769-9bd2-e2d8b8c91f50"
+                        ajusteId: "4f8f7f3e-5a63-4c8e-97b8-c6f6b595b1dd"
+                        processoOrigemId: "f47ac10b-58cc-4372-a567-0e02b2c3d479"
+                        processoAplicacaoId: "d2e3f4a5-6789-4abc-def1-234567890123"
+                        creditoOrigemId: "7483a40c-bf1a-42b6-9638-b28bbd630b21"
+                        titularId: "fd7d5594-b667-4d7f-9516-4d6a9199b2d4"
+                        titularNome: "João Santos"
+                        obraId: "17de4c6c-b7d1-4d59-9e65-f71d71048d21"
+                        obraTitulo: "Canção Exemplo"
+                        fonogramaId: null
+                        categoria: "AUTOR"
+                        subcategoriaConexa: null
+                        valorCreditoOrigem: 400.00
+                        valorAjuste: -340.00
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+      x-permission: "distribuicao:default:processo:visualizar"
+      x-frontend-notes: |
+        Exibir card com total/valor de ajustes por estorno e tabela separada dos créditos positivos.
+        `valorTotalAjustesEstorno` e `valorAplicado` já retornam negativos.
+      x-backend-notes: |
+        Retornar `ajustesEstorno: []`, `totalAjustesEstorno: 0` e `valorTotalAjustesEstorno: 0.00`
+        quando não houver ajustes previstos/aplicados no processo.
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        Token JWT via Keycloak (Authorization Code + PKCE).
+        Leitura permitida para consultor-distribuicao e analista-distribuicao.
+        Ações de processo que preveem/efetivam/cancelam ajustes requerem analista-distribuicao.
+
+  responses:
+    BadRequest:
+      description: Requisição inválida
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ProblemDetails"
+          example:
+            type: "https://tools.ietf.org/html/rfc7231#section-6.5.1"
+            title: "Bad Request"
+            status: 400
+            detail: "Parâmetro periodoOrigem deve seguir o formato YYYY-MM"
+            instance: "/api/v1/ajustes-estorno"
+
+    Unauthorized:
+      description: Não autenticado — token ausente ou inválido
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ProblemDetails"
+          example:
+            type: "https://tools.ietf.org/html/rfc7231#section-6.5.1"
+            title: "Unauthorized"
+            status: 401
+            detail: "Token de autenticação ausente ou inválido"
+            instance: "/api/v1/ajustes-estorno"
+
+    Forbidden:
+      description: Usuário autenticado sem permissão requerida
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ProblemDetails"
+          example:
+            type: "https://tools.ietf.org/html/rfc7231#section-6.5.3"
+            title: "Forbidden"
+            status: 403
+            detail: "Usuário sem permissão distribuicao:default:ajuste:visualizar"
+            instance: "/api/v1/ajustes-estorno/4f8f7f3e-5a63-4c8e-97b8-c6f6b595b1dd"
+
+    NotFound:
+      description: Recurso não encontrado
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ProblemDetails"
+          example:
+            type: "https://tools.ietf.org/html/rfc7231#section-6.5.4"
+            title: "Resource Not Found"
+            status: 404
+            detail: "Ajuste de estorno não encontrado"
+            instance: "/api/v1/ajustes-estorno/4f8f7f3e-5a63-4c8e-97b8-c6f6b595b1dd"
+
+    InternalServerError:
+      description: Erro interno do servidor
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ProblemDetails"
+          example:
+            type: "https://tools.ietf.org/html/rfc7231#section-6.6.1"
+            title: "Internal Server Error"
+            status: 500
+            detail: "An unexpected error occurred"
+            instance: "/api/v1/ajustes-estorno"
+            traceId: "0HN4B2E8M0T0K:00000001"
+
+  schemas:
+
+    RubricaResumo:
+      type: object
+      description: "Resumo da rubrica afetada"
+      required:
+        - sigla
+        - nome
+      properties:
+        sigla:
+          type: string
+          maxLength: 20
+          description: Sigla da rubrica
+          example: "RADIO"
+        nome:
+          type: string
+          maxLength: 100
+          description: Nome completo da rubrica
+          example: "Rádio AM/FM"
+
+    AjusteEstornoStatus:
+      type: string
+      description: Estado atual do ajuste por estorno
+      enum:
+        - PENDENTE_APLICACAO
+        - PREVISTO
+        - APLICADO
+        - CANCELADO
+        - IGNORADO_SEM_DISTRIBUICAO
+        - PROCESSO_CRIADO_DESATUALIZADO
+        - ERRO_INTEGRIDADE
+      example: "PENDENTE_APLICACAO"
+
+    ProcessoStatus:
+      type: string
+      enum:
+        - CRIADO
+        - CALCULADO
+        - APROVADO
+        - FINALIZADO
+        - CANCELADO
+      example: "CALCULADO"
+
+    AjusteEstornoListResponse:
+      type: object
+      required:
+        - items
+        - metadata
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/AjusteEstornoResumo"
+        metadata:
+          $ref: "#/components/schemas/PaginationInfo"
+
+    PaginationInfo:
+      type: object
+      required:
+        - page
+        - size
+        - total
+        - totalPages
+      properties:
+        page:
+          type: integer
+          minimum: 1
+          example: 1
+        size:
+          type: integer
+          minimum: 1
+          example: 20
+        total:
+          type: integer
+          minimum: 0
+          example: 42
+        totalPages:
+          type: integer
+          minimum: 0
+          example: 3
+
+    AjusteEstornoResumo:
+      type: object
+      description: "Registro local de ajuste/evento de estorno"
+      required:
+        - id
+        - eventId
+        - pagamentoId
+        - licencaId
+        - rubrica
+        - periodoOrigem
+        - valorEstornadoBruto
+        - valorAjusteLiquido
+        - status
+        - justificativa
+        - estornadoPor
+        - estornadoEm
+        - recebidoEm
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Identificador local do ajuste
+          example: "4f8f7f3e-5a63-4c8e-97b8-c6f6b595b1dd"
+        eventId:
+          type: string
+          format: uuid
+          description: ID do CloudEvent consumido
+          example: "74f36d49-01f8-4726-a839-621a22954ec0"
+        pagamentoId:
+          type: string
+          format: uuid
+          description: Pagamento estornado na Arrecadação
+          example: "7d1b7a52-64be-4a3b-a0a7-2d54c9a16c02"
+        licencaId:
+          type: string
+          format: uuid
+          description: Licença vinculada ao pagamento estornado
+          example: "b9e9b9b8-3434-43dd-bf3d-600698de6b8f"
+        rubrica:
+          $ref: "#/components/schemas/RubricaResumo"
+        periodoOrigem:
+          type: string
+          pattern: "^\\d{4}-\\d{2}$"
+          description: Período da verba estornada
+          example: "2026-03"
+        valorEstornadoBruto:
+          type: number
+          description: Valor bruto recebido em `data.valorEstornado`
+          example: 1000.00
+        valorAjusteLiquido:
+          type: number
+          description: Valor líquido calculado para compensação (`valorEstornadoBruto * 0.85`)
+          example: 850.00
+        valorAplicado:
+          type: number
+          nullable: true
+          description: Valor negativo previsto/aplicado; null enquanto não há aplicação
+          example: -850.00
+        status:
+          $ref: "#/components/schemas/AjusteEstornoStatus"
+        processoOrigemId:
+          type: string
+          format: uuid
+          nullable: true
+          description: Processo que usou a verba antes do estorno
+          example: "f47ac10b-58cc-4372-a567-0e02b2c3d479"
+        processoAplicacaoId:
+          type: string
+          format: uuid
+          nullable: true
+          description: Processo que prevê/aplicou o ajuste
+          example: "d2e3f4a5-6789-4abc-def1-234567890123"
+        justificativa:
+          type: string
+          minLength: 1
+          description: Justificativa informada na Arrecadação
+          example: "Pagamento registrado em duplicidade"
+        estornadoPor:
+          type: string
+          minLength: 1
+          description: Autor do estorno no domínio Arrecadação
+          example: "analista.arrecadacao@ecad.org.br"
+        estornadoEm:
+          type: string
+          format: date-time
+          description: Momento do estorno na Arrecadação
+          example: "2026-05-20T10:00:00Z"
+        recebidoEm:
+          type: string
+          format: date-time
+          description: Momento em que a Distribuição consumiu o evento
+          example: "2026-05-20T10:00:05Z"
+        previstoEm:
+          type: string
+          format: date-time
+          nullable: true
+          description: Momento em que o ajuste entrou como previsão em cálculo
+          example: "2026-05-20T12:00:00Z"
+        aplicadoEm:
+          type: string
+          format: date-time
+          nullable: true
+          description: Momento em que a aplicação se tornou definitiva
+          example: null
+
+    AjusteEstornoDetalhe:
+      allOf:
+        - $ref: "#/components/schemas/AjusteEstornoResumo"
+        - type: object
+          required:
+            - historicoAplicacao
+            - linhas
+            - payloadOriginal
+          properties:
+            processoOrigem:
+              $ref: "#/components/schemas/ProcessoResumo"
+            processoAplicacao:
+              $ref: "#/components/schemas/ProcessoResumo"
+            historicoAplicacao:
+              type: array
+              items:
+                $ref: "#/components/schemas/HistoricoAjusteEstorno"
+            linhas:
+              type: array
+              items:
+                $ref: "#/components/schemas/LinhaAjusteEstorno"
+            payloadOriginal:
+              $ref: "#/components/schemas/ArrecadacaoPagamentoEstornadoEvent"
+
+    ProcessoResumo:
+      type: object
+      required:
+        - id
+        - rubrica
+        - periodo
+        - status
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "f47ac10b-58cc-4372-a567-0e02b2c3d479"
+        rubrica:
+          $ref: "#/components/schemas/RubricaResumo"
+        periodo:
+          type: string
+          pattern: "^\\d{4}-\\d{2}$"
+          example: "2026-03"
+        status:
+          $ref: "#/components/schemas/ProcessoStatus"
+
+    HistoricoAjusteEstorno:
+      type: object
+      required:
+        - status
+        - ocorridoEm
+      properties:
+        status:
+          $ref: "#/components/schemas/AjusteEstornoStatus"
+        processoId:
+          type: string
+          format: uuid
+          nullable: true
+          description: Processo relacionado à transição, quando houver
+          example: "d2e3f4a5-6789-4abc-def1-234567890123"
+        ocorridoEm:
+          type: string
+          format: date-time
+          example: "2026-05-20T12:00:00Z"
+        observacao:
+          type: string
+          nullable: true
+          example: "Selecionado no cálculo do processo RADIO/2026-04"
+
+    LinhaAjusteEstorno:
+      type: object
+      required:
+        - id
+        - ajusteId
+        - processoOrigemId
+        - processoAplicacaoId
+        - creditoOrigemId
+        - titularId
+        - titularNome
+        - obraId
+        - obraTitulo
+        - categoria
+        - valorCreditoOrigem
+        - valorAjuste
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "1dbf8f1d-5d68-4db3-bb8f-8cb4c3b54b11"
+        ajusteId:
+          type: string
+          format: uuid
+          example: "4f8f7f3e-5a63-4c8e-97b8-c6f6b595b1dd"
+        processoOrigemId:
+          type: string
+          format: uuid
+          example: "f47ac10b-58cc-4372-a567-0e02b2c3d479"
+        processoAplicacaoId:
+          type: string
+          format: uuid
+          example: "d2e3f4a5-6789-4abc-def1-234567890123"
+        creditoOrigemId:
+          type: string
+          format: uuid
+          example: "8a4b2ef8-6d31-4e3e-a671-29b2f654ca60"
+        titularId:
+          type: string
+          format: uuid
+          example: "31be2647-01bb-44d0-a9c7-3e086bd16045"
+        titularNome:
+          type: string
+          example: "Maria Silva"
+        obraId:
+          type: string
+          format: uuid
+          example: "17de4c6c-b7d1-4d59-9e65-f71d71048d21"
+        obraTitulo:
+          type: string
+          example: "Canção Exemplo"
+        fonogramaId:
+          type: string
+          format: uuid
+          nullable: true
+          example: null
+        categoria:
+          type: string
+          example: "AUTOR"
+        subcategoriaConexa:
+          type: string
+          nullable: true
+          example: null
+        valorCreditoOrigem:
+          type: number
+          description: Valor positivo original usado na proporção
+          example: 600.00
+        valorAjuste:
+          type: number
+          description: Valor negativo alocado na linha
+          example: -510.00
+
+    ProcessoCalculoResponse:
+      type: object
+      required:
+        - processoId
+        - rubrica
+        - periodo
+        - status
+        - resumo
+        - ajustesEstorno
+      properties:
+        processoId:
+          type: string
+          format: uuid
+          example: "d2e3f4a5-6789-4abc-def1-234567890123"
+        rubrica:
+          $ref: "#/components/schemas/RubricaResumo"
+        periodo:
+          type: string
+          pattern: "^\\d{4}-\\d{2}$"
+          example: "2026-04"
+        status:
+          $ref: "#/components/schemas/ProcessoStatus"
+        resumo:
+          $ref: "#/components/schemas/ProcessoCalculoResumo"
+        ajustesEstorno:
+          type: array
+          description: Ajustes previstos/aplicados em seção separada dos créditos positivos
+          items:
+            $ref: "#/components/schemas/ProcessoCalculoAjusteEstorno"
+
+    ProcessoCalculoResumo:
+      type: object
+      required:
+        - verbaLiquida
+        - totalCreditos
+        - valorTotalCreditos
+        - totalCreditosRetidos
+        - valorTotalCreditosRetidos
+        - totalRetidosLiberados
+        - valorTotalRetidosLiberados
+        - totalAjustesEstorno
+        - valorTotalAjustesEstorno
+        - valorLiquidoDemonstravel
+      properties:
+        verbaLiquida:
+          type: number
+          example: 10000.00
+        totalCreditos:
+          type: integer
+          minimum: 0
+          example: 120
+        valorTotalCreditos:
+          type: number
+          example: 10000.00
+        totalCreditosRetidos:
+          type: integer
+          minimum: 0
+          example: 3
+        valorTotalCreditosRetidos:
+          type: number
+          example: 250.00
+        totalRetidosLiberados:
+          type: integer
+          minimum: 0
+          example: 2
+        valorTotalRetidosLiberados:
+          type: number
+          example: 1250.00
+        totalAjustesEstorno:
+          type: integer
+          minimum: 0
+          example: 1
+        valorTotalAjustesEstorno:
+          type: number
+          description: Soma negativa dos ajustes por estorno
+          example: -850.00
+        valorLiquidoDemonstravel:
+          type: number
+          description: Total financeiro demonstrável após seções separadas de liberações e ajustes
+          example: 10400.00
+
+    ProcessoCalculoAjusteEstorno:
+      type: object
+      required:
+        - ajusteId
+        - pagamentoId
+        - licencaId
+        - periodoOrigem
+        - processoOrigemId
+        - status
+        - justificativa
+        - valorEstornadoBruto
+        - valorAjusteLiquido
+        - valorAplicado
+        - totalLinhas
+        - linhas
+      properties:
+        ajusteId:
+          type: string
+          format: uuid
+          example: "4f8f7f3e-5a63-4c8e-97b8-c6f6b595b1dd"
+        pagamentoId:
+          type: string
+          format: uuid
+          example: "7d1b7a52-64be-4a3b-a0a7-2d54c9a16c02"
+        licencaId:
+          type: string
+          format: uuid
+          example: "b9e9b9b8-3434-43dd-bf3d-600698de6b8f"
+        periodoOrigem:
+          type: string
+          pattern: "^\\d{4}-\\d{2}$"
+          example: "2026-03"
+        processoOrigemId:
+          type: string
+          format: uuid
+          example: "f47ac10b-58cc-4372-a567-0e02b2c3d479"
+        status:
+          $ref: "#/components/schemas/AjusteEstornoStatus"
+        justificativa:
+          type: string
+          example: "Pagamento registrado em duplicidade"
+        valorEstornadoBruto:
+          type: number
+          example: 1000.00
+        valorAjusteLiquido:
+          type: number
+          example: 850.00
+        valorAplicado:
+          type: number
+          description: Valor negativo previsto/aplicado
+          example: -850.00
+        totalLinhas:
+          type: integer
+          minimum: 0
+          example: 2
+        linhas:
+          type: array
+          items:
+            $ref: "#/components/schemas/LinhaAjusteEstorno"
+
+    ArrecadacaoPagamentoEstornadoEvent:
+      type: object
+      description: "CloudEvent 1.0 consumido da Arrecadação"
+      required:
+        - specversion
+        - id
+        - source
+        - type
+        - subject
+        - time
+        - datacontenttype
+        - data
+      properties:
+        specversion:
+          type: string
+          const: "1.0"
+        id:
+          type: string
+          format: uuid
+          example: "74f36d49-01f8-4726-a839-621a22954ec0"
+        source:
+          type: string
+          const: "urn:arrecadacao-api"
+        type:
+          type: string
+          const: "arrecadacao.pagamento.estornado"
+        subject:
+          type: string
+          format: uuid
+          example: "7d1b7a52-64be-4a3b-a0a7-2d54c9a16c02"
+        time:
+          type: string
+          format: date-time
+          example: "2026-05-20T10:00:00Z"
+        datacontenttype:
+          type: string
+          const: "application/json"
+        data:
+          $ref: "#/components/schemas/ArrecadacaoPagamentoEstornadoData"
+      additionalProperties: true
+
+    ArrecadacaoPagamentoEstornadoData:
+      type: object
+      required:
+        - pagamentoId
+        - licencaId
+        - rubricaSigla
+        - periodo
+        - quantidadeUdas
+        - valorEstornado
+        - justificativa
+        - estornadoPor
+        - estornadoEm
+      properties:
+        pagamentoId:
+          type: string
+          format: uuid
+        licencaId:
+          type: string
+          format: uuid
+        rubricaSigla:
+          type: string
+          minLength: 1
+          example: "RADIO"
+        periodo:
+          type: string
+          pattern: "^\\d{4}-(0[1-9]|1[0-2])$"
+          example: "2026-03"
+        quantidadeUdas:
+          type: string
+          pattern: "^-?\\d+(\\.\\d+)?$"
+          example: "10.000000"
+        valorEstornado:
+          type: string
+          pattern: "^-?\\d+(\\.\\d+)?$"
+          example: "1000.00"
+        justificativa:
+          type: string
+          minLength: 1
+          example: "Pagamento registrado em duplicidade"
+        estornadoPor:
+          type: string
+          minLength: 1
+          example: "analista.arrecadacao@ecad.org.br"
+        estornadoEm:
+          type: string
+          format: date-time
+          example: "2026-05-20T10:00:00Z"
+      additionalProperties: false
+
+    DistribuicaoAjusteEstornoRegistradoEvent:
+      type: object
+      description: "CloudEvent 1.0 publicado quando ajuste pendente é registrado"
+      required:
+        - specversion
+        - id
+        - source
+        - type
+        - subject
+        - time
+        - datacontenttype
+        - data
+      properties:
+        specversion:
+          type: string
+          const: "1.0"
+        id:
+          type: string
+          format: uuid
+        source:
+          type: string
+          const: "urn:distribuicao-api"
+        type:
+          type: string
+          const: "distribuicao.ajuste.estorno.registrado"
+        subject:
+          type: string
+          format: uuid
+          description: ajusteId
+        time:
+          type: string
+          format: date-time
+        datacontenttype:
+          type: string
+          const: "application/json"
+        data:
+          $ref: "#/components/schemas/DistribuicaoAjusteEstornoRegistradoData"
+
+    DistribuicaoAjusteEstornoRegistradoData:
+      type: object
+      required:
+        - ajusteId
+        - pagamentoId
+        - licencaId
+        - rubricaSigla
+        - periodoOrigem
+        - valorEstornadoBruto
+        - valorAjusteLiquido
+        - status
+        - estornadoPor
+        - estornadoEm
+        - registradoEm
+      properties:
+        ajusteId:
+          type: string
+          format: uuid
+        pagamentoId:
+          type: string
+          format: uuid
+        licencaId:
+          type: string
+          format: uuid
+        rubricaSigla:
+          type: string
+          example: "RADIO"
+        periodoOrigem:
+          type: string
+          pattern: "^\\d{4}-\\d{2}$"
+          example: "2026-03"
+        processoOrigemId:
+          type: string
+          format: uuid
+          nullable: true
+        valorEstornadoBruto:
+          type: string
+          pattern: "^-?\\d+(\\.\\d+)?$"
+          example: "1000.00"
+        valorAjusteLiquido:
+          type: string
+          pattern: "^-?\\d+(\\.\\d+)?$"
+          example: "850.00"
+        status:
+          type: string
+          const: "PENDENTE_APLICACAO"
+        estornadoPor:
+          type: string
+        estornadoEm:
+          type: string
+          format: date-time
+        registradoEm:
+          type: string
+          format: date-time
+
+    DistribuicaoAjusteEstornoAplicadoEvent:
+      type: object
+      description: "CloudEvent 1.0 publicado quando ajuste é efetivado na finalização do processo"
+      required:
+        - specversion
+        - id
+        - source
+        - type
+        - subject
+        - time
+        - datacontenttype
+        - data
+      properties:
+        specversion:
+          type: string
+          const: "1.0"
+        id:
+          type: string
+          format: uuid
+        source:
+          type: string
+          const: "urn:distribuicao-api"
+        type:
+          type: string
+          const: "distribuicao.ajuste.estorno.aplicado"
+        subject:
+          type: string
+          format: uuid
+          description: ajusteId
+        time:
+          type: string
+          format: date-time
+        datacontenttype:
+          type: string
+          const: "application/json"
+        data:
+          $ref: "#/components/schemas/DistribuicaoAjusteEstornoAplicadoData"
+
+    DistribuicaoAjusteEstornoAplicadoData:
+      type: object
+      required:
+        - ajusteId
+        - pagamentoId
+        - licencaId
+        - rubricaSigla
+        - periodoOrigem
+        - periodoAplicacao
+        - processoOrigemId
+        - processoAplicacaoId
+        - valorEstornadoBruto
+        - valorAjusteLiquido
+        - valorAplicado
+        - totalLinhas
+        - estornadoPor
+        - estornadoEm
+        - aplicadoEm
+      properties:
+        ajusteId:
+          type: string
+          format: uuid
+        pagamentoId:
+          type: string
+          format: uuid
+        licencaId:
+          type: string
+          format: uuid
+        rubricaSigla:
+          type: string
+          example: "RADIO"
+        periodoOrigem:
+          type: string
+          pattern: "^\\d{4}-\\d{2}$"
+          example: "2026-03"
+        periodoAplicacao:
+          type: string
+          pattern: "^\\d{4}-\\d{2}$"
+          example: "2026-04"
+        processoOrigemId:
+          type: string
+          format: uuid
+        processoAplicacaoId:
+          type: string
+          format: uuid
+        valorEstornadoBruto:
+          type: string
+          pattern: "^-?\\d+(\\.\\d+)?$"
+          example: "1000.00"
+        valorAjusteLiquido:
+          type: string
+          pattern: "^-?\\d+(\\.\\d+)?$"
+          example: "850.00"
+        valorAplicado:
+          type: string
+          pattern: "^-?\\d+(\\.\\d+)?$"
+          example: "-850.00"
+        totalLinhas:
+          type: integer
+          minimum: 0
+          example: 2
+        estornadoPor:
+          type: string
+        estornadoEm:
+          type: string
+          format: date-time
+        aplicadoEm:
+          type: string
+          format: date-time
+
+    ProblemDetails:
+      type: object
+      description: "Formato de erro RFC 7807 (ProblemDetails)"
+      required:
+        - type
+        - title
+        - status
+      properties:
+        type:
+          type: string
+          format: uri
+          description: URI de referência do tipo de erro
+          example: "https://tools.ietf.org/html/rfc7231#section-6.5.4"
+        title:
+          type: string
+          description: Título curto do erro
+          example: "Resource Not Found"
+        status:
+          type: integer
+          description: HTTP status code
+          example: 404
+        detail:
+          type: string
+          description: Descrição detalhada do erro
+          example: "Ajuste de estorno não encontrado"
+        instance:
+          type: string
+          description: Path da requisição que gerou o erro
+          example: "/api/v1/ajustes-estorno/4f8f7f3e-5a63-4c8e-97b8-c6f6b595b1dd"
+        traceId:
+          type: string
+          nullable: true
+          description: ID de rastreamento (presente em erros 5xx)
+          example: "0HN4B2E8M0T0K:00000001"

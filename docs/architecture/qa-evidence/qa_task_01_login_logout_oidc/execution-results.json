@@ -1,0 +1,115 @@
+{
+  "taskId": "qa_task_01",
+  "slug": "login_logout_oidc",
+  "baseUrl": "https://mcad.tasso.dev.br",
+  "startedAt": "2026-05-20T02:27:18.593Z",
+  "cases": [
+    {
+      "id": "CT-01",
+      "username": "analista_cadastro",
+      "status": "PASS",
+      "callbackObserved": true,
+      "callbackQueryKeys": [
+        "code",
+        "iss",
+        "state"
+      ],
+      "bearerSeenOnPermissions": true,
+      "permissionsStatus": 200,
+      "screenshots": [
+        "screenshots/ct-01_analista_cadastro_app_after_login.png",
+        "screenshots/ct-01_analista_cadastro_before_logout.png",
+        "screenshots/ct-01_analista_cadastro_logout.png",
+        "screenshots/ct-01_analista_cadastro_after_logout_protected_route.png"
+      ],
+      "consoleMessages": [],
+      "pageErrors": [],
+      "completedAt": "2026-05-20T02:27:35.521Z"
+    },
+    {
+      "id": "CT-02",
+      "username": "analista_distribuicao",
+      "status": "PASS",
+      "callbackObserved": true,
+      "callbackQueryKeys": [
+        "code",
+        "iss",
+        "state"
+      ],
+      "bearerSeenOnPermissions": true,
+      "permissionsStatus": 200,
+      "screenshots": [
+        "screenshots/ct-02_analista_distribuicao_app_after_login.png",
+        "screenshots/ct-02_analista_distribuicao_before_logout.png",
+        "screenshots/ct-02_analista_distribuicao_logout.png",
+        "screenshots/ct-02_analista_distribuicao_after_logout_protected_route.png"
+      ],
+      "consoleMessages": [],
+      "pageErrors": [],
+      "completedAt": "2026-05-20T02:27:49.734Z"
+    },
+    {
+      "id": "CT-03",
+      "username": "analista_identificacao",
+      "status": "PASS",
+      "callbackObserved": true,
+      "callbackQueryKeys": [
+        "code",
+        "iss",
+        "state"
+      ],
+      "bearerSeenOnPermissions": true,
+      "permissionsStatus": 200,
+      "screenshots": [
+        "screenshots/ct-03_analista_identificacao_app_after_login.png",
+        "screenshots/ct-03_analista_identificacao_before_logout.png",
+        "screenshots/ct-03_analista_identificacao_logout.png",
+        "screenshots/ct-03_analista_identificacao_after_logout_protected_route.png"
+      ],
+      "consoleMessages": [],
+      "pageErrors": [],
+      "completedAt": "2026-05-20T02:28:03.256Z"
+    },
+    {
+      "id": "CT-04",
+      "username": "analista_arrecadacao",
+      "status": "PASS",
+      "callbackObserved": true,
+      "callbackQueryKeys": [
+        "code",
+        "iss",
+        "state"
+      ],
+      "bearerSeenOnPermissions": true,
+      "permissionsStatus": 200,
+      "screenshots": [
+        "screenshots/ct-04_analista_arrecadacao_app_after_login.png",
+        "screenshots/ct-04_analista_arrecadacao_before_logout.png",
+        "screenshots/ct-04_analista_arrecadacao_logout.png",
+        "screenshots/ct-04_analista_arrecadacao_after_logout_protected_route.png"
+      ],
+      "consoleMessages": [],
+      "pageErrors": [],
+      "completedAt": "2026-05-20T02:28:15.582Z"
+    },
+    {
+      "id": "CT-05",
+      "username": "consultor_cadastro",
+      "status": "FAIL",
+      "callbackObserved": false,
+      "callbackQueryKeys": [],
+      "bearerSeenOnPermissions": false,
+      "permissionsStatus": null,
+      "screenshots": [
+        "screenshots/ct-05_consultor_cadastro_fail.png"
+      ],
+      "consoleMessages": [
+        "[error] Failed to load resource: the server responded with a status of 422 ()"
+      ],
+      "pageErrors": [],
+      "error": "page.waitForURL: Timeout 60000ms exceeded.\n=========================== logs ===========================\nwaiting for navigation until \"load\"\n============================================================\n    at loginWithLogto (/home/tsgomes/github-tassosgomes/mcad/mcad/docs/architecture/qa-evidence/qa_task_01_login_logout_oidc/qa_task_01_login_logout_oidc.spec.mjs:262:10)\n    at /home/tsgomes/github-tassosgomes/mcad/mcad/docs/architecture/qa-evidence/qa_task_01_login_logout_oidc/qa_task_01_login_logout_oidc.spec.mjs:298:9",
+      "completedAt": "2026-05-20T02:29:18.699Z"
+    }
+  ],
+  "updatedAt": "2026-05-20T02:29:18.699Z"
+}

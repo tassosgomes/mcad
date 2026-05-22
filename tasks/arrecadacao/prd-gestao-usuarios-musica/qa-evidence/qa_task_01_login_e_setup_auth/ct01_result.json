@@ -1,0 +1,12 @@
+{
+  "finalUrl": "https://mcad.tasso.dev.br/cadastro/associacoes",
+  "storageStateCookiesCount": 7,
+  "localStorageKeys": [],
+  "sessionStorageKeys": [],
+  "bearerTokensSeenInRequests": 1,
+  "jwtFoundInStorage": 0,
+  "jwtCaptured": true,
+  "consoleErrors": 0,
+  "pageErrors": 0,
+  "status": "PASS"
+}

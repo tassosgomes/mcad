@@ -4,8 +4,8 @@
 > `distribuicao-api` via `authz-spring-boot-starter`. Origem dos nomes:
 > `services/distribuicao-api/distribuicao-api/src/main/resources/permissions.yaml`.
 > Regra geral dos papéis:
-> * `distribuicao.consultor` — leitura / consulta / visualização.
-> * `distribuicao.analista` — herda do consultor e adiciona escrita / transições de estado.
+> * `distribuicao.default.consultor` — leitura / consulta / visualização.
+> * `distribuicao.default.analista` — herda do consultor e adiciona escrita / transições de estado.
 
 > **Formato das chaves**: 4 segmentos `dominio:area:recurso:acao`, com `area=default`,
 > padrão uniforme em todo o mcad (cadastro, identificacao, arrecadacao, distribuicao).
@@ -19,21 +19,21 @@
 
 | Permissão | Descrição | Método | Endpoint | Papel inicial |
 |---|---|---|---|---|
-| `distribuicao:default:rubrica:listar` | Lista as rubricas sincronizadas a partir da Arrecadação | GET | `/api/v1/rubricas` | distribuicao.consultor |
-| `distribuicao:default:rubrica:visualizar` | Detalhe de uma rubrica específica | GET | `/api/v1/rubricas/{sigla}` | distribuicao.consultor |
+| `distribuicao:default:rubrica:listar` | Lista as rubricas sincronizadas a partir da Arrecadação | GET | `/api/v1/rubricas` | distribuicao.default.consultor |
+| `distribuicao:default:rubrica:visualizar` | Detalhe de uma rubrica específica | GET | `/api/v1/rubricas/{sigla}` | distribuicao.default.consultor |
 
 ## Processo de Distribuição (F02, planejado neste PRD)
 
 | Permissão | Descrição | Método | Endpoint | Papel inicial |
 |---|---|---|---|---|
-| `distribuicao:default:processo:listar` | Lista paginada de processos de distribuição com filtros (rubrica, período, status) | GET | `/api/v1/processos` | distribuicao.consultor |
-| `distribuicao:default:processo:listar` | Lista combinações rubrica+período disponíveis para criação de processo | GET | `/api/v1/processos/disponiveis` | distribuicao.consultor |
-| `distribuicao:default:processo:visualizar` | Detalhes completos de um processo de distribuição | GET | `/api/v1/processos/{id}` | distribuicao.consultor |
-| `distribuicao:default:processo:criar` | Cria um novo processo de distribuição para uma combinação rubrica+período com Rol fechado e Verba disponível | POST | `/api/v1/processos` | distribuicao.analista |
-| `distribuicao:default:processo:calcular` | Dispara o cálculo de créditos — transiciona o processo de CRIADO para CALCULADO (F02, planejado neste PRD) | POST | `/api/v1/processos/{id}/calcular` | distribuicao.analista |
-| `distribuicao:default:processo:aprovar` | Aprova o resultado do cálculo — transiciona o processo de CALCULADO para APROVADO (F02, planejado neste PRD) | POST | `/api/v1/processos/{id}/aprovar` | distribuicao.analista |
-| `distribuicao:default:processo:finalizar` | Finaliza o processo — transiciona de APROVADO para FINALIZADO (ação irreversível) (F02, planejado neste PRD) | POST | `/api/v1/processos/{id}/finalizar` | distribuicao.analista |
-| `distribuicao:default:processo:cancelar` | Cancela o processo a partir de qualquer estado exceto FINALIZADO; exige justificativa obrigatória (F02, planejado neste PRD) | POST | `/api/v1/processos/{id}/cancelar` | distribuicao.analista |
+| `distribuicao:default:processo:listar` | Lista paginada de processos de distribuição com filtros (rubrica, período, status) | GET | `/api/v1/processos` | distribuicao.default.consultor |
+| `distribuicao:default:processo:listar` | Lista combinações rubrica+período disponíveis para criação de processo | GET | `/api/v1/processos/disponiveis` | distribuicao.default.consultor |
+| `distribuicao:default:processo:visualizar` | Detalhes completos de um processo de distribuição | GET | `/api/v1/processos/{id}` | distribuicao.default.consultor |
+| `distribuicao:default:processo:criar` | Cria um novo processo de distribuição para uma combinação rubrica+período com Rol fechado e Verba disponível | POST | `/api/v1/processos` | distribuicao.default.analista |
+| `distribuicao:default:processo:calcular` | Dispara o cálculo de créditos — transiciona o processo de CRIADO para CALCULADO (F02, planejado neste PRD) | POST | `/api/v1/processos/{id}/calcular` | distribuicao.default.analista |
+| `distribuicao:default:processo:aprovar` | Aprova o resultado do cálculo — transiciona o processo de CALCULADO para APROVADO (F02, planejado neste PRD) | POST | `/api/v1/processos/{id}/aprovar` | distribuicao.default.analista |
+| `distribuicao:default:processo:finalizar` | Finaliza o processo — transiciona de APROVADO para FINALIZADO (ação irreversível) (F02, planejado neste PRD) | POST | `/api/v1/processos/{id}/finalizar` | distribuicao.default.analista |
+| `distribuicao:default:processo:cancelar` | Cancela o processo a partir de qualquer estado exceto FINALIZADO; exige justificativa obrigatória (F02, planejado neste PRD) | POST | `/api/v1/processos/{id}/cancelar` | distribuicao.default.analista |
 
 ## Observações operacionais
 

@@ -57,7 +57,9 @@ public class SecurityConfig {
     // Logto segue RFC 9068 e emite tokens com typ=at+jwt.
     // O Spring Security 6.3 só aceita typ=JWT por padrão — usamos o builder withJwkSetUri
     // para customizar o JWSTypeVerifier e aceitar at+jwt também.
+    // @ConditionalOnMissingBean: testes fornecem um JwtDecoder stub no TestSecurityConfig.
     @Bean
+    @org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean(JwtDecoder.class)
     JwtDecoder jwtDecoder(
         @Value("${spring.security.oauth2.resourceserver.jwt.issuer-uri}") String issuerUri
     ) {

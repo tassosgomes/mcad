@@ -170,8 +170,8 @@ Em seguida, validar 401/403/200 nas APIs:
 
 4. Criar ou atualizar papéis
    - Criar papéis iniciais por domínio, por exemplo:
-     - `cadastro.consultor`
-     - `cadastro.analista`
+     - `cadastro.default.consultor`
+     - `cadastro.default.analista`
    - Associar permissões de leitura ao papel consultor.
    - Associar permissões de leitura e escrita/processamento ao papel analista.
 

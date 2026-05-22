@@ -1,5 +1,5 @@
 ---
-status: pending
+status: done
 parallelizable: false
 blocked_by: []
 ---
@@ -40,7 +40,7 @@ Criar migration Flyway V9 que adiciona 3 colunas nullable a tabela `arrecadacao.
 
 ## Subtarefas
 
-- [ ] 1.1 Criar `V9__add_estorno_columns_pagamento.sql` com ALTER TABLE + 3 colunas
+- [x] 1.1 Criar `V9__add_estorno_columns_pagamento.sql` com ALTER TABLE + 3 colunas
 
 ## Detalhes de Implementacao
 
@@ -53,10 +53,10 @@ ALTER TABLE arrecadacao.pagamento
 
 ## Testes
 
-- [ ] Flyway executa V9 sem erros (validado nos testes de integracao da task 4.0)
-- [ ] Colunas existem e aceitam NULL (pagamentos existentes nao quebram)
+- [x] Flyway executa V9 sem erros (validado nos testes de integracao da task 4.0)
+- [x] Colunas existem e aceitam NULL (pagamentos existentes nao quebram)
 
 ## Criterios de Sucesso
 
-- [ ] Build compila: `cd services/arrecadacao-api && mvn compile -pl arrecadacao-infra`
-- [ ] Migration V9 executa sem erros em sequencia com V1-V8
+- [x] Build compila: `cd services/arrecadacao-api && mvn compile -pl arrecadacao-infra`
+- [x] Migration V9 executa sem erros em sequencia com V1-V8

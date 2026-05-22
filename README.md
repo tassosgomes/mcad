@@ -1,19 +1,30 @@
 # mcad
 
-## Keycloak
+## Autenticação e autorização
 
-Provisionamento automatizado do realm de autenticação:
+O MCAD separa autenticação e autorização:
 
-```bash
-./scripts/provision-keycloak.sh
+- autenticação via IdP OIDC/OAuth2 (Logto em produção; Keycloak segue compatível para dev/local);
+- autorização fina via `ecad-authz`;
+- frontend consulta permissões efetivas pelo BFF (`/api/me` e `/api/me/permissions`) apenas para UX;
+- APIs validam JWT Bearer e exigem permissões no formato `dominio:area:recurso:acao`.
+
+Documentação principal:
+
+- [Plano atual de autenticação/autorização](docs/architecture/auth-plan.md)
+- [Guia operacional da migração AuthZ](docs/migracao-authz/guia-operacional.md)
+- [ADRs de autenticação/autorização](docs/adr/README.md)
+
+Variáveis principais:
+
+```env
+OIDC_AUTHORITY=https://9lcinu.logto.app/oidc
+OIDC_AUDIENCE=https://api.mcad.local
+AUTH_ENABLED=true
+AUTHZ_BASE_URL=http://localhost:8085
+AUTHZ_TIMEOUT_MS=3000
+AUTHZ_CACHE_TTL_SECONDS=60
 ```
-
-O script lê as credenciais administrativas de [/.env](/home/tsgomes/mcad/.env) e garante de forma idempotente:
-
-- realm `mcad`
-- client público `mcad-frontend` com PKCE S256
-- roles `analista-cadastro` e `consultor`
-- usuários de teste `analista.teste` e `consultor.teste`
 
 ## Copiloto Operacional
 
