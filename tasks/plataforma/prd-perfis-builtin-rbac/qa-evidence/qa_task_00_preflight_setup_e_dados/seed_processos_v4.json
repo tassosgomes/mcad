@@ -1,0 +1,45 @@
+{
+  "captured_at": "2026-05-29T00:31:34.472Z",
+  "user": "operador.dev",
+  "token_fp": "...Xpt906",
+  "playwright_mode": "headed",
+  "steps": [
+    {
+      "name": "list_loaded",
+      "screenshot": "v4_processos_list.png"
+    },
+    {
+      "name": "criar_form_loaded",
+      "screenshot": "v4_processo_criar_form.png"
+    },
+    {
+      "name": "list_disponiveis",
+      "status": 200,
+      "count": 0,
+      "body": "[]"
+    },
+    {
+      "name": "list_rubricas",
+      "status": 200,
+      "count": 0,
+      "body": "[]"
+    },
+    {
+      "name": "no_disponiveis_no_processos_seeded",
+      "count": 0
+    }
+  ],
+  "seeds": [
+    {
+      "seq": "synthetic_probe",
+      "payload": {
+        "rubricaSigla": "TESTE",
+        "periodo": "2025-Q1"
+      },
+      "status": 400,
+      "dur_ms": 694,
+      "body": "{\"type\":\"about:blank\",\"title\":\"Bad Request\",\"status\":400,\"detail\":\"Invalid request content.\",\"instance\":\"/api/v1/processos\"}",
+      "note": "Synthetic payload to confirm error path when no rubricas/snapshots exist"
+    }
+  ]
+}

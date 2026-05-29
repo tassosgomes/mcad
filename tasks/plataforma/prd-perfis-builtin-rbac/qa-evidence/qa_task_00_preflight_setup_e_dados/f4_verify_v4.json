@@ -1,0 +1,84 @@
+{
+  "captured_at": "2026-05-29T00:30:13.218Z",
+  "user": "operador.dev",
+  "token_fp": "...-zG5tM",
+  "playwright_mode": "headed",
+  "probes": [
+    {
+      "url": "https://mcad-distribuicao.tasso.dev.br/api/v1/processos",
+      "status": 200,
+      "dur_ms": 414,
+      "body_len": 45,
+      "sample": "{\"items\":[],\"totalElements\":0,\"totalPages\":0}"
+    },
+    {
+      "url": "https://mcad-distribuicao.tasso.dev.br/api/v1/processos/disponiveis",
+      "status": 200,
+      "dur_ms": 422,
+      "body_len": 2,
+      "sample": "[]"
+    },
+    {
+      "url": "https://mcad-distribuicao.tasso.dev.br/api/v1/rubricas",
+      "status": 200,
+      "dur_ms": 264,
+      "body_len": 2,
+      "sample": "[]"
+    },
+    {
+      "url": "https://mcad-distribuicao.tasso.dev.br/actuator/info",
+      "status": 200,
+      "dur_ms": 238,
+      "body_len": 2,
+      "sample": "{}"
+    },
+    {
+      "url": "https://mcad-distribuicao.tasso.dev.br/actuator/health",
+      "status": 200,
+      "dur_ms": 261,
+      "body_len": 327,
+      "sample": "{\"status\":\"UP\",\"components\":{\"db\":{\"status\":\"UP\",\"details\":{\"database\":\"PostgreSQL\",\"validationQuery\":\"isValid()\"}},\"diskSpace\":{\"status\":\"UP\",\"details\":{\"total\":206900281344,\"free\":172698288128,\"threshold\":10485760,\"path\":\"/app/.\",\"exists\":true}},\"ping\":{\"status\":\"UP\"},\"rabbit\":{\"status\":\"UP\",\"details\":{\"version\":\"2.7.2\"}}}}"
+    },
+    {
+      "url": "https://mcad-distribuicao.tasso.dev.br/actuator/mappings",
+      "status": 404,
+      "dur_ms": 368,
+      "body_len": 136,
+      "sample": "{\"type\":\"about:blank\",\"title\":\"Not Found\",\"status\":404,\"detail\":\"No static resource actuator/mappings.\",\"instance\":\"/actuator/mappings\"}"
+    },
+    {
+      "url": "https://mcad-distribuicao.tasso.dev.br/v3/api-docs",
+      "status": 404,
+      "dur_ms": 331,
+      "body_len": 124,
+      "sample": "{\"type\":\"about:blank\",\"title\":\"Not Found\",\"status\":404,\"detail\":\"No static resource v3/api-docs.\",\"instance\":\"/v3/api-docs\"}"
+    },
+    {
+      "url": "https://mcad-bff.tasso.dev.br/api/distribuicao/v1/processos",
+      "status": 200,
+      "dur_ms": 357,
+      "body_len": 45,
+      "sample": "{\"items\":[],\"totalElements\":0,\"totalPages\":0}"
+    },
+    {
+      "url": "https://mcad-bff.tasso.dev.br/api/distribuicao/v1/processos/disponiveis",
+      "status": 200,
+      "dur_ms": 504,
+      "body_len": 2,
+      "sample": "[]"
+    },
+    {
+      "url": "https://mcad-bff.tasso.dev.br/api/distribuicao/v1/rubricas",
+      "status": 200,
+      "dur_ms": 315,
+      "body_len": 2,
+      "sample": "[]"
+    }
+  ],
+  "mappings_filtered": {
+    "status": 404,
+    "dur_ms": 1061,
+    "total_mappings": 0,
+    "filtered": []
+  }
+}

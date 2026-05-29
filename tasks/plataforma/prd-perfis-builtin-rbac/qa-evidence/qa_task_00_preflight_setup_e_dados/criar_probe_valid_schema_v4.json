@@ -1,0 +1,10 @@
+{
+  "captured_at": "2026-05-29T00:32:31.590Z",
+  "payload": {
+    "rubricaSigla": "TESTE",
+    "periodo": "2025-01"
+  },
+  "status": 422,
+  "dur_ms": 381,
+  "body": "{\"type\":\"https://www.rfc-editor.org/rfc/rfc9457\",\"title\":\"Calculation Preconditions Failed\",\"status\":422,\"detail\":\"Não existe Rol de Execuções fechado para rubrica 'TESTE' e período '2025-01'\",\"instance\":\"/api/v1/processos\"}"
+}
