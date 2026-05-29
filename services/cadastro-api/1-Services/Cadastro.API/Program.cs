@@ -1,10 +1,12 @@
 using Cadastro.API.Audit;
+using Cadastro.API.Authorization;
 using Cadastro.API.AsyncApi;
 using Cadastro.API.Endpoints;
 using Cadastro.API.Infrastructure;
 using Cadastro.API.Swagger;
 using Cadastro.Application.Audit;
 using Cadastro.Application.Associacoes.Queries;
+using Cadastro.Application.Common.Authorization;
 using Cadastro.Application.Common.CQRS;
 using Cadastro.Application.Titulares.Commands;
 using Cadastro.Domain.Interfaces;
@@ -63,6 +65,7 @@ builder.Services.AddEcadAudit(builder.Configuration, options =>
     options.RabbitMqUri = AuditConfigurationHelpers.ResolveRabbitMqUri(builder.Configuration);
 });
 builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<ICurrentUserPermissions, HttpContextCurrentUserPermissions>();
 builder.Services.AddScoped<IAuditContextProvider, HttpAuditContextProvider>();
 builder.Services.AddScoped<ObraAuditEventFactory>();
 builder.Services.AddScoped<IObraAuditPublisher, ObraAuditPublisher>();

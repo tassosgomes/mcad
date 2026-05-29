@@ -38,6 +38,7 @@
       "cadastro:default:titular:criar",
       "cadastro:default:titular:editar",
       "cadastro:default:titular:excluir",
+      "cadastro:default:titular:ver-cpf-completo",
       "cadastro:default:obra:listar",
       "cadastro:default:obra:visualizar",
       "cadastro:default:obra:criar",
@@ -174,13 +175,16 @@
       "distribuicao:default:rubrica:listar",
       "distribuicao:default:rubrica:visualizar",
       "distribuicao:default:processo:listar",
-      "distribuicao:default:processo:visualizar"
+      "distribuicao:default:processo:visualizar",
+      "distribuicao:default:credito:listar",
+      "distribuicao:default:credito:visualizar",
+      "distribuicao:default:demonstrativo:visualizar"
     ]
   },
   {
-    "key": "distribuicao.default.analista",
-    "displayName": "Analista Distribuição",
-    "description": "Acesso de leitura e operação ao módulo de Distribuição. Herda permissões do consultor e adiciona criação, cálculo, aprovação, finalização e cancelamento de processos.",
+    "key": "distribuicao.default.operador",
+    "displayName": "Operador Distribuição",
+    "description": "[Built-in] Operações reversíveis em Distribuição: criar e calcular processos. Não decide status nem audita.",
     "domain": "distribuicao",
     "area": "default",
     "permissionKeys": [
@@ -188,11 +192,95 @@
       "distribuicao:default:rubrica:visualizar",
       "distribuicao:default:processo:listar",
       "distribuicao:default:processo:visualizar",
+      "distribuicao:default:credito:listar",
+      "distribuicao:default:credito:visualizar",
+      "distribuicao:default:demonstrativo:visualizar",
+      "distribuicao:default:processo:criar",
+      "distribuicao:default:processo:calcular"
+    ]
+  },
+  {
+    "key": "distribuicao.default.gerente",
+    "displayName": "Gerente Distribuição",
+    "description": "[Built-in] Governança e auditoria de Distribuição: aprovar, finalizar, cancelar, ver histórico de alterações, ver assignments escopados.",
+    "domain": "distribuicao",
+    "area": "default",
+    "permissionKeys": [
+      "distribuicao:default:rubrica:listar",
+      "distribuicao:default:rubrica:visualizar",
+      "distribuicao:default:processo:listar",
+      "distribuicao:default:processo:visualizar",
+      "distribuicao:default:credito:listar",
+      "distribuicao:default:credito:visualizar",
+      "distribuicao:default:processo:aprovar",
+      "distribuicao:default:processo:finalizar",
+      "distribuicao:default:processo:cancelar",
+      "distribuicao:default:processo:exportar",
+      "distribuicao:default:processo:ver-justificativa-cancelamento",
+      "distribuicao:default:processo:ver-historico-alteracoes",
+      "distribuicao:default:credito:ver-historico-alteracoes",
+      "distribuicao:default:demonstrativo:visualizar",
+      "distribuicao:default:demonstrativo:exportar",
+      "cadastro:default:titular:ver-cpf-completo",
+      "acessos:distribuicao:papel:visualizar",
+      "acessos:distribuicao:atribuicao:ver-historico"
+    ]
+  },
+  {
+    "key": "distribuicao.default.analista",
+    "displayName": "Analista Distribuição",
+    "description": "Acesso de leitura e operação sênior ao módulo de Distribuição. Herda permissões do operador e adiciona decisões de status e ações ultra-sensíveis, sem trilha de auditoria.",
+    "domain": "distribuicao",
+    "area": "default",
+    "permissionKeys": [
+      "distribuicao:default:rubrica:listar",
+      "distribuicao:default:rubrica:visualizar",
+      "distribuicao:default:processo:listar",
+      "distribuicao:default:processo:visualizar",
+      "distribuicao:default:credito:listar",
+      "distribuicao:default:credito:visualizar",
       "distribuicao:default:processo:criar",
       "distribuicao:default:processo:calcular",
       "distribuicao:default:processo:aprovar",
       "distribuicao:default:processo:finalizar",
-      "distribuicao:default:processo:cancelar"
+      "distribuicao:default:processo:cancelar",
+      "distribuicao:default:processo:exportar",
+      "distribuicao:default:processo:ver-justificativa-cancelamento",
+      "distribuicao:default:processo:recalcular-pos-calculado",
+      "distribuicao:default:credito-retido:liberar-manual",
+      "distribuicao:default:demonstrativo:visualizar",
+      "distribuicao:default:demonstrativo:exportar",
+      "cadastro:default:titular:ver-cpf-completo"
+    ]
+  },
+  {
+    "key": "acessos.default.gestor",
+    "displayName": "Gestor de Acessos",
+    "description": "[Built-in] Único caminho recomendado para atribuir e remover papéis de usuários. Cross-domain.",
+    "domain": "acessos",
+    "area": "default",
+    "permissionKeys": [
+      "acessos:default:papel:listar",
+      "acessos:default:papel:visualizar",
+      "acessos:default:usuario:listar",
+      "acessos:default:usuario:visualizar-papeis-completo",
+      "acessos:default:papel:atribuir",
+      "acessos:default:papel:remover",
+      "acessos:default:atribuicao:ver-historico"
+    ]
+  },
+  {
+    "key": "acessos.default.consultor",
+    "displayName": "Consultor de Acessos",
+    "description": "[Built-in] Auditor / Compliance Officer read-only de assignments. Sem poder de escrita.",
+    "domain": "acessos",
+    "area": "default",
+    "permissionKeys": [
+      "acessos:default:papel:listar",
+      "acessos:default:papel:visualizar",
+      "acessos:default:usuario:listar",
+      "acessos:default:usuario:visualizar-papeis-completo",
+      "acessos:default:atribuicao:ver-historico"
     ]
   }
 ]

@@ -64,6 +64,17 @@ O modelo antigo (`read`/`write` scopes e `hasRole(...)`) foi removido do código
   - `analista_arrecadacao@mcad.dev` → `arrecadacao.default.analista`
 - Papéis `authz.admin.*` (admin da plataforma de autorização) mantidos inalterados nos respectivos usuários.
 
+### Catálogo built-in formalizado (2026-05-26)
+
+Após a estabilização da migração para `ecad-authz`, o catálogo de perfis built-in foi formalizado em `tasks/plataforma/prd-perfis-builtin-rbac/prd.md` e `tasks/plataforma/prd-perfis-builtin-rbac/techspec.md`.
+
+- Framework canônico documentado nos ADRs 0006-0009.
+- Estrutura de 4 níveis por domínio de negócio: Consultor, Operador, Gerente e Analista.
+- Gerente e Analista passam a ser eixos segregados: governança/auditoria versus operação sênior.
+- Novo domínio transversal `acessos`, com Gestor de Acessos e Consultor de Acessos.
+- Piloto de catálogo em Distribuição e carve-out controlado em Cadastro para mascaramento server-side de CPF.
+- Próximos passos: aplicar o framework completo em Cadastro, Identificação e Arrecadação via PRDs próprios.
+
 ---
 
 ## 3. Pendências conhecidas

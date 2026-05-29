@@ -2,7 +2,7 @@
   "service": "cadastro-api",
   "domain": "cadastro",
   "area": "default",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "permissions": [
     { "key": "cadastro:default:associacao:listar", "displayName": "Listar associações", "description": "Lista paginada de associações cadastradas.", "resource": "associacao", "action": "listar" },
     { "key": "cadastro:default:associacao:visualizar", "displayName": "Visualizar associação", "description": "Acesso aos dados de uma associação específica.", "resource": "associacao", "action": "visualizar" },
@@ -13,6 +13,7 @@
     { "key": "cadastro:default:titular:criar", "displayName": "Criar titular", "description": "Cadastra um novo titular.", "resource": "titular", "action": "criar" },
     { "key": "cadastro:default:titular:editar", "displayName": "Editar titular", "description": "Atualiza dados cadastrais de um titular.", "resource": "titular", "action": "editar" },
     { "key": "cadastro:default:titular:excluir", "displayName": "Excluir titular", "description": "Remove um titular do cadastro.", "resource": "titular", "action": "excluir" },
+    { "key": "cadastro:default:titular:ver-cpf-completo", "displayName": "Ver CPF completo do titular", "description": "[Ação sensível / UI] Permite ver CPF/CNPJ completo (sem mascaramento) na resposta de Titular. Requisito LGPD.", "resource": "titular", "action": "ver-cpf-completo" },
 
     { "key": "cadastro:default:obra:listar", "displayName": "Listar obras", "description": "Lista paginada e filtrada de obras musicais.", "resource": "obra", "action": "listar" },
     { "key": "cadastro:default:obra:visualizar", "displayName": "Visualizar obra", "description": "Acesso aos dados completos de uma obra.", "resource": "obra", "action": "visualizar" },

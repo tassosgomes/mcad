@@ -1,0 +1,24 @@
+{
+  "service": "bff",
+  "domain": "acessos",
+  "area": "default",
+  "version": "1.0.0",
+  "permissions": [
+    { "key": "acessos:default:papel:listar", "displayName": "Listar perfis built-in", "description": "[Leitura] Lista catálogo de perfis built-in (todos os domínios).", "resource": "papel", "action": "listar" },
+    { "key": "acessos:default:papel:visualizar", "displayName": "Visualizar perfil", "description": "[Leitura] Visualiza description, displayName e permissionKeys de um perfil built-in.", "resource": "papel", "action": "visualizar" },
+    { "key": "acessos:default:usuario:listar", "displayName": "Listar usuários", "description": "[Leitura] Lista usuários do ecad-authz (busca por email/subject).", "resource": "usuario", "action": "listar" },
+    { "key": "acessos:default:usuario:visualizar-papeis-completo", "displayName": "Visualizar papéis de um usuário (todos os domínios)", "description": "[Leitura] Vê todos os papéis de um usuário em todos os domínios.", "resource": "usuario", "action": "visualizar-papeis-completo" },
+    { "key": "acessos:default:papel:atribuir", "displayName": "Atribuir papel a usuário", "description": "[Operação reversível] Atribui um perfil built-in a um usuário.", "resource": "papel", "action": "atribuir" },
+    { "key": "acessos:default:papel:remover", "displayName": "Remover papel de usuário", "description": "[Operação reversível] Remove um perfil de usuário.", "resource": "papel", "action": "remover" },
+    { "key": "acessos:default:atribuicao:ver-historico", "displayName": "Ver histórico global de atribuições", "description": "[Trilha de auditoria] Lista o histórico global de atribuições/remoções (cross-domain).", "resource": "atribuicao", "action": "ver-historico" },
+
+    { "key": "acessos:cadastro:papel:visualizar", "displayName": "Ver papéis (escopo Cadastro)", "description": "[Leitura] Vê assignments envolvendo papéis do domínio Cadastro.", "resource": "papel", "action": "visualizar" },
+    { "key": "acessos:cadastro:atribuicao:ver-historico", "displayName": "Histórico de atribuições (escopo Cadastro)", "description": "[Trilha de auditoria] Vê histórico de atribuições escopado a Cadastro.", "resource": "atribuicao", "action": "ver-historico" },
+    { "key": "acessos:identificacao:papel:visualizar", "displayName": "Ver papéis (escopo Identificação)", "description": "[Leitura] Vê assignments envolvendo papéis do domínio Identificação.", "resource": "papel", "action": "visualizar" },
+    { "key": "acessos:identificacao:atribuicao:ver-historico", "displayName": "Histórico de atribuições (escopo Identificação)", "description": "[Trilha de auditoria] Vê histórico escopado a Identificação.", "resource": "atribuicao", "action": "ver-historico" },
+    { "key": "acessos:arrecadacao:papel:visualizar", "displayName": "Ver papéis (escopo Arrecadação)", "description": "[Leitura] Vê assignments envolvendo papéis do domínio Arrecadação.", "resource": "papel", "action": "visualizar" },
+    { "key": "acessos:arrecadacao:atribuicao:ver-historico", "displayName": "Histórico de atribuições (escopo Arrecadação)", "description": "[Trilha de auditoria] Vê histórico escopado a Arrecadação.", "resource": "atribuicao", "action": "ver-historico" },
+    { "key": "acessos:distribuicao:papel:visualizar", "displayName": "Ver papéis (escopo Distribuição)", "description": "[Leitura] Vê assignments envolvendo papéis do domínio Distribuição.", "resource": "papel", "action": "visualizar" },
+    { "key": "acessos:distribuicao:atribuicao:ver-historico", "displayName": "Histórico de atribuições (escopo Distribuição)", "description": "[Trilha de auditoria] Vê histórico escopado a Distribuição.", "resource": "atribuicao", "action": "ver-historico" }
+  ]
+}

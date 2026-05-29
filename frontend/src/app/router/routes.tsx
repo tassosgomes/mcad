@@ -50,6 +50,15 @@ const AUTHZ_ADMIN_PERMISSIONS = [
   'authz:admin:audit:visualizar',
 ];
 
+const ACESSOS_PERMISSIONS = [
+  'acessos:default:papel:listar',
+  'acessos:default:papel:atribuir',
+  'acessos:cadastro:papel:visualizar',
+  'acessos:identificacao:papel:visualizar',
+  'acessos:arrecadacao:papel:visualizar',
+  'acessos:distribuicao:papel:visualizar',
+];
+
 /**
  * Copiloto está disponível para qualquer usuário que tenha acesso (mesmo de
  * leitura) a um dos domínios. Cada domínio aparece com sua permissão de
@@ -78,6 +87,11 @@ const DOMAIN_LANDING: Array<{ permission: string; path: string }> = [
   { permission: 'distribuicao:default:rubrica:listar', path: '/distribuicao/rubricas' },
   { permission: 'distribuicao:default:processo:listar', path: '/distribuicao/processos' },
   { permission: 'authz:admin:role:visualizar', path: '/autorizacao/papeis' },
+  { permission: 'acessos:default:papel:listar', path: '/autorizacao/atribuicoes' },
+  { permission: 'acessos:distribuicao:papel:visualizar', path: '/autorizacao/meu-dominio' },
+  { permission: 'acessos:cadastro:papel:visualizar', path: '/autorizacao/meu-dominio' },
+  { permission: 'acessos:identificacao:papel:visualizar', path: '/autorizacao/meu-dominio' },
+  { permission: 'acessos:arrecadacao:papel:visualizar', path: '/autorizacao/meu-dominio' },
 ];
 
 /**
@@ -199,7 +213,7 @@ export const router = createBrowserRouter([
       {
         path: 'autorizacao/*',
         element: (
-          <RequirePermission anyOf={AUTHZ_ADMIN_PERMISSIONS}>
+          <RequirePermission anyOf={[...AUTHZ_ADMIN_PERMISSIONS, ...ACESSOS_PERMISSIONS]}>
             <Suspense fallback={<Loading />}>
               <AuthzRoutes />
             </Suspense>

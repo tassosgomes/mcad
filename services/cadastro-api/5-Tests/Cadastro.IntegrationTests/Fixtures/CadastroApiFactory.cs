@@ -120,9 +120,27 @@ public class CadastroApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
         var client = factory.CreateClient();
         client.DefaultRequestHeaders.Remove(TestAuthHandler.AuthModeHeader);
         client.DefaultRequestHeaders.Remove(TestAuthHandler.RolesHeader);
+        client.DefaultRequestHeaders.Remove(TestAuthHandler.PermissionsHeader);
         client.DefaultRequestHeaders.Remove(TestAuthHandler.UsernameHeader);
         client.DefaultRequestHeaders.Add(TestAuthHandler.UsernameHeader, DefaultUsername);
         client.DefaultRequestHeaders.Add(TestAuthHandler.RolesHeader, roles.Length == 0 ? "analista-cadastro" : string.Join(',', roles));
+        return client;
+    }
+
+    public HttpClient CreateAuthenticatedClientWithPermissions(
+        string username,
+        string role,
+        params string[] permissions)
+    {
+        var client = CreateAuthenticatedClient(roles: [role]);
+        client.DefaultRequestHeaders.Remove(TestAuthHandler.UsernameHeader);
+        client.DefaultRequestHeaders.Add(TestAuthHandler.UsernameHeader, username);
+        client.DefaultRequestHeaders.Remove(TestAuthHandler.PermissionsHeader);
+        if (permissions.Length > 0)
+        {
+            client.DefaultRequestHeaders.Add(TestAuthHandler.PermissionsHeader, string.Join(',', permissions));
+        }
+
         return client;
     }
 
@@ -133,6 +151,7 @@ public class CadastroApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
         var client = factory.CreateClient();
         client.DefaultRequestHeaders.Remove(TestAuthHandler.RolesHeader);
         client.DefaultRequestHeaders.Remove(TestAuthHandler.UsernameHeader);
+        client.DefaultRequestHeaders.Remove(TestAuthHandler.PermissionsHeader);
         client.DefaultRequestHeaders.Remove(TestAuthHandler.AuthModeHeader);
         client.DefaultRequestHeaders.Add(TestAuthHandler.AuthModeHeader, "none");
         return client;
@@ -161,6 +180,7 @@ internal sealed class TestAuthHandler : AuthenticationHandler<AuthenticationSche
     public const string SchemeName = "Test";
     public const string AuthModeHeader = "X-Test-Auth";
     public const string RolesHeader = "X-Test-Roles";
+    public const string PermissionsHeader = "X-Test-Permissions";
     public const string UsernameHeader = "X-Test-Username";
 
     public TestAuthHandler(
@@ -179,9 +199,11 @@ internal sealed class TestAuthHandler : AuthenticationHandler<AuthenticationSche
         }
 
         var username = Request.Headers[UsernameHeader].FirstOrDefault() ?? "analista.teste";
-        var roles = Request.Headers[RolesHeader]
-            .SelectMany(value => value.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+        var roles = SplitHeaderValues(Request.Headers[RolesHeader])
             .DefaultIfEmpty("analista-cadastro")
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+        var permissions = SplitHeaderValues(Request.Headers[PermissionsHeader])
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .ToArray();
 
@@ -193,6 +215,7 @@ internal sealed class TestAuthHandler : AuthenticationHandler<AuthenticationSche
         };
 
         claims.AddRange(roles.Select(role => new Claim(ClaimTypes.Role, role)));
+        claims.AddRange(permissions.Select(permission => new Claim("permission", permission)));
         if (roles.Contains("analista-cadastro", StringComparer.OrdinalIgnoreCase))
         {
             claims.Add(new Claim("scope", "write"));
@@ -202,5 +225,12 @@ internal sealed class TestAuthHandler : AuthenticationHandler<AuthenticationSche
         var principal = new ClaimsPrincipal(identity);
         var ticket = new AuthenticationTicket(principal, SchemeName);
         return Task.FromResult(AuthenticateResult.Success(ticket));
+    }
+
+    private static IEnumerable<string> SplitHeaderValues(IEnumerable<string?> values)
+    {
+        return values
+            .Where(value => !string.IsNullOrWhiteSpace(value))
+            .SelectMany(value => value!.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
     }
 }

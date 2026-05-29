@@ -11,6 +11,8 @@ interface SidebarChild {
   path: string;
   /** optional: child is hidden unless the user has this permission */
   requiredPermission?: string;
+  /** anyOf-semantics: child is visible if the subject has at least one permission. */
+  requiredPermissions?: string[];
 }
 
 interface SidebarGroup {
@@ -122,10 +124,40 @@ const navigation: SidebarGroup[] = [
       'authz:admin:user-role:visualizar',
       'authz:admin:session:visualizar',
       'authz:admin:audit:visualizar',
+      'acessos:default:papel:listar',
+      'acessos:default:papel:atribuir',
+      'acessos:cadastro:papel:visualizar',
+      'acessos:identificacao:papel:visualizar',
+      'acessos:arrecadacao:papel:visualizar',
+      'acessos:distribuicao:papel:visualizar',
     ],
     children: [
-      { label: 'Permissões', path: '/autorizacao/permissoes' },
-      { label: 'Papéis', path: '/autorizacao/papeis' },
+      {
+        label: 'Permissões',
+        path: '/autorizacao/permissoes',
+        requiredPermission: 'authz:admin:permission:visualizar',
+      },
+      {
+        label: 'Papéis',
+        path: '/autorizacao/papeis',
+        requiredPermission: 'authz:admin:role:visualizar',
+      },
+      {
+        label: 'Atribuir Acessos',
+        path: '/autorizacao/atribuicoes',
+        requiredPermission: 'acessos:default:papel:atribuir',
+      },
+      {
+        label: 'Meu Domínio',
+        path: '/autorizacao/meu-dominio',
+        requiredPermissions: [
+          'acessos:default:papel:listar',
+          'acessos:cadastro:papel:visualizar',
+          'acessos:identificacao:papel:visualizar',
+          'acessos:arrecadacao:papel:visualizar',
+          'acessos:distribuicao:papel:visualizar',
+        ],
+      },
     ],
   },
 ];
@@ -177,7 +209,9 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
 
             // Filter children by per-item permission (if specified)
             const visibleChildren = group.children.filter(
-              (child) => !child.requiredPermission || can(child.requiredPermission),
+              (child) =>
+                (!child.requiredPermission || can(child.requiredPermission)) &&
+                (!child.requiredPermissions || hasAny(child.requiredPermissions)),
             );
 
             return (

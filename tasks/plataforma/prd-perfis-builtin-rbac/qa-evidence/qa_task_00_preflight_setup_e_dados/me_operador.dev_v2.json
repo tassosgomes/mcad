@@ -1,0 +1,28 @@
+{
+  "_captured_at": "2026-05-28T23:44:18.213Z",
+  "_hint": "operador.dev",
+  "_bff_me_status": 200,
+  "_bff_me_permissions_status": 200,
+  "_jwt_fingerprint": "...PiiK3V",
+  "me_subjectId_redacted": "i0dv***nx",
+  "me_name": "Operador Distribuição",
+  "me_email_redacted": "op***@mcad.local",
+  "permissions": [
+    "distribuicao:default:demonstrativo:visualizar",
+    "distribuicao:default:rubrica:listar",
+    "distribuicao:default:processo:listar",
+    "distribuicao:default:processo:visualizar",
+    "distribuicao:default:rubrica:visualizar",
+    "distribuicao:default:credito:visualizar",
+    "distribuicao:default:processo:criar",
+    "distribuicao:default:processo:calcular",
+    "distribuicao:default:credito:listar"
+  ],
+  "permissions_count": 9,
+  "version": 2,
+  "error_body": null,
+  "expected_role": "distribuicao.default.operador",
+  "expected_count": 9,
+  "has_expected_permissions": true,
+  "count_matches_expected": true
+}

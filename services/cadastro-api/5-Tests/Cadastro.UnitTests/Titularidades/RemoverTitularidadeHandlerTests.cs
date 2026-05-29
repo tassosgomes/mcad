@@ -1,3 +1,4 @@
+using Cadastro.Application.Common.Authorization;
 using Cadastro.Application.Common.Exceptions;
 using Cadastro.Application.Titularidades.Commands;
 using Cadastro.Application.Titularidades.Responses;
@@ -26,7 +27,8 @@ public class RemoverTitularidadeHandlerTests
         _handler = new RemoverTitularidadeCommandHandler(
             _titularidadeRepoMock.Object,
             _obraRepoMock.Object,
-            _auditPublisherMock.Object);
+            _auditPublisherMock.Object,
+            Mock.Of<ICurrentUserPermissions>(p => p.Has(CadastroPermissionNames.TitularVerCpfCompleto)));
     }
 
     [Fact]

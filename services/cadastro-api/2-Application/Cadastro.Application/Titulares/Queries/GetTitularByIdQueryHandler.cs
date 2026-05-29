@@ -1,3 +1,4 @@
+using Cadastro.Application.Common.Authorization;
 using Cadastro.Application.Common.CQRS;
 using Cadastro.Application.Common.Exceptions;
 using Cadastro.Application.Titulares.Responses;
@@ -12,10 +13,12 @@ namespace Cadastro.Application.Titulares.Queries;
 public class GetTitularByIdQueryHandler : IQueryHandler<GetTitularByIdQuery, TitularResponse>
 {
     private readonly ITitularRepository _repository;
+    private readonly ICurrentUserPermissions _permissions;
 
-    public GetTitularByIdQueryHandler(ITitularRepository repository)
+    public GetTitularByIdQueryHandler(ITitularRepository repository, ICurrentUserPermissions permissions)
     {
         _repository = repository;
+        _permissions = permissions;
     }
 
     public async Task<TitularResponse> HandleAsync(
@@ -24,6 +27,8 @@ public class GetTitularByIdQueryHandler : IQueryHandler<GetTitularByIdQuery, Tit
         var titular = await _repository.GetByIdAsync(query.Id, cancellationToken)
             ?? throw new NotFoundException("Titular", query.Id);
 
-        return ListarTitularesQueryHandler.MapToResponse(titular);
+        var fullDocumentAllowed = _permissions.Has(CadastroPermissionNames.TitularVerCpfCompleto);
+
+        return ListarTitularesQueryHandler.MapToResponse(titular, fullDocumentAllowed);
     }
 }

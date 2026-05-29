@@ -1,0 +1,91 @@
+{
+  "session": {
+    "created_at": "2026-05-28T00:00:00Z",
+    "prd_path": "tasks/plataforma/prd-perfis-builtin-rbac/prd.md",
+    "techspec_path": "tasks/plataforma/prd-perfis-builtin-rbac/techspec.md",
+    "orchestrator_version": "1.0",
+    "skill_dir": "/home/tsgomes/mcad/.claude/skills/flow-qa-orchestrator"
+  },
+  "scope": {
+    "user_stories_in_scope": [
+      { "task_id": "qa_task_00", "slug": "preflight_setup_e_dados",                        "description": "Pre-flight: login dos 6 usuarios, validacao de assignments, criacao de processos de seed" },
+      { "task_id": "qa_task_01", "slug": "governanca_irreversiveis_so_gerente",            "description": "US-01: irreversiveis (aprovar/finalizar/cancelar) apenas para Gerente; auditoria exclusiva" },
+      { "task_id": "qa_task_02", "slug": "analista_operacao_senior_sem_auditoria",         "description": "US-02: Analista opera amplo (recalcular pos-CALCULADO, liberar retido, CPF completo) sem ver aba Historico" },
+      { "task_id": "qa_task_03", "slug": "gerente_historico_alteracoes",                   "description": "US-03: aba Historico de Alteracoes renderiza eventos USER_ACTION e DATA_CHANGE com diff; proxy BFF gateado" },
+      { "task_id": "qa_task_04", "slug": "gestor_acessos_atribuir_remover_papeis",         "description": "US-04: Gestor de Acessos atribui e remove papeis; nao ve telas de negocio" },
+      { "task_id": "qa_task_05", "slug": "consultor_acessos_e_escopo_gerente",             "description": "US-05: Consultor de Acessos read-only; Gerente em /autorizacao/meu-dominio ve apenas seu dominio" },
+      { "task_id": "qa_task_06", "slug": "cpf_mascarado_lgpd",                             "description": "US-06: CPF mascarado server-side para perfis sem cadastro:default:titular:ver-cpf-completo" }
+    ],
+    "excluded": [
+      { "id": "US-07", "reason": "Framework replicavel cobertura via ADRs 0006-0009; sem comportamento runtime testavel" }
+    ]
+  },
+  "environment": {
+    "base_url": "https://mcad.tasso.dev.br",
+    "services": {
+      "frontend":         "https://mcad.tasso.dev.br",
+      "bff":              "https://mcad-bff.tasso.dev.br",
+      "cadastro_api":     "https://mcad-cadastro.tasso.dev.br",
+      "distribuicao_api": "https://mcad-distribuicao.tasso.dev.br",
+      "arrecadacao_api":  "https://mcad-arrecadacao.tasso.dev.br",
+      "identificacao_api":"https://mcad-identificacao.tasso.dev.br",
+      "identity_sync":    "https://mcad-identity-sync.tasso.dev.br",
+      "ecad_authz":       "https://mcad-authz.tasso.dev.br"
+    },
+    "auth": {
+      "enabled": true,
+      "type": "bearer",
+      "idp": "Logto",
+      "flow": "browser_login_via_playwright_headed",
+      "credentials_file": "/home/tsgomes/mcad/.env_qa",
+      "credentials_file_notes": "Arquivo contem email, username, hint e senha por usuario. NAO copiar valores para nenhum artefato de evidencia.",
+      "users": [
+        { "subject_hint": "consultor.dev",         "expected_role": "distribuicao.default.consultor" },
+        { "subject_hint": "operador.dev",          "expected_role": "distribuicao.default.operador" },
+        { "subject_hint": "gerente.dev",           "expected_role": "distribuicao.default.gerente" },
+        { "subject_hint": "analista.dev",          "expected_role": "distribuicao.default.analista", "logto_email": "analista_distribuicao@mcad.dev", "note": "Email diverge do assignments.json (analista.dev@mcad.local); QA usa o email do Logto" },
+        { "subject_hint": "gestor-acessos.dev",    "expected_role": "acessos.default.gestor" },
+        { "subject_hint": "consultor-acessos.dev", "expected_role": "acessos.default.consultor" }
+      ]
+    }
+  },
+  "database": {
+    "enabled": false,
+    "notes": "Assercoes baseadas exclusivamente em resposta HTTP e DOM via Playwright."
+  },
+  "report": {
+    "formats": ["markdown"],
+    "output_dir": "/home/tsgomes/mcad/tasks/plataforma/prd-perfis-builtin-rbac/qa-evidence",
+    "consolidated_file": "qa_report_consolidated.md"
+  },
+  "tooling": {
+    "playwright": {
+      "available": true,
+      "location": "/home/tsgomes/mcad/frontend",
+      "package": "@playwright/test ^1.59.1",
+      "mode": "headed",
+      "browser": "chromium",
+      "notes": "Subagentes executam scripts ad-hoc via `cd frontend && npx playwright ...` ou criam .spec.ts temporario sob frontend/."
+    },
+    "http_client": {
+      "tool": "curl",
+      "jwt_capture_strategy": "Apos login no Playwright, ler localStorage/cookies da sessao para extrair Bearer token e reutilizar via curl. NAO logar o JWT em arquivos de evidencia (apenas claims relevantes e ultimos 6 chars como fingerprint)."
+    }
+  },
+  "execution": {
+    "tasks": [
+      { "id": "qa_task_00", "slug": "preflight_setup_e_dados",                        "type": ["ui","api"],     "depends_on": [],                  "can_run_parallel_with": [] },
+      { "id": "qa_task_01", "slug": "governanca_irreversiveis_so_gerente",            "type": ["ui","api"],     "depends_on": ["qa_task_00"],      "can_run_parallel_with": ["qa_task_02","qa_task_06"] },
+      { "id": "qa_task_02", "slug": "analista_operacao_senior_sem_auditoria",         "type": ["ui","api"],     "depends_on": ["qa_task_00"],      "can_run_parallel_with": ["qa_task_01","qa_task_06"] },
+      { "id": "qa_task_06", "slug": "cpf_mascarado_lgpd",                             "type": ["ui","api"],     "depends_on": ["qa_task_00"],      "can_run_parallel_with": ["qa_task_01","qa_task_02"] },
+      { "id": "qa_task_04", "slug": "gestor_acessos_atribuir_remover_papeis",         "type": ["ui","api"],     "depends_on": ["qa_task_00","qa_task_01","qa_task_02","qa_task_06"], "can_run_parallel_with": [] },
+      { "id": "qa_task_05", "slug": "consultor_acessos_e_escopo_gerente",             "type": ["ui","api"],     "depends_on": ["qa_task_04"],      "can_run_parallel_with": [] },
+      { "id": "qa_task_03", "slug": "gerente_historico_alteracoes",                   "type": ["ui","api"],     "depends_on": ["qa_task_05"],      "can_run_parallel_with": [] }
+    ],
+    "phases": [
+      { "phase": 1, "mode": "sequential", "tasks": ["qa_task_00"] },
+      { "phase": 2, "mode": "parallel",   "tasks": ["qa_task_01","qa_task_02","qa_task_06"] },
+      { "phase": 3, "mode": "sequential", "tasks": ["qa_task_04","qa_task_05","qa_task_03"] }
+    ]
+  }
+}

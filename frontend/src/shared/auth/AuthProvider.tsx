@@ -5,6 +5,7 @@ import { Loading } from '@components/ui/loading';
 import { setArrecadacaoAuthTokenProvider } from '@services/apiArrecadacaoClient';
 import { setAuditoriaAuthTokenProvider } from '@services/apiAuditoriaClient';
 import { setAuthzAuthTokenProvider } from '@services/apiAuthzClient';
+import { setBffAuthTokenProvider } from '@services/apiBffClient';
 import { setAuthTokenProvider } from '@services/apiClient';
 import { setDistribuicaoAuthTokenProvider } from '@services/apiDistribuicaoClient';
 import { setIdentificacaoAuthTokenProvider } from '@services/apiIdentificacaoClient';
@@ -122,6 +123,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     setArrecadacaoAuthTokenProvider(() => user?.access_token ?? null);
     setAuditoriaAuthTokenProvider(() => user?.access_token ?? null);
     setAuthzAuthTokenProvider(() => user?.access_token ?? null);
+    setBffAuthTokenProvider(() => user?.access_token ?? null);
     setAuthTokenProvider(() => user?.access_token ?? null);
     setDistribuicaoAuthTokenProvider(() => user?.access_token ?? null);
     setIdentificacaoAuthTokenProvider(() => user?.access_token ?? null);
@@ -130,6 +132,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       setArrecadacaoAuthTokenProvider(null);
       setAuditoriaAuthTokenProvider(null);
       setAuthzAuthTokenProvider(null);
+      setBffAuthTokenProvider(null);
       setAuthTokenProvider(null);
       setDistribuicaoAuthTokenProvider(null);
       setIdentificacaoAuthTokenProvider(null);

@@ -6,6 +6,7 @@ import { Button } from '@components/ui/button';
 import { Loading } from '@components/ui/loading';
 import { ErrorState } from '@components/ui/error-state';
 import { useToast } from '@components/ui/toast';
+import { Can } from '@shared/authz';
 import { useProcesso } from '../hooks/useProcesso';
 import {
   useCalcularProcesso,
@@ -17,6 +18,7 @@ import { ProcessoStatusBadge } from '../components/ProcessoStatusBadge';
 import { ProcessoActions } from '../components/ProcessoActions';
 import { CancelarModal } from '../components/CancelarModal';
 import { FinalizarModal } from '../components/FinalizarModal';
+import { HistoricoAlteracoesTab } from '../components/HistoricoAlteracoesTab';
 import styles from './ProcessoDetailPage.module.css';
 
 function formatBRL(value: number): string {
@@ -35,6 +37,8 @@ function formatDateTime(dateStr: string | null): string {
   });
 }
 
+type ActiveTab = 'detalhes' | 'historico';
+
 export function ProcessoDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -42,6 +46,7 @@ export function ProcessoDetailPage() {
 
   const [cancelarOpen, setCancelarOpen] = useState(false);
   const [finalizarOpen, setFinalizarOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<ActiveTab>('detalhes');
 
   const { data: processo, isLoading, error, refetch } = useProcesso(id!);
 
@@ -91,6 +96,11 @@ export function ProcessoDetailPage() {
     addToast({ type: 'success', title: 'Sucesso', message: 'Processo cancelado com sucesso!' });
   }
 
+  function handleExportar() {
+    addToast({ type: 'success', title: 'Exportação', message: 'Exportação do processo solicitada.' });
+    window.print();
+  }
+
   if (isLoading) return <Loading />;
   if (error || !processo) {
     return <ErrorState message="Processo não encontrado" onRetry={refetch} />;
@@ -116,99 +126,136 @@ export function ProcessoDetailPage() {
         action={<ProcessoStatusBadge status={processo.status} />}
       />
 
-      <div className={styles.card}>
-        <h2 className={styles.sectionTitle}>Dados do Processo</h2>
-        <div className={styles.grid}>
-          <div className={styles.field}>
-            <span className={styles.fieldLabel}>Rubrica</span>
-            <span className={styles.fieldValue}>
-              <span className={styles.chip}>{processo.rubrica.sigla}</span>
-              {processo.rubrica.nome}
-            </span>
-          </div>
-          <div className={styles.field}>
-            <span className={styles.fieldLabel}>Período</span>
-            <span className={`${styles.fieldValue} ${styles.mono}`}>{processo.periodo}</span>
-          </div>
-          <div className={styles.field}>
-            <span className={styles.fieldLabel}>Verba Líquida</span>
-            <span className={`${styles.fieldValue} ${styles.valorDestaque}`}>
-              {formatBRL(processo.verbaLiquida)}
-            </span>
-          </div>
-          <div className={styles.field}>
-            <span className={styles.fieldLabel}>Total de Execuções</span>
-            <span className={`${styles.fieldValue} ${styles.mono}`}>
-              {processo.totalExecucoes !== null
-                ? processo.totalExecucoes.toLocaleString('pt-BR')
-                : '—'}
-            </span>
-          </div>
-          <div className={styles.field}>
-            <span className={styles.fieldLabel}>Analista Responsável</span>
-            <span className={styles.fieldValue}>{processo.analistaResponsavel}</span>
-          </div>
-        </div>
+      <div className={styles.tabs} role="tablist" aria-label="Seções do processo">
+        <button
+          type="button"
+          role="tab"
+          aria-selected={activeTab === 'detalhes'}
+          className={`${styles.tab} ${activeTab === 'detalhes' ? styles.activeTab : ''}`}
+          onClick={() => setActiveTab('detalhes')}
+        >
+          Detalhes
+        </button>
+        <Can permission="distribuicao:default:processo:ver-historico-alteracoes">
+          <button
+            type="button"
+            role="tab"
+            aria-selected={activeTab === 'historico'}
+            className={`${styles.tab} ${activeTab === 'historico' ? styles.activeTab : ''}`}
+            onClick={() => setActiveTab('historico')}
+          >
+            Histórico de Alterações
+          </button>
+        </Can>
       </div>
 
-      <div className={styles.card}>
-        <h2 className={styles.sectionTitle}>Histórico de Transições</h2>
-        <div className={styles.timeline}>
-          <div className={styles.timelineItem}>
-            <span className={styles.timelineLabel}>Criado em</span>
-            <span className={styles.timelineValue}>{formatDateTime(processo.criadoEm)}</span>
+      {activeTab === 'detalhes' && (
+        <>
+          <div className={styles.card}>
+            <h2 className={styles.sectionTitle}>Dados do Processo</h2>
+            <div className={styles.grid}>
+              <div className={styles.field}>
+                <span className={styles.fieldLabel}>Rubrica</span>
+                <span className={styles.fieldValue}>
+                  <span className={styles.chip}>{processo.rubrica.sigla}</span>
+                  {processo.rubrica.nome}
+                </span>
+              </div>
+              <div className={styles.field}>
+                <span className={styles.fieldLabel}>Período</span>
+                <span className={`${styles.fieldValue} ${styles.mono}`}>{processo.periodo}</span>
+              </div>
+              <div className={styles.field}>
+                <span className={styles.fieldLabel}>Verba Líquida</span>
+                <span className={`${styles.fieldValue} ${styles.valorDestaque}`}>
+                  {formatBRL(processo.verbaLiquida)}
+                </span>
+              </div>
+              <div className={styles.field}>
+                <span className={styles.fieldLabel}>Total de Execuções</span>
+                <span className={`${styles.fieldValue} ${styles.mono}`}>
+                  {processo.totalExecucoes !== null
+                    ? processo.totalExecucoes.toLocaleString('pt-BR')
+                    : '—'}
+                </span>
+              </div>
+              <div className={styles.field}>
+                <span className={styles.fieldLabel}>Analista Responsável</span>
+                <span className={styles.fieldValue}>{processo.analistaResponsavel}</span>
+              </div>
+            </div>
           </div>
-          {processo.calculadoEm && (
-            <div className={styles.timelineItem}>
-              <span className={styles.timelineLabel}>Calculado em</span>
-              <span className={styles.timelineValue}>{formatDateTime(processo.calculadoEm)}</span>
-            </div>
-          )}
-          {processo.aprovadoEm && (
-            <div className={styles.timelineItem}>
-              <span className={styles.timelineLabel}>Aprovado em</span>
-              <span className={styles.timelineValue}>{formatDateTime(processo.aprovadoEm)}</span>
-            </div>
-          )}
-          {processo.finalizadoEm && (
-            <div className={styles.timelineItem}>
-              <span className={styles.timelineLabel}>Finalizado em</span>
-              <span className={styles.timelineValue}>{formatDateTime(processo.finalizadoEm)}</span>
-            </div>
-          )}
-          {processo.canceladoEm && (
-            <div className={styles.timelineItem}>
-              <span className={styles.timelineLabel}>Cancelado em</span>
-              <span className={styles.timelineValue}>{formatDateTime(processo.canceladoEm)}</span>
-            </div>
-          )}
-        </div>
-      </div>
 
-      {processo.status === 'CANCELADO' && processo.justificativaCancelamento && (
-        <div className={styles.card}>
-          <h2 className={styles.sectionTitle}>Dados do Cancelamento</h2>
-          <div className={styles.grid}>
-            <div className={`${styles.field} ${styles.fullWidth}`}>
-              <span className={styles.fieldLabel}>Justificativa</span>
-              <span className={styles.fieldValue}>{processo.justificativaCancelamento}</span>
+          <div className={styles.card}>
+            <h2 className={styles.sectionTitle}>Histórico de Transições</h2>
+            <div className={styles.timeline}>
+              <div className={styles.timelineItem}>
+                <span className={styles.timelineLabel}>Criado em</span>
+                <span className={styles.timelineValue}>{formatDateTime(processo.criadoEm)}</span>
+              </div>
+              {processo.calculadoEm && (
+                <div className={styles.timelineItem}>
+                  <span className={styles.timelineLabel}>Calculado em</span>
+                  <span className={styles.timelineValue}>{formatDateTime(processo.calculadoEm)}</span>
+                </div>
+              )}
+              {processo.aprovadoEm && (
+                <div className={styles.timelineItem}>
+                  <span className={styles.timelineLabel}>Aprovado em</span>
+                  <span className={styles.timelineValue}>{formatDateTime(processo.aprovadoEm)}</span>
+                </div>
+              )}
+              {processo.finalizadoEm && (
+                <div className={styles.timelineItem}>
+                  <span className={styles.timelineLabel}>Finalizado em</span>
+                  <span className={styles.timelineValue}>{formatDateTime(processo.finalizadoEm)}</span>
+                </div>
+              )}
+              {processo.canceladoEm && (
+                <div className={styles.timelineItem}>
+                  <span className={styles.timelineLabel}>Cancelado em</span>
+                  <span className={styles.timelineValue}>{formatDateTime(processo.canceladoEm)}</span>
+                </div>
+              )}
             </div>
           </div>
-        </div>
+
+          {processo.status === 'CANCELADO' && processo.justificativaCancelamento && (
+            <Can permission="distribuicao:default:processo:ver-justificativa-cancelamento">
+              <div className={styles.card}>
+                <h2 className={styles.sectionTitle}>Dados do Cancelamento</h2>
+                <div className={styles.grid}>
+                  <div className={`${styles.field} ${styles.fullWidth}`}>
+                    <span className={styles.fieldLabel}>Justificativa</span>
+                    <span className={styles.fieldValue}>{processo.justificativaCancelamento}</span>
+                  </div>
+                </div>
+              </div>
+            </Can>
+          )}
+
+          {processo.status !== 'FINALIZADO' && processo.status !== 'CANCELADO' && (
+            <div className={styles.card}>
+              <h2 className={styles.sectionTitle}>Ações</h2>
+              <ProcessoActions
+                processo={processo}
+                onCalcular={handleCalcular}
+                onRecalcular={handleCalcular}
+                onAprovar={handleAprovar}
+                onFinalizar={() => setFinalizarOpen(true)}
+                onCancelar={() => setCancelarOpen(true)}
+                onExportar={handleExportar}
+                isLoading={isAnyLoading}
+              />
+            </div>
+          )}
+        </>
       )}
 
-      {processo.status !== 'FINALIZADO' && processo.status !== 'CANCELADO' && (
-        <div className={styles.card}>
-          <h2 className={styles.sectionTitle}>Ações</h2>
-          <ProcessoActions
-            processo={processo}
-            onCalcular={handleCalcular}
-            onAprovar={handleAprovar}
-            onFinalizar={() => setFinalizarOpen(true)}
-            onCancelar={() => setCancelarOpen(true)}
-            isLoading={isAnyLoading}
-          />
-        </div>
+      {activeTab === 'historico' && (
+        <Can permission="distribuicao:default:processo:ver-historico-alteracoes">
+          <HistoricoAlteracoesTab processoId={processo.id} />
+        </Can>
       )}
 
       <CancelarModal

@@ -1,0 +1,39 @@
+{
+  "captured_at": "2026-05-28T23:49:21.897Z",
+  "seeded_by": "operador.dev@mcad.local",
+  "approved_by": "gerente.dev@mcad.local",
+  "seeds": [
+    {
+      "seq": 1,
+      "id": null,
+      "method": "api",
+      "create_status": null,
+      "payload": null,
+      "body_status": null,
+      "detail_screenshot": null,
+      "errors": [
+        "Sem disponibilidades para criar processo"
+      ],
+      "disp_count": 0
+    },
+    {
+      "seq": 2,
+      "id": null,
+      "method": "api",
+      "create_status": null,
+      "payload": null,
+      "body_status": null,
+      "detail_screenshot": null,
+      "errors": [
+        "Sem disponibilidades para criar processo"
+      ],
+      "disp_count": 0
+    }
+  ],
+  "calcs": [],
+  "approval": null,
+  "notes": [
+    "Re-validation of /api/me/permissions for 6 users was done in run3.mjs (preflight_results_v2.json) — all PASS.",
+    "UI route /distribuicao/processos rendered \"Acesso negado\" during the first screenshot pass despite operador having distribuicao:default:processo:listar — likely a perms-query race during initial paint. Re-screenshot after 6s wait captured here as login_operador.dev_v2_postwait.png."
+  ]
+}

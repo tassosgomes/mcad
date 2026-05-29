@@ -1,5 +1,7 @@
+using Cadastro.Application.Common.Authorization;
 using Cadastro.Application.Common.CQRS;
 using Cadastro.Application.Common.Exceptions;
+using Cadastro.Application.Titulares;
 using Cadastro.Application.Titularidades.Responses;
 using Cadastro.Domain.Entities;
 using Cadastro.Domain.Interfaces;
@@ -10,11 +12,16 @@ public class ListarTitularidadesQueryHandler : IQueryHandler<ListarTitularidades
 {
     private readonly ITitularidadeRepository _repository;
     private readonly IObraRepository _obraRepository;
+    private readonly ICurrentUserPermissions _permissions;
 
-    public ListarTitularidadesQueryHandler(ITitularidadeRepository repository, IObraRepository obraRepository)
+    public ListarTitularidadesQueryHandler(
+        ITitularidadeRepository repository,
+        IObraRepository obraRepository,
+        ICurrentUserPermissions permissions)
     {
         _repository = repository;
         _obraRepository = obraRepository;
+        _permissions = permissions;
     }
 
     public async Task<TitularidadesResponse> HandleAsync(ListarTitularidadesQuery query, CancellationToken cancellationToken)
@@ -28,7 +35,8 @@ public class ListarTitularidadesQueryHandler : IQueryHandler<ListarTitularidades
         var soma = titularidades.Sum(t => t.Percentual);
         var somaCompleta = soma == 100.0000m;
 
-        var items = titularidades.Select(MapToItemResponse).ToList();
+        var fullDocumentAllowed = _permissions.Has(CadastroPermissionNames.TitularVerCpfCompleto);
+        var items = titularidades.Select(t => MapToItemResponse(t, fullDocumentAllowed)).ToList();
 
         return new TitularidadesResponse(
             query.ObraId,
@@ -38,8 +46,13 @@ public class ListarTitularidadesQueryHandler : IQueryHandler<ListarTitularidades
         );
     }
 
-    internal static TitularidadeItemResponse MapToItemResponse(TitularidadeAutoral t)
+    internal static TitularidadeItemResponse MapToItemResponse(TitularidadeAutoral t, bool fullDocumentAllowed)
     {
+        var documentoFormatado = DocumentoMasking.Apply(
+            t.Titular.Documento,
+            t.Titular.DocumentoFormatado,
+            fullDocumentAllowed).DocumentoFormatado;
+
         return new TitularidadeItemResponse(
             t.Id,
             new TitularResumoResponse(
@@ -47,7 +60,7 @@ public class ListarTitularidadesQueryHandler : IQueryHandler<ListarTitularidades
                 t.Titular.Codigo,
                 t.Titular.Nome,
                 t.Titular.Tipo.ToString().ToUpperInvariant(),
-                t.Titular.DocumentoFormatado,
+                documentoFormatado,
                 t.Titular.Associacao?.Sigla
             ),
             t.Categoria.ToString().ToUpperInvariant(),

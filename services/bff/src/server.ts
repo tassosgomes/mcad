@@ -1,5 +1,7 @@
 import Fastify, { type FastifyInstance } from 'fastify';
 import type { BffConfig } from './config.js';
+import { registerAcessosRoutes } from './acessosRoutes.js';
+import { registerHistoricoRoutes } from './historicoRoutes.js';
 import { createMeCache, type MeCache } from './meCache.js';
 import { registerMeRoutes } from './meRoutes.js';
 import { registerProxy } from './proxy.js';
@@ -70,6 +72,14 @@ export async function buildServer(
     config,
     cache: meCache,
     fetchImpl: options.fetchImpl as unknown as Parameters<typeof registerMeRoutes>[1]['fetchImpl'],
+  });
+  await registerAcessosRoutes(server, {
+    config,
+    fetchImpl: options.fetchImpl as unknown as Parameters<typeof registerAcessosRoutes>[1]['fetchImpl'],
+  });
+  await registerHistoricoRoutes(server, {
+    config,
+    fetchImpl: options.fetchImpl as unknown as Parameters<typeof registerHistoricoRoutes>[1]['fetchImpl'],
   });
 
   for (const upstream of config.upstreams) {

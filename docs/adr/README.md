@@ -18,12 +18,16 @@ Convenções:
 | [0003](./0003-backend-authoritative-authorization.md) | Backend como Fonte Autoritativa de Autorização | Accepted | 2026-05-14 |
 | [0004](./0004-bff-permissions-for-ux.md) | BFF Expõe `/api/me` e `/api/me/permissions` para UX | Accepted | 2026-05-14 |
 | [0005](./0005-dotnet-authz-sdk.md) | SDK .NET Próprio para o ecad-authz | Accepted | 2026-05-14 |
+| [0006](./0006-perfis-built-in-rbac.md) | Catálogo Canônico de Perfis Built-in (Framework RBAC) | Accepted | 2026-05-26 |
+| [0007](./0007-dominio-acessos-segregado.md) | Domínio Transversal `acessos` Segregado do Super-Admin de Plataforma | Accepted | 2026-05-26 |
+| [0008](./0008-bff-gateway-cross-cutting.md) | BFF como Gateway de Operações Cross-cutting | Accepted | 2026-05-26 |
+| [0009](./0009-cpf-masking-permission-aware-mapper.md) | Mascaramento Server-Side de CPF via Permission-Aware Mapper | Accepted | 2026-05-26 |
 
 ## Decisões abertas / futuras ADRs
 
-- **Escopo `ASSOCIATION`** — autorização condicionada a associação do usuário (ex.: analista vê só obras da sua associação). Mudará a assinatura das permissões e a chamada ao ecad-authz. Candidata a ADR 0007.
-- **Admin UI via BFF** — avaliar substituir chamadas diretas do frontend ao `ecad-authz` por rotas `/api/authz/*` no BFF.
-- **Distribuição em produção** — validar/aplicar o catálogo `distribuicao:default:*` no ambiente alvo quando o serviço for promovido.
+- **Escopo `ASSOCIATION`** — autorização condicionada a associação do usuário (ex.: analista vê só obras da sua associação). Mudará a assinatura das permissões e a chamada ao ecad-authz.
+- **Admin UI via BFF** — avaliar substituir chamadas diretas do frontend ao `ecad-authz` por rotas `/api/authz/*` no BFF, além das rotas cross-cutting definidas no ADR 0008.
+- **Rollout dos demais domínios** — aplicar o framework do ADR 0006 a Cadastro, Identificação e Arrecadação em PRDs próprios.
 
 ## Como propor uma nova ADR
 

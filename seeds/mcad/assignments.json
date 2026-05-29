@@ -22,6 +22,38 @@
     ]
   },
   {
+    "email": "operador.dev@mcad.local",
+    "name": "Operador Dev",
+    "subjectHint": "operador.dev",
+    "roleKeys": [
+      "distribuicao.default.operador"
+    ]
+  },
+  {
+    "email": "gerente.dev@mcad.local",
+    "name": "Gerente Dev",
+    "subjectHint": "gerente.dev",
+    "roleKeys": [
+      "distribuicao.default.gerente"
+    ]
+  },
+  {
+    "email": "gestor-acessos.dev@mcad.local",
+    "name": "Gestor de Acessos Dev",
+    "subjectHint": "gestor-acessos.dev",
+    "roleKeys": [
+      "acessos.default.gestor"
+    ]
+  },
+  {
+    "email": "consultor-acessos.dev@mcad.local",
+    "name": "Consultor de Acessos Dev",
+    "subjectHint": "consultor-acessos.dev",
+    "roleKeys": [
+      "acessos.default.consultor"
+    ]
+  },
+  {
     "email": "sem-papel.dev@mcad.local",
     "name": "Sem Papel Dev",
     "subjectHint": "sem-papel.dev",

@@ -1,8 +1,9 @@
 package br.com.ecad.distribuicao.tests.authz;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -10,37 +11,58 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import br.com.ecad.distribuicao.api.DistribuicaoApiApplication;
+import br.com.ecad.distribuicao.application.commands.CalcularProcessoCommand;
+import br.com.ecad.distribuicao.application.commands.handlers.CalcularProcessoCommandHandler;
+import br.com.ecad.distribuicao.application.dto.CalcularProcessoResponse;
+import br.com.ecad.distribuicao.domain.enums.StatusProcesso;
 import br.com.ecad.distribuicao.tests.config.TestSecurityConfig;
 import br.org.ecad.audit.sdk.AuditClient;
 import br.org.ecad.authz.sdk.cache.LocalDecisionCache;
 import br.org.ecad.authz.sdk.cache.RemoteDecisionCache;
 import br.org.ecad.authz.sdk.client.AuthzDecisionClient;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import java.math.BigDecimal;
+import java.time.Instant;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
+import java.util.function.Supplier;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
+import org.mockito.ArgumentCaptor;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
+import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
+import org.springframework.test.web.servlet.request.RequestPostProcessor;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 /**
- * Verifica que o {@code authz-spring-boot-starter} gera as decisões esperadas (401/403/200)
- * para os endpoints do {@code ProcessoController} anotados com {@code @RequiresPermission}.
+ * Covers the Distribuicao enforcement contract from ADR 0006
+ * ({@code docs/adr/0006-perfis-built-in-rbac.md}) through the
+ * {@code authz-spring-boot-starter}: unauthenticated calls return 401, authenticated callers without
+ * the endpoint permission return 403, and the four built-in Distribuicao roles follow the current
+ * {@code seeds/mcad/roles.json} permission catalog.
  */
 @SpringBootTest(
         classes = DistribuicaoApiApplication.class,
@@ -65,6 +87,94 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 @SuppressWarnings("null")
 class AuthzPermissionEnforcementTest {
 
+    private static final String CONSULTOR = "distribuicao.default.consultor";
+    private static final String OPERADOR = "distribuicao.default.operador";
+    private static final String GERENTE = "distribuicao.default.gerente";
+    private static final String ANALISTA = "distribuicao.default.analista";
+
+    private static final String RUBRICA_LISTAR = "distribuicao:default:rubrica:listar";
+    private static final String RUBRICA_VISUALIZAR = "distribuicao:default:rubrica:visualizar";
+    private static final String PROCESSO_LISTAR = "distribuicao:default:processo:listar";
+    private static final String PROCESSO_VISUALIZAR = "distribuicao:default:processo:visualizar";
+    private static final String PROCESSO_CRIAR = "distribuicao:default:processo:criar";
+    private static final String PROCESSO_CALCULAR = "distribuicao:default:processo:calcular";
+    private static final String PROCESSO_APROVAR = "distribuicao:default:processo:aprovar";
+    private static final String PROCESSO_FINALIZAR = "distribuicao:default:processo:finalizar";
+    private static final String PROCESSO_CANCELAR = "distribuicao:default:processo:cancelar";
+    private static final String PROCESSO_RECALCULAR_POS_CALCULADO =
+            "distribuicao:default:processo:recalcular-pos-calculado";
+
+    private static final String PROCESSO_REQUEST = """
+            {"rubricaSigla":"RADIO","periodo":"2026-03"}
+            """;
+    private static final String CANCELAR_REQUEST = """
+            {"justificativa":"Justificativa longa"}
+            """;
+
+    private static final List<String> ROLE_KEYS = List.of(CONSULTOR, OPERADOR, GERENTE, ANALISTA);
+
+    private static final Map<String, Set<String>> ROLE_PERMISSIONS = Map.of(
+            CONSULTOR,
+            Set.of(
+                    RUBRICA_LISTAR,
+                    RUBRICA_VISUALIZAR,
+                    PROCESSO_LISTAR,
+                    PROCESSO_VISUALIZAR,
+                    "distribuicao:default:credito:listar",
+                    "distribuicao:default:credito:visualizar",
+                    "distribuicao:default:demonstrativo:visualizar"),
+            OPERADOR,
+            Set.of(
+                    RUBRICA_LISTAR,
+                    RUBRICA_VISUALIZAR,
+                    PROCESSO_LISTAR,
+                    PROCESSO_VISUALIZAR,
+                    "distribuicao:default:credito:listar",
+                    "distribuicao:default:credito:visualizar",
+                    "distribuicao:default:demonstrativo:visualizar",
+                    PROCESSO_CRIAR,
+                    PROCESSO_CALCULAR),
+            GERENTE,
+            Set.of(
+                    RUBRICA_LISTAR,
+                    RUBRICA_VISUALIZAR,
+                    PROCESSO_LISTAR,
+                    PROCESSO_VISUALIZAR,
+                    "distribuicao:default:credito:listar",
+                    "distribuicao:default:credito:visualizar",
+                    PROCESSO_APROVAR,
+                    PROCESSO_FINALIZAR,
+                    PROCESSO_CANCELAR,
+                    "distribuicao:default:processo:exportar",
+                    "distribuicao:default:processo:ver-justificativa-cancelamento",
+                    "distribuicao:default:processo:ver-historico-alteracoes",
+                    "distribuicao:default:credito:ver-historico-alteracoes",
+                    "distribuicao:default:demonstrativo:visualizar",
+                    "distribuicao:default:demonstrativo:exportar",
+                    "cadastro:default:titular:ver-cpf-completo",
+                    "acessos:distribuicao:papel:visualizar",
+                    "acessos:distribuicao:atribuicao:ver-historico"),
+            ANALISTA,
+            Set.of(
+                    RUBRICA_LISTAR,
+                    RUBRICA_VISUALIZAR,
+                    PROCESSO_LISTAR,
+                    PROCESSO_VISUALIZAR,
+                    "distribuicao:default:credito:listar",
+                    "distribuicao:default:credito:visualizar",
+                    PROCESSO_CRIAR,
+                    PROCESSO_CALCULAR,
+                    PROCESSO_APROVAR,
+                    PROCESSO_FINALIZAR,
+                    PROCESSO_CANCELAR,
+                    "distribuicao:default:processo:exportar",
+                    "distribuicao:default:processo:ver-justificativa-cancelamento",
+                    PROCESSO_RECALCULAR_POS_CALCULADO,
+                    "distribuicao:default:credito-retido:liberar-manual",
+                    "distribuicao:default:demonstrativo:visualizar",
+                    "distribuicao:default:demonstrativo:exportar",
+                    "cadastro:default:titular:ver-cpf-completo"));
+
     @Container
     static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:16-alpine")
             .withDatabaseName("mcad")
@@ -83,14 +193,14 @@ class AuthzPermissionEnforcementTest {
         registry.add("spring.rabbitmq.port", () -> 5672);
     }
 
-    @Autowired MockMvc mockMvc;
-    @Autowired ObjectMapper objectMapper;
+    @Autowired private MockMvc mockMvc;
 
     @MockBean private AuthzDecisionClient authzDecisionClient;
     @MockBean private RemoteDecisionCache remoteDecisionCache;
     @MockBean private RabbitTemplate rabbitTemplate;
     @MockBean private JwtDecoder jwtDecoder;
     @MockBean private AuditClient auditClient;
+    @MockBean private CalcularProcessoCommandHandler calcularProcessoCommandHandler;
 
     @Autowired private LocalDecisionCache localDecisionCache;
 
@@ -105,219 +215,191 @@ class AuthzPermissionEnforcementTest {
         localDecisionCache.invalidateAll();
     }
 
-    // ========== GET /api/v1/processos (listar) ==========
+    @ParameterizedTest(name = "{0} {1} -> allowed={2}")
+    @MethodSource("roleEndpointMatrix")
+    void enforcePermission_WithRoleAndEndpoint_ShouldMatchCatalog(
+            String roleKey,
+            SecuredEndpoint endpoint,
+            boolean expectedAllowed) throws Exception {
+        givenCallerWithRole(roleKey);
 
-    @Test
-    void listar_SemJwt_DeveRetornar401() throws Exception {
-        mockMvc.perform(get("/api/v1/processos"))
+        if (expectedAllowed) {
+            MvcResult result = mockMvc.perform(endpoint.request().with(jwtForRole(roleKey)))
+                    .andReturn();
+
+            assertNotAuthorizationFailure(result, endpoint, roleKey);
+            return;
+        }
+
+        mockMvc.perform(endpoint.request().with(jwtForRole(roleKey)))
+                .andExpect(status().isForbidden());
+    }
+
+    @ParameterizedTest(name = "{0} without JWT -> 401")
+    @MethodSource("securedEndpoints")
+    void enforcePermission_WithoutJwt_ShouldReturnUnauthorized(SecuredEndpoint endpoint) throws Exception {
+        mockMvc.perform(endpoint.request())
                 .andExpect(status().isUnauthorized());
     }
 
-    @Test
-    void listar_ComPermissaoNegada_DeveRetornar403() throws Exception {
-        when(authzDecisionClient.checkDecision(eq("distribuicao:default:processo:listar"), any(), anyString()))
-                .thenReturn(false);
-        mockMvc.perform(get("/api/v1/processos").with(jwt().jwt(j -> j.subject("user").claim("sid", "sess"))))
+    @ParameterizedTest(name = "{0} without permissions -> 403")
+    @MethodSource("securedEndpoints")
+    void enforcePermission_WithJwtWithoutPermission_ShouldReturnForbidden(SecuredEndpoint endpoint) throws Exception {
+        givenCallerWithPermissions(Set.of());
+
+        mockMvc.perform(endpoint.request().with(jwtForRole("distribuicao.default.sem-permissao")))
                 .andExpect(status().isForbidden());
     }
 
     @Test
-    void listar_ComPermissaoPermitida_NaoDeveRetornar401Ou403() throws Exception {
-        when(authzDecisionClient.checkDecision(eq("distribuicao:default:processo:listar"), any(), anyString()))
-                .thenReturn(true);
-        var result = mockMvc.perform(get("/api/v1/processos").with(jwt().jwt(j -> j.subject("user").claim("sid", "sess"))))
-                .andReturn();
-        org.assertj.core.api.Assertions.assertThat(result.getResponse().getStatus()).isNotIn(401, 403, 503);
-    }
+    void roleCatalog_WithRecalcularPosCalculadoPermission_ShouldGrantOnlyAnalista() {
+        List<String> rolesWithPermission = ROLE_KEYS.stream()
+                .filter(roleKey -> ROLE_PERMISSIONS.get(roleKey).contains(PROCESSO_RECALCULAR_POS_CALCULADO))
+                .toList();
 
-    // ========== GET /api/v1/processos/disponiveis ==========
-
-    @Test
-    void disponiveis_SemJwt_DeveRetornar401() throws Exception {
-        mockMvc.perform(get("/api/v1/processos/disponiveis"))
-                .andExpect(status().isUnauthorized());
+        assertThat(rolesWithPermission).containsExactly(ANALISTA);
     }
 
     @Test
-    void disponiveis_ComPermissaoNegada_DeveRetornar403() throws Exception {
-        when(authzDecisionClient.checkDecision(eq("distribuicao:default:processo:listar"), any(), anyString()))
-                .thenReturn(false);
-        mockMvc.perform(get("/api/v1/processos/disponiveis").with(jwt().jwt(j -> j.subject("user").claim("sid", "sess"))))
-                .andExpect(status().isForbidden());
+    void calcular_WithAuthorizationHeader_ShouldPropagateHeaderToCommand() throws Exception {
+        UUID processoId = UUID.randomUUID();
+        String authorizationHeader = "Bearer analyst-token";
+        givenCallerWithRole(ANALISTA);
+        when(calcularProcessoCommandHandler.handle(any(CalcularProcessoCommand.class)))
+                .thenReturn(calculoResponse(processoId));
+
+        mockMvc.perform(post("/api/v1/processos/{id}/calcular", processoId)
+                        .header(HttpHeaders.AUTHORIZATION, authorizationHeader)
+                        .with(jwtForRole(ANALISTA)))
+                .andExpect(status().isOk());
+
+        ArgumentCaptor<CalcularProcessoCommand> commandCaptor =
+                ArgumentCaptor.forClass(CalcularProcessoCommand.class);
+        verify(calcularProcessoCommandHandler).handle(commandCaptor.capture());
+        assertThat(commandCaptor.getValue().processoId()).isEqualTo(processoId);
+        assertThat(commandCaptor.getValue().bearerToken()).isEqualTo(authorizationHeader);
     }
 
-    @Test
-    void disponiveis_ComPermissaoPermitida_NaoDeveRetornar401Ou403() throws Exception {
-        when(authzDecisionClient.checkDecision(eq("distribuicao:default:processo:listar"), any(), anyString()))
-                .thenReturn(true);
-        var result = mockMvc.perform(get("/api/v1/processos/disponiveis")
-                .with(jwt().jwt(j -> j.subject("user").claim("sid", "sess"))))
-                .andReturn();
-        org.assertj.core.api.Assertions.assertThat(result.getResponse().getStatus()).isNotIn(401, 403, 503);
+    private void givenCallerWithRole(String roleKey) {
+        givenCallerWithPermissions(ROLE_PERMISSIONS.getOrDefault(roleKey, Set.of()));
     }
 
-    // ========== GET /api/v1/processos/{id} (visualizar) ==========
-
-    @Test
-    void buscarPorId_SemJwt_DeveRetornar401() throws Exception {
-        mockMvc.perform(get("/api/v1/processos/" + UUID.randomUUID()))
-                .andExpect(status().isUnauthorized());
-    }
-
-    @Test
-    void buscarPorId_ComPermissaoNegada_DeveRetornar403() throws Exception {
-        when(authzDecisionClient.checkDecision(eq("distribuicao:default:processo:visualizar"), any(), anyString()))
-                .thenReturn(false);
-        mockMvc.perform(get("/api/v1/processos/" + UUID.randomUUID())
-                .with(jwt().jwt(j -> j.subject("user").claim("sid", "sess"))))
-                .andExpect(status().isForbidden());
-    }
-
-    @Test
-    void buscarPorId_ComPermissaoPermitida_NaoDeveRetornar401Ou403() throws Exception {
-        when(authzDecisionClient.checkDecision(eq("distribuicao:default:processo:visualizar"), any(), anyString()))
-                .thenReturn(true);
-        var result = mockMvc.perform(get("/api/v1/processos/" + UUID.randomUUID())
-                .with(jwt().jwt(j -> j.subject("user").claim("sid", "sess"))))
-                .andReturn();
-        org.assertj.core.api.Assertions.assertThat(result.getResponse().getStatus()).isNotIn(401, 403, 503);
-    }
-
-    // ========== POST /api/v1/processos (criar) ==========
-
-    @Test
-    void criar_SemJwt_DeveRetornar401() throws Exception {
-        mockMvc.perform(post("/api/v1/processos")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(Map.of("rubricaSigla", "RADIO", "periodo", "2026-03"))))
-                .andExpect(status().isUnauthorized());
-    }
-
-    @Test
-    void criar_ComPermissaoNegada_DeveRetornar403() throws Exception {
-        when(authzDecisionClient.checkDecision(eq("distribuicao:default:processo:criar"), any(), anyString()))
-                .thenReturn(false);
-        mockMvc.perform(post("/api/v1/processos")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(Map.of("rubricaSigla", "RADIO", "periodo", "2026-03")))
-                .with(jwt().jwt(j -> j.subject("user").claim("sid", "sess"))))
-                .andExpect(status().isForbidden());
-    }
-
-    @Test
-    void criar_ComPermissaoPermitida_NaoDeveRetornar401Ou403() throws Exception {
-        when(authzDecisionClient.checkDecision(eq("distribuicao:default:processo:criar"), any(), anyString()))
-                .thenReturn(true);
-        var result = mockMvc.perform(post("/api/v1/processos")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(Map.of("rubricaSigla", "RADIO", "periodo", "2026-03")))
-                .with(jwt().jwt(j -> j.subject("user").claim("sid", "sess"))))
-                .andReturn();
-        org.assertj.core.api.Assertions.assertThat(result.getResponse().getStatus()).isNotIn(401, 403, 503);
-    }
-
-    // ========== POST /api/v1/processos/{id}/aprovar ==========
-
-    @Test
-    void aprovar_SemJwt_DeveRetornar401() throws Exception {
-        mockMvc.perform(post("/api/v1/processos/" + UUID.randomUUID() + "/aprovar"))
-                .andExpect(status().isUnauthorized());
-    }
-
-    @Test
-    void aprovar_ComPermissaoNegada_DeveRetornar403() throws Exception {
-        when(authzDecisionClient.checkDecision(eq("distribuicao:default:processo:aprovar"), any(), anyString()))
-                .thenReturn(false);
-        mockMvc.perform(post("/api/v1/processos/" + UUID.randomUUID() + "/aprovar")
-                .with(jwt().jwt(j -> j.subject("user").claim("sid", "sess"))))
-                .andExpect(status().isForbidden());
-    }
-
-    @Test
-    void aprovar_ComPermissaoPermitida_NaoDeveRetornar401Ou403() throws Exception {
-        when(authzDecisionClient.checkDecision(eq("distribuicao:default:processo:aprovar"), any(), anyString()))
-                .thenReturn(true);
-        var result = mockMvc.perform(post("/api/v1/processos/" + UUID.randomUUID() + "/aprovar")
-                .with(jwt().jwt(j -> j.subject("user").claim("sid", "sess"))))
-                .andReturn();
-        org.assertj.core.api.Assertions.assertThat(result.getResponse().getStatus()).isNotIn(401, 403, 503);
-    }
-
-    // ========== POST /api/v1/processos/{id}/finalizar ==========
-
-    @Test
-    void finalizar_SemJwt_DeveRetornar401() throws Exception {
-        mockMvc.perform(post("/api/v1/processos/" + UUID.randomUUID() + "/finalizar"))
-                .andExpect(status().isUnauthorized());
-    }
-
-    @Test
-    void finalizar_ComPermissaoNegada_DeveRetornar403() throws Exception {
-        when(authzDecisionClient.checkDecision(eq("distribuicao:default:processo:finalizar"), any(), anyString()))
-                .thenReturn(false);
-        mockMvc.perform(post("/api/v1/processos/" + UUID.randomUUID() + "/finalizar")
-                .with(jwt().jwt(j -> j.subject("user").claim("sid", "sess"))))
-                .andExpect(status().isForbidden());
-    }
-
-    @Test
-    void finalizar_ComPermissaoPermitida_NaoDeveRetornar401Ou403() throws Exception {
-        when(authzDecisionClient.checkDecision(eq("distribuicao:default:processo:finalizar"), any(), anyString()))
-                .thenReturn(true);
-        var result = mockMvc.perform(post("/api/v1/processos/" + UUID.randomUUID() + "/finalizar")
-                .with(jwt().jwt(j -> j.subject("user").claim("sid", "sess"))))
-                .andReturn();
-        org.assertj.core.api.Assertions.assertThat(result.getResponse().getStatus()).isNotIn(401, 403, 503);
-    }
-
-    // ========== POST /api/v1/processos/{id}/cancelar ==========
-
-    @Test
-    void cancelar_SemJwt_DeveRetornar401() throws Exception {
-        mockMvc.perform(post("/api/v1/processos/" + UUID.randomUUID() + "/cancelar")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(Map.of("justificativa", "Justificativa longa"))))
-                .andExpect(status().isUnauthorized());
-    }
-
-    @Test
-    void cancelar_ComPermissaoNegada_DeveRetornar403() throws Exception {
-        when(authzDecisionClient.checkDecision(eq("distribuicao:default:processo:cancelar"), any(), anyString()))
-                .thenReturn(false);
-        mockMvc.perform(post("/api/v1/processos/" + UUID.randomUUID() + "/cancelar")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(Map.of("justificativa", "Justificativa longa")))
-                .with(jwt().jwt(j -> j.subject("user").claim("sid", "sess"))))
-                .andExpect(status().isForbidden());
-    }
-
-    @Test
-    void cancelar_ComPermissaoPermitida_NaoDeveRetornar401Ou403() throws Exception {
-        when(authzDecisionClient.checkDecision(eq("distribuicao:default:processo:cancelar"), any(), anyString()))
-                .thenReturn(true);
-        var result = mockMvc.perform(post("/api/v1/processos/" + UUID.randomUUID() + "/cancelar")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(Map.of("justificativa", "Justificativa longa")))
-                .with(jwt().jwt(j -> j.subject("user").claim("sid", "sess"))))
-                .andReturn();
-        org.assertj.core.api.Assertions.assertThat(result.getResponse().getStatus()).isNotIn(401, 403, 503);
-    }
-
-    // ========== GET /api/v1/rubricas (visualizar — legacy) ==========
-
-    @Test
-    void listarRubricas_SemJwt_DeveRetornar401() throws Exception {
-        mockMvc.perform(get("/api/v1/rubricas"))
-                .andExpect(status().isUnauthorized());
-    }
-
-    @Test
-    void listarRubricas_ComPermissaoPermitida_NaoDeveRetornar401Ou403() throws Exception {
+    private void givenCallerWithPermissions(Set<String> permissions) {
         when(authzDecisionClient.checkDecision(anyString(), any(), anyString()))
-                .thenReturn(true);
-        var result = mockMvc.perform(get("/api/v1/rubricas")
-                .with(jwt().jwt(j -> j.subject("user").claim("sid", "sess"))))
-                .andReturn();
-        org.assertj.core.api.Assertions.assertThat(result.getResponse().getStatus()).isNotIn(401, 403, 503);
+                .thenAnswer(invocation -> permissions.contains(invocation.getArgument(0, String.class)));
+    }
+
+    private static Stream<Arguments> roleEndpointMatrix() {
+        return ROLE_KEYS.stream()
+                .flatMap(roleKey -> securedEndpoints()
+                        .map(endpoint -> Arguments.of(
+                                roleKey,
+                                endpoint,
+                                ROLE_PERMISSIONS.get(roleKey).contains(endpoint.requiredPermission()))));
+    }
+
+    private static Stream<SecuredEndpoint> securedEndpoints() {
+        return Stream.of(
+                new SecuredEndpoint(
+                        "GET /api/v1/processos",
+                        PROCESSO_LISTAR,
+                        () -> get("/api/v1/processos")),
+                new SecuredEndpoint(
+                        "GET /api/v1/processos/disponiveis",
+                        PROCESSO_LISTAR,
+                        () -> get("/api/v1/processos/disponiveis")),
+                new SecuredEndpoint(
+                        "GET /api/v1/processos/{id}",
+                        PROCESSO_VISUALIZAR,
+                        () -> get("/api/v1/processos/{id}", UUID.randomUUID())),
+                new SecuredEndpoint(
+                        "POST /api/v1/processos",
+                        PROCESSO_CRIAR,
+                        () -> post("/api/v1/processos")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(PROCESSO_REQUEST)),
+                new SecuredEndpoint(
+                        "POST /api/v1/processos/{id}/calcular",
+                        PROCESSO_CALCULAR,
+                        () -> post("/api/v1/processos/{id}/calcular", UUID.randomUUID())),
+                new SecuredEndpoint(
+                        "GET /api/v1/processos/{id}/calculo",
+                        PROCESSO_VISUALIZAR,
+                        () -> get("/api/v1/processos/{id}/calculo", UUID.randomUUID())),
+                new SecuredEndpoint(
+                        "POST /api/v1/processos/{id}/aprovar",
+                        PROCESSO_APROVAR,
+                        () -> post("/api/v1/processos/{id}/aprovar", UUID.randomUUID())),
+                new SecuredEndpoint(
+                        "POST /api/v1/processos/{id}/finalizar",
+                        PROCESSO_FINALIZAR,
+                        () -> post("/api/v1/processos/{id}/finalizar", UUID.randomUUID())),
+                new SecuredEndpoint(
+                        "POST /api/v1/processos/{id}/cancelar",
+                        PROCESSO_CANCELAR,
+                        () -> post("/api/v1/processos/{id}/cancelar", UUID.randomUUID())
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(CANCELAR_REQUEST)),
+                new SecuredEndpoint(
+                        "GET /api/v1/rubricas",
+                        RUBRICA_LISTAR,
+                        () -> get("/api/v1/rubricas")),
+                new SecuredEndpoint(
+                        "GET /api/v1/rubricas/{sigla}",
+                        RUBRICA_VISUALIZAR,
+                        () -> get("/api/v1/rubricas/{sigla}", "RADIO")));
+    }
+
+    private static RequestPostProcessor jwtForRole(String roleKey) {
+        return jwt().jwt(jwt -> jwt
+                .subject(roleKey)
+                .claim("sid", "sess-" + roleKey)
+                .claim("roles", List.of(roleKey)));
+    }
+
+    private static CalcularProcessoResponse calculoResponse(UUID processoId) {
+        return new CalcularProcessoResponse(
+                processoId,
+                StatusProcesso.CALCULADO,
+                "RADIO",
+                "2026-03",
+                BigDecimal.TEN,
+                0,
+                0,
+                BigDecimal.ZERO,
+                0,
+                BigDecimal.ZERO,
+                0,
+                BigDecimal.ZERO,
+                0,
+                BigDecimal.ZERO,
+                Instant.parse("2026-03-01T00:00:00Z"));
+    }
+
+    private static void assertNotAuthorizationFailure(
+            MvcResult result,
+            SecuredEndpoint endpoint,
+            String roleKey) {
+        assertThat(result.getResponse().getStatus())
+                .as("%s should pass authorization for %s", roleKey, endpoint)
+                .isNotIn(
+                        HttpStatus.UNAUTHORIZED.value(),
+                        HttpStatus.FORBIDDEN.value(),
+                        HttpStatus.SERVICE_UNAVAILABLE.value());
+    }
+
+    private record SecuredEndpoint(
+            String name,
+            String requiredPermission,
+            Supplier<MockHttpServletRequestBuilder> requestFactory) {
+
+        MockHttpServletRequestBuilder request() {
+            return requestFactory.get();
+        }
+
+        @Override
+        public String toString() {
+            return name;
+        }
     }
 }

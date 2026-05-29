@@ -2,17 +2,28 @@
   "service": "distribuicao-api",
   "domain": "distribuicao",
   "area": "default",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "permissions": [
-    { "key": "distribuicao:default:rubrica:listar", "displayName": "Listar rubricas", "description": "Lista as rubricas sincronizadas a partir da Arrecadação.", "resource": "rubrica", "action": "listar" },
-    { "key": "distribuicao:default:rubrica:visualizar", "displayName": "Visualizar rubrica", "description": "Detalhe de uma rubrica específica.", "resource": "rubrica", "action": "visualizar" },
+    { "key": "distribuicao:default:rubrica:listar", "displayName": "Listar rubricas", "description": "[Leitura] Lista as rubricas sincronizadas a partir da Arrecadação.", "resource": "rubrica", "action": "listar" },
+    { "key": "distribuicao:default:rubrica:visualizar", "displayName": "Visualizar rubrica", "description": "[Leitura] Detalhe de uma rubrica específica.", "resource": "rubrica", "action": "visualizar" },
 
-    { "key": "distribuicao:default:processo:listar", "displayName": "Listar processos", "description": "Lista paginada de processos de distribuição; também usado pelo endpoint /disponiveis.", "resource": "processo", "action": "listar" },
-    { "key": "distribuicao:default:processo:visualizar", "displayName": "Visualizar processo", "description": "Detalhes de um processo de distribuição e seu resumo de cálculo.", "resource": "processo", "action": "visualizar" },
-    { "key": "distribuicao:default:processo:criar", "displayName": "Criar processo", "description": "Cria um novo processo de distribuição para uma combinação rubrica+período.", "resource": "processo", "action": "criar" },
-    { "key": "distribuicao:default:processo:calcular", "displayName": "Calcular processo", "description": "Dispara o cálculo de créditos (transição CRIADO → CALCULADO).", "resource": "processo", "action": "calcular" },
-    { "key": "distribuicao:default:processo:aprovar", "displayName": "Aprovar processo", "description": "Aprova o cálculo (transição CALCULADO → APROVADO).", "resource": "processo", "action": "aprovar" },
-    { "key": "distribuicao:default:processo:finalizar", "displayName": "Finalizar processo", "description": "Finaliza o processo (APROVADO → FINALIZADO; irreversível).", "resource": "processo", "action": "finalizar" },
-    { "key": "distribuicao:default:processo:cancelar", "displayName": "Cancelar processo", "description": "Cancela o processo a partir de qualquer estado exceto FINALIZADO; exige justificativa.", "resource": "processo", "action": "cancelar" }
+    { "key": "distribuicao:default:processo:listar", "displayName": "Listar processos", "description": "[Leitura] Lista paginada de processos de distribuição; também usado pelo endpoint /disponiveis.", "resource": "processo", "action": "listar" },
+    { "key": "distribuicao:default:processo:visualizar", "displayName": "Visualizar processo", "description": "[Leitura] Detalhes de um processo de distribuição e seu resumo de cálculo.", "resource": "processo", "action": "visualizar" },
+    { "key": "distribuicao:default:processo:criar", "displayName": "Criar processo", "description": "[Operação reversível] Cria um novo processo de distribuição para uma combinação rubrica+período.", "resource": "processo", "action": "criar" },
+    { "key": "distribuicao:default:processo:calcular", "displayName": "Calcular processo", "description": "[Operação reversível] Dispara o cálculo de créditos (transição CRIADO → CALCULADO).", "resource": "processo", "action": "calcular" },
+    { "key": "distribuicao:default:processo:aprovar", "displayName": "Aprovar processo", "description": "[Decisão de status] Aprova o cálculo (transição CALCULADO → APROVADO).", "resource": "processo", "action": "aprovar" },
+    { "key": "distribuicao:default:processo:finalizar", "displayName": "Finalizar processo", "description": "[Decisão de status] Finaliza o processo (APROVADO → FINALIZADO; irreversível).", "resource": "processo", "action": "finalizar" },
+    { "key": "distribuicao:default:processo:cancelar", "displayName": "Cancelar processo", "description": "[Decisão de status] Cancela o processo a partir de qualquer estado exceto FINALIZADO; irreversível e exige justificativa.", "resource": "processo", "action": "cancelar" },
+
+    { "key": "distribuicao:default:credito:listar", "displayName": "Listar créditos", "description": "[Leitura] Lista créditos de um processo de distribuição.", "resource": "credito", "action": "listar" },
+    { "key": "distribuicao:default:credito:visualizar", "displayName": "Visualizar crédito", "description": "[Leitura] Detalhe de um crédito específico.", "resource": "credito", "action": "visualizar" },
+    { "key": "distribuicao:default:processo:exportar", "displayName": "Exportar processo", "description": "[Ação sensível / UI] Exporta relatório consolidado do processo.", "resource": "processo", "action": "exportar" },
+    { "key": "distribuicao:default:processo:ver-justificativa-cancelamento", "displayName": "Ver justificativa de cancelamento", "description": "[Ação sensível / UI] Exibe a justificativa textual de processos cancelados.", "resource": "processo", "action": "ver-justificativa-cancelamento" },
+    { "key": "distribuicao:default:processo:recalcular-pos-calculado", "displayName": "Recalcular processo após CALCULADO", "description": "[Ação sensível / UI] Permite recalcular um processo que já está em estado CALCULADO. Operação excepcional.", "resource": "processo", "action": "recalcular-pos-calculado" },
+    { "key": "distribuicao:default:credito-retido:liberar-manual", "displayName": "Liberar crédito retido manualmente", "description": "[Ação sensível / UI] Força liberação de crédito retido fora do fluxo normal de distribuição.", "resource": "credito-retido", "action": "liberar-manual" },
+    { "key": "distribuicao:default:processo:ver-historico-alteracoes", "displayName": "Ver histórico de alterações do processo", "description": "[Trilha de auditoria] Acesso ao timeline do ecad-auditoria para um processo.", "resource": "processo", "action": "ver-historico-alteracoes" },
+    { "key": "distribuicao:default:credito:ver-historico-alteracoes", "displayName": "Ver histórico de alterações de crédito", "description": "[Trilha de auditoria] Acesso ao timeline do ecad-auditoria para um crédito.", "resource": "credito", "action": "ver-historico-alteracoes" },
+    { "key": "distribuicao:default:demonstrativo:visualizar", "displayName": "Visualizar demonstrativo", "description": "[Leitura] Visualiza demonstrativo por titular (depende de F07).", "resource": "demonstrativo", "action": "visualizar" },
+    { "key": "distribuicao:default:demonstrativo:exportar", "displayName": "Exportar demonstrativo", "description": "[Ação sensível / UI] Exporta demonstrativo por titular (depende de F07).", "resource": "demonstrativo", "action": "exportar" }
   ]
 }

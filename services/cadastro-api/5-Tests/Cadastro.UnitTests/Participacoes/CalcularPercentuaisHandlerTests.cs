@@ -1,3 +1,4 @@
+using Cadastro.Application.Common.Authorization;
 using Cadastro.Application.Common.Exceptions;
 using Cadastro.Application.Participacoes.Commands;
 using Cadastro.Domain.Entities;
@@ -23,7 +24,8 @@ public class CalcularPercentuaisHandlerTests
         _handler = new CalcularPercentuaisCommandHandler(
             _participacaoRepo.Object,
             _fonogramaRepo.Object,
-            Mock.Of<IParticipacaoAuditPublisher>());
+            Mock.Of<IParticipacaoAuditPublisher>(),
+            Mock.Of<ICurrentUserPermissions>(p => p.Has(CadastroPermissionNames.TitularVerCpfCompleto)));
     }
 
     private Fonograma CriarFonograma(StatusFonograma status = StatusFonograma.PendenteValidacao)

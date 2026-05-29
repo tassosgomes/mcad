@@ -16,6 +16,35 @@
   padding: var(--space-5);
 }
 
+.tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  border-bottom: 1px solid rgba(67, 70, 85, 0.18);
+}
+
+.tab {
+  min-height: 40px;
+  padding: var(--space-2) var(--space-3);
+  background: transparent;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  font-weight: 700;
+}
+
+.tab:hover {
+  color: var(--color-text-primary);
+}
+
+.activeTab {
+  border-bottom-color: var(--color-accent);
+  color: var(--color-text-primary);
+}
+
 .sectionTitle {
   font-size: var(--text-base);
   font-weight: 600;

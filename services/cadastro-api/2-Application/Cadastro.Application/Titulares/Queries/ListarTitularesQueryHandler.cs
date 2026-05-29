@@ -1,3 +1,4 @@
+using Cadastro.Application.Common.Authorization;
 using Cadastro.Application.Common.CQRS;
 using Cadastro.Application.Common.Responses;
 using Cadastro.Application.Titulares.Responses;
@@ -13,10 +14,12 @@ namespace Cadastro.Application.Titulares.Queries;
 public class ListarTitularesQueryHandler : IQueryHandler<ListarTitularesQuery, TitularListResponse>
 {
     private readonly ITitularRepository _repository;
+    private readonly ICurrentUserPermissions _permissions;
 
-    public ListarTitularesQueryHandler(ITitularRepository repository)
+    public ListarTitularesQueryHandler(ITitularRepository repository, ICurrentUserPermissions permissions)
     {
         _repository = repository;
+        _permissions = permissions;
     }
 
     public async Task<TitularListResponse> HandleAsync(
@@ -36,22 +39,32 @@ public class ListarTitularesQueryHandler : IQueryHandler<ListarTitularesQuery, T
 
         var totalPages = (int)Math.Ceiling((double)total / query.Size);
 
+        var fullDocumentAllowed = _permissions.Has(CadastroPermissionNames.TitularVerCpfCompleto);
+
         return new TitularListResponse(
-            Data: items.Select(MapToResponse),
+            Data: items.Select(item => MapToResponse(item, fullDocumentAllowed)),
             Pagination: new PaginationResponse(query.Page, query.Size, total, totalPages));
     }
 
-    internal static TitularResponse MapToResponse(Titular t) => new(
+    internal static TitularResponse MapToResponse(Titular t, bool fullDocumentAllowed)
+    {
+        var (documento, documentoFormatado) = DocumentoMasking.Apply(
+            t.Documento,
+            t.DocumentoFormatado,
+            fullDocumentAllowed);
+
+        return new TitularResponse(
         Id: t.Id,
         Codigo: t.Codigo,
         Nome: t.Nome,
         Tipo: t.Tipo.ToString(),
-        Documento: t.Documento,
-        DocumentoFormatado: t.DocumentoFormatado,
+        Documento: documento,
+        DocumentoFormatado: documentoFormatado,
         Nacionalidade: t.Nacionalidade,
         CaeIpi: t.CaeIpi?.Valor,
         Associacao: new AssociacaoResumoResponse(t.Associacao.Id, t.Associacao.Codigo, t.Associacao.Sigla, t.Associacao.Nome),
         Status: t.Status.ToString().ToUpperInvariant(),
         CriadoEm: t.CriadoEm,
         AtualizadoEm: t.AtualizadoEm);
+    }
 }

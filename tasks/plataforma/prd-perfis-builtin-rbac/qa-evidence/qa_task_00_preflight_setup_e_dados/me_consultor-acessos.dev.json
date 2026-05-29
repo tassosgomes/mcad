@@ -1,0 +1,17 @@
+{
+  "_captured_at": "2026-05-28T23:04:45.243Z",
+  "_hint": "consultor-acessos.dev",
+  "_bff_me_status": 401,
+  "_bff_me_permissions_status": 401,
+  "_jwt_fingerprint": "...YPT2dW",
+  "me_subjectId_redacted": null,
+  "me_name": null,
+  "me_email_redacted": null,
+  "permissions": null,
+  "permissions_count": null,
+  "version": null,
+  "error_body": {
+    "code": "INVALID_TOKEN",
+    "message": "Usuário não provisionado. Contate o administrador."
+  }
+}

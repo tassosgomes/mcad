@@ -1,0 +1,219 @@
+{
+  "headless": true,
+  "captured_at": "2026-05-28T23:45:53.790Z",
+  "base_url": "https://mcad.tasso.dev.br",
+  "bff_url": "https://mcad-bff.tasso.dev.br",
+  "expected_roles": {
+    "consultor.dev": "distribuicao.default.consultor",
+    "operador.dev": "distribuicao.default.operador",
+    "gerente.dev": "distribuicao.default.gerente",
+    "analista.dev": "distribuicao.default.analista",
+    "gestor-acessos.dev": "acessos.default.gestor",
+    "consultor-acessos.dev": "acessos.default.consultor"
+  },
+  "expected_perm_counts": {
+    "consultor.dev": 40,
+    "operador.dev": 9,
+    "gerente.dev": 16,
+    "analista.dev": 102,
+    "gestor-acessos.dev": 7,
+    "consultor-acessos.dev": 5
+  },
+  "logins": [
+    {
+      "hint": "consultor.dev",
+      "email_redacted": "co***@mcad.local",
+      "login_status": "ok",
+      "me_status": 200,
+      "me_permissions_status": 200,
+      "me_permissions_count": 40,
+      "expected_role": "distribuicao.default.consultor",
+      "expected_count": 40,
+      "has_expected_permissions": true,
+      "count_matches_expected": true,
+      "notes": [],
+      "token_fingerprint": "...1EBs7b",
+      "duration_ms": 16843,
+      "error_body": null
+    },
+    {
+      "hint": "operador.dev",
+      "email_redacted": "op***@mcad.local",
+      "login_status": "ok",
+      "me_status": 200,
+      "me_permissions_status": 200,
+      "me_permissions_count": 9,
+      "expected_role": "distribuicao.default.operador",
+      "expected_count": 9,
+      "has_expected_permissions": true,
+      "count_matches_expected": true,
+      "notes": [],
+      "token_fingerprint": "...PiiK3V",
+      "duration_ms": 19583,
+      "error_body": null
+    },
+    {
+      "hint": "gerente.dev",
+      "email_redacted": "ge***@mcad.local",
+      "login_status": "ok",
+      "me_status": 200,
+      "me_permissions_status": 200,
+      "me_permissions_count": 16,
+      "expected_role": "distribuicao.default.gerente",
+      "expected_count": 16,
+      "has_expected_permissions": true,
+      "count_matches_expected": true,
+      "notes": [],
+      "token_fingerprint": "...NNXWCZ",
+      "duration_ms": 14725,
+      "error_body": null
+    },
+    {
+      "hint": "analista.dev",
+      "email_redacted": "an***@mcad.dev",
+      "login_status": "ok",
+      "me_status": 200,
+      "me_permissions_status": 200,
+      "me_permissions_count": 102,
+      "expected_role": "distribuicao.default.analista",
+      "expected_count": 102,
+      "has_expected_permissions": true,
+      "count_matches_expected": true,
+      "notes": [],
+      "token_fingerprint": "...x5I4Zl",
+      "duration_ms": 16751,
+      "error_body": null
+    },
+    {
+      "hint": "gestor-acessos.dev",
+      "email_redacted": "ge***@mcad.local",
+      "login_status": "ok",
+      "me_status": 200,
+      "me_permissions_status": 200,
+      "me_permissions_count": 7,
+      "expected_role": "acessos.default.gestor",
+      "expected_count": 7,
+      "has_expected_permissions": true,
+      "count_matches_expected": true,
+      "notes": [],
+      "token_fingerprint": "...-V6AuJ",
+      "duration_ms": 15113,
+      "error_body": null
+    },
+    {
+      "hint": "consultor-acessos.dev",
+      "email_redacted": "co***@mcad.local",
+      "login_status": "ok",
+      "me_status": 200,
+      "me_permissions_status": 200,
+      "me_permissions_count": 5,
+      "expected_role": "acessos.default.consultor",
+      "expected_count": 5,
+      "has_expected_permissions": true,
+      "count_matches_expected": true,
+      "notes": [],
+      "token_fingerprint": "...353-GK",
+      "duration_ms": 12867,
+      "error_body": null
+    }
+  ],
+  "seeds": [
+    {
+      "seq": 1,
+      "method": "api_fallback",
+      "id": null,
+      "status": 404,
+      "errors": [
+        "No create button found on /distribuicao/processos"
+      ],
+      "screenshots": [
+        "processo_seed_1_no_button.png"
+      ],
+      "http_calls": [],
+      "duration_ms": 0,
+      "api_fallback": {
+        "status": 404,
+        "body": {
+          "type": "about:blank",
+          "title": "Not Found",
+          "status": 404,
+          "detail": "No static resource api/v1/processos.",
+          "instance": "/api/v1/processos"
+        },
+        "payload": {
+          "nome": "Processo QA Preflight v2 #1",
+          "descricao": "Seed criado pelo QA Task Runner v2 para validacao de US-03 historico (seq 1)",
+          "competencia": "2026-05",
+          "data_referencia": "2026-05-28"
+        }
+      }
+    },
+    {
+      "seq": 2,
+      "method": "api_fallback",
+      "id": null,
+      "status": 404,
+      "errors": [
+        "No create button found on /distribuicao/processos"
+      ],
+      "screenshots": [
+        "processo_seed_2_no_button.png"
+      ],
+      "http_calls": [],
+      "duration_ms": 0,
+      "api_fallback": {
+        "status": 404,
+        "body": {
+          "type": "about:blank",
+          "title": "Not Found",
+          "status": 404,
+          "detail": "No static resource api/v1/processos.",
+          "instance": "/api/v1/processos"
+        },
+        "payload": {
+          "nome": "Processo QA Preflight v2 #2",
+          "descricao": "Seed criado pelo QA Task Runner v2 para validacao de US-03 historico (seq 2)",
+          "competencia": "2026-05",
+          "data_referencia": "2026-05-28"
+        }
+      }
+    }
+  ],
+  "calcs": [
+    {
+      "seq": 1,
+      "processoId": null,
+      "action": "calcular",
+      "success": false,
+      "screenshot": "processo_calcular_1_no_button.png",
+      "errors": [
+        "No Calcular button visible"
+      ],
+      "http_calls": [],
+      "duration_ms": 0
+    },
+    {
+      "seq": 2,
+      "processoId": null,
+      "action": "calcular",
+      "success": false,
+      "screenshot": "processo_calcular_2_no_button.png",
+      "errors": [
+        "No Calcular button visible"
+      ],
+      "http_calls": [],
+      "duration_ms": 0
+    }
+  ],
+  "approval": {
+    "processoId": null,
+    "action": "aprovar",
+    "success": false,
+    "screenshot": "processo_aprovado_no_button.png",
+    "errors": [
+      "No Aprovar button visible"
+    ],
+    "http_calls": [],
+    "duration_ms": 0
+  }
+}

@@ -17,6 +17,8 @@ test('loadConfig returns proxy defaults', () => {
   delete process.env.AUTHZ_BASE_URL;
   delete process.env.AUTHZ_TIMEOUT_MS;
   delete process.env.ME_CACHE_TTL_SECONDS;
+  delete process.env.AUDIT_TIMEOUT_MS;
+  process.env.AUDIT_BASE_URL = 'http://localhost:8090/api/v1/audit';
 
   const config = loadConfig();
 
@@ -25,6 +27,8 @@ test('loadConfig returns proxy defaults', () => {
   assert.equal(config.authzBaseUrl, 'http://localhost:8085');
   assert.equal(config.authzTimeoutMs, 3000);
   assert.equal(config.meCacheTtlSeconds, 60);
+  assert.equal(config.auditBaseUrl, 'http://localhost:8090/api/v1/audit');
+  assert.equal(config.auditTimeoutMs, 5000);
   assert.deepEqual(config.corsAllowedOrigins, [
     'http://localhost:5173',
     'https://mcad.tasso.dev.br',
@@ -55,6 +59,8 @@ test('loadConfig reads environment overrides', () => {
   process.env.AUTHZ_BASE_URL = 'https://authz.example/';
   process.env.AUTHZ_TIMEOUT_MS = '5000';
   process.env.ME_CACHE_TTL_SECONDS = '120';
+  process.env.AUDIT_BASE_URL = 'https://audit.example/api/v1/audit/';
+  process.env.AUDIT_TIMEOUT_MS = '7000';
 
   const config = loadConfig();
   const cadastro = config.upstreams.find((upstream) => upstream.name === 'cadastro');
@@ -72,4 +78,12 @@ test('loadConfig reads environment overrides', () => {
   assert.equal(config.authzBaseUrl, 'https://authz.example');
   assert.equal(config.authzTimeoutMs, 5000);
   assert.equal(config.meCacheTtlSeconds, 120);
+  assert.equal(config.auditBaseUrl, 'https://audit.example/api/v1/audit');
+  assert.equal(config.auditTimeoutMs, 7000);
+});
+
+test('loadConfig requires AUDIT_BASE_URL', () => {
+  delete process.env.AUDIT_BASE_URL;
+
+  assert.throws(() => loadConfig(), /AUDIT_BASE_URL is required/);
 });

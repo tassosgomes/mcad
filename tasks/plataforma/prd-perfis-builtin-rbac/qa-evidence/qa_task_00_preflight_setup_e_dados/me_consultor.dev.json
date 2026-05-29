@@ -1,0 +1,14 @@
+{
+  "_captured_at": "2026-05-28T23:03:41.327Z",
+  "_hint": "consultor.dev",
+  "_bff_me_status": 200,
+  "_bff_me_permissions_status": 200,
+  "_jwt_fingerprint": "...GX9Q2W",
+  "me_subjectId_redacted": "g4t9***ad",
+  "me_name": "consultor dev",
+  "me_email_redacted": "co***@mcad.local",
+  "permissions": [],
+  "permissions_count": 0,
+  "version": 1,
+  "error_body": null
+}

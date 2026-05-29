@@ -1,4 +1,5 @@
 using Cadastro.Application.Audit;
+using Cadastro.Application.Common.Authorization;
 using Cadastro.Application.Common.CQRS;
 using Cadastro.Application.Common.Exceptions;
 using Cadastro.Application.Titulares.Queries;
@@ -22,19 +23,22 @@ public class CriarTitularCommandHandler : ICommandHandler<CriarTitularCommand, T
     private readonly IValidator<CriarTitularCommand> _validator;
     private readonly IOutboxEventWriter _outbox;
     private readonly ITitularAuditPublisher _auditPublisher;
+    private readonly ICurrentUserPermissions _permissions;
 
     public CriarTitularCommandHandler(
         ITitularRepository titularRepository,
         IAssociacaoRepository associacaoRepository,
         IValidator<CriarTitularCommand> validator,
         IOutboxEventWriter outbox,
-        ITitularAuditPublisher auditPublisher)
+        ITitularAuditPublisher auditPublisher,
+        ICurrentUserPermissions permissions)
     {
         _titularRepository = titularRepository;
         _associacaoRepository = associacaoRepository;
         _validator = validator;
         _outbox = outbox;
         _auditPublisher = auditPublisher;
+        _permissions = permissions;
     }
 
     public async Task<TitularResponse> HandleAsync(
@@ -102,6 +106,8 @@ public class CriarTitularCommandHandler : ICommandHandler<CriarTitularCommand, T
         // Reload com Associação para o response
         titular = await _titularRepository.GetByIdAsync(titular.Id, cancellationToken) ?? titular;
 
-        return ListarTitularesQueryHandler.MapToResponse(titular);
+        var fullDocumentAllowed = _permissions.Has(CadastroPermissionNames.TitularVerCpfCompleto);
+
+        return ListarTitularesQueryHandler.MapToResponse(titular, fullDocumentAllowed);
     }
 }

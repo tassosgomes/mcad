@@ -1,6 +1,8 @@
+using Cadastro.Application.Common.Authorization;
 using Cadastro.Application.Common.CQRS;
 using Cadastro.Application.Common.Exceptions;
 using Cadastro.Application.Participacoes.Responses;
+using Cadastro.Application.Titulares;
 using Cadastro.Application.Titularidades.Responses;
 using Cadastro.Domain.Entities;
 using Cadastro.Domain.Enums;
@@ -12,11 +14,16 @@ public class ListarParticipacoesQueryHandler : IQueryHandler<ListarParticipacoes
 {
     private readonly IParticipacaoRepository _repository;
     private readonly IFonogramaRepository _fonogramaRepository;
+    private readonly ICurrentUserPermissions _permissions;
 
-    public ListarParticipacoesQueryHandler(IParticipacaoRepository repository, IFonogramaRepository fonogramaRepository)
+    public ListarParticipacoesQueryHandler(
+        IParticipacaoRepository repository,
+        IFonogramaRepository fonogramaRepository,
+        ICurrentUserPermissions permissions)
     {
         _repository = repository;
         _fonogramaRepository = fonogramaRepository;
+        _permissions = permissions;
     }
 
     public async Task<ParticipacoesResponse> HandleAsync(ListarParticipacoesQuery query, CancellationToken cancellationToken)
@@ -31,9 +38,11 @@ public class ListarParticipacoesQueryHandler : IQueryHandler<ListarParticipacoes
         bool somaCalculada = lista.Any() && lista.All(p => p.Percentual.HasValue);
         decimal? soma = somaCalculada ? lista.Sum(p => p.Percentual!.Value) : null;
 
+        var fullDocumentAllowed = _permissions.Has(CadastroPermissionNames.TitularVerCpfCompleto);
+
         return new ParticipacoesResponse(
             query.FonogramaId,
-            lista.Select(MapToItemResponse).ToList(),
+            lista.Select(p => MapToItemResponse(p, fullDocumentAllowed)).ToList(),
             soma,
             somaCalculada,
             fonograma.PercentuaisDesatualizados
@@ -43,7 +52,8 @@ public class ListarParticipacoesQueryHandler : IQueryHandler<ListarParticipacoes
     internal static ParticipacoesResponse BuildResponse(
         Guid fonogramaId, 
         IEnumerable<ParticipacaoConexa> participacoes, 
-        bool percentuaisDesatualizados)
+        bool percentuaisDesatualizados,
+        bool fullDocumentAllowed)
     {
         var lista = participacoes.ToList();
         bool somaCalculada = lista.Any() && lista.All(p => p.Percentual.HasValue);
@@ -51,15 +61,20 @@ public class ListarParticipacoesQueryHandler : IQueryHandler<ListarParticipacoes
 
         return new ParticipacoesResponse(
             fonogramaId,
-            lista.Select(MapToItemResponse).ToList(),
+            lista.Select(p => MapToItemResponse(p, fullDocumentAllowed)).ToList(),
             soma,
             somaCalculada,
             percentuaisDesatualizados
         );
     }
 
-    internal static ParticipacaoItemResponse MapToItemResponse(ParticipacaoConexa p)
+    internal static ParticipacaoItemResponse MapToItemResponse(ParticipacaoConexa p, bool fullDocumentAllowed)
     {
+        var documentoFormatado = DocumentoMasking.Apply(
+            p.Titular.Documento,
+            p.Titular.DocumentoFormatado,
+            fullDocumentAllowed).DocumentoFormatado;
+
         return new ParticipacaoItemResponse(
             p.Id,
             new TitularResumoResponse(
@@ -67,7 +82,7 @@ public class ListarParticipacoesQueryHandler : IQueryHandler<ListarParticipacoes
                 p.Titular.Codigo,
                 p.Titular.Nome,
                 p.Titular.Tipo.ToString().ToUpperInvariant(),
-                p.Titular.DocumentoFormatado,
+                documentoFormatado,
                 p.Titular.Associacao?.Sigla
             ),
             CategoriaToString(p.Categoria),

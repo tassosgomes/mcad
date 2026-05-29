@@ -1,0 +1,24 @@
+{
+  "_captured_at": "2026-05-28T23:45:20.647Z",
+  "_hint": "consultor-acessos.dev",
+  "_bff_me_status": 200,
+  "_bff_me_permissions_status": 200,
+  "_jwt_fingerprint": "...353-GK",
+  "me_subjectId_redacted": "hu6o***ps",
+  "me_name": "Consultor de Acessos",
+  "me_email_redacted": "co***@mcad.local",
+  "permissions": [
+    "acessos:default:papel:listar",
+    "acessos:default:atribuicao:ver-historico",
+    "acessos:default:papel:visualizar",
+    "acessos:default:usuario:visualizar-papeis-completo",
+    "acessos:default:usuario:listar"
+  ],
+  "permissions_count": 5,
+  "version": 2,
+  "error_body": null,
+  "expected_role": "acessos.default.consultor",
+  "expected_count": 5,
+  "has_expected_permissions": true,
+  "count_matches_expected": true
+}

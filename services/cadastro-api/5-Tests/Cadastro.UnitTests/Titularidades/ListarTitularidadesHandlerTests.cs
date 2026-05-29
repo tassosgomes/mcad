@@ -1,3 +1,4 @@
+using Cadastro.Application.Common.Authorization;
 using Cadastro.Application.Titularidades.Queries;
 using Cadastro.Application.Titularidades.Responses;
 using Cadastro.Domain.Entities;
@@ -20,7 +21,10 @@ public class ListarTitularidadesHandlerTests
     {
         _titularidadeRepoMock = new Mock<ITitularidadeRepository>();
         _obraRepoMock = new Mock<IObraRepository>();
-        _handler = new ListarTitularidadesQueryHandler(_titularidadeRepoMock.Object, _obraRepoMock.Object);
+        _handler = new ListarTitularidadesQueryHandler(
+            _titularidadeRepoMock.Object,
+            _obraRepoMock.Object,
+            Mock.Of<ICurrentUserPermissions>(p => p.Has(CadastroPermissionNames.TitularVerCpfCompleto)));
     }
 
     [Fact]

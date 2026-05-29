@@ -1,0 +1,407 @@
+{
+  "captured_at": "2026-05-28T23:05:46.464Z",
+  "used_user": "analista.dev",
+  "token_fingerprint": "...rgIB00",
+  "calls": {
+    "list_roles": {
+      "status": 200,
+      "path": "/roles",
+      "sample": {
+        "keys": [
+          "page",
+          "size",
+          "totalElements",
+          "totalPages",
+          "content"
+        ],
+        "first": null
+      },
+      "full": {
+        "page": 0,
+        "size": 20,
+        "totalElements": 0,
+        "totalPages": 0,
+        "content": []
+      }
+    },
+    "list_roles_distribuicao": {
+      "status": 200,
+      "path": "/roles?domain=distribuicao",
+      "sample": {
+        "keys": [
+          "page",
+          "size",
+          "totalElements",
+          "totalPages",
+          "content"
+        ],
+        "first": null
+      },
+      "full": {
+        "page": 0,
+        "size": 20,
+        "totalElements": 0,
+        "totalPages": 0,
+        "content": []
+      }
+    },
+    "list_roles_acessos": {
+      "status": 200,
+      "path": "/roles?domain=acessos",
+      "sample": {
+        "keys": [
+          "page",
+          "size",
+          "totalElements",
+          "totalPages",
+          "content"
+        ],
+        "first": null
+      },
+      "full": {
+        "page": 0,
+        "size": 20,
+        "totalElements": 0,
+        "totalPages": 0,
+        "content": []
+      }
+    },
+    "list_permissions_distribuicao": {
+      "status": 200,
+      "path": "/permissions?domain=distribuicao",
+      "sample": {
+        "keys": [
+          "page",
+          "size",
+          "totalElements",
+          "totalPages",
+          "content"
+        ],
+        "first": null
+      },
+      "full": {
+        "page": 0,
+        "size": 20,
+        "totalElements": 9,
+        "totalPages": 1,
+        "content": [
+          {
+            "id": "0232b219-2355-4277-ad52-f73aa22d13f7",
+            "key": "distribuicao:default:processo:aprovar",
+            "displayName": "Aprovar processo",
+            "domain": "distribuicao",
+            "area": "default",
+            "status": "ACTIVE"
+          },
+          {
+            "id": "0a4885eb-f67d-405d-ad7d-3b4c2fab23ed",
+            "key": "distribuicao:default:processo:calcular",
+            "displayName": "Calcular processo",
+            "domain": "distribuicao",
+            "area": "default",
+            "status": "ACTIVE"
+          },
+          {
+            "id": "c5d61db2-54de-4df6-b3cb-08e43f25bc08",
+            "key": "distribuicao:default:processo:cancelar",
+            "displayName": "Cancelar processo",
+            "domain": "distribuicao",
+            "area": "default",
+            "status": "ACTIVE"
+          },
+          {
+            "id": "4c1a48c0-e4d9-409c-8789-37bf331af488",
+            "key": "distribuicao:default:processo:criar",
+            "displayName": "Criar processo",
+            "domain": "distribuicao",
+            "area": "default",
+            "status": "ACTIVE"
+          },
+          {
+            "id": "220ed2d7-8f6b-41b3-b564-03d9fcb3fe78",
+            "key": "distribuicao:default:processo:finalizar",
+            "displayName": "Finalizar processo",
+            "domain": "distribuicao",
+            "area": "default",
+            "status": "ACTIVE"
+          },
+          {
+            "id": "c1526beb-cce7-4961-9ed4-a77ae6615553",
+            "key": "distribuicao:default:processo:listar",
+            "displayName": "Listar processos",
+            "domain": "distribuicao",
+            "area": "default",
+            "status": "ACTIVE"
+          },
+          {
+            "id": "00f0d91c-697a-4333-aca5-25bbb6700b54",
+            "key": "distribuicao:default:processo:visualizar",
+            "displayName": "Visualizar processo",
+            "domain": "distribuicao",
+            "area": "default",
+            "status": "ACTIVE"
+          },
+          {
+            "id": "869aa086-5512-44d8-ba23-20c30b8a073f",
+            "key": "distribuicao:default:rubrica:listar",
+            "displayName": "Listar rubricas",
+            "domain": "distribuicao",
+            "area": "default",
+            "status": "ACTIVE"
+          },
+          {
+            "id": "e01d2d72-fe7c-4e37-80ca-35be702b6ab8",
+            "key": "distribuicao:default:rubrica:visualizar",
+            "displayName": "Visualizar rubrica",
+            "domain": "distribuicao",
+            "area": "default",
+            "status": "ACTIVE"
+          }
+        ]
+      }
+    },
+    "list_permissions_acessos": {
+      "status": 200,
+      "path": "/permissions?domain=acessos",
+      "sample": {
+        "keys": [
+          "page",
+          "size",
+          "totalElements",
+          "totalPages",
+          "content"
+        ],
+        "first": null
+      },
+      "full": {
+        "page": 0,
+        "size": 20,
+        "totalElements": 0,
+        "totalPages": 0,
+        "content": []
+      }
+    },
+    "list_permissions_cadastro": {
+      "status": 200,
+      "path": "/permissions?domain=cadastro",
+      "sample": {
+        "keys": [
+          "page",
+          "size",
+          "totalElements",
+          "totalPages",
+          "content"
+        ],
+        "first": null
+      },
+      "full": {
+        "page": 0,
+        "size": 20,
+        "totalElements": 82,
+        "totalPages": 5,
+        "content": [
+          {
+            "id": "7d76b1d5-e564-40fe-9aa4-1f09837da993",
+            "key": "cadastro:associacao:listar",
+            "displayName": "Listar associacoes",
+            "domain": "cadastro",
+            "area": "cadastro",
+            "status": "DEPRECATED"
+          },
+          {
+            "id": "3ea12a05-81b8-4d17-94c3-4bc35fb3034c",
+            "key": "cadastro:associacao:visualizar",
+            "displayName": "Visualizar associacao",
+            "domain": "cadastro",
+            "area": "cadastro",
+            "status": "DEPRECATED"
+          },
+          {
+            "id": "b5e92f95-53d5-492f-9133-c6d9faa0b0d8",
+            "key": "cadastro:default:associacao:listar",
+            "displayName": "Listar associações",
+            "domain": "cadastro",
+            "area": "default",
+            "status": "DEPRECATED"
+          },
+          {
+            "id": "5cc3731f-7d81-4deb-848b-5fb492341c54",
+            "key": "cadastro:default:associacao:visualizar",
+            "displayName": "Visualizar associação",
+            "domain": "cadastro",
+            "area": "default",
+            "status": "DEPRECATED"
+          },
+          {
+            "id": "f4d27039-50db-4f33-b712-c0b2f2c85fb0",
+            "key": "cadastro:default:fonograma:criar",
+            "displayName": "Criar fonograma",
+            "domain": "cadastro",
+            "area": "default",
+            "status": "DEPRECATED"
+          },
+          {
+            "id": "42d27787-112a-47ca-a49e-43cb9f971807",
+            "key": "cadastro:default:fonograma:depurar",
+            "displayName": "Depurar fonograma",
+            "domain": "cadastro",
+            "area": "default",
+            "status": "DEPRECATED"
+          },
+          {
+            "id": "17b2347e-cecd-4404-afbe-ba5334a8b562",
+            "key": "cadastro:default:fonograma:editar",
+            "displayName": "Editar fonograma",
+            "domain": "cadastro",
+            "area": "default",
+            "status": "DEPRECATED"
+          },
+          {
+            "id": "b7c54b88-293c-459b-8dcf-d5e47fde0132",
+            "key": "cadastro:default:fonograma:excluir",
+            "displayName": "Excluir fonograma",
+            "domain": "cadastro",
+            "area": "default",
+            "status": "DEPRECATED"
+          },
+          {
+            "id": "b5348198-6143-45c2-a7d5-44d531b58fbf",
+            "key": "cadastro:default:fonograma:listar",
+            "displayName": "Listar fonogramas",
+            "domain": "cadastro",
+            "area": "default",
+            "status": "DEPRECATED"
+          },
+          {
+            "id": "c1856496-64bf-4f1f-b2cd-3c30ec5ae485",
+            "key": "cadastro:default:fonograma:listar-por-obra",
+            "displayName": "Listar fonogramas por obra",
+            "domain": "cadastro",
+            "area": "default",
+            "status": "DEPRECATED"
+          },
+          {
+            "id": "e45d9198-05af-4731-9eca-56d278b02e6d",
+            "key": "cadastro:default:fonograma:visualizar",
+            "displayName": "Visualizar fonograma",
+            "domain": "cadastro",
+            "area": "default",
+            "status": "DEPRECATED"
+          },
+          {
+            "id": "1c7316bd-d58e-4616-9d65-7c6d485e86e9",
+            "key": "cadastro:default:obra:criar",
+            "displayName": "Criar obra",
+            "domain": "cadastro",
+            "area": "default",
+            "status": "DEPRECATED"
+          },
+          {
+            "id": "0940edfc-1cf9-4efb-8506-0a9b508285ed",
+            "key": "cadastro:default:obra:depurar",
+            "displayName": "Depurar obra",
+            "domain": "cadastro",
+            "area": "default",
+            "status": "DEPRECATED"
+          },
+          {
+            "id": "77efafdd-fb18-4a9d-95e7-03c8b03bdf2a",
+            "key": "cadastro:default:obra:dp",
+            "displayName": "Marcar obra como domínio público",
+            "domain": "cadastro",
+            "area": "default",
+            "status": "DEPRECATED"
+          },
+          {
+            "id": "3617cd01-2377-4fe8-b33e-4dd75feb36c0",
+            "key": "cadastro:default:obra:editar",
+            "displayName": "Editar obra",
+            "domain": "cadastro",
+            "area": "default",
+            "status": "DEPRECATED"
+          },
+          {
+            "id": "f952a78f-5c21-4388-ab65-b47fdbaacf56",
+            "key": "cadastro:default:obra:excluir",
+            "displayName": "Excluir obra",
+            "domain": "cadastro",
+            "area": "default",
+            "status": "DEPRECATED"
+          },
+          {
+            "id": "2233419c-7826-4a91-8bbd-e7ccb8872d29",
+            "key": "cadastro:default:obra:gerar-iswc",
+            "displayName": "Gerar ISWC",
+            "domain": "cadastro",
+            "area": "default",
+            "status": "DEPRECATED"
+          },
+          {
+            "id": "7d8ae996-f758-4694-a4f3-06f6111d1744",
+            "key": "cadastro:default:obra:listar",
+            "displayName": "Listar obras",
+            "domain": "cadastro",
+            "area": "default",
+            "status": "DEPRECATED"
+          },
+          {
+            "id": "933d8788-909a-4c6d-bd8b-44db9b043d29",
+            "key": "cadastro:default:obra:visualizar",
+            "displayName": "Visualizar obra",
+            "domain": "cadastro",
+            "area": "default",
+            "status": "DEPRECATED"
+          },
+          {
+            "id": "b37eb5ce-1bec-4ece-9b07-b929caeb9681",
+            "key": "cadastro:default:participacao:adicionar",
+            "displayName": "Adicionar participação",
+            "domain": "cadastro",
+            "area": "default",
+            "status": "DEPRECATED"
+          }
+        ]
+      }
+    },
+    "list_users": {
+      "status": 200,
+      "path": "/users",
+      "sample": {
+        "keys": [
+          "page",
+          "size",
+          "totalElements",
+          "totalPages",
+          "content"
+        ],
+        "first": null
+      },
+      "full": {
+        "page": 0,
+        "size": 20,
+        "totalElements": 0,
+        "totalPages": 0,
+        "content": []
+      }
+    },
+    "list_assignments": {
+      "status": 500,
+      "path": "/user-roles",
+      "sample": {
+        "keys": [
+          "code",
+          "message",
+          "correlationId",
+          "details"
+        ],
+        "first": null
+      },
+      "full": {
+        "code": "INTERNAL_ERROR",
+        "message": "An unexpected error occurred.",
+        "correlationId": "165ad8be-dd00-476e-906d-9157f3ce6bfe",
+        "details": {}
+      }
+    }
+  }
+}

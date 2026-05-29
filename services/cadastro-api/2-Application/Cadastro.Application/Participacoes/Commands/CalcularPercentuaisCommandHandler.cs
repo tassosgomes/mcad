@@ -1,4 +1,5 @@
 using Cadastro.Application.Audit;
+using Cadastro.Application.Common.Authorization;
 using Cadastro.Application.Common.CQRS;
 using Cadastro.Application.Common.Exceptions;
 using Cadastro.Application.Participacoes.Queries;
@@ -16,15 +17,18 @@ public class CalcularPercentuaisCommandHandler : ICommandHandler<CalcularPercent
     private readonly IParticipacaoRepository _repository;
     private readonly IFonogramaRepository _fonogramaRepository;
     private readonly IParticipacaoAuditPublisher _auditPublisher;
+    private readonly ICurrentUserPermissions _permissions;
 
     public CalcularPercentuaisCommandHandler(
         IParticipacaoRepository repository,
         IFonogramaRepository fonogramaRepository,
-        IParticipacaoAuditPublisher auditPublisher)
+        IParticipacaoAuditPublisher auditPublisher,
+        ICurrentUserPermissions permissions)
     {
         _repository = repository;
         _fonogramaRepository = fonogramaRepository;
         _auditPublisher = auditPublisher;
+        _permissions = permissions;
     }
 
     public async Task<ParticipacoesResponse> HandleAsync(CalcularPercentuaisCommand command, CancellationToken cancellationToken)
@@ -54,6 +58,11 @@ public class CalcularPercentuaisCommandHandler : ICommandHandler<CalcularPercent
 
         await _repository.SaveChangesAsync(cancellationToken);
 
-        return ListarParticipacoesQueryHandler.BuildResponse(command.FonogramaId, participacoes, fonograma.PercentuaisDesatualizados);
+        var fullDocumentAllowed = _permissions.Has(CadastroPermissionNames.TitularVerCpfCompleto);
+        return ListarParticipacoesQueryHandler.BuildResponse(
+            command.FonogramaId,
+            participacoes,
+            fonograma.PercentuaisDesatualizados,
+            fullDocumentAllowed);
     }
 }

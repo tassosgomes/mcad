@@ -1,3 +1,4 @@
+using Cadastro.Application.Common.Authorization;
 using Cadastro.Application.Common.Exceptions;
 using Cadastro.Application.Participacoes.Commands;
 using Cadastro.Application.Participacoes.Responses;
@@ -25,7 +26,8 @@ public class AdicionarParticipacaoHandlerTests
             _participacaoRepo.Object,
             _fonogramaRepo.Object,
             _titularRepo.Object,
-            Mock.Of<IParticipacaoAuditPublisher>());
+            Mock.Of<IParticipacaoAuditPublisher>(),
+            Mock.Of<ICurrentUserPermissions>(p => p.Has(CadastroPermissionNames.TitularVerCpfCompleto)));
     }
 
     private Fonograma CriarFonograma(StatusFonograma status = StatusFonograma.PendenteValidacao)

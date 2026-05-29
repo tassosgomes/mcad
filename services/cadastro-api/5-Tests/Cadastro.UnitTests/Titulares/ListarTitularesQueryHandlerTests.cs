@@ -1,4 +1,5 @@
 using AwesomeAssertions;
+using Cadastro.Application.Common.Authorization;
 using Cadastro.Application.Titulares.Queries;
 using Cadastro.Domain.Entities;
 using Cadastro.Domain.Interfaces;
@@ -15,7 +16,9 @@ public class ListarTitularesQueryHandlerTests
     public ListarTitularesQueryHandlerTests()
     {
         _mockRepo = new Mock<ITitularRepository>();
-        _handler = new ListarTitularesQueryHandler(_mockRepo.Object);
+        _handler = new ListarTitularesQueryHandler(
+            _mockRepo.Object,
+            Mock.Of<ICurrentUserPermissions>(p => p.Has(CadastroPermissionNames.TitularVerCpfCompleto)));
     }
 
     [Fact]

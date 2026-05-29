@@ -1,4 +1,5 @@
 using AwesomeAssertions;
+using Cadastro.Application.Common.Authorization;
 using Cadastro.Application.Common.Exceptions;
 using Cadastro.Application.Titulares.Commands;
 using Cadastro.Domain.Entities;
@@ -35,7 +36,8 @@ public class CriarTitularCommandHandlerTests
             _mockAssociacaoRepo.Object,
             _mockValidator.Object,
             _mockOutbox.Object,
-            Mock.Of<ITitularAuditPublisher>());
+            Mock.Of<ITitularAuditPublisher>(),
+            Mock.Of<ICurrentUserPermissions>(p => p.Has(CadastroPermissionNames.TitularVerCpfCompleto)));
     }
 
     [Fact]

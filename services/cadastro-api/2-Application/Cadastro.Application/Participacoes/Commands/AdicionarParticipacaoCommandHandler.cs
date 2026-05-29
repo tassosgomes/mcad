@@ -1,4 +1,5 @@
 using Cadastro.Application.Audit;
+using Cadastro.Application.Common.Authorization;
 using Cadastro.Application.Common.CQRS;
 using Cadastro.Application.Common.Exceptions;
 using Cadastro.Application.Participacoes.Queries;
@@ -16,17 +17,20 @@ public class AdicionarParticipacaoCommandHandler : ICommandHandler<AdicionarPart
     private readonly IFonogramaRepository _fonogramaRepository;
     private readonly ITitularRepository _titularRepository;
     private readonly IParticipacaoAuditPublisher _auditPublisher;
+    private readonly ICurrentUserPermissions _permissions;
 
     public AdicionarParticipacaoCommandHandler(
         IParticipacaoRepository repository,
         IFonogramaRepository fonogramaRepository,
         ITitularRepository titularRepository,
-        IParticipacaoAuditPublisher auditPublisher)
+        IParticipacaoAuditPublisher auditPublisher,
+        ICurrentUserPermissions permissions)
     {
         _repository = repository;
         _fonogramaRepository = fonogramaRepository;
         _titularRepository = titularRepository;
         _auditPublisher = auditPublisher;
+        _permissions = permissions;
     }
 
     public async Task<ParticipacoesResponse> HandleAsync(AdicionarParticipacaoCommand command, CancellationToken cancellationToken)
@@ -64,7 +68,12 @@ public class AdicionarParticipacaoCommandHandler : ICommandHandler<AdicionarPart
         await _repository.SaveChangesAsync(cancellationToken);
 
         var todas = (await _repository.GetByFonogramaIdAsync(command.FonogramaId, cancellationToken)).ToList();
-        return ListarParticipacoesQueryHandler.BuildResponse(command.FonogramaId, todas, fonograma.PercentuaisDesatualizados);
+        var fullDocumentAllowed = _permissions.Has(CadastroPermissionNames.TitularVerCpfCompleto);
+        return ListarParticipacoesQueryHandler.BuildResponse(
+            command.FonogramaId,
+            todas,
+            fonograma.PercentuaisDesatualizados,
+            fullDocumentAllowed);
     }
 
     internal static bool TryParseCategoriaConexo(string value, out CategoriaConexo categoria)

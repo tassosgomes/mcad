@@ -21,6 +21,8 @@ const ME_BASE_CONFIG: BffConfig = {
   authzBaseUrl: 'http://localhost:8085',
   authzTimeoutMs: 3000,
   meCacheTtlSeconds: 60,
+  auditBaseUrl: 'http://localhost:8090/api/v1/audit',
+  auditTimeoutMs: 5000,
   upstreams: [],
 };
 
@@ -84,6 +86,8 @@ test('health endpoints return bff status', async () => {
     authzBaseUrl: 'http://localhost:8085',
     authzTimeoutMs: 3000,
     meCacheTtlSeconds: 60,
+    auditBaseUrl: 'http://localhost:8090/api/v1/audit',
+    auditTimeoutMs: 5000,
     upstreams: [],
   });
 
@@ -144,6 +148,8 @@ test('proxy rewrites route prefix and forwards query string and auth header', as
     authzBaseUrl: 'http://localhost:8085',
     authzTimeoutMs: 3000,
     meCacheTtlSeconds: 60,
+    auditBaseUrl: 'http://localhost:8090/api/v1/audit',
+    auditTimeoutMs: 5000,
     upstreams: [
       {
         name: 'identificacao',
@@ -229,6 +235,8 @@ test('ai proxy rewrites chat route and forwards auth and mcad headers', async (t
     authzBaseUrl: 'http://localhost:8085',
     authzTimeoutMs: 3000,
     meCacheTtlSeconds: 60,
+    auditBaseUrl: 'http://localhost:8090/api/v1/audit',
+    auditTimeoutMs: 5000,
     upstreams: [
       {
         name: 'ai',
@@ -286,6 +294,8 @@ test('cors preflight is handled by the bff before proxying', async () => {
     authzBaseUrl: 'http://localhost:8085',
     authzTimeoutMs: 3000,
     meCacheTtlSeconds: 60,
+    auditBaseUrl: 'http://localhost:8090/api/v1/audit',
+    auditTimeoutMs: 5000,
     upstreams: [
       {
         name: 'authz',
@@ -353,6 +363,8 @@ test('authz legacy v1 route forwards to authz upstream', async (t) => {
     authzBaseUrl: 'http://localhost:8085',
     authzTimeoutMs: 3000,
     meCacheTtlSeconds: 60,
+    auditBaseUrl: 'http://localhost:8090/api/v1/audit',
+    auditTimeoutMs: 5000,
     upstreams: [
       {
         name: 'authz-legacy',

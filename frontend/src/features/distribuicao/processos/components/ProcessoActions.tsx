@@ -1,4 +1,4 @@
-import { usePermissions } from '@shared/authz';
+import { Can, usePermissions } from '@shared/authz';
 import { Button } from '@components/ui/button';
 import type { Processo } from '../types/processo';
 import styles from './ProcessoActions.module.css';
@@ -6,26 +6,32 @@ import styles from './ProcessoActions.module.css';
 interface ProcessoActionsProps {
   processo: Processo;
   onCalcular: () => void;
+  onRecalcular?: () => void;
   onAprovar: () => void;
   onFinalizar: () => void;
   onCancelar: () => void;
+  onExportar?: () => void;
   isLoading: boolean;
 }
 
 export function ProcessoActions({
   processo,
   onCalcular,
+  onRecalcular,
   onAprovar,
   onFinalizar,
   onCancelar,
+  onExportar,
   isLoading,
 }: ProcessoActionsProps) {
   const { can } = usePermissions();
 
   const canCalcular = can('distribuicao:default:processo:calcular');
+  const canRecalcular = can('distribuicao:default:processo:recalcular-pos-calculado');
   const canAprovar = can('distribuicao:default:processo:aprovar');
   const canFinalizar = can('distribuicao:default:processo:finalizar');
   const canCancelar = can('distribuicao:default:processo:cancelar');
+  const canExportar = can('distribuicao:default:processo:exportar');
 
   const { status } = processo;
 
@@ -35,8 +41,9 @@ export function ProcessoActions({
 
   const hasAnyAction =
     (status === 'CRIADO' && (canCalcular || canCancelar)) ||
-    (status === 'CALCULADO' && (canAprovar || canCancelar)) ||
-    (status === 'APROVADO' && (canFinalizar || canCancelar));
+    (status === 'CALCULADO' && (canRecalcular || canAprovar || canCancelar)) ||
+    (status === 'APROVADO' && (canRecalcular || canFinalizar || canCancelar)) ||
+    canExportar;
 
   if (!hasAnyAction) {
     return null;
@@ -54,6 +61,20 @@ export function ProcessoActions({
         >
           {isLoading ? 'Calculando...' : 'Calcular'}
         </Button>
+      )}
+
+      {(status === 'CALCULADO' || status === 'APROVADO') && (
+        <Can permission="distribuicao:default:processo:recalcular-pos-calculado">
+          <Button
+            variant="secondary"
+            onClick={onRecalcular}
+            disabled={isLoading || !onRecalcular}
+            type="button"
+            id="btn-recalcular-processo"
+          >
+            {isLoading ? 'Recalculando...' : 'Recalcular'}
+          </Button>
+        </Can>
       )}
 
       {status === 'CALCULADO' && canAprovar && (
@@ -79,6 +100,18 @@ export function ProcessoActions({
           {isLoading ? 'Finalizando...' : 'Finalizar'}
         </Button>
       )}
+
+      <Can permission="distribuicao:default:processo:exportar">
+        <Button
+          variant="secondary"
+          onClick={onExportar}
+          disabled={isLoading || !onExportar}
+          type="button"
+          id="btn-exportar-processo"
+        >
+          Exportar
+        </Button>
+      </Can>
 
       {(status === 'CRIADO' || status === 'CALCULADO' || status === 'APROVADO') && canCancelar && (
         <Button

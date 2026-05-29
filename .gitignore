@@ -64,6 +64,7 @@ $RECYCLE.BIN/
 
 .tmp
 .env_linux
+.env_qa
 
 #id
 .qwen

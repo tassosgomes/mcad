@@ -14,17 +14,30 @@ export interface BffConfig {
   authzBaseUrl: string;
   authzTimeoutMs: number;
   meCacheTtlSeconds: number;
+  auditBaseUrl: string;
+  auditTimeoutMs: number;
 }
 
 const DEFAULT_REQUEST_BODY_LIMIT_BYTES = 50 * 1024 * 1024;
 const DEFAULT_AUTHZ_BASE_URL = 'http://localhost:8085';
 const DEFAULT_AUTHZ_TIMEOUT_MS = 3000;
 const DEFAULT_ME_CACHE_TTL_SECONDS = 60;
+const DEFAULT_AUDIT_TIMEOUT_MS = 5000;
 
 function getEnv(name: string, fallback: string): string {
   const value = process.env[name];
 
   return value && value.trim() ? value.trim() : fallback;
+}
+
+function getRequiredEnv(name: string): string {
+  const value = process.env[name];
+
+  if (!value || !value.trim()) {
+    throw new Error(`${name} is required`);
+  }
+
+  return value.trim();
 }
 
 function getNumberEnv(name: string, fallback: number): number {
@@ -79,6 +92,8 @@ export function loadConfig(): BffConfig {
     authzBaseUrl: getEnv('AUTHZ_BASE_URL', DEFAULT_AUTHZ_BASE_URL).replace(/\/$/, ''),
     authzTimeoutMs: getNumberEnv('AUTHZ_TIMEOUT_MS', DEFAULT_AUTHZ_TIMEOUT_MS),
     meCacheTtlSeconds: getNumberEnv('ME_CACHE_TTL_SECONDS', DEFAULT_ME_CACHE_TTL_SECONDS),
+    auditBaseUrl: getRequiredEnv('AUDIT_BASE_URL').replace(/\/$/, ''),
+    auditTimeoutMs: getNumberEnv('AUDIT_TIMEOUT_MS', DEFAULT_AUDIT_TIMEOUT_MS),
     upstreams: [
       {
         name: 'cadastro',

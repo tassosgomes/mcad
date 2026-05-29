@@ -1,0 +1,21 @@
+{
+  "_captured_at": "2026-05-28T23:04:17.560Z",
+  "_hint": "analista.dev",
+  "_bff_me_status": 200,
+  "_bff_me_permissions_status": 200,
+  "_jwt_fingerprint": "...DwPy5Q",
+  "me_subjectId_redacted": "4en9***lc",
+  "me_name": "Analista Distribuicao",
+  "me_email_redacted": "an***@mcad.dev",
+  "permissions": [
+    "authz:admin:session:visualizar",
+    "authz:admin:user:visualizar",
+    "authz:admin:role:visualizar",
+    "authz:admin:audit:visualizar",
+    "authz:admin:user-role:visualizar",
+    "authz:admin:permission:visualizar"
+  ],
+  "permissions_count": 6,
+  "version": 3,
+  "error_body": null
+}

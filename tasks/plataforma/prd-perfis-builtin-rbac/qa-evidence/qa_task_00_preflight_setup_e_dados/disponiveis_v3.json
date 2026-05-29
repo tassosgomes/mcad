@@ -1,0 +1,11 @@
+{
+  "status": 404,
+  "items": [],
+  "raw": {
+    "type": "about:blank",
+    "title": "Not Found",
+    "status": 404,
+    "detail": "No static resource api/v1/processos/disponiveis.",
+    "instance": "/api/v1/processos/disponiveis"
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "_captured_at": "2026-05-28T23:45:05.474Z",
+  "_hint": "gestor-acessos.dev",
+  "_bff_me_status": 200,
+  "_bff_me_permissions_status": 200,
+  "_jwt_fingerprint": "...-V6AuJ",
+  "me_subjectId_redacted": "amhg***om",
+  "me_name": "Gestor de Acessos",
+  "me_email_redacted": "ge***@mcad.local",
+  "permissions": [
+    "acessos:default:atribuicao:ver-historico",
+    "acessos:default:usuario:listar",
+    "acessos:default:papel:atribuir",
+    "acessos:default:papel:visualizar",
+    "acessos:default:papel:remover",
+    "acessos:default:usuario:visualizar-papeis-completo",
+    "acessos:default:papel:listar"
+  ],
+  "permissions_count": 7,
+  "version": 2,
+  "error_body": null,
+  "expected_role": "acessos.default.gestor",
+  "expected_count": 7,
+  "has_expected_permissions": true,
+  "count_matches_expected": true
+}

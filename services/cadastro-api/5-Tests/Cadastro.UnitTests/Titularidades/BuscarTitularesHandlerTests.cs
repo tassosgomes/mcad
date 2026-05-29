@@ -1,3 +1,4 @@
+using Cadastro.Application.Common.Authorization;
 using Cadastro.Application.Titularidades.Queries;
 using Cadastro.Domain.Entities;
 using Cadastro.Domain.Interfaces;
@@ -16,7 +17,9 @@ public class BuscarTitularesHandlerTests
     public BuscarTitularesHandlerTests()
     {
         _titularRepoMock = new Mock<ITitularRepository>();
-        _handler = new BuscarTitularesQueryHandler(_titularRepoMock.Object);
+        _handler = new BuscarTitularesQueryHandler(
+            _titularRepoMock.Object,
+            Mock.Of<ICurrentUserPermissions>(p => p.Has(CadastroPermissionNames.TitularVerCpfCompleto)));
     }
 
     [Fact]

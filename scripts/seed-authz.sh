@@ -2,8 +2,8 @@
 # scripts/seed-authz.sh
 #
 # Seed idempotente do ecad-authz para o mcad. Popula:
-#   1) catálogos das 3 APIs (cadastro, identificacao, arrecadacao);
-#   2) papéis padrão *.consultor / *.analista por domínio (6 papéis);
+#   1) catálogos de permissões em seeds/mcad/*.permissions.json;
+#   2) papéis padrão declarados em seeds/mcad/roles.json;
 #   3) associação de permissões aos papéis;
 #   4) atribuição dos papéis aos usuários de teste (consultor.dev,
 #      analista.dev, sem-papel.dev).
@@ -63,7 +63,7 @@ Usage: $0 [options]
 
 Options:
   --dry-run                  Mostra as requisições que seriam feitas, sem executar.
-  --service <name>           Processa só um catálogo (cadastro|identificacao|arrecadacao).
+  --service <name>           Processa só um catálogo pelo prefixo do arquivo <name>.permissions.json.
   --skip-catalogs            Pula registro de catálogos.
   --skip-roles               Pula criação de papéis e associação de permissões.
   --skip-assignments         Pula atribuição de papéis aos usuários de teste.
@@ -74,9 +74,7 @@ Variáveis de ambiente:
   AUTHZ_ADMIN_TOKEN          Bearer token admin (obrigatório, exceto em --dry-run).
 
 Arquivos de input lidos de: ${SEEDS_DIR}
-  cadastro.permissions.json
-  identificacao.permissions.json
-  arrecadacao.permissions.json
+  *.permissions.json
   roles.json
   assignments.json
 EOF
@@ -110,8 +108,8 @@ if [[ "${DRY_RUN}" -eq 0 && -z "${AUTHZ_ADMIN_TOKEN}" ]]; then
   exit 1
 fi
 
-if [[ -n "${ONLY_SERVICE}" && ! "${ONLY_SERVICE}" =~ ^(cadastro|identificacao|arrecadacao|distribuicao)$ ]]; then
-  log_err "--service deve ser um de: cadastro, identificacao, arrecadacao, distribuicao"
+if [[ -n "${ONLY_SERVICE}" && ! -f "${SEEDS_DIR}/${ONLY_SERVICE}.permissions.json" ]]; then
+  log_err "--service deve apontar para um arquivo existente em ${SEEDS_DIR}/<service>.permissions.json"
   exit 2
 fi
 
@@ -203,6 +201,15 @@ register_catalog() {
       return 1
       ;;
   esac
+}
+
+discover_catalog_services() {
+  local file base
+  for file in "${SEEDS_DIR}"/*.permissions.json; do
+    [[ -e "${file}" ]] || continue
+    base="$(basename "${file}")"
+    printf '%s\n' "${base%.permissions.json}"
+  done | sort
 }
 
 # ── Etapa 2: papéis ──────────────────────────────────────────────────────────
@@ -473,9 +480,11 @@ main() {
   # Etapa 1: catálogos
   if [[ "${SKIP_CATALOGS}" -eq 0 ]]; then
     log_head "Etapa 1/3 — Catálogos de permissões"
-    local services=(cadastro identificacao arrecadacao distribuicao)
+    local services=()
     if [[ -n "${ONLY_SERVICE}" ]]; then
       services=("${ONLY_SERVICE}")
+    else
+      mapfile -t services < <(discover_catalog_services)
     fi
     for svc in "${services[@]}"; do
       register_catalog "${svc}"

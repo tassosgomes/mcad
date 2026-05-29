@@ -1,4 +1,5 @@
 using Cadastro.Application.Audit;
+using Cadastro.Application.Common.Authorization;
 using Cadastro.Application.Common.CQRS;
 using Cadastro.Application.Common.Exceptions;
 using Cadastro.Application.Participacoes.Queries;
@@ -15,15 +16,18 @@ public class RemoverParticipacaoCommandHandler : ICommandHandler<RemoverParticip
     private readonly IParticipacaoRepository _repository;
     private readonly IFonogramaRepository _fonogramaRepository;
     private readonly IParticipacaoAuditPublisher _auditPublisher;
+    private readonly ICurrentUserPermissions _permissions;
 
     public RemoverParticipacaoCommandHandler(
         IParticipacaoRepository repository,
         IFonogramaRepository fonogramaRepository,
-        IParticipacaoAuditPublisher auditPublisher)
+        IParticipacaoAuditPublisher auditPublisher,
+        ICurrentUserPermissions permissions)
     {
         _repository = repository;
         _fonogramaRepository = fonogramaRepository;
         _auditPublisher = auditPublisher;
+        _permissions = permissions;
     }
 
     public async Task<ParticipacoesResponse> HandleAsync(RemoverParticipacaoCommand command, CancellationToken cancellationToken)
@@ -59,6 +63,11 @@ public class RemoverParticipacaoCommandHandler : ICommandHandler<RemoverParticip
         await _repository.SaveChangesAsync(cancellationToken);
 
         var todas = (await _repository.GetByFonogramaIdAsync(command.FonogramaId, cancellationToken)).ToList();
-        return ListarParticipacoesQueryHandler.BuildResponse(command.FonogramaId, todas, fonograma.PercentuaisDesatualizados);
+        var fullDocumentAllowed = _permissions.Has(CadastroPermissionNames.TitularVerCpfCompleto);
+        return ListarParticipacoesQueryHandler.BuildResponse(
+            command.FonogramaId,
+            todas,
+            fonograma.PercentuaisDesatualizados,
+            fullDocumentAllowed);
     }
 }

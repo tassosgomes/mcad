@@ -1,4 +1,5 @@
 using Cadastro.Application.Audit;
+using Cadastro.Application.Common.Authorization;
 using Cadastro.Application.Common.CQRS;
 using Cadastro.Application.Common.Exceptions;
 using Cadastro.Application.Titularidades.Queries;
@@ -15,15 +16,18 @@ public class RemoverTitularidadeCommandHandler : ICommandHandler<RemoverTitulari
     private readonly ITitularidadeRepository _repository;
     private readonly IObraRepository _obraRepository;
     private readonly ITitularidadeAuditPublisher _auditPublisher;
+    private readonly ICurrentUserPermissions _permissions;
 
     public RemoverTitularidadeCommandHandler(
         ITitularidadeRepository repository,
         IObraRepository obraRepository,
-        ITitularidadeAuditPublisher auditPublisher)
+        ITitularidadeAuditPublisher auditPublisher,
+        ICurrentUserPermissions permissions)
     {
         _repository = repository;
         _obraRepository = obraRepository;
         _auditPublisher = auditPublisher;
+        _permissions = permissions;
     }
 
     public async Task<TitularidadesResponse> HandleAsync(RemoverTitularidadeCommand command, CancellationToken cancellationToken)
@@ -51,10 +55,11 @@ public class RemoverTitularidadeCommandHandler : ICommandHandler<RemoverTitulari
         var titularidades = await _repository.GetByObraIdAsync(command.ObraId, cancellationToken);
         var soma = titularidades.Sum(t => t.Percentual);
         var somaCompleta = soma == 100.0000m;
+        var fullDocumentAllowed = _permissions.Has(CadastroPermissionNames.TitularVerCpfCompleto);
         
         return new TitularidadesResponse(
             command.ObraId,
-            titularidades.Select(ListarTitularidadesQueryHandler.MapToItemResponse).ToList(),
+            titularidades.Select(t => ListarTitularidadesQueryHandler.MapToItemResponse(t, fullDocumentAllowed)).ToList(),
             soma,
             somaCompleta
         );

@@ -1,0 +1,32 @@
+{
+  "captured_at": "2026-05-29T00:08:44.544Z",
+  "playwright_mode": "headed",
+  "smoke": {
+    "gerente_processos_route": "OK",
+    "gerente_screenshot": "v3_smoke_gerente.png"
+  },
+  "seeded_by": "operador.dev@mcad.local",
+  "approved_by": "gerente.dev@mcad.local",
+  "disponiveis_count": 0,
+  "seeds": [
+    {
+      "seq": 1,
+      "id": null,
+      "errors": [
+        "Sem disponibilidades para criar processo"
+      ],
+      "disp_count": 0
+    },
+    {
+      "seq": 2,
+      "id": null,
+      "errors": [
+        "Sem disponibilidades para criar processo"
+      ],
+      "disp_count": 0
+    }
+  ],
+  "calcs": [],
+  "approval": null,
+  "aba_historico_aparece_para_gerente": "nao-verificado"
+}
