@@ -26,7 +26,7 @@ RUN addgroup -S app && adduser -S app -G app
 ENV JAVA_OPTS="" \
     SERVER_PORT=5004
 
-COPY --from=build /workspace/distribuicao-api/target/distribuicao-api-*.jar app.jar
+COPY --from=build /workspace/distribuicao-api/target/distribuicao-api-*-exec.jar app.jar
 
 EXPOSE 5004
 
