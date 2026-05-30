@@ -12,6 +12,7 @@ O MCAD separa autenticação e autorização:
 Documentação principal:
 
 - [Plano atual de autenticação/autorização](docs/architecture/auth-plan.md)
+- [Desenvolvimento local/híbrido](docs/local-development.md)
 - [Guia operacional da migração AuthZ](docs/migracao-authz/guia-operacional.md)
 - [ADRs de autenticação/autorização](docs/adr/README.md)
 

@@ -1,6 +1,9 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
+const bffProxyTarget = process.env.VITE_BFF_PROXY_TARGET || 'http://localhost:5200';
+const frontendPort = Number(process.env.FRONTEND_PORT || 5173);
+const strictPort = process.env.FRONTEND_STRICT_PORT !== 'false';
 // https://vite.dev/config/
 export default defineConfig({
     plugins: [react()],
@@ -15,10 +18,11 @@ export default defineConfig({
         },
     },
     server: {
-        port: 5173,
+        port: frontendPort,
+        strictPort,
         proxy: {
             '/api': {
-                target: 'http://localhost:5200',
+                target: bffProxyTarget,
                 changeOrigin: true,
             },
         },

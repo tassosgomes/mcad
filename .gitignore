@@ -17,6 +17,7 @@ build.log
 **/dist/
 **/coverage/
 **/*.tsbuildinfo
+frontend/public/runtime-env.js
 
 # Java / Maven
 **/target/
