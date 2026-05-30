@@ -11,7 +11,6 @@ export interface IdentityUserSnapshot {
   displayName: string | null;
   email: string | null;
   avatarUrl: string | null;
-  roles: string[];
   isSuspended: boolean;
   raw: Record<string, unknown>;
 }
@@ -33,6 +32,18 @@ export interface IdentityUserEvent {
 
 type UnknownRecord = Record<string, unknown>;
 
+const legacyRoleFields = ['roles', 'roleKeys'] as const;
+
+let identitySyncRolesIgnoredTotal = 0;
+
+export function getIdentitySyncMetrics(): { identity_sync_roles_ignored_total: number } {
+  return { identity_sync_roles_ignored_total: identitySyncRolesIgnoredTotal };
+}
+
+export function resetIdentitySyncMetricsForTest(): void {
+  identitySyncRolesIgnoredTotal = 0;
+}
+
 export function buildIdentityEvent(payload: unknown, rawBody: Buffer): IdentityUserEvent | null {
   if (!isRecord(payload)) {
     throw new Error('Webhook payload must be a JSON object');
@@ -53,11 +64,14 @@ export function buildIdentityEvent(payload: unknown, rawBody: Buffer): IdentityU
   if (!logtoUserId) {
     return null;
   }
-  const user = extractedUser ?? (dataRecord && readString(dataRecord.id) ? dataRecord : { id: logtoUserId });
+  const user =
+    extractedUser ?? (dataRecord && readString(dataRecord.id) ? dataRecord : { id: logtoUserId });
 
   const payloadHash = createHash('sha256').update(rawBody).digest('hex');
   const eventType = resolveIdentityEventType(event, user);
   const occurredAt = readString(payload.createdAt) ?? new Date().toISOString();
+  const ignoredLegacyRoles = countLegacyRoleEntries(user);
+  identitySyncRolesIgnoredTotal += ignoredLegacyRoles;
 
   return {
     eventId: createHash('sha256')
@@ -76,9 +90,8 @@ export function buildIdentityEvent(payload: unknown, rawBody: Buffer): IdentityU
       displayName: readString(user.name),
       email: readString(user.primaryEmail),
       avatarUrl: readString(user.avatar),
-      roles: extractRoles(user),
       isSuspended: readBoolean(user.isSuspended) ?? event === 'User.SuspensionStatus.Updated',
-      raw: user,
+      raw: omitLegacyRoleFields(user),
     },
     metadata: {
       payloadHash,
@@ -106,17 +119,19 @@ function extractUser(payload: UnknownRecord): UnknownRecord | null {
   return readRecord(data?.user);
 }
 
-function extractRoles(user: UnknownRecord): string[] {
-  const roles = user.roles;
-  if (!Array.isArray(roles)) return [];
+function countLegacyRoleEntries(user: UnknownRecord): number {
+  return legacyRoleFields.reduce((count, field) => {
+    const value = user[field];
+    return count + (Array.isArray(value) ? value.length : 0);
+  }, 0);
+}
 
-  return roles
-    .map((role) => {
-      if (typeof role === 'string') return role;
-      if (isRecord(role)) return readString(role.name);
-      return null;
-    })
-    .filter((role): role is string => Boolean(role));
+function omitLegacyRoleFields(user: UnknownRecord): UnknownRecord {
+  const sanitized: UnknownRecord = { ...user };
+  for (const field of legacyRoleFields) {
+    delete sanitized[field];
+  }
+  return sanitized;
 }
 
 function isRecord(value: unknown): value is UnknownRecord {

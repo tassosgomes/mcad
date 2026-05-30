@@ -1,11 +1,14 @@
 # identity-sync-api
 
-Sincroniza periodicamente os usuários e papéis do Logto para o `ecad-authz` via RabbitMQ.
+Sincroniza periodicamente identidade e status dos usuários do Logto para o
+`ecad-authz` via RabbitMQ.
 
 Faz polling na Management API do Logto a cada N minutos, monta um snapshot
-por usuário (incluindo roles atribuídas) e publica eventos no exchange
+por usuário sem papéis de negócio e publica eventos no exchange
 `identity.events`. O `ecad-authz` consome a fila `authz.identity.users` e faz
 upsert na tabela `users` (idempotente por `idp_subject` = `logtoUserId`).
+Assignments de papéis pertencem ao `ecad-authz` e devem ser criados/removidos
+por seus endpoints oficiais, normalmente via BFF.
 
 ## Endpoints
 
@@ -29,6 +32,30 @@ Exchange topic: `identity.events`
 > deleção por diff entre Logto e a tabela local não está implementada — usuários
 > removidos do Logto continuarão existindo no `ecad-authz` até receberem
 > tratamento manual ou um evento `User.Deleted` por outra via.
+
+Snapshot de usuário publicado:
+
+```json
+{
+  "logtoUserId": "logto-user-1",
+  "username": "analista_arrecadacao",
+  "displayName": "Analista Arrecadacao",
+  "email": "analista_arrecadacao@mcad.dev",
+  "avatarUrl": null,
+  "isSuspended": false,
+  "raw": {
+    "id": "logto-user-1",
+    "username": "analista_arrecadacao",
+    "name": "Analista Arrecadacao",
+    "primaryEmail": "analista_arrecadacao@mcad.dev",
+    "isSuspended": false
+  }
+}
+```
+
+O payload não publica `roles` nem `roleKeys`. Se payloads legados ou mocks ainda
+incluírem esses campos, eles são removidos do evento e contabilizados na métrica
+`identity_sync_roles_ignored_total`, sem registrar os valores dos papéis.
 
 ## Variáveis de ambiente
 
@@ -104,10 +131,9 @@ Variáveis: `IDENTITY_EVENTS_EXCHANGE=identity.events`,
 
 ## Notas
 
-- A Management API do Logto tem rate limit. 5 minutos × ~N users (1 chamada de
-  list + N de roles) costuma ser confortável para centenas de usuários.
+- A Management API do Logto tem rate limit. O sync usa paginação em
+  `GET /api/users` e não chama `GET /users/{id}/roles`.
 - Webhook do Logto **não é mais consumido** — sincronização passou a ser por
-  polling, pois `User.Created` e `User.Data.Updated` não carregam roles e
-  exigiriam fetch adicional via Management API mesmo no caminho de webhook.
+  polling de identidade/status, sem fetch adicional de roles.
 - `LOGTO_PAGE_SIZE` controla o tamanho de página do `GET /api/users` (máx. 100,
   limite da Management API).

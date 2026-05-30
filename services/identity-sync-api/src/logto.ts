@@ -5,7 +5,6 @@ export interface LogtoUser {
   primaryEmail?: string | null;
   avatar?: string | null;
   isSuspended?: boolean;
-  roles?: Array<string | { name?: string | null }>;
 }
 
 export interface LogtoUserImporter {
@@ -53,26 +52,13 @@ export class LogtoManagementClient implements LogtoUserImporter {
       page++;
     }
 
-    return Promise.all(
-      collected.map(async (user) => ({
-        ...user,
-        roles: await this.api<Array<{ name?: string | null }>>(
-          `/users/${encodeURIComponent(user.id)}/roles`,
-          token,
-        ),
-      })),
-    );
+    return collected;
   }
 
   async getUser(userId: string): Promise<LogtoUser | null> {
     const token = await this.getToken();
     try {
-      const user = await this.api<LogtoUser>(`/users/${encodeURIComponent(userId)}`, token);
-      const roles = await this.api<Array<{ name?: string | null }>>(
-        `/users/${encodeURIComponent(userId)}/roles`,
-        token,
-      );
-      return { ...user, roles };
+      return await this.api<LogtoUser>(`/users/${encodeURIComponent(userId)}`, token);
     } catch (error) {
       const message = (error as Error).message ?? '';
       if (message.includes('status 404')) return null;

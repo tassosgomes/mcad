@@ -1,8 +1,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import type { IdentitySyncConfig } from './config.js';
-import type { IdentityUserEvent } from './events.js';
-import type { LogtoUser, LogtoUserImporter } from './logto.js';
+import {
+  getIdentitySyncMetrics,
+  resetIdentitySyncMetricsForTest,
+  type IdentityUserEvent,
+} from './events.js';
+import { LogtoManagementClient, type LogtoUser, type LogtoUserImporter } from './logto.js';
 import type { IdentityEventPublisher } from './publisher.js';
 import { createSyncScheduler } from './scheduler.js';
 import { buildServer } from './server.js';
@@ -52,17 +56,18 @@ const silentLogger = {
 };
 
 test('syncs current Logto users and publishes identity events', async () => {
+  resetIdentitySyncMetricsForTest();
   const publisher = new MemoryPublisher();
-  const importer = new MemoryLogtoImporter([
-    {
-      id: 'logto-user-1',
-      username: 'analista_arrecadacao',
-      name: 'Analista Arrecadacao',
-      primaryEmail: 'analista_arrecadacao@mcad.dev',
-      roles: [{ name: 'analista-arrecadacao' }],
-      isSuspended: false,
-    },
-  ]);
+  const legacyUserWithRoles = {
+    id: 'logto-user-1',
+    username: 'analista_arrecadacao',
+    name: 'Analista Arrecadacao',
+    primaryEmail: 'analista_arrecadacao@mcad.dev',
+    roles: [{ name: 'analista-arrecadacao' }],
+    roleKeys: ['auditor'],
+    isSuspended: false,
+  };
+  const importer = new MemoryLogtoImporter([legacyUserWithRoles]);
   const server = await buildServer(config, { publisher, logtoUsers: importer });
 
   const response = await server.inject({
@@ -74,9 +79,53 @@ test('syncs current Logto users and publishes identity events', async () => {
   assert.equal(response.statusCode, 202);
   assert.equal(response.json().published, 1);
   assert.equal(publisher.events[0]?.eventType, 'identity.user.upserted');
-  assert.deepEqual(publisher.events[0]?.user.roles, ['analista-arrecadacao']);
+  assert.equal('roles' in publisher.events[0]!.user, false);
+  assert.equal('roleKeys' in publisher.events[0]!.user.raw, false);
+  assert.equal('roles' in publisher.events[0]!.user.raw, false);
+  assert.deepEqual(getIdentitySyncMetrics(), { identity_sync_roles_ignored_total: 2 });
 
   await server.close();
+});
+
+test('Logto management client does not fetch user roles', async () => {
+  const originalFetch = globalThis.fetch;
+  const requestedPaths: string[] = [];
+
+  globalThis.fetch = (async (input) => {
+    const url = new URL(
+      typeof input === 'string' || input instanceof URL ? input.toString() : input.url,
+    );
+    requestedPaths.push(`${url.pathname}${url.search}`);
+
+    if (url.pathname === '/oidc/token') {
+      return jsonResponse({ access_token: 'management-token' });
+    }
+    if (url.pathname === '/api/users' && url.search === '?page=1&page_size=2') {
+      return jsonResponse([{ id: 'logto-user-1', username: 'analista_arrecadacao' }]);
+    }
+    if (url.pathname === '/api/users/logto-user-1') {
+      return jsonResponse({ id: 'logto-user-1', username: 'analista_arrecadacao' });
+    }
+
+    return jsonResponse({ error: 'unexpected request' }, 500);
+  }) as typeof fetch;
+
+  try {
+    const client = new LogtoManagementClient('https://logto.test/api', 'm2m-id', 'm2m-secret', {
+      pageSize: 2,
+    });
+
+    assert.deepEqual(await client.listUsers(), [
+      { id: 'logto-user-1', username: 'analista_arrecadacao' },
+    ]);
+    assert.deepEqual(await client.getUser('logto-user-1'), {
+      id: 'logto-user-1',
+      username: 'analista_arrecadacao',
+    });
+    assert.equal(requestedPaths.some((path) => path.endsWith('/roles')), false);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
 });
 
 test('rejects manual sync without admin token', async () => {
@@ -102,7 +151,6 @@ test('manual sync delegates to scheduler when present (mutex shared)', async () 
       username: 'consultor_dev',
       name: 'Consultor Dev',
       primaryEmail: 'consultor.dev@mcad.local',
-      roles: [],
       isSuspended: false,
     },
   ]);
@@ -159,7 +207,6 @@ test('maps suspended Logto users to dedicated identity events', async () => {
       name: 'Suspenso',
       primaryEmail: 'suspenso@mcad.dev',
       isSuspended: true,
-      roles: [],
     },
   ]);
   const server = await buildServer(config, { publisher, logtoUsers: importer });
@@ -177,3 +224,10 @@ test('maps suspended Logto users to dedicated identity events', async () => {
 
   await server.close();
 });
+
+function jsonResponse(body: unknown, status = 200): Response {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { 'content-type': 'application/json' },
+  });
+}
