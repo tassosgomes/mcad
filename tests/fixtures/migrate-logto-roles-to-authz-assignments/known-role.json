@@ -1,0 +1,16 @@
+{
+  "users": [
+    {
+      "id": "logto-user-known",
+      "username": "analista_cadastro",
+      "primaryEmail": "analista.cadastro@mcad.local",
+      "roles": [
+        {
+          "id": "role-legacy-analista-cadastro",
+          "name": "analista-cadastro"
+        }
+      ]
+    }
+  ]
+}
+

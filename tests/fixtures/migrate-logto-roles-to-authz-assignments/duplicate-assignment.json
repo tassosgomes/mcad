@@ -1,0 +1,16 @@
+{
+  "users": [
+    {
+      "id": "logto-user-duplicate",
+      "username": "gerente_dev",
+      "primaryEmail": "gerente.dev@mcad.local",
+      "roles": [
+        {
+          "id": "role-legacy-gerente-distribuicao",
+          "name": "gerente-distribuicao"
+        }
+      ]
+    }
+  ]
+}
+

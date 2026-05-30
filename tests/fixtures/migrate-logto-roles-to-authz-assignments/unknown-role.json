@@ -1,0 +1,16 @@
+{
+  "users": [
+    {
+      "id": "logto-user-unknown",
+      "username": "usuario_legacy",
+      "primaryEmail": "usuario.legacy@mcad.local",
+      "roles": [
+        {
+          "id": "role-legacy-sem-mapeamento",
+          "name": "legacy-sem-mapeamento"
+        }
+      ]
+    }
+  ]
+}
+

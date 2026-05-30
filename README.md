@@ -26,6 +26,24 @@ AUTHZ_TIMEOUT_MS=3000
 AUTHZ_CACHE_TTL_SECONDS=60
 ```
 
+### Migração controlada de roles Logto
+
+O backfill de roles legadas do Logto para assignments oficiais do `ecad-authz`
+usa somente APIs oficiais e gera relatório sem imprimir tokens, senhas ou
+conteúdo sensível do `.env_qa`.
+
+```bash
+node scripts/migrate-logto-roles-to-authz-assignments.mjs --dry-run \
+  --report tasks/plataforma/prd-authz-fonte-unica-assignments/migration-report.md
+
+node scripts/migrate-logto-roles-to-authz-assignments.mjs --apply \
+  --report tasks/plataforma/prd-authz-fonte-unica-assignments/migration-report.md
+```
+
+Variáveis necessárias: `LOGTO_MANAGEMENT_API` com `LOGTO_MANAGEMENT_TOKEN` ou
+`LOGTO_M2M_CLIENT_ID`/`LOGTO_M2M_CLIENT_SECRET`, `AUTHZ_BASE_URL` e
+`AUTHZ_ADMIN_TOKEN` para `--apply`.
+
 ## Copiloto Operacional
 
 O Copiloto usa o BFF em `/api/ai/v1/*`, que encaminha para `services/ai-orchestrator`.
