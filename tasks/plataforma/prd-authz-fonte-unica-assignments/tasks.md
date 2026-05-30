@@ -40,7 +40,7 @@ Remove confianca residual em roles/scopes do JWT nos servicos auxiliares, adicio
 - [x] 3.0 Criar migracao controlada de roles Logto para assignments `ecad-authz`
 - [x] 4.0 Reescrever provisionamento Logto para autenticacao pura e fixtures explicitas
 - [x] 5.0 Evoluir BFF de Acessos, Auditoria e cache/versionamento de permissoes
-- [ ] 6.0 Migrar frontend para permissoes efetivas e tela completa de Atribuicoes
+- [x] 6.0 Migrar frontend para permissoes efetivas e tela completa de Atribuicoes
 - [ ] 7.0 Remover autorizacao por roles/scopes JWT de servicos auxiliares
 - [ ] 8.0 Executar cutover, validacao QA, observabilidade e documentacao final
 

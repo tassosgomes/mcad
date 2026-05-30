@@ -11,7 +11,6 @@ function authValue(overrides: Partial<AuthContextValue> = {}): AuthContextValue 
     user: null,
     isAuthenticated: true,
     isLoggingOut: false,
-    roles: [],
     login: async () => undefined,
     logout: vi.fn(async () => undefined),
     getToken: () => 'jwt-test',

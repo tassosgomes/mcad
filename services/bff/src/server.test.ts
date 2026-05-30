@@ -452,6 +452,8 @@ test('/api/me returns subjectId, name and email from authz upstream', async () =
       subjectId: 'cyberark|abc123',
       name: 'Maria Silva',
       email: 'maria@ecad.org.br',
+      roles: SAMPLE_AUTHZ_PAYLOAD.roles,
+      primaryRole: SAMPLE_AUTHZ_PAYLOAD.roles[0],
     });
   } finally {
     await server.close();
@@ -515,6 +517,8 @@ test('/api/me caches successive calls within TTL and does not hit upstream twice
       subjectId: 'cyberark|abc123',
       name: 'Maria Silva',
       email: 'maria@ecad.org.br',
+      roles: SAMPLE_AUTHZ_PAYLOAD.roles,
+      primaryRole: SAMPLE_AUTHZ_PAYLOAD.roles[0],
     });
     assert.equal(getCallCount(), 1, 'upstream should be hit only once when cache is warm');
   } finally {

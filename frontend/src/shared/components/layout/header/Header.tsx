@@ -1,32 +1,19 @@
-
-import styles from './Header.module.css';
 import { LogOut, Menu } from 'lucide-react';
 import { Badge } from '@components/ui/badge';
 import { useAuth } from '@shared/auth';
+import { useEffectiveProfile } from '@shared/auth/meApi';
+import styles from './Header.module.css';
 
 interface HeaderProps {
   onMenuClick?: () => void;
 }
 
-const ROLE_LABELS: Array<[string, string]> = [
-  ['analista-arrecadacao', 'Analista de Arrecadação'],
-  ['analista-identificacao', 'Analista de Identificação'],
-  ['analista-cadastro', 'Analista de Cadastro'],
-  ['analista-distribuicao', 'Analista de Distribuição'],
-  ['consultor-arrecadacao', 'Consultor de Arrecadação'],
-  ['consultor-identificacao', 'Consultor de Identificação'],
-  ['consultor', 'Consultor'],
-];
-
-function resolveRoleLabel(roles: string[]): string {
-  const matchedRole = ROLE_LABELS.find(([role]) => roles.includes(role));
-  return matchedRole?.[1] ?? 'Usuário autenticado';
-}
-
 export function Header({ onMenuClick }: HeaderProps) {
-  const { user, roles, logout } = useAuth();
-  const userName = user?.profile.name ?? user?.profile.preferred_username ?? user?.profile.sub ?? 'Usuário';
-  const roleLabel = resolveRoleLabel(roles);
+  const { isAuthenticated, logout } = useAuth();
+  const profileQuery = useEffectiveProfile();
+  const profile = profileQuery.data;
+  const userName = profile?.name ?? profile?.email ?? profile?.subjectId ?? 'Usuário autenticado';
+  const roleLabel = profile?.primaryRole ?? 'Perfil efetivo';
 
   return (
     <header className={styles.header}>
@@ -40,7 +27,7 @@ export function Header({ onMenuClick }: HeaderProps) {
         </div>
       </div>
 
-      {user && (
+      {isAuthenticated && (
         <div className={styles.right}>
           <span className={styles.userName}>{userName}</span>
           <Badge variant="secondary">{roleLabel}</Badge>

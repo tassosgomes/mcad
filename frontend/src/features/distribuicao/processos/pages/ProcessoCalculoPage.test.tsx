@@ -107,7 +107,6 @@ function renderPage(
     user: null,
     isAuthenticated: true,
     isLoggingOut: false,
-    roles: [],
     login: async () => undefined,
     logout: async () => undefined,
     getToken: () => 'token-123',

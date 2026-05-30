@@ -67,6 +67,8 @@ export async function registerMeRoutes(
       subjectId: user.subject,
       name: user.name,
       email: user.email,
+      roles: result.payload.roles,
+      primaryRole: result.payload.roles[0] ?? null,
     });
   });
 

@@ -1,21 +1,11 @@
 import { useEffect } from 'react';
-import type { User } from 'oidc-client-ts';
 import { useNavigate } from 'react-router-dom';
 import { Loading } from '@components/ui/loading';
+import { fetchPermissions } from '@shared/authz/permissionsApi';
 import { userManager } from './authConfig';
 import { resolveAuthorizedReturnPath } from './authorizedRoutes';
 
 let activeCallbackUrl: string | null = null;
-
-function extractRoles(user: User | null): string[] {
-  const roles = user?.profile?.roles;
-
-  if (!Array.isArray(roles)) {
-    return [];
-  }
-
-  return roles.filter((role): role is string => typeof role === 'string');
-}
 
 export function CallbackPage() {
   const navigate = useNavigate();
@@ -32,10 +22,10 @@ export function CallbackPage() {
 
       try {
         const user = await userManager.signinRedirectCallback();
-        const returnUrl = resolveAuthorizedReturnPath(
-          sessionStorage.getItem('returnUrl'),
-          extractRoles(user)
-        );
+        const permissions = user.access_token
+          ? (await fetchPermissions({ token: user.access_token })).data.permissions
+          : [];
+        const returnUrl = resolveAuthorizedReturnPath(sessionStorage.getItem('returnUrl'), permissions);
         sessionStorage.removeItem('returnUrl');
         navigate(returnUrl, { replace: true });
       } catch (error) {

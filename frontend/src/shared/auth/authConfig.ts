@@ -60,10 +60,9 @@ export const oidcConfig: UserManagerSettings = {
   post_logout_redirect_uri: resolvePostLogoutRedirectUri(),
   silent_redirect_uri: resolveSilentRedirectUri(),
   response_type: 'code',
-  // 'access' e 'write' são scopes da API resource https://api.mcad.local.
-  // Sem pelo menos um scope do resource, o Logto emite um token opaco (sem aud da API).
-  // 'access' → todos os papéis;  'write' → somente analistas.
-  scope: 'openid profile roles access write',
+  // 'access' e 'write' mantêm a audience da API resource https://api.mcad.local.
+  // Papéis de negócio não são solicitados nem usados como claim funcional.
+  scope: 'openid profile access write',
   // Logto (RFC 8707): o parâmetro 'resource' precisa estar em AMBOS os requests —
   // na autorização (extraQueryParams) E na troca de código (extraTokenParams).
   // Sem isso o Logto emite um token opaco sem aud da API.

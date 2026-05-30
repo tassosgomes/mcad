@@ -20,16 +20,6 @@ interface AuthProviderProps {
   children: ReactNode;
 }
 
-function extractRoles(user: User | null): string[] {
-  const roles = user?.profile?.roles;
-
-  if (Array.isArray(roles)) {
-    return roles.filter((role): role is string => typeof role === 'string');
-  }
-
-  return [];
-}
-
 function getCurrentReturnUrl(): string {
   const returnUrl = `${window.location.pathname}${window.location.search}${window.location.hash}`;
 
@@ -102,7 +92,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
     };
   }, []);
 
-  const roles = extractRoles(user);
   const isAuthenticated = user !== null && !user.expired;
 
   const login = async () => {
@@ -173,7 +162,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
         user,
         isAuthenticated,
         isLoggingOut,
-        roles,
         login,
         logout,
         getToken,

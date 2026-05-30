@@ -5,7 +5,6 @@ export interface AuthContextValue {
   user: User | null;
   isAuthenticated: boolean;
   isLoggingOut: boolean;
-  roles: string[];
   login: () => Promise<void>;
   logout: () => Promise<void>;
   getToken: () => string | null;

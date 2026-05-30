@@ -1,8 +1,9 @@
-export const AUDIT_ALLOWED_ROLES = [
-  'analista-cadastro',
-  'analista-identificacao',
-  'analista-arrecadacao',
-  'analista-distribuicao',
+export const AUDIT_HISTORY_PERMISSIONS = [
+  'cadastro:default:status:visualizar-historico-obra',
+  'cadastro:default:status:visualizar-historico-fonograma',
+  'identificacao:default:captacao:listar',
+  'arrecadacao:default:cliente:listar',
+  'authz:admin:audit:visualizar',
 ] as const;
 
 export const auditEntityTypes = {

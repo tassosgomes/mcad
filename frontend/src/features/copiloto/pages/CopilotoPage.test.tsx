@@ -17,7 +17,6 @@ function renderWithAuth(children: ReactNode) {
     user: null,
     isAuthenticated: true,
     isLoggingOut: false,
-    roles: ['analista-cadastro'],
     login: async () => undefined,
     logout: async () => undefined,
     getToken: () => 'token-123',

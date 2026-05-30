@@ -1,21 +1,25 @@
-const authorizedRouteByRole: Array<{ roles: string[]; path: string }> = [
-  { roles: ['analista-cadastro', 'consultor'], path: '/cadastro/associacoes' },
-  { roles: ['analista-identificacao', 'consultor-identificacao'], path: '/identificacao/captacoes' },
-  { roles: ['analista-arrecadacao', 'consultor-arrecadacao'], path: '/arrecadacao/licencas' },
-  { roles: ['analista-distribuicao', 'consultor-distribuicao'], path: '/distribuicao/rubricas' },
+const authorizedRouteByPermission: Array<{ permission: string; path: string }> = [
+  { permission: 'cadastro:default:associacao:listar', path: '/cadastro/associacoes' },
+  { permission: 'identificacao:default:captacao:listar', path: '/identificacao/captacoes' },
+  { permission: 'arrecadacao:default:cliente:listar', path: '/arrecadacao/licencas' },
+  { permission: 'distribuicao:default:rubrica:listar', path: '/distribuicao/rubricas' },
+  { permission: 'distribuicao:default:processo:listar', path: '/distribuicao/processos' },
+  { permission: 'authz:admin:role:visualizar', path: '/autorizacao/papeis' },
+  { permission: 'acessos:default:papel:listar', path: '/autorizacao/atribuicoes' },
 ];
 
-export function getDefaultAuthorizedPath(roles: string[]): string {
-  const match = authorizedRouteByRole.find(({ roles: allowedRoles }) =>
-    allowedRoles.some((role) => roles.includes(role))
-  );
+export function getDefaultAuthorizedPath(permissions: readonly string[]): string {
+  const match = authorizedRouteByPermission.find(({ permission }) => permissions.includes(permission));
 
-  return match?.path ?? '/cadastro/associacoes';
+  return match?.path ?? '/';
 }
 
-export function resolveAuthorizedReturnPath(returnUrl: string | null, roles: string[]): string {
+export function resolveAuthorizedReturnPath(
+  returnUrl: string | null,
+  permissions: readonly string[],
+): string {
   if (!returnUrl || returnUrl === '/') {
-    return getDefaultAuthorizedPath(roles);
+    return getDefaultAuthorizedPath(permissions);
   }
 
   return returnUrl;
