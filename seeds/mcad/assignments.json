@@ -58,5 +58,78 @@
     "name": "Sem Papel Dev",
     "subjectHint": "sem-papel.dev",
     "roleKeys": []
+  },
+  {
+    "email": "analista_cadastro@mcad.dev",
+    "name": "Analista Cadastro",
+    "subjectHint": "analista_cadastro",
+    "roleKeys": [
+      "cadastro.default.analista"
+    ]
+  },
+  {
+    "email": "analista_identificacao@mcad.dev",
+    "name": "Analista Identificacao",
+    "subjectHint": "analista_identificacao",
+    "roleKeys": [
+      "identificacao.default.analista"
+    ]
+  },
+  {
+    "email": "analista_arrecadacao@mcad.dev",
+    "name": "Analista Arrecadacao",
+    "subjectHint": "analista_arrecadacao",
+    "roleKeys": [
+      "arrecadacao.default.analista"
+    ]
+  },
+  {
+    "email": "analista_distribuicao@mcad.dev",
+    "name": "Analista Distribuicao",
+    "subjectHint": "analista_distribuicao",
+    "roleKeys": [
+      "distribuicao.default.analista"
+    ]
+  },
+  {
+    "email": "consultor_geral@mcad.dev",
+    "name": "Consultor Geral",
+    "subjectHint": "consultor_geral",
+    "roleKeys": [
+      "cadastro.default.consultor",
+      "identificacao.default.consultor",
+      "arrecadacao.default.consultor",
+      "distribuicao.default.consultor"
+    ]
+  },
+  {
+    "email": "consultor_identificacao@mcad.dev",
+    "name": "Consultor Identificacao",
+    "subjectHint": "consultor_identificacao",
+    "roleKeys": [
+      "identificacao.default.consultor"
+    ]
+  },
+  {
+    "email": "consultor_arrecadacao@mcad.dev",
+    "name": "Consultor Arrecadacao",
+    "subjectHint": "consultor_arrecadacao",
+    "roleKeys": [
+      "arrecadacao.default.consultor"
+    ]
+  },
+  {
+    "email": "consultor_distribuicao@mcad.dev",
+    "name": "Consultor Distribuicao",
+    "subjectHint": "consultor_distribuicao",
+    "roleKeys": [
+      "distribuicao.default.consultor"
+    ]
+  },
+  {
+    "email": "sem_papel@mcad.dev",
+    "name": "Sem Papel",
+    "subjectHint": "sem_papel",
+    "roleKeys": []
   }
 ]

@@ -5,14 +5,15 @@
 #   1) catálogos de permissões em seeds/mcad/*.permissions.json;
 #   2) papéis padrão declarados em seeds/mcad/roles.json;
 #   3) associação de permissões aos papéis;
-#   4) atribuição dos papéis aos usuários de teste (consultor.dev,
-#      analista.dev, sem-papel.dev).
+#   4) atribuição explícita dos papéis aos usuários de teste declarados em
+#      seeds/mcad/assignments.json.
 #
 # Pré-requisitos:
 #   - ecad-authz acessível em $AUTHZ_BASE_URL (default http://localhost:8085).
 #   - $AUTHZ_ADMIN_TOKEN exportado (Bearer token de service admin / TI global).
-#   - Os 3 usuários de teste já existem no ecad-authz (sync do Logto/Keycloak
-#     ou criação manual). O script só ATRIBUI papéis — não cria usuários.
+#   - Os usuários de teste já existem no ecad-authz (sync do Logto/Keycloak
+#     ou criação manual). O script só ATRIBUI papéis no ecad-authz — não cria
+#     usuários e não depende de roles no IdP.
 #   - jq e curl instalados.
 #
 # Uso:
@@ -76,7 +77,7 @@ Variáveis de ambiente:
 Arquivos de input lidos de: ${SEEDS_DIR}
   *.permissions.json
   roles.json
-  assignments.json
+  assignments.json       # fonte DEV/CI dos assignments de teste; Logto não cria roles
 EOF
 }
 

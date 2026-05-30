@@ -26,6 +26,25 @@ AUTHZ_TIMEOUT_MS=3000
 AUTHZ_CACHE_TTL_SECONDS=60
 ```
 
+### Provisionamento Logto
+
+O provisionamento do Logto é restrito a autenticação/OIDC: aplicação SPA,
+API Resource/audience e usuários de teste. Ele não cria roles de negócio, não
+atribui roles a usuários e remove o customizer legado de claim `roles` do
+access token, quando existir.
+
+```bash
+./scripts/provision-logto.sh
+./scripts/provision-logto.sh --check-no-business-roles
+```
+
+Assignments DEV/CI ficam no `ecad-authz` e devem ser aplicados pela fixture
+`seeds/mcad/assignments.json`:
+
+```bash
+./scripts/seed-authz.sh
+```
+
 ### Migração controlada de roles Logto
 
 O backfill de roles legadas do Logto para assignments oficiais do `ecad-authz`

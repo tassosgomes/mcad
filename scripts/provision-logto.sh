@@ -9,11 +9,101 @@
 #
 # Uso:
 #   ./scripts/provision-logto.sh
+#   ./scripts/provision-logto.sh --check-no-business-roles
 
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 ENV_FILE="${ENV_FILE:-$ROOT_DIR/.env}"
+
+if [[ "${1:-}" == "--help" || "${1:-}" == "-h" ]]; then
+  cat <<'EOF'
+Uso:
+  ./scripts/provision-logto.sh
+  ./scripts/provision-logto.sh --check-no-business-roles
+
+Provisiona somente autenticação/OIDC no Logto:
+  - API Resource/audience;
+  - aplicação SPA;
+  - usuários de teste.
+
+Assignments de negócio devem ser aplicados no ecad-authz via:
+  ./scripts/seed-authz.sh
+EOF
+  exit 0
+fi
+
+if [[ "${1:-}" == "--check-no-business-roles" ]]; then
+  if [[ "$#" -ne 1 ]]; then
+    echo "Uso: $0 --check-no-business-roles" >&2
+    exit 2
+  fi
+
+  python3 - "$0" <<'PY'
+import ast
+import re
+import sys
+from pathlib import Path
+
+script_path = Path(sys.argv[1])
+source = script_path.read_text(encoding="utf-8")
+marker = "python3 - <<'PY'\n"
+try:
+    start = source.index(marker) + len(marker)
+    end = source.rindex("\nPY")
+except ValueError as exc:
+    raise SystemExit(f"Não foi possível localizar o bloco Python em {script_path}") from exc
+
+tree = ast.parse(source[start:end], filename=str(script_path))
+violations = []
+
+def read_string(node):
+    if isinstance(node, ast.Constant) and isinstance(node.value, str):
+        return node.value
+    if isinstance(node, ast.JoinedStr):
+        return "".join(
+            part.value if isinstance(part, ast.Constant) and isinstance(part.value, str) else "{}"
+            for part in node.values
+        )
+    return None
+
+def is_forbidden_logto_path(method, path):
+    if re.match(r"^/roles(?:[/?#]|$)", path) is not None:
+        return True
+    if re.match(r"^/users/[^/]+/roles(?:[/?#]|$)", path) is not None:
+        return True
+    if path.startswith("/configs/jwt-customizer"):
+        return method != "DELETE" or path != "/configs/jwt-customizer/access-token"
+    return False
+
+for node in ast.walk(tree):
+    if not isinstance(node, ast.Call):
+        continue
+    if not isinstance(node.func, ast.Name) or node.func.id != "api":
+        continue
+    if len(node.args) < 2:
+        continue
+    method = read_string(node.args[0]) or "<dynamic>"
+    path = read_string(node.args[1])
+    if path and is_forbidden_logto_path(method, path):
+        violations.append(f"linha {node.lineno}: api({method!r}, {path!r}, ...)")
+
+if violations:
+    print("Provisionamento Logto contém chamadas proibidas de roles/customizer:", file=sys.stderr)
+    for violation in violations:
+        print(f"  - {violation}", file=sys.stderr)
+    raise SystemExit(1)
+
+print("OK: provision-logto.sh não provisiona roles/user roles nem cria/atualiza JWT customizer.")
+PY
+  exit 0
+fi
+
+if [[ "$#" -gt 0 ]]; then
+  echo "Argumento desconhecido: $1" >&2
+  echo "Use --help para ver opções." >&2
+  exit 2
+fi
 
 if [[ ! -f "$ENV_FILE" ]]; then
   echo "Arquivo de environment não encontrado: $ENV_FILE" >&2
@@ -36,6 +126,7 @@ export LOGTO_BASE_URL="${LOGTO_MANAGEMENT_API%/api}"
 python3 - <<'PY'
 import json
 import os
+import re
 import sys
 import urllib.error
 import urllib.parse
@@ -50,40 +141,16 @@ FRONTEND_APP_NAME = "mcad-frontend"
 API_RESOURCE_NAME = "mcad-apis"
 API_RESOURCE_INDICATOR = "https://api.mcad.local"
 
-ACCESS_TOKEN_ROLES_CUSTOMIZER_SCRIPT = """const getCustomJwtClaims = async ({ context, token }) => {
-  const audiences = Array.isArray(token.aud) ? token.aud : [token.aud];
-
-  const roles = (context.user.roles ?? [])
-    .filter((role) =>
-      (role.scopes ?? []).some((scope) =>
-        audiences.includes(scope.resource?.indicator)
-      )
-    )
-    .map((role) => role.name);
-
-  return { roles };
-};"""
-
-ROLES = [
-    ("analista-cadastro",      "Analista de Cadastro (leitura + escrita)"),
-    ("analista-identificacao", "Analista de Identificação (leitura + escrita)"),
-    ("analista-arrecadacao",   "Analista de Arrecadação (leitura + escrita)"),
-    ("analista-distribuicao",  "Analista de Distribuição (leitura + escrita)"),
-    ("consultor",              "Consultor (somente leitura)"),
-    ("consultor-identificacao", "Consultor de Identificação (somente leitura)"),
-    ("consultor-arrecadacao",  "Consultor de Arrecadação (somente leitura)"),
-    ("consultor-distribuicao", "Consultor de Distribuição (somente leitura)"),
-]
-
 USERS = [
-    {"username": "analista_cadastro",      "name": "Analista Cadastro",       "password": "Analista123!", "role": "analista-cadastro"},
-    {"username": "analista_identificacao", "name": "Analista Identificacao",  "password": "Analista123!", "role": "analista-identificacao"},
-    {"username": "analista_arrecadacao",   "name": "Analista Arrecadacao",    "password": "Analista123!", "role": "analista-arrecadacao"},
-    {"username": "analista_distribuicao",  "name": "Analista Distribuicao",   "password": "Analista123!", "role": "analista-distribuicao"},
-    {"username": "consultor_geral",        "name": "Consultor Geral",         "password": "bbd8n_tW", "role": "consultor"},
-    {"username": "consultor_identificacao", "name": "Consultor Identificacao", "password": "Consultor123!", "role": "consultor-identificacao"},
-    {"username": "consultor_arrecadacao",  "name": "Consultor Arrecadacao",   "password": "Consultor123!", "role": "consultor-arrecadacao"},
-    {"username": "consultor_distribuicao", "name": "Consultor Distribuicao",  "password": "Consultor123!", "role": "consultor-distribuicao"},
+    {"username": "analista_cadastro",       "name": "Analista Cadastro",       "email": "analista_cadastro@mcad.dev",       "password": "Analista123!"},
+    {"username": "analista_identificacao",  "name": "Analista Identificacao",  "email": "analista_identificacao@mcad.dev",  "password": "Analista123!"},
+    {"username": "analista_arrecadacao",    "name": "Analista Arrecadacao",    "email": "analista_arrecadacao@mcad.dev",    "password": "Analista123!"},
+    {"username": "analista_distribuicao",   "name": "Analista Distribuicao",   "email": "analista_distribuicao@mcad.dev",   "password": "Analista123!"},
+    {"username": "consultor_geral",         "name": "Consultor Geral",         "email": "consultor_geral@mcad.dev",         "password": "bbd8n_tW"},
+    {"username": "consultor_identificacao", "name": "Consultor Identificacao", "email": "consultor_identificacao@mcad.dev", "password": "Consultor123!"},
+    {"username": "consultor_arrecadacao",   "name": "Consultor Arrecadacao",   "email": "consultor_arrecadacao@mcad.dev",   "password": "Consultor123!"},
+    {"username": "consultor_distribuicao",  "name": "Consultor Distribuicao",  "email": "consultor_distribuicao@mcad.dev",  "password": "Consultor123!"},
+    {"username": "sem_papel",               "name": "Sem Papel",              "email": "sem_papel@mcad.dev",               "password": "SemPapel123!"},
 ]
 
 
@@ -125,6 +192,7 @@ def post_form(url: str, data: dict) -> dict:
 
 
 def api(method: str, path: str, token: str, payload=None):
+    assert_authentication_only_path(method, path)
     url = f"{api_url}{path}"
     headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
     data = json.dumps(payload).encode() if payload is not None else None
@@ -137,6 +205,20 @@ def api(method: str, path: str, token: str, payload=None):
         if exc.code == 404:
             return None
         raise RuntimeError(f"{method} {path} → {exc.code}: {exc.read().decode()}") from exc
+
+
+def assert_authentication_only_path(method: str, path: str) -> None:
+    uses_logto_roles = (
+        re.match(r"^/roles(?:[/?#]|$)", path) is not None
+        or re.match(r"^/users/[^/]+/roles(?:[/?#]|$)", path) is not None
+    )
+    mutates_jwt_customizer = path.startswith("/configs/jwt-customizer") and (
+        method != "DELETE" or path != "/configs/jwt-customizer/access-token"
+    )
+    if uses_logto_roles or mutates_jwt_customizer:
+        raise RuntimeError(
+            f"Chamada Logto proibida em provisionamento authentication-only: {method} {path}"
+        )
 
 
 def get_token() -> str:
@@ -154,8 +236,8 @@ def get_token() -> str:
 
 # ── Provisioning helpers ──────────────────────────────────────────────────────
 
-def ensure_api_resource(token: str) -> str:
-    """Cria ou retorna o API Resource com scopes 'access' e 'write'. Retorna o resource id."""
+def ensure_api_resource(token: str) -> tuple[str, list[str]]:
+    """Cria ou retorna o API Resource e o scope técnico mínimo para emissão de audience."""
     resources = api("GET", "/resources", token) or []
     existing = next((r for r in resources if r.get("indicator") == API_RESOURCE_INDICATOR), None)
     if existing:
@@ -169,20 +251,20 @@ def ensure_api_resource(token: str) -> str:
         resource_id = created["id"]
         print(f"  API Resource criado: {API_RESOURCE_INDICATOR} (id={resource_id})")
 
-    # Garante scopes 'access' e 'write' no resource
+    # Scope técnico mínimo. Papéis/permissões de negócio ficam no ecad-authz.
     existing_scopes = api("GET", f"/resources/{resource_id}/scopes", token) or []
     existing_scope_names = {s["name"]: s["id"] for s in existing_scopes}
-    scope_ids = {}
-    for scope_name, scope_desc in [("access", "Acesso de leitura às APIs mcad"), ("write", "Operações de escrita nas APIs mcad")]:
+    ensured_scopes = []
+    for scope_name, scope_desc in [("access", "Emissão de access token para APIs mcad")]:
         if scope_name in existing_scope_names:
-            scope_ids[scope_name] = existing_scope_names[scope_name]
+            ensured_scopes.append(scope_name)
             print(f"  Scope '{scope_name}' já existe")
         else:
-            created = api("POST", f"/resources/{resource_id}/scopes", token, {"name": scope_name, "description": scope_desc})
-            scope_ids[scope_name] = created["id"]
-            print(f"  Scope '{scope_name}' criado (id={scope_ids[scope_name]})")
+            api("POST", f"/resources/{resource_id}/scopes", token, {"name": scope_name, "description": scope_desc})
+            ensured_scopes.append(scope_name)
+            print(f"  Scope '{scope_name}' criado")
 
-    return resource_id, scope_ids
+    return resource_id, ensured_scopes
 
 
 def ensure_frontend_app(token: str) -> str:
@@ -223,177 +305,62 @@ def ensure_frontend_app(token: str) -> str:
     return created["id"]
 
 
-def ensure_role(token: str, name: str, description: str, scope_ids_to_assign: list[str]) -> str:
-    """Cria ou retorna uma role e garante os scopes atribuídos. Retorna o id."""
-    roles = api("GET", f"/roles?search={urllib.parse.quote(name)}&limit=20", token) or []
-    existing = next((r for r in roles if r.get("name") == name), None)
-    if existing:
-        print(f"  Role já existe: {name}")
-        role_id = existing["id"]
-    else:
-        created = api("POST", "/roles", token, {
-            "name": name,
-            "description": description,
-            "type": "User",
-        })
-        role_id = created["id"]
-        print(f"  Role criada: {name}")
-
-    # Garante que os scopes estão atribuídos à role
-    current_scopes = api("GET", f"/roles/{role_id}/scopes", token) or []
-    current_scope_ids = {s["id"] for s in current_scopes}
-    missing = [sid for sid in scope_ids_to_assign if sid not in current_scope_ids]
-    if missing:
-        api("POST", f"/roles/{role_id}/scopes", token, {"scopeIds": missing})
-        print(f"    Scopes atribuídos à role {name}")
-
-    return role_id
-
-
-def ensure_user(token: str, username: str, name: str, password: str, role_id: str) -> None:
-    """Cria ou atualiza usuário e garante a role atribuída."""
+def ensure_user(token: str, username: str, name: str, email: str, password: str) -> dict:
+    """Cria ou retorna usuário de teste, sem atribuição de papéis no Logto."""
     users = api("GET", f"/users?search={urllib.parse.quote(username)}&limit=20", token) or []
     existing = next((u for u in users if u.get("username") == username), None)
 
     if existing:
         user_id = existing["id"]
         print(f"  Usuário já existe: {username}")
+        return {"id": user_id, "username": username, "email": existing.get("primaryEmail") or email}
     else:
-        first, *rest = name.split(" ", 1)
-        last = rest[0] if rest else ""
         created = api("POST", "/users", token, {
             "username": username,
             "name": name,
-            "primaryEmail": f"{username.replace('.', '_')}@mcad.dev",
+            "primaryEmail": email,
             "password": password,
         })
         user_id = created["id"]
         print(f"  Usuário criado: {username} (id={user_id})")
-
-    # Verifica roles já atribuídas
-    current_roles = api("GET", f"/users/{user_id}/roles", token) or []
-    if any(r.get("id") == role_id for r in current_roles):
-        return
-
-    api("POST", f"/users/{user_id}/roles", token, {"roleIds": [role_id]})
-    print(f"    Role atribuída ao usuário {username}")
+        return {"id": user_id, "username": username, "email": email}
 
 
-def ensure_access_token_roles_customizer(token: str) -> None:
-    """Garante que o access token JWT inclua a claim 'roles' filtrada pelo API Resource."""
-    payload = {
-        "script": ACCESS_TOKEN_ROLES_CUSTOMIZER_SCRIPT,
-        "environmentVariables": {},
-        "contextSample": {
-            "user": {
-                "id": "user_123",
-                "username": "analista_arrecadacao",
-                "primaryEmail": "analista_arrecadacao@mcad.dev",
-                "primaryPhone": None,
-                "name": "Analista Arrecadacao",
-                "avatar": None,
-                "customData": {},
-                "identities": {},
-                "profile": {},
-                "applicationId": "mcad-frontend",
-                "isSuspended": False,
-                "hasPassword": True,
-                "ssoIdentities": [],
-                "mfaVerificationFactors": [],
-                "roles": [
-                    {
-                        "id": "role_arrecadacao",
-                        "name": "analista-arrecadacao",
-                        "description": "Analista de Arrecadação (leitura + escrita)",
-                        "scopes": [
-                            {
-                                "id": "scope_write",
-                                "name": "write",
-                                "description": "Operações de escrita nas APIs mcad",
-                                "resourceId": "resource_mcad",
-                                "resource": {
-                                    "tenantId": "tenant_mcad",
-                                    "id": "resource_mcad",
-                                    "name": API_RESOURCE_NAME,
-                                    "indicator": API_RESOURCE_INDICATOR,
-                                    "isDefault": False,
-                                    "accessTokenTtl": 3600,
-                                },
-                            },
-                        ],
-                    },
-                ],
-                "organizations": [],
-                "organizationRoles": [],
-            },
-            "grant": {
-                "type": "urn:ietf:params:oauth:grant-type:token-exchange",
-                "subjectTokenContext": {},
-            },
-            "interaction": {
-                "interactionEvent": "SignIn",
-                "userId": "user_123",
-            },
-        },
-        "tokenSample": {
-            "jti": "sample-token",
-            "aud": API_RESOURCE_INDICATOR,
-            "scope": "access write",
-            "clientId": FRONTEND_APP_NAME,
-            "accountId": "user_123",
-            "grantId": "grant_123",
-            "gty": "authorization_code",
-            "kind": "AccessToken",
-        },
-        "blockIssuanceOnError": True,
-    }
-
-    customizers = api("GET", "/configs/jwt-customizer", token) or []
-    existing = next((c for c in customizers if c.get("key") == "jwt.accessToken"), None)
-    existing_value = (existing or {}).get("value") or {}
-    if existing_value.get("script") == ACCESS_TOKEN_ROLES_CUSTOMIZER_SCRIPT:
-        print("  JWT customizer de access token já existe")
-        return
-
-    api("PUT", "/configs/jwt-customizer/access-token", token, payload)
-    action = "atualizado" if existing else "criado"
-    print(f"  JWT customizer de access token {action} com claim 'roles'")
+def remove_legacy_access_token_customizer(token: str) -> None:
+    """Remove customizer legado que injetava roles no access token, se existir."""
+    api("DELETE", "/configs/jwt-customizer/access-token", token)
+    print("  JWT customizer de access token removido ou ausente")
 
 
 # ── Main ──────────────────────────────────────────────────────────────────────
 
-print("\n[1/6] Obtendo token M2M...")
+print("\n[1/5] Obtendo token M2M...")
 token = get_token()
 print("  Token obtido com sucesso.")
 
-print("\n[2/6] Garantindo API Resource e scopes...")
-resource_id, scope_ids = ensure_api_resource(token)
-# Roles de analista recebem access + write; consultores recebem apenas access
-ANALISTA_ROLE_NAMES = {"analista-cadastro", "analista-identificacao", "analista-arrecadacao", "analista-distribuicao"}
+print("\n[2/5] Garantindo API Resource e audience...")
+resource_id, ensured_scopes = ensure_api_resource(token)
 
-print("\n[3/6] Garantindo aplicação SPA frontend...")
+print("\n[3/5] Garantindo aplicação SPA frontend...")
 frontend_app_id = ensure_frontend_app(token)
 
-print("\n[4/6] Garantindo roles...")
-role_ids = {}
-for role_name, role_desc in ROLES:
-    scopes = [scope_ids["access"], scope_ids["write"]] if role_name in ANALISTA_ROLE_NAMES else [scope_ids["access"]]
-    role_ids[role_name] = ensure_role(token, role_name, role_desc, scopes)
-
-print("\n[5/6] Garantindo usuários de teste...")
+print("\n[4/5] Garantindo usuários de teste sem roles Logto...")
+provisioned_users = []
 for user in USERS:
-    ensure_user(token, user["username"], user["name"], user["password"], role_ids[user["role"]])
+    provisioned_users.append(ensure_user(token, user["username"], user["name"], user["email"], user["password"]))
 
-print("\n[6/6] Garantindo JWT customizer do access token...")
-ensure_access_token_roles_customizer(token)
+print("\n[5/5] Removendo JWT customizer legado de roles, se existir...")
+remove_legacy_access_token_customizer(token)
 
 print("\n✓ Provisionamento concluído.")
 print(json.dumps({
     "oidcAuthority": f"{base_url}/oidc",
     "apiResourceIndicator": API_RESOURCE_INDICATOR,
+    "apiResourceId": resource_id,
+    "apiResourceScopesEnsured": ensured_scopes,
     "frontendAppId": frontend_app_id,
-    "accessTokenCustomizer": "jwt.accessToken.roles",
-    "roles": list(role_ids.keys()),
-    "users": [u["username"] for u in USERS],
+    "users": provisioned_users,
+    "legacyAccessTokenCustomizer": "removed-or-absent",
+    "businessAssignments": "not managed in Logto; run scripts/seed-authz.sh for seeds/mcad/assignments.json",
 }, indent=2))
 PY
