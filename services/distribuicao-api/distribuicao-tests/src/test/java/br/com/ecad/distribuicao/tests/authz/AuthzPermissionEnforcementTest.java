@@ -45,6 +45,7 @@ import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
@@ -265,6 +266,7 @@ class AuthzPermissionEnforcementTest {
         UUID processoId = UUID.randomUUID();
         String authorizationHeader = "Bearer analyst-token";
         givenCallerWithRole(ANALISTA);
+        givenDecodedBearerToken("analyst-token", ANALISTA);
         when(calcularProcessoCommandHandler.handle(any(CalcularProcessoCommand.class)))
                 .thenReturn(calculoResponse(processoId));
 
@@ -287,6 +289,10 @@ class AuthzPermissionEnforcementTest {
     private void givenCallerWithPermissions(Set<String> permissions) {
         when(authzDecisionClient.checkDecision(anyString(), any(), anyString()))
                 .thenAnswer(invocation -> permissions.contains(invocation.getArgument(0, String.class)));
+    }
+
+    private void givenDecodedBearerToken(String tokenValue, String roleKey) {
+        when(jwtDecoder.decode(tokenValue)).thenReturn(jwtForBearerToken(tokenValue, roleKey));
     }
 
     private static Stream<Arguments> roleEndpointMatrix() {
@@ -355,6 +361,18 @@ class AuthzPermissionEnforcementTest {
                 .subject(roleKey)
                 .claim("sid", "sess-" + roleKey)
                 .claim("roles", List.of(roleKey)));
+    }
+
+    private static Jwt jwtForBearerToken(String tokenValue, String roleKey) {
+        Instant issuedAt = Instant.parse("2026-03-01T00:00:00Z");
+        return Jwt.withTokenValue(tokenValue)
+                .header("alg", "none")
+                .subject(roleKey)
+                .claim("sid", "sess-" + roleKey)
+                .claim("roles", List.of(roleKey))
+                .issuedAt(issuedAt)
+                .expiresAt(issuedAt.plusSeconds(300))
+                .build();
     }
 
     private static CalcularProcessoResponse calculoResponse(UUID processoId) {
