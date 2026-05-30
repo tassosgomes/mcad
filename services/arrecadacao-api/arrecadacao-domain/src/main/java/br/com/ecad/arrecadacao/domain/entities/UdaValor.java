@@ -25,6 +25,12 @@ public class UdaValor {
     @Column(name = "criado_por", length = 200)
     private String criadoPor; // nullable for seed
 
+    @Column(name = "criado_por_subject", length = 128)
+    private String criadoPorSubject;
+
+    @Column(name = "criado_por_rotulo", length = 512)
+    private String criadoPorRotulo;
+
     protected UdaValor() {}
 
     public static UdaValor criar(BigDecimal valor, LocalDate dataVigencia, String criadoPor) {
@@ -43,10 +49,29 @@ public class UdaValor {
         return uda;
     }
 
+    public static UdaValor criar(BigDecimal valor, LocalDate dataVigencia,
+                                 String criadoPorSubject, String criadoPorRotulo) {
+        String rotulo = requireText(criadoPorRotulo, "criadoPorRotulo must not be blank");
+        String subject = requireText(criadoPorSubject, "criadoPorSubject must not be blank");
+        UdaValor uda = criar(valor, dataVigencia, rotulo);
+        uda.criadoPorSubject = subject;
+        uda.criadoPorRotulo = rotulo;
+        return uda;
+    }
+
+    private static String requireText(String value, String message) {
+        if (value == null || value.isBlank()) {
+            throw new IllegalArgumentException(message);
+        }
+        return value;
+    }
+
     // Getters — immutable after creation (append-only)
     public UUID getId() { return id; }
     public BigDecimal getValor() { return valor; }
     public LocalDate getDataVigencia() { return dataVigencia; }
     public Instant getCriadoEm() { return criadoEm; }
     public String getCriadoPor() { return criadoPor; }
+    public String getCriadoPorSubject() { return criadoPorSubject; }
+    public String getCriadoPorRotulo() { return criadoPorRotulo; }
 }

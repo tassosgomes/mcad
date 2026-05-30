@@ -50,6 +50,12 @@ public class Pagamento {
     @Column(name = "estornado_por", length = 200)
     private String estornadoPor;
 
+    @Column(name = "estornado_por_subject", length = 128)
+    private String estornadoPorSubject;
+
+    @Column(name = "estornado_por_rotulo", length = 512)
+    private String estornadoPorRotulo;
+
     @Column(name = "estornado_em")
     private Instant estornadoEm;
 
@@ -110,6 +116,21 @@ public class Pagamento {
         this.atualizadoEm = Instant.now();
     }
 
+    public void estornar(String justificativa, String estornadoPorSubject, String estornadoPorRotulo) {
+        String rotulo = requireText(estornadoPorRotulo, "estornadoPorRotulo must not be blank");
+        String subject = requireText(estornadoPorSubject, "estornadoPorSubject must not be blank");
+        estornar(justificativa, rotulo);
+        this.estornadoPorSubject = subject;
+        this.estornadoPorRotulo = rotulo;
+    }
+
+    private static String requireText(String value, String message) {
+        if (value == null || value.isBlank()) {
+            throw new IllegalArgumentException(message);
+        }
+        return value;
+    }
+
     // Getters only — quantidadeUdas, valorUdaNoMomento, valorBruto sao imutaveis apos registro
     public UUID getId() { return id; }
     public UUID getLicencaId() { return licencaId; }
@@ -126,5 +147,7 @@ public class Pagamento {
     // F06 — getters dos campos de estorno
     public String getJustificativaEstorno() { return justificativaEstorno; }
     public String getEstornadoPor() { return estornadoPor; }
+    public String getEstornadoPorSubject() { return estornadoPorSubject; }
+    public String getEstornadoPorRotulo() { return estornadoPorRotulo; }
     public Instant getEstornadoEm() { return estornadoEm; }
 }

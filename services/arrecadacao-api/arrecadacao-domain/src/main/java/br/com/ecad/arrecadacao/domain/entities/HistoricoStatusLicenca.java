@@ -29,6 +29,12 @@ public class HistoricoStatusLicenca {
     @Column(name = "autor", length = 100, nullable = false)
     private String autor;
 
+    @Column(name = "ator_subject", length = 128)
+    private String atorSubject;
+
+    @Column(name = "autor_rotulo", length = 512)
+    private String autorRotulo;
+
     @Column(name = "data", nullable = false)
     private Instant data;
 
@@ -40,6 +46,7 @@ public class HistoricoStatusLicenca {
         Objects.requireNonNull(licencaId, "licencaId e obrigatorio");
         Objects.requireNonNull(statusNovo, "statusNovo e obrigatorio");
         Objects.requireNonNull(justificativa, "justificativa e obrigatoria");
+        Objects.requireNonNull(autor, "autor e obrigatorio");
         if (justificativa.trim().length() < 10) {
             throw new IllegalArgumentException("Justificativa deve ter no minimo 10 caracteres");
         }
@@ -54,11 +61,31 @@ public class HistoricoStatusLicenca {
         return historico;
     }
 
+    public static HistoricoStatusLicenca criar(UUID licencaId,
+            StatusLicenca statusAnterior, StatusLicenca statusNovo,
+            String justificativa, String atorSubject, String autorRotulo) {
+        String rotulo = requireText(autorRotulo, "autorRotulo e obrigatorio");
+        String subject = requireText(atorSubject, "atorSubject e obrigatorio");
+        var historico = criar(licencaId, statusAnterior, statusNovo, justificativa, rotulo);
+        historico.atorSubject = subject;
+        historico.autorRotulo = rotulo;
+        return historico;
+    }
+
+    private static String requireText(String value, String message) {
+        if (value == null || value.isBlank()) {
+            throw new IllegalArgumentException(message);
+        }
+        return value;
+    }
+
     public UUID getId() { return id; }
     public UUID getLicencaId() { return licencaId; }
     public StatusLicenca getStatusAnterior() { return statusAnterior; }
     public StatusLicenca getStatusNovo() { return statusNovo; }
     public String getJustificativa() { return justificativa; }
     public String getAutor() { return autor; }
+    public String getAtorSubject() { return atorSubject; }
+    public String getAutorRotulo() { return autorRotulo; }
     public Instant getData() { return data; }
 }

@@ -112,6 +112,8 @@ class PagamentoTest {
         assertThat(pagamento.getStatus()).isEqualTo(StatusPagamento.ESTORNADO);
         assertThat(pagamento.getJustificativaEstorno()).isEqualTo(JUSTIFICATIVA_VALIDA);
         assertThat(pagamento.getEstornadoPor()).isEqualTo(AUTOR_VALIDO);
+        assertThat(pagamento.getEstornadoPorSubject()).isNull();
+        assertThat(pagamento.getEstornadoPorRotulo()).isNull();
         assertThat(pagamento.getEstornadoEm()).isNotNull();
         assertThat(pagamento.getAtualizadoEm()).isNotNull();
     }
@@ -191,5 +193,31 @@ class PagamentoTest {
         assertThatThrownBy(() -> pagamento.estornar(JUSTIFICATIVA_VALIDA, null))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("Autor must not be blank");
+    }
+
+    @Test
+    void estornar_ComSnapshotAtor_DevePersistirSubjectRotuloELegado() {
+        // Arrange
+        Pagamento pagamento = Pagamento.registrar(LICENCA_ID, QUANTIDADE_UDAS, VALOR_UDA);
+
+        // Act
+        pagamento.estornar(JUSTIFICATIVA_VALIDA, "logto-user-4", "Carlos Melo (carlos.melo)");
+
+        // Assert
+        assertThat(pagamento.getStatus()).isEqualTo(StatusPagamento.ESTORNADO);
+        assertThat(pagamento.getEstornadoPorSubject()).isEqualTo("logto-user-4");
+        assertThat(pagamento.getEstornadoPorRotulo()).isEqualTo("Carlos Melo (carlos.melo)");
+        assertThat(pagamento.getEstornadoPor()).isEqualTo("Carlos Melo (carlos.melo)");
+    }
+
+    @Test
+    void estornar_ComSnapshotAtorERotuloEmBranco_DeveLancar() {
+        // Arrange
+        Pagamento pagamento = Pagamento.registrar(LICENCA_ID, QUANTIDADE_UDAS, VALOR_UDA);
+
+        // Act & Assert
+        assertThatThrownBy(() -> pagamento.estornar(JUSTIFICATIVA_VALIDA, "logto-user-4", " "))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("estornadoPorRotulo must not be blank");
     }
 }

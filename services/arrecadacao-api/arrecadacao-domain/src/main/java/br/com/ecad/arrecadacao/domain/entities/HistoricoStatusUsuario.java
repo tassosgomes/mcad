@@ -34,6 +34,12 @@ public class HistoricoStatusUsuario {
     @Column(nullable = false, length = 100)
     private String autor;
 
+    @Column(name = "ator_subject", length = 128)
+    private String atorSubject;
+
+    @Column(name = "autor_rotulo", length = 512)
+    private String autorRotulo;
+
     @Column(nullable = false)
     private Instant data;
 
@@ -55,11 +61,31 @@ public class HistoricoStatusUsuario {
         return h;
     }
 
+    public static HistoricoStatusUsuario criar(UUID usuarioMusicaId, StatusUsuarioMusica statusAnterior,
+                                               StatusUsuarioMusica statusNovo, String justificativa,
+                                               String atorSubject, String autorRotulo) {
+        String rotulo = requireText(autorRotulo, "autorRotulo must not be blank");
+        String subject = requireText(atorSubject, "atorSubject must not be blank");
+        HistoricoStatusUsuario historico = criar(usuarioMusicaId, statusAnterior, statusNovo, justificativa, rotulo);
+        historico.atorSubject = subject;
+        historico.autorRotulo = rotulo;
+        return historico;
+    }
+
+    private static String requireText(String value, String message) {
+        if (value == null || value.isBlank()) {
+            throw new IllegalArgumentException(message);
+        }
+        return value;
+    }
+
     public UUID getId() { return id; }
     public UUID getUsuarioMusicaId() { return usuarioMusicaId; }
     public StatusUsuarioMusica getStatusAnterior() { return statusAnterior; }
     public StatusUsuarioMusica getStatusNovo() { return statusNovo; }
     public String getJustificativa() { return justificativa; }
     public String getAutor() { return autor; }
+    public String getAtorSubject() { return atorSubject; }
+    public String getAutorRotulo() { return autorRotulo; }
     public Instant getData() { return data; }
 }

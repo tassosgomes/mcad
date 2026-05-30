@@ -1,7 +1,6 @@
 package br.com.ecad.arrecadacao.domain.entities;
 
 import br.com.ecad.arrecadacao.domain.enums.StatusLicenca;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -26,6 +25,8 @@ class HistoricoStatusLicencaTest {
         assertEquals(StatusLicenca.SUSPENSA, historico.getStatusNovo());
         assertEquals("Inadimplencia recorrente", historico.getJustificativa());
         assertEquals("sistema", historico.getAutor());
+        assertNull(historico.getAtorSubject());
+        assertNull(historico.getAutorRotulo());
         assertNotNull(historico.getData());
     }
 
@@ -60,11 +61,33 @@ class HistoricoStatusLicencaTest {
     }
 
     @Test
-    @Disabled("Production code lacks autor null guard in HistoricoStatusLicenca.criar() — "
-            + "Objects.requireNonNull is applied to licencaId, statusNovo and justificativa but NOT to autor. "
-            + "HistoricoStatusUsuario.criar() does guard autor via Objects.requireNonNull (simmetric sibling). "
-            + "Decision needed: add Objects.requireNonNull(autor, \"autor e obrigatorio\") to close the gap or accept null.")
     void criar_AutorNull_DeveLancar() {
-        // Intentionally left disabled — see @Disabled message above.
+        assertThrows(NullPointerException.class, () -> {
+            HistoricoStatusLicenca.criar(
+                    licencaId, StatusLicenca.ATIVA, StatusLicenca.SUSPENSA,
+                    "Inadimplencia recorrente", null);
+        });
+    }
+
+    @Test
+    void criar_ComSnapshotAtor_DevePersistirSubjectRotuloELegado() {
+        var historico = HistoricoStatusLicenca.criar(
+                licencaId, StatusLicenca.ATIVA, StatusLicenca.SUSPENSA,
+                "Inadimplencia recorrente", "logto-user-1", "Maria Silva (maria.silva)");
+
+        assertEquals("logto-user-1", historico.getAtorSubject());
+        assertEquals("Maria Silva (maria.silva)", historico.getAutorRotulo());
+        assertEquals("Maria Silva (maria.silva)", historico.getAutor());
+    }
+
+    @Test
+    void criar_ComSnapshotAtorERotuloEmBranco_DeveLancar() {
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> {
+            HistoricoStatusLicenca.criar(
+                    licencaId, StatusLicenca.ATIVA, StatusLicenca.SUSPENSA,
+                    "Inadimplencia recorrente", "logto-user-1", " ");
+        });
+
+        assertEquals("autorRotulo e obrigatorio", ex.getMessage());
     }
 }
