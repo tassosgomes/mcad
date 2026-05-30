@@ -22,6 +22,7 @@ const DEFAULT_REQUEST_BODY_LIMIT_BYTES = 50 * 1024 * 1024;
 const DEFAULT_AUTHZ_BASE_URL = 'http://localhost:8085';
 const DEFAULT_AUTHZ_TIMEOUT_MS = 3000;
 const DEFAULT_ME_CACHE_TTL_SECONDS = 60;
+const MAX_ME_CACHE_TTL_SECONDS = 300;
 const DEFAULT_AUDIT_TIMEOUT_MS = 5000;
 
 function getEnv(name: string, fallback: string): string {
@@ -79,6 +80,16 @@ function getListEnv(name: string, fallback: string[]): string[] {
     .filter(Boolean);
 }
 
+function getMeCacheTtlSeconds(): number {
+  const ttlSeconds = getNumberEnv('ME_CACHE_TTL_SECONDS', DEFAULT_ME_CACHE_TTL_SECONDS);
+
+  if (ttlSeconds > MAX_ME_CACHE_TTL_SECONDS) {
+    throw new Error(`ME_CACHE_TTL_SECONDS must be less than or equal to ${MAX_ME_CACHE_TTL_SECONDS}`);
+  }
+
+  return ttlSeconds;
+}
+
 export function loadConfig(): BffConfig {
   return {
     host: getEnv('BFF_HOST', '0.0.0.0'),
@@ -91,7 +102,7 @@ export function loadConfig(): BffConfig {
     enableLegacyCadastroRoute: getBooleanEnv('BFF_ENABLE_LEGACY_CADASTRO_ROUTE', true),
     authzBaseUrl: getEnv('AUTHZ_BASE_URL', DEFAULT_AUTHZ_BASE_URL).replace(/\/$/, ''),
     authzTimeoutMs: getNumberEnv('AUTHZ_TIMEOUT_MS', DEFAULT_AUTHZ_TIMEOUT_MS),
-    meCacheTtlSeconds: getNumberEnv('ME_CACHE_TTL_SECONDS', DEFAULT_ME_CACHE_TTL_SECONDS),
+    meCacheTtlSeconds: getMeCacheTtlSeconds(),
     auditBaseUrl: getRequiredEnv('AUDIT_BASE_URL').replace(/\/$/, ''),
     auditTimeoutMs: getNumberEnv('AUDIT_TIMEOUT_MS', DEFAULT_AUDIT_TIMEOUT_MS),
     upstreams: [

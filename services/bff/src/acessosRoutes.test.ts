@@ -3,6 +3,7 @@ import { test } from 'node:test';
 import type { BffConfig } from './config.js';
 import { buildServer } from './server.js';
 import { deriveScopedDomains } from './acessosRoutes.js';
+import { createMeCache } from './meCache.js';
 
 const BASE_CONFIG: BffConfig = {
   host: '127.0.0.1',
@@ -98,8 +99,23 @@ function standardAuthzHandler(permissions: string[]) {
         status: 200,
         body: {
           content: [
-            { id: 'role-distrib', key: 'distribuicao.default.gerente', domain: 'distribuicao', displayName: 'Gerente Distribuicao' },
-            { id: 'role-cadastro', key: 'cadastro.default.operador', domain: 'cadastro', displayName: 'Operador Cadastro' },
+            {
+              id: 'role-distrib',
+              key: 'distribuicao.default.gerente',
+              domain: 'distribuicao',
+              displayName: 'Gerente Distribuicao',
+              type: 'BUILT_IN',
+              status: 'ACTIVE',
+              critical: true,
+            },
+            {
+              id: 'role-cadastro',
+              key: 'cadastro.default.operador',
+              domain: 'cadastro',
+              displayName: 'Operador Cadastro',
+              type: 'BUILT_IN',
+              status: 'ACTIVE',
+            },
           ],
           page: 0,
           size: 200,
@@ -163,6 +179,46 @@ test('GET /api/acessos/assignments without Authorization returns 401', async () 
     assert.equal(response.statusCode, 401);
     assert.deepEqual(response.json(), { code: 'UNAUTHORIZED' });
     assert.equal(calls.length, 0);
+  } finally {
+    await server.close();
+  }
+});
+
+test('GET /api/acessos/usuarios requires usuario:listar permission and returns safe user fields', async () => {
+  const deniedFetch = buildFakeFetch(standardAuthzHandler(['acessos:default:papel:listar'])).fetchImpl;
+  const deniedServer = await buildServer(BASE_CONFIG, { fetchImpl: deniedFetch });
+
+  try {
+    const denied = await deniedServer.inject({
+      method: 'GET',
+      url: '/api/acessos/usuarios?query=user',
+      headers: { authorization: 'Bearer token' },
+    });
+    assert.equal(denied.statusCode, 403);
+  } finally {
+    await deniedServer.close();
+  }
+
+  const { fetchImpl, calls } = buildFakeFetch(standardAuthzHandler(['acessos:default:usuario:listar']));
+  const server = await buildServer(BASE_CONFIG, { fetchImpl });
+
+  try {
+    const allowed = await server.inject({
+      method: 'GET',
+      url: '/api/acessos/usuarios?query=user&page=0&size=10',
+      headers: { authorization: 'Bearer token' },
+    });
+    const body = allowed.json() as { items: Array<{ id: string; subject: string; email?: string; name?: string }> };
+    const usersCall = calls.find((call) => call.url.startsWith('http://authz.local/v1/users?'));
+
+    assert.equal(allowed.statusCode, 200);
+    assert.equal(usersCall?.url, 'http://authz.local/v1/users?page=0&size=10&q=user');
+    assert.deepEqual(body.items[0], {
+      id: 'user-1',
+      subject: 'sub-1',
+      email: 'one@mcad.local',
+      name: 'User One',
+    });
   } finally {
     await server.close();
   }
@@ -289,6 +345,70 @@ test('POST /api/acessos/papeis/atribuir proxies assignment and returns 204', asy
   }
 });
 
+test('POST /api/acessos/papeis/atribuir maps duplicate assignment to 409', async () => {
+  const { fetchImpl } = buildFakeFetch((url, init) => {
+    if (url === 'http://authz.local/v1/me/authorization-context') {
+      return { status: 200, body: authzContext(['acessos:default:papel:atribuir']) };
+    }
+
+    if (url === 'http://authz.local/v1/users/target-user/roles' && init.method === 'POST') {
+      return { status: 409, body: { code: 'ASSIGNMENT_ALREADY_EXISTS', message: 'Assignment already exists' } };
+    }
+
+    return { status: 404, body: { code: 'NOT_FOUND' } };
+  });
+  const server = await buildServer(BASE_CONFIG, { fetchImpl });
+
+  try {
+    const response = await server.inject({
+      method: 'POST',
+      url: '/api/acessos/papeis/atribuir',
+      headers: { authorization: 'Bearer token' },
+      payload: { userId: 'target-user', roleKey: 'distribuicao.default.gerente' },
+    });
+
+    assert.equal(response.statusCode, 409);
+    assert.deepEqual(response.json(), {
+      code: 'ASSIGNMENT_ALREADY_EXISTS',
+      message: 'Assignment already exists',
+    });
+  } finally {
+    await server.close();
+  }
+});
+
+test('POST /api/acessos/papeis/atribuir invalidates /api/me cache aliases for target user', async () => {
+  const { fetchImpl } = buildFakeFetch(standardAuthzHandler(['acessos:default:papel:atribuir']));
+  const cache = createMeCache();
+  cache.set('target-sub', {
+    ...authzContext([]),
+    user: {
+      id: 'target-user',
+      subject: 'target-sub',
+      email: 'target@mcad.local',
+      name: 'Target User',
+    },
+    version: 1,
+  }, 60);
+  const server = await buildServer(BASE_CONFIG, { fetchImpl, meCache: cache });
+
+  try {
+    assert.equal(cache.size(), 1);
+
+    const response = await server.inject({
+      method: 'POST',
+      url: '/api/acessos/papeis/atribuir',
+      headers: { authorization: 'Bearer token' },
+      payload: { userId: 'target-user', roleKey: 'distribuicao.default.gerente' },
+    });
+
+    assert.equal(response.statusCode, 204);
+    assert.equal(cache.size(), 0);
+  } finally {
+    await server.close();
+  }
+});
+
 test('DELETE /api/acessos/papeis/atribuir/:assignmentId requires remover permission', async () => {
   const { fetchImpl } = buildFakeFetch(standardAuthzHandler([]));
   const server = await buildServer(BASE_CONFIG, { fetchImpl });
@@ -349,6 +469,37 @@ test('GET /api/acessos/papeis requires listar permission and proxies catalog', a
     });
     assert.equal(allowed.statusCode, 200);
     assert.equal(allowed.json().content.length, 2);
+  } finally {
+    await server.close();
+  }
+});
+
+test('GET /api/acessos/papeis forwards filters and returns normalized critical flag', async () => {
+  const { fetchImpl, calls } = buildFakeFetch(standardAuthzHandler(['acessos:default:papel:listar']));
+  const server = await buildServer(BASE_CONFIG, { fetchImpl });
+
+  try {
+    const response = await server.inject({
+      method: 'GET',
+      url: '/api/acessos/papeis?domain=distribuicao&type=BUILT_IN&status=ACTIVE',
+      headers: { authorization: 'Bearer token' },
+    });
+    const body = response.json() as { content: Array<{ key: string; critical: boolean; type: string; status: string }> };
+    const rolesCall = calls.find((call) => call.url.startsWith('http://authz.local/v1/roles?'));
+
+    assert.equal(response.statusCode, 200);
+    assert.equal(rolesCall?.url, 'http://authz.local/v1/roles?domain=distribuicao&type=BUILT_IN&status=ACTIVE');
+    assert.deepEqual(body.content, [
+      {
+        id: 'role-distrib',
+        key: 'distribuicao.default.gerente',
+        domain: 'distribuicao',
+        displayName: 'Gerente Distribuicao',
+        type: 'BUILT_IN',
+        status: 'ACTIVE',
+        critical: true,
+      },
+    ]);
   } finally {
     await server.close();
   }

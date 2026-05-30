@@ -263,3 +263,55 @@ Sugestao de melhoria no:
 - PRD: Nenhuma sugestao especifica.
 - TechSpec: Nenhuma sugestao especifica.
 - Template de Task: Nenhuma sugestao especifica.
+
+---
+
+## 2026-05-29 | PRD: prd-authz-fonte-unica-assignments | Task: 5.0
+
+Modelo utilizado:
+(Preenchido pelo Orquestrador)
+
+### Problemas Identificados
+
+1. Categoria Tecnica: Erro de integracao
+   Severidade: Alta
+   Fase Detectada: Revisao
+   Origem Provavel: Lacuna na TechSpec
+   Necessitou Reimplementacao Significativa? Sim
+   Descricao: O BFF implementou `GET /api/acessos/atribuicoes/historico` como proxy para `GET /entities/UserRoleAssignment/{userId|_all}/timeline` e anexou `roleKey`, `page`, `size` e `domain` como query string. O audit-service disponivel aceita somente timeline por entidade com parametro `limit`, filtrando apenas por `entity_type` e `entity_id`; logo os filtros/paginacao exigidos pela task nao sao efetivos e `_all` nao e contrato documentado.
+
+### Resumo da Tarefa
+
+Total de Problemas: 1
+Categoria Tecnica mais frequente: Erro de integracao
+Origem mais frequente: Lacuna na TechSpec
+Indicio de fragilidade estrutural? Sim
+Sugestao de melhoria no:
+- PRD: Declarar se historico global de atribuicoes deve ser requisito bloqueante antes de existir endpoint de colecao na Auditoria.
+- TechSpec: Definir contrato real de Auditoria para assignments, incluindo filtros suportados, paginacao e comportamento quando `userId` estiver ausente.
+- Template de Task: Exigir validacao do contrato upstream quando a task depender de proxy para servico externo.
+- Skill: Nenhuma sugestao especifica.
+
+---
+
+## 2026-05-29 | PRD: prd-authz-fonte-unica-assignments | Task: 5.0 | Validacao 2
+
+Modelo utilizado:
+(Preenchido pelo Orquestrador)
+
+### Problemas Identificados
+
+Zero Defects Identified
+Iteracoes ate estabilizacao: 2
+
+### Resumo da Tarefa
+
+Total de Problemas: 0
+Categoria Tecnica mais frequente: N/A
+Origem mais frequente: N/A
+Indicio de fragilidade estrutural? Nao
+Sugestao de melhoria no:
+- PRD: Nenhuma sugestao especifica.
+- TechSpec: Nenhuma sugestao especifica apos a correcao do contrato de colecao de historico.
+- Template de Task: Nenhuma sugestao especifica.
+- Skill: Nenhuma sugestao especifica.

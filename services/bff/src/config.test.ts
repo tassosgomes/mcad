@@ -87,3 +87,10 @@ test('loadConfig requires AUDIT_BASE_URL', () => {
 
   assert.throws(() => loadConfig(), /AUDIT_BASE_URL is required/);
 });
+
+test('loadConfig rejects ME_CACHE_TTL_SECONDS above permission propagation SLA', () => {
+  process.env.AUDIT_BASE_URL = 'http://localhost:8090/api/v1/audit';
+  process.env.ME_CACHE_TTL_SECONDS = '301';
+
+  assert.throws(() => loadConfig(), /ME_CACHE_TTL_SECONDS must be less than or equal to 300/);
+});

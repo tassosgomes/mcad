@@ -75,6 +75,7 @@ export async function buildServer(
   });
   await registerAcessosRoutes(server, {
     config,
+    cache: meCache,
     fetchImpl: options.fetchImpl as unknown as Parameters<typeof registerAcessosRoutes>[1]['fetchImpl'],
   });
   await registerHistoricoRoutes(server, {

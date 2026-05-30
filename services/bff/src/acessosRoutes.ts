@@ -1,11 +1,14 @@
 import type { FastifyInstance, FastifyRequest } from 'fastify';
 import type { BffConfig } from './config.js';
 import { type FetchLike, resolveAuthzContext, sendError } from './authzContext.js';
+import type { MeCache } from './meCache.js';
 
 /**
  * Public BFF contract:
  * - GET /api/acessos/assignments -> {items, page, size, total}; each item has
  *   subject, userId, email, name and roles [{assignmentId, key, roleId, domain, displayName}].
+ * - GET /api/acessos/usuarios -> {items, page, size, total}; each item has
+ *   id, subject, email, name and status.
  * - GET /api/acessos/papeis -> proxies ecad-authz role catalog page.
  * - POST /api/acessos/papeis/atribuir body {userId, roleKey, scope?} -> 204.
  * - DELETE /api/acessos/papeis/atribuir/:assignmentId -> 204, where assignmentId
@@ -16,6 +19,7 @@ import { type FetchLike, resolveAuthzContext, sendError } from './authzContext.j
  */
 
 const FULL_LIST_PERMISSION = 'acessos:default:papel:listar';
+const LIST_USERS_PERMISSION = 'acessos:default:usuario:listar';
 const ASSIGN_PERMISSION = 'acessos:default:papel:atribuir';
 const REMOVE_PERMISSION = 'acessos:default:papel:remover';
 const SCOPED_VIEW_PERMISSION = /^acessos:([a-z-]+):papel:visualizar$/;
@@ -23,6 +27,7 @@ const SCOPED_VIEW_PERMISSION = /^acessos:([a-z-]+):papel:visualizar$/;
 export interface AcessosRoutesOptions {
   config: BffConfig;
   fetchImpl?: FetchLike;
+  cache?: MeCache;
 }
 
 interface ScopedAccess {
@@ -41,13 +46,20 @@ interface UserSummary {
   subject: string;
   email?: string;
   name?: string;
+  status?: string;
 }
 
 interface RoleCatalogItem {
+  [key: string]: unknown;
   id: string;
   key: string;
   domain: string;
   displayName: string;
+  description?: string;
+  area?: string;
+  type?: string;
+  status?: string;
+  critical: boolean;
 }
 
 interface AssignmentRole {
@@ -84,6 +96,10 @@ function getString(value: unknown): string | undefined {
 
 function getNumber(value: unknown, fallback: number): number {
   return typeof value === 'number' && Number.isFinite(value) ? value : fallback;
+}
+
+function getBoolean(value: unknown): boolean | undefined {
+  return typeof value === 'boolean' ? value : undefined;
 }
 
 function asRecord(value: unknown): Record<string, unknown> | undefined {
@@ -125,6 +141,7 @@ function toUserSummary(value: unknown): UserSummary | undefined {
     subject: getString(record.subject) ?? id,
     email: getString(record.email),
     name: getString(record.name),
+    status: getString(record.status),
   };
 }
 
@@ -142,8 +159,24 @@ function toRoleCatalogItem(value: unknown): RoleCatalogItem | undefined {
   const id = getString(record.id) ?? key;
   const domain = getString(record.domain) ?? roleDomainFromKey(key);
   const displayName = getString(record.displayName) ?? key;
+  const critical =
+    getBoolean(record.critical) ??
+    getBoolean(record.isCritical) ??
+    getBoolean(record.sensitive) ??
+    false;
 
-  return { id, key, domain, displayName };
+  return {
+    ...record,
+    id,
+    key,
+    domain,
+    displayName,
+    description: getString(record.description),
+    area: getString(record.area),
+    type: getString(record.type) ?? getString(record.roleType),
+    status: getString(record.status),
+    critical,
+  };
 }
 
 function buildAssignmentId(userId: string, roleId: string): string {
@@ -211,6 +244,51 @@ function appendAccessQuery(url: URL, query: Record<string, unknown>): void {
   if (size) url.searchParams.set('size', size);
   if (search) url.searchParams.set('q', search);
   if (sort) url.searchParams.set('sort', sort);
+}
+
+function normalizeUserSearch(body: unknown, fallbackPage: number, fallbackSize: number) {
+  return {
+    items: getPageContent(body).map(toUserSummary).filter(isDefined),
+    page: getPageNumber(body, 'page', fallbackPage),
+    size: getPageNumber(body, 'size', fallbackSize),
+    total: getTotal(body),
+  };
+}
+
+function roleMatchesFilters(role: RoleCatalogItem, query: Record<string, unknown>): boolean {
+  const domain = queryValue(query.domain);
+  const type = queryValue(query.type);
+  const status = queryValue(query.status);
+
+  return (
+    (!domain || role.domain === domain) &&
+    (!type || role.type === type) &&
+    (!status || role.status === status)
+  );
+}
+
+function normalizeRolesPage(body: unknown, query: Record<string, unknown>): unknown {
+  if (Array.isArray(body)) {
+    return body.map(toRoleCatalogItem).filter(isDefined).filter((role) => roleMatchesFilters(role, query));
+  }
+
+  const record = asRecord(body);
+  if (!record) return body;
+
+  const contentKey = Array.isArray(record.content) ? 'content' : Array.isArray(record.items) ? 'items' : undefined;
+  if (!contentKey) return body;
+
+  const roles = (record[contentKey] as unknown[])
+    .map(toRoleCatalogItem)
+    .filter(isDefined)
+    .filter((role) => roleMatchesFilters(role, query));
+
+  return {
+    ...record,
+    [contentKey]: roles,
+    total: getNumber(record.total, roles.length),
+    totalElements: getNumber(record.totalElements, roles.length),
+  };
 }
 
 async function fetchAuthz(
@@ -300,6 +378,24 @@ function mapUpstreamErrorBody(body: unknown, fallbackCode: string): { code: stri
   return { code, ...(message ? { message } : {}) };
 }
 
+function parseAuthzVersion(value: string | null): number | undefined {
+  if (!value) return undefined;
+
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : undefined;
+}
+
+function invalidateMeCache(cache: MeCache | undefined, userId: string, authzVersionHeader: string | null): void {
+  if (!cache) return;
+
+  const authzVersion = parseAuthzVersion(authzVersionHeader);
+  if (authzVersion !== undefined) {
+    cache.maybeUpdateVersion(userId, authzVersion);
+  }
+
+  cache.invalidate(userId);
+}
+
 export async function registerAcessosRoutes(
   server: FastifyInstance,
   options: AcessosRoutesOptions,
@@ -309,6 +405,41 @@ export async function registerAcessosRoutes(
   if (!fetchImpl) {
     throw new Error('No fetch implementation available for acessos routes');
   }
+
+  server.get('/api/acessos/usuarios', async (request, reply) => {
+    const ctx = await resolveAuthzContext(request, reply, options, fetchImpl);
+    if (!ctx) return;
+
+    if (!hasPermission(ctx.payload.permissions, LIST_USERS_PERMISSION)) {
+      return sendError(reply, 403, 'PERMISSION_DENIED');
+    }
+
+    const query = (request.query as Record<string, unknown>) ?? {};
+    const url = new URL(`${options.config.authzBaseUrl}/v1/users`);
+    appendAccessQuery(url, query);
+
+    const result = await fetchAuthz(
+      request,
+      options.config,
+      fetchImpl,
+      ctx.token,
+      `${url.pathname}${url.search}`,
+      { correlationId: request.id },
+    );
+
+    if (result.status !== 200) {
+      return reply.code(result.status).send(mapUpstreamErrorBody(result.body, 'AUTHZ_UNAVAILABLE'));
+    }
+
+    setAuthzVersionHeader(request, reply.header.bind(reply), ctx.authzVersionHeader);
+    return reply.code(200).send(
+      normalizeUserSearch(
+        result.body,
+        Number(queryValue(query.page) ?? 0),
+        Number(queryValue(query.size) ?? getPageContent(result.body).length),
+      ),
+    );
+  });
 
   server.get('/api/acessos/assignments', async (request, reply) => {
     const ctx = await resolveAuthzContext(request, reply, options, fetchImpl);
@@ -380,7 +511,7 @@ export async function registerAcessosRoutes(
         ? roles
         : roles.filter((role) => access.scoped.includes(role.domain));
 
-      if (filteredRoles.length > 0) {
+      if (access.allDomains || filteredRoles.length > 0) {
         items.push({ ...user, userId: user.id, roles: filteredRoles });
       }
     }
@@ -418,7 +549,8 @@ export async function registerAcessosRoutes(
     );
 
     setAuthzVersionHeader(request, reply.header.bind(reply), ctx.authzVersionHeader);
-    return reply.code(result.status).send(result.body);
+    const body = result.status === 200 ? normalizeRolesPage(result.body, request.query as Record<string, unknown>) : result.body;
+    return reply.code(result.status).send(body);
   });
 
   server.post('/api/acessos/papeis/atribuir', async (request, reply) => {
@@ -464,7 +596,9 @@ export async function registerAcessosRoutes(
     );
 
     if (ok) {
-      const authzVersion = result.headers.get('x-authz-version') ?? ctx.authzVersionHeader;
+      const upstreamAuthzVersion = result.headers.get('x-authz-version');
+      invalidateMeCache(options.cache, userId, upstreamAuthzVersion);
+      const authzVersion = upstreamAuthzVersion ?? ctx.authzVersionHeader;
       setAuthzVersionHeader(request, reply.header.bind(reply), authzVersion);
       return reply.code(204).send();
     }
@@ -510,7 +644,9 @@ export async function registerAcessosRoutes(
     );
 
     if (ok) {
-      const authzVersion = result.headers.get('x-authz-version') ?? ctx.authzVersionHeader;
+      const upstreamAuthzVersion = result.headers.get('x-authz-version');
+      invalidateMeCache(options.cache, parsed.userId, upstreamAuthzVersion);
+      const authzVersion = upstreamAuthzVersion ?? ctx.authzVersionHeader;
       setAuthzVersionHeader(request, reply.header.bind(reply), authzVersion);
       return reply.code(204).send();
     }

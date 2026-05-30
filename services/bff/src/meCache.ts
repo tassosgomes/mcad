@@ -64,15 +64,30 @@ export function createMeCache(): MeCache {
 
     set(subjectId, value, ttlSeconds) {
       const ttlMs = Math.max(0, ttlSeconds * 1000);
-      store.set(subjectId, {
+      const entry = {
         value,
         version: value.version,
         expiresAt: Date.now() + ttlMs,
-      });
+      };
+
+      store.set(subjectId, entry);
+      store.set(value.user.subject, entry);
+      store.set(value.user.id, entry);
     },
 
     invalidate(subjectId) {
-      store.delete(subjectId);
+      const entry = store.get(subjectId);
+
+      if (!entry) {
+        store.delete(subjectId);
+        return;
+      }
+
+      for (const [key, value] of store.entries()) {
+        if (value === entry) {
+          store.delete(key);
+        }
+      }
     },
 
     maybeUpdateVersion(subjectId, newVersion) {
@@ -83,7 +98,11 @@ export function createMeCache(): MeCache {
       }
 
       if (newVersion > entry.version) {
-        store.delete(subjectId);
+        for (const [key, value] of store.entries()) {
+          if (value === entry) {
+            store.delete(key);
+          }
+        }
         return true;
       }
 
@@ -91,7 +110,7 @@ export function createMeCache(): MeCache {
     },
 
     size() {
-      return store.size;
+      return new Set(store.values()).size;
     },
 
     clear() {
