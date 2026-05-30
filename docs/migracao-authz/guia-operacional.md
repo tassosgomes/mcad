@@ -4,6 +4,151 @@ Este guia registra a sequência correta para migrar cada serviço do MCAD para a
 
 O ponto crítico aprendido na migração do `cadastro-api`: a API não deve ser implantada exigindo permissões que ainda não existem no catálogo do `ecad-authz`, pois isso impede a atribuição na tela administrativa e causa negação de acesso.
 
+## Cutover final: Logto auth-only e assignments no ecad-authz
+
+Esta seção fecha a migração em que o Logto deixa de ser fonte direta ou indireta de autorização de negócio. O Logto permanece como IdP OIDC e emissor de token com audience válida; roles, assignments e permissões efetivas pertencem ao `ecad-authz`.
+
+Relatório operacional da PRD atual: `tasks/plataforma/prd-authz-fonte-unica-assignments/cutover-report.md`.
+
+### Pré-requisitos de go/no-go
+
+Antes da janela de cutover:
+
+```bash
+rtk rg -n "^- \\[x\\] [1-7]\\.0" tasks/plataforma/prd-authz-fonte-unica-assignments/tasks.md
+rtk bash scripts/provision-logto.sh --check-no-business-roles
+rtk bash scripts/seed-authz.sh --dry-run
+```
+
+Validar também:
+
+- versões implantadas das tasks 1.0 a 7.0;
+- `ecad-authz`, BFF, frontend, Auditoria e `identity-sync-api` saudáveis;
+- `.env_qa` disponível somente para leitura local, sem copiar senha/token para logs;
+- `AUTHZ_ADMIN_TOKEN`, credenciais Logto M2M e tokens de teste carregados no shell de operação;
+- plano de rollback revisado com o relatório de migração anterior em mãos.
+
+### Sequência de cutover
+
+1. Executar migração dry-run com export real do Logto:
+
+   ```bash
+   rtk node scripts/migrate-logto-roles-to-authz-assignments.mjs --dry-run \
+     --logto-export "$LOGTO_ROLES_EXPORT" \
+     --env-qa .env_qa \
+     --report tasks/plataforma/prd-authz-fonte-unica-assignments/migration-report-dry-run.md \
+     --correlation-id "authz-cutover-dry-run-YYYYMMDDHHMM"
+   ```
+
+   Prosseguir somente se `blockingFindings=0` e `rolesUnmapped=0`.
+
+2. Executar apply da migração:
+
+   ```bash
+   rtk node scripts/migrate-logto-roles-to-authz-assignments.mjs --apply \
+     --logto-export "$LOGTO_ROLES_EXPORT" \
+     --env-qa .env_qa \
+     --report tasks/plataforma/prd-authz-fonte-unica-assignments/migration-report-apply.md \
+     --correlation-id "authz-cutover-apply-YYYYMMDDHHMM"
+   ```
+
+   O ator técnico da migração é `migration`; preservar o relatório como evidência.
+
+3. Reaplicar provisionamento Logto authentication-only:
+
+   ```bash
+   ENV_FILE=.env rtk bash scripts/provision-logto.sh
+   rtk bash scripts/provision-logto.sh --check-no-business-roles
+   ```
+
+   O script deve manter SPA, API Resource/audience e usuários de teste, remover o customizer legado de `roles` e não criar roles/user roles no Logto.
+
+4. Aplicar fixtures explícitas somente em DEV/CI:
+
+   ```bash
+   AUTHZ_BASE_URL="$AUTHZ_BASE_URL" AUTHZ_ADMIN_TOKEN="$AUTHZ_ADMIN_TOKEN" rtk bash scripts/seed-authz.sh
+   ```
+
+   Produção deve usar assignments reais migrados ou operados pela tela de Atribuições.
+
+5. Validar token real sem roles:
+
+   ```bash
+   ACCESS_TOKEN="$ACCESS_TOKEN" rtk node -e 'const token=process.env.ACCESS_TOKEN; if(!token) throw new Error("ACCESS_TOKEN ausente"); const payload=JSON.parse(Buffer.from(token.split(".")[1],"base64url")); const scopes=String(payload.scope ?? "").split(/\s+/).filter(Boolean); const hasRoles=Object.prototype.hasOwnProperty.call(payload,"roles") || Object.prototype.hasOwnProperty.call(payload,"role"); console.log(JSON.stringify({aud:payload.aud, scope:payload.scope ?? null, hasRoles, hasScopeRoles:scopes.includes("roles")}, null, 2)); if (hasRoles || scopes.includes("roles")) process.exit(1);'
+   rtk curl -sS -H "Authorization: Bearer $ACCESS_TOKEN" "$BFF_BASE_URL/api/me/permissions" -D /tmp/mcad-authz-headers.txt -o /tmp/mcad-authz-permissions.json
+   ```
+
+   Gate: sem claim `roles`, sem scope `roles`, audience válida e resposta BFF com `x-authz-version`.
+
+6. Validar usuário sem assignment:
+
+   ```bash
+   rtk curl -sS -o /tmp/mcad-sem-assignment-api.json -w "%{http_code}\n" \
+     -H "Authorization: Bearer $SEMPAPEL_TOKEN" \
+     "$BFF_BASE_URL/api/acessos/assignments"
+   ```
+
+   Gate: `403` em API protegida e UI sem ações protegidas.
+
+7. Validar concessão dinâmica sem relogin:
+
+   ```bash
+   START_EPOCH="$(date +%s)"
+   rtk curl -sS -X POST "$BFF_BASE_URL/api/acessos/papeis/atribuir" \
+     -H "Authorization: Bearer $GESTOR_ACESSOS_TOKEN" \
+     -H "Content-Type: application/json" \
+     -d '{"userId":"<target-user-id>","roleKey":"<role-key>"}' \
+     -D /tmp/mcad-assign-headers.txt
+   rtk curl -sS -H "Authorization: Bearer $TARGET_TOKEN" "$BFF_BASE_URL/api/me/permissions" \
+     -D /tmp/mcad-target-after-assign-headers.txt \
+     -o /tmp/mcad-target-after-assign.json
+   END_EPOCH="$(date +%s)"
+   echo "$((END_EPOCH - START_EPOCH))"
+   ```
+
+   Gate: permissão refletida sem relogin em até 300 segundos.
+
+8. Validar revogação:
+
+   ```bash
+   START_EPOCH="$(date +%s)"
+   rtk curl -sS -X DELETE "$BFF_BASE_URL/api/acessos/papeis/atribuir/<assignment-id>" \
+     -H "Authorization: Bearer $GESTOR_ACESSOS_TOKEN" \
+     -D /tmp/mcad-remove-headers.txt
+   rtk curl -sS -H "Authorization: Bearer $TARGET_TOKEN" "$BFF_BASE_URL/api/me/permissions" \
+     -D /tmp/mcad-target-after-remove-headers.txt \
+     -o /tmp/mcad-target-after-remove.json
+   END_EPOCH="$(date +%s)"
+   echo "$((END_EPOCH - START_EPOCH))"
+   ```
+
+   Gate: permissão deixa de conceder acesso em até 300 segundos.
+
+### Observabilidade esperada
+
+Durante e após a janela, conferir:
+
+- `identity_sync_roles_ignored_total` sem crescimento inesperado;
+- `authz_identity_role_keys_ignored_total` apenas para eventos legados, sem gerar assignments;
+- `bff_acessos_assignment_requests_total{action,outcome}` coerente com atribuições/removidas;
+- latência de chamadas BFF -> `ecad-authz` e BFF -> Auditoria;
+- logs `acessos.papel.atribuir` e `acessos.papel.remover` com actor, target, roleKey, outcome, status e correlationId;
+- ausência de token, senha, segredo M2M e conteúdo sensível da `.env_qa` nos logs.
+
+### Rollback e troubleshooting
+
+Rollback não deve recriar roles de negócio no Logto como fonte de autorização. Se houver falha:
+
+1. Pausar novas operações de atribuição/removação.
+2. Preservar relatórios, headers, correlationIds e logs da janela.
+3. Remover somente assignments criados na execução de `--apply`, usando o relatório como fonte.
+4. Reexecutar `--dry-run` até `blockingFindings=0`.
+5. Em indisponibilidade do `ecad-authz`, manter deny seguro e reverter deploy do componente afetado; não reativar fallback por role/scope JWT.
+6. Em falha de Auditoria, tratar como `AUDIT_UNAVAILABLE`/503 e não considerar histórico incompleto como evidência aprovada.
+7. Em token com `roles` ou scope `roles`, revisar o tenant Logto e bloquear o cutover até remover customizer/scope legado.
+
+Critério de fechamento: relatório de migração apply, evidências de `.env_qa`, token sem roles/scope roles, deny seguro, concessão e revogação em até 5 minutos, e métricas/logs revisados sem segredos.
+
 ## Ambiente local com ecad-authz
 
 ### Subir o ecad-authz
