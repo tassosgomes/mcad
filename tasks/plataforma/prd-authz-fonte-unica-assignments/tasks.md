@@ -35,7 +35,7 @@ Remove confianca residual em roles/scopes do JWT nos servicos auxiliares, adicio
 
 ## Tarefas
 
-- [ ] 1.0 Remover autoassignment por roles do IdP no `ecad-authz`
+- [x] 1.0 Remover autoassignment por roles do IdP no `ecad-authz`
 - [ ] 2.0 Publicar sync de identidade sem roles no `identity-sync-api`
 - [ ] 3.0 Criar migracao controlada de roles Logto para assignments `ecad-authz`
 - [ ] 4.0 Reescrever provisionamento Logto para autenticacao pura e fixtures explicitas
