@@ -84,18 +84,28 @@ export async function buildServer(
   });
 
   for (const upstream of config.upstreams) {
-    await registerProxy(server, upstream);
+    await registerProxy(server, upstream, {
+      config,
+      fetchImpl: options.fetchImpl as unknown as Parameters<typeof registerProxy>[2]['fetchImpl'],
+    });
   }
 
   if (config.enableLegacyCadastroRoute) {
     const cadastro = config.upstreams.find((upstream) => upstream.name === 'cadastro');
 
     if (cadastro) {
-      await registerProxy(server, {
-        ...cadastro,
-        name: 'cadastro-legacy',
-        prefix: '/api/v1',
-      });
+      await registerProxy(
+        server,
+        {
+          ...cadastro,
+          name: 'cadastro-legacy',
+          prefix: '/api/v1',
+        },
+        {
+          config,
+          fetchImpl: options.fetchImpl as unknown as Parameters<typeof registerProxy>[2]['fetchImpl'],
+        },
+      );
     }
   }
 

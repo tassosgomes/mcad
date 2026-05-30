@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { createHmac } from 'node:crypto';
 import { test } from 'node:test';
 import { buildServer } from '../index.js';
 import type { AiOrchestratorConfig } from '../config/env.js';
@@ -12,6 +13,7 @@ const config: AiOrchestratorConfig = {
   maxMessageChars: 4000,
   toolTimeoutMs: 1000,
   tracePrompts: false,
+  runtimeAuthSecret: 'test-runtime-secret',
   upstreams: {
     cadastroBaseUrl: 'http://localhost:5001/api/v1',
     identificacaoBaseUrl: 'http://localhost:5100/api/v1',
@@ -22,6 +24,25 @@ const config: AiOrchestratorConfig = {
   },
 };
 
+function signRuntimeHeaders() {
+  const timestamp = Date.now();
+  const signature = createHmac('sha256', config.runtimeAuthSecret ?? '')
+    .update(JSON.stringify({
+      requestId: 'request-1',
+      userId: 'user-1',
+      displayName: '',
+      permissions: ['cadastro.obras.read'],
+      authzVersion: 42,
+      timestamp,
+    }))
+    .digest('base64url');
+
+  return {
+    'x-mcad-runtime-auth-timestamp': String(timestamp),
+    'x-mcad-runtime-auth-signature': signature,
+  };
+}
+
 test('chat endpoint returns deterministic response in test mode', async () => {
   const server = await buildServer(config);
 
@@ -31,8 +52,12 @@ test('chat endpoint returns deterministic response in test mode', async () => {
       url: '/v1/chat',
       headers: {
         authorization: 'Bearer local-token',
+        'x-mcad-request-id': 'request-1',
+        'x-mcad-bff-upstream': 'ai',
         'x-mcad-user-id': 'user-1',
         'x-mcad-permissions': 'cadastro.obras.read',
+        'x-mcad-authz-version': '42',
+        ...signRuntimeHeaders(),
       },
       payload: {
         message: 'Explique a obra 123',

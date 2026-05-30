@@ -13,6 +13,7 @@ export interface BffConfig {
   enableLegacyCadastroRoute: boolean;
   authzBaseUrl: string;
   authzTimeoutMs: number;
+  aiRuntimeAuthSecret?: string;
   meCacheTtlSeconds: number;
   auditBaseUrl: string;
   auditTimeoutMs: number;
@@ -102,6 +103,7 @@ export function loadConfig(): BffConfig {
     enableLegacyCadastroRoute: getBooleanEnv('BFF_ENABLE_LEGACY_CADASTRO_ROUTE', true),
     authzBaseUrl: getEnv('AUTHZ_BASE_URL', DEFAULT_AUTHZ_BASE_URL).replace(/\/$/, ''),
     authzTimeoutMs: getNumberEnv('AUTHZ_TIMEOUT_MS', DEFAULT_AUTHZ_TIMEOUT_MS),
+    aiRuntimeAuthSecret: getEnv('AI_RUNTIME_AUTH_SECRET', ''),
     meCacheTtlSeconds: getMeCacheTtlSeconds(),
     auditBaseUrl: getRequiredEnv('AUDIT_BASE_URL').replace(/\/$/, ''),
     auditTimeoutMs: getNumberEnv('AUDIT_TIMEOUT_MS', DEFAULT_AUDIT_TIMEOUT_MS),

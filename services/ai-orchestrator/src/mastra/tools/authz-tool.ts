@@ -6,8 +6,8 @@ import { successSource } from './tool-results.js';
 
 export const permissionsResultSchema = z.object({
   userId: z.string(),
-  roles: z.array(z.string()),
   permissions: z.array(z.string()),
+  authzVersion: z.number().int().nonnegative(),
   source: z.object({
     toolId: z.string(),
     status: z.enum(['success', 'denied', 'error']),
@@ -26,8 +26,8 @@ export const consultarPermissoesUsuario = createTool({
 
     return {
       userId: values.userId,
-      roles: values.roles,
       permissions: values.permissions,
+      authzVersion: values.authzVersion,
       source: successSource('consultarPermissoesUsuario'),
     };
   },

@@ -7,6 +7,7 @@ export interface AiOrchestratorConfig {
   maxMessageChars: number;
   toolTimeoutMs: number;
   tracePrompts: boolean;
+  runtimeAuthSecret?: string;
   storageUrl?: string;
   upstreams: {
     cadastroBaseUrl: string;
@@ -76,6 +77,7 @@ export function loadConfig(): AiOrchestratorConfig {
     maxMessageChars: getNumberEnv('AI_MAX_MESSAGE_CHARS', 4000),
     toolTimeoutMs: getNumberEnv('AI_TOOL_TIMEOUT_MS', 10000),
     tracePrompts: getBooleanEnv('AI_TRACE_PROMPTS', false),
+    runtimeAuthSecret: getOptionalEnv('AI_RUNTIME_AUTH_SECRET'),
     storageUrl: getOptionalEnv('AI_STORAGE_URL'),
     upstreams: {
       cadastroBaseUrl: getEnv('CADASTRO_API_BASE_URL', 'http://localhost:5001/api/v1'),

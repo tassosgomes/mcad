@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { createHmac } from 'node:crypto';
 import { type AddressInfo } from 'node:net';
 import { createServer, type IncomingHttpHeaders } from 'node:http';
 import { test } from 'node:test';
@@ -226,25 +227,38 @@ test('ai proxy rewrites chat route and forwards auth and mcad headers', async (t
   }
 
   const { port } = upstreamServer.address() as AddressInfo;
-  const server = await buildServer({
-    host: '127.0.0.1',
-    port: 0,
-    requestBodyLimitBytes: 1024,
-    corsAllowedOrigins: ['https://mcad.tasso.dev.br'],
-    enableLegacyCadastroRoute: false,
-    authzBaseUrl: 'http://localhost:8085',
-    authzTimeoutMs: 3000,
-    meCacheTtlSeconds: 60,
-    auditBaseUrl: 'http://localhost:8090/api/v1/audit',
-    auditTimeoutMs: 5000,
-    upstreams: [
-      {
-        name: 'ai',
-        prefix: '/api/ai/v1',
-        baseUrl: `http://127.0.0.1:${port}/v1`,
-      },
-    ],
+  const fakeAuthz = buildFakeFetch((url, init) => {
+    assert.equal(url, 'http://localhost:8085/v1/me/authorization-context');
+    assert.equal(init.headers?.authorization, 'Bearer ai-token');
+    return {
+      status: 200,
+      body: SAMPLE_AUTHZ_PAYLOAD,
+      headers: { 'x-authz-version': '42' },
+    };
   });
+  const server = await buildServer(
+    {
+      host: '127.0.0.1',
+      port: 0,
+      requestBodyLimitBytes: 1024,
+      corsAllowedOrigins: ['https://mcad.tasso.dev.br'],
+      enableLegacyCadastroRoute: false,
+      authzBaseUrl: 'http://localhost:8085',
+      authzTimeoutMs: 3000,
+      aiRuntimeAuthSecret: 'test-runtime-secret',
+      meCacheTtlSeconds: 60,
+      auditBaseUrl: 'http://localhost:8090/api/v1/audit',
+      auditTimeoutMs: 5000,
+      upstreams: [
+        {
+          name: 'ai',
+          prefix: '/api/ai/v1',
+          baseUrl: `http://127.0.0.1:${port}/v1`,
+        },
+      ],
+    },
+    { fetchImpl: fakeAuthz.fetchImpl },
+  );
 
   try {
     const response = await server.inject({
@@ -254,6 +268,9 @@ test('ai proxy rewrites chat route and forwards auth and mcad headers', async (t
         authorization: 'Bearer ai-token',
         'content-type': 'application/json',
         origin: 'https://mcad.tasso.dev.br',
+        'x-mcad-roles': 'admin',
+        'x-mcad-permissions': 'forged.permission',
+        'x-mcad-authz-version': '999',
       },
       payload: {
         message: 'Explique a obra 123',
@@ -267,9 +284,28 @@ test('ai proxy rewrites chat route and forwards auth and mcad headers', async (t
       message: 'Explique a obra 123',
     });
     assert.equal(receivedHeaders.authorization, 'Bearer ai-token');
+    assert.equal(receivedHeaders['x-mcad-user-id'], 'usr-123');
+    assert.equal(receivedHeaders['x-mcad-user-name'], 'Maria Silva');
+    assert.equal(receivedHeaders['x-mcad-permissions'], SAMPLE_AUTHZ_PAYLOAD.permissions.join(','));
+    assert.equal(receivedHeaders['x-mcad-authz-version'], '42');
+    assert.equal(typeof receivedHeaders['x-mcad-runtime-auth-timestamp'], 'string');
+    assert.equal(typeof receivedHeaders['x-mcad-runtime-auth-signature'], 'string');
+    const expectedSignature = createHmac('sha256', 'test-runtime-secret')
+      .update(JSON.stringify({
+        requestId: receivedHeaders['x-mcad-request-id'],
+        userId: 'usr-123',
+        displayName: 'Maria Silva',
+        permissions: SAMPLE_AUTHZ_PAYLOAD.permissions,
+        authzVersion: 42,
+        timestamp: Number(receivedHeaders['x-mcad-runtime-auth-timestamp']),
+      }))
+      .digest('base64url');
+    assert.equal(receivedHeaders['x-mcad-runtime-auth-signature'], expectedSignature);
+    assert.equal(receivedHeaders['x-mcad-roles'], undefined);
     assert.equal(receivedHeaders['x-mcad-bff-upstream'], 'ai');
     assert.equal(receivedHeaders['x-mcad-original-url'], '/api/ai/v1/chat');
     assert.equal(typeof receivedHeaders['x-mcad-request-id'], 'string');
+    assert.equal(fakeAuthz.getCallCount(), 1);
     assert.equal(response.headers['x-mcad-bff-upstream'], 'ai');
     assert.equal(typeof response.headers['x-mcad-request-id'], 'string');
     assert.equal(response.headers['access-control-allow-origin'], 'https://mcad.tasso.dev.br');

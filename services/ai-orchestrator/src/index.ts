@@ -136,7 +136,7 @@ export async function buildServer(config: AiOrchestratorConfig = loadConfig()) {
     }
 
     try {
-      const runtimeContext = buildRuntimeContextFromRequest(request, config);
+      const runtimeContext = await buildRuntimeContextFromRequest(request, config);
       const threadId = parsedRequest.data.threadId ?? randomUUID();
 
       if (!config.openAiApiKey) {
@@ -153,7 +153,7 @@ export async function buildServer(config: AiOrchestratorConfig = loadConfig()) {
           eventType: 'chat',
           target: 'mcad-operational-agent',
           status: 'success',
-          metadata: { threadId, testMode: true },
+          metadata: { threadId, authzVersion: runtimeContext.get('authzVersion'), testMode: true },
         });
 
         return {
@@ -181,7 +181,7 @@ export async function buildServer(config: AiOrchestratorConfig = loadConfig()) {
         eventType: 'chat',
         target: 'mcad-operational-agent',
         status: 'success',
-        metadata: { threadId, toolCalls },
+        metadata: { threadId, authzVersion: runtimeContext.get('authzVersion'), toolCalls },
       });
 
       return {
@@ -213,7 +213,7 @@ export async function buildServer(config: AiOrchestratorConfig = loadConfig()) {
     }
 
     try {
-      const runtimeContext = buildRuntimeContextFromRequest(request, config);
+      const runtimeContext = await buildRuntimeContextFromRequest(request, config);
       const runId = randomUUID();
 
       switch (request.params.workflowId) {
@@ -228,7 +228,7 @@ export async function buildServer(config: AiOrchestratorConfig = loadConfig()) {
             eventType: 'workflow',
             target: explicarObraWorkflowId,
             status: 'success',
-            metadata: { runId },
+            metadata: { runId, authzVersion: runtimeContext.get('authzVersion') },
           });
 
           return {
@@ -249,7 +249,7 @@ export async function buildServer(config: AiOrchestratorConfig = loadConfig()) {
             eventType: 'workflow',
             target: validarDistribuicaoWorkflowId,
             status: 'success',
-            metadata: { runId },
+            metadata: { runId, authzVersion: runtimeContext.get('authzVersion') },
           });
 
           return {
@@ -270,7 +270,7 @@ export async function buildServer(config: AiOrchestratorConfig = loadConfig()) {
             eventType: 'workflow',
             target: prepararAcaoSensivelWorkflowId,
             status: 'suspended',
-            metadata: { runId, stepId: prepararAcaoSensivelApprovalStepId },
+            metadata: { runId, authzVersion: runtimeContext.get('authzVersion'), stepId: prepararAcaoSensivelApprovalStepId },
           });
 
           return {
@@ -314,7 +314,7 @@ export async function buildServer(config: AiOrchestratorConfig = loadConfig()) {
     }
 
     try {
-      const runtimeContext = buildRuntimeContextFromRequest(request, config);
+      const runtimeContext = await buildRuntimeContextFromRequest(request, config);
 
       if (request.params.workflowId !== prepararAcaoSensivelWorkflowId) {
         return reply
@@ -331,6 +331,7 @@ export async function buildServer(config: AiOrchestratorConfig = loadConfig()) {
         status: 'success',
         metadata: {
           runId: request.params.runId,
+          authzVersion: runtimeContext.get('authzVersion'),
           aprovado: Boolean(parsedRequest.data.resumeData.aprovado),
           approved: Boolean(parsedRequest.data.resumeData.approved),
         },

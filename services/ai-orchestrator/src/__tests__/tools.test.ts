@@ -44,8 +44,8 @@ after(() => {
 function runtimeContext(permissions: string[]) {
   return createRuntimeContext({
     userId: 'user-1',
-    roles: [],
     permissions,
+    authzVersion: 42,
     accessToken: 'local-token',
     requestId: 'request-1',
     locale: 'pt-BR',
@@ -57,6 +57,7 @@ test('consultarPermissoesUsuario returns permissions from runtime context', asyn
   const tool = consultarPermissoesUsuario as ExecutableTool<Record<string, never>, {
     userId: string;
     permissions: string[];
+    authzVersion: number;
   }>;
 
   const result = await tool.execute({
@@ -66,6 +67,7 @@ test('consultarPermissoesUsuario returns permissions from runtime context', asyn
 
   assert.equal(result.userId, 'user-1');
   assert.deepEqual(result.permissions, ['authz.permissions.read']);
+  assert.equal(result.authzVersion, 42);
 });
 
 test('buscarObra validates permission before calling cadastro API', async () => {

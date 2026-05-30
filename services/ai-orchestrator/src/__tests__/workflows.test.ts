@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { createHmac } from 'node:crypto';
 import { after, test } from 'node:test';
 import { buildServer } from '../index.js';
 import type { AiOrchestratorConfig } from '../config/env.js';
@@ -12,6 +13,7 @@ const config: AiOrchestratorConfig = {
   maxMessageChars: 4000,
   toolTimeoutMs: 1000,
   tracePrompts: false,
+  runtimeAuthSecret: 'test-runtime-secret',
   upstreams: {
     cadastroBaseUrl: 'http://cadastro.local/api/v1',
     identificacaoBaseUrl: 'http://identificacao.local/api/v1',
@@ -29,10 +31,28 @@ after(() => {
 });
 
 function authHeaders(permissions: string) {
+  const permissionList = permissions.split(',').map((permission) => permission.trim()).filter(Boolean);
+  const timestamp = Date.now();
+  const signature = createHmac('sha256', config.runtimeAuthSecret ?? '')
+    .update(JSON.stringify({
+      requestId: 'request-1',
+      userId: 'user-1',
+      displayName: '',
+      permissions: permissionList,
+      authzVersion: 42,
+      timestamp,
+    }))
+    .digest('base64url');
+
   return {
     authorization: 'Bearer local-token',
+    'x-mcad-request-id': 'request-1',
+    'x-mcad-bff-upstream': 'ai',
     'x-mcad-user-id': 'user-1',
     'x-mcad-permissions': permissions,
+    'x-mcad-authz-version': '42',
+    'x-mcad-runtime-auth-timestamp': String(timestamp),
+    'x-mcad-runtime-auth-signature': signature,
   };
 }
 

@@ -339,3 +339,55 @@ Sugestao de melhoria no:
 - TechSpec: Nenhuma sugestao especifica.
 - Template de Task: Nenhuma sugestao especifica.
 - Skill: Nenhuma sugestao especifica.
+
+---
+
+## 2026-05-30 | PRD: prd-authz-fonte-unica-assignments | Task: 7.0
+
+Modelo utilizado:
+(Preenchido pelo Orquestrador)
+
+### Problemas Identificados
+
+1. Categoria Tecnica: Problema de seguranca
+   Severidade: Alta
+   Fase Detectada: Revisao
+   Origem Provavel: Lacuna na TechSpec
+   Necessitou Reimplementacao Significativa? Sim
+   Descricao: O ai-orchestrator aceita headers de runtime (`x-mcad-bff-upstream: ai`, `x-mcad-permissions`, `x-mcad-authz-version`) sem assinatura, segredo compartilhado ou verificacao de origem confiavel. Um cliente que alcance o servico pode forjar permissoes efetivas e evitar a consulta ao ecad-authz, apesar de o BFF remover headers forjados no proxy.
+
+### Resumo da Tarefa
+
+Total de Problemas: 1
+Categoria Tecnica mais frequente: Problema de seguranca
+Origem mais frequente: Lacuna na TechSpec
+Indicio de fragilidade estrutural? Sim
+Sugestao de melhoria no:
+- PRD: Explicitar que contexto efetivo recebido por servico auxiliar deve ser autenticado e nao apenas identificado por header.
+- TechSpec: Definir mecanismo obrigatorio para headers internos do BFF ao ai-orchestrator, como HMAC com timestamp/nonce, mTLS/service identity, ou consulta obrigatoria ao ecad-authz.
+- Template de Task: Incluir teste negativo para headers internos forjados diretamente no consumidor.
+- Skill: Nenhuma sugestao especifica.
+
+---
+
+## 2026-05-30 | PRD: prd-authz-fonte-unica-assignments | Task: 7.0 | Validacao 2
+
+Modelo utilizado:
+(Preenchido pelo Orquestrador)
+
+### Problemas Identificados
+
+Zero Defects Identified
+Iteracoes ate estabilizacao: 2
+
+### Resumo da Tarefa
+
+Total de Problemas: 0
+Categoria Tecnica mais frequente: N/A
+Origem mais frequente: N/A
+Indicio de fragilidade estrutural? Nao
+Sugestao de melhoria no:
+- PRD: Nenhuma sugestao especifica apos a correcao de autenticidade dos headers internos.
+- TechSpec: Nenhuma sugestao especifica apos a implementacao de HMAC com timestamp para o contexto BFF -> ai-orchestrator.
+- Template de Task: Nenhuma sugestao especifica.
+- Skill: Nenhuma sugestao especifica.

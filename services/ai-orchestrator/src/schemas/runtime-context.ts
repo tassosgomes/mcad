@@ -4,14 +4,22 @@ import { z } from 'zod';
 export const mcadRuntimeContextSchema = z.object({
   userId: z.string().min(1),
   displayName: z.string().optional(),
-  roles: z.array(z.string()),
   permissions: z.array(z.string()),
+  authzVersion: z.number().int().nonnegative(),
   accessToken: z.string().min(1),
   requestId: z.string().min(1),
   locale: z.literal('pt-BR'),
   environment: z.enum(['local', 'dev', 'prod']),
 });
 
+export const resolvedRuntimeAuthorizationSchema = mcadRuntimeContextSchema.pick({
+  userId: true,
+  displayName: true,
+  permissions: true,
+  authzVersion: true,
+});
+
+export type ResolvedRuntimeAuthorization = z.infer<typeof resolvedRuntimeAuthorizationSchema>;
 export type McadRuntimeContextValues = z.infer<typeof mcadRuntimeContextSchema>;
 export type McadRuntimeContext = RuntimeContext<McadRuntimeContextValues>;
 
@@ -23,8 +31,8 @@ export function createRuntimeContext(values: McadRuntimeContextValues): McadRunt
   if (parsedValues.displayName) {
     runtimeContext.set('displayName', parsedValues.displayName);
   }
-  runtimeContext.set('roles', parsedValues.roles);
   runtimeContext.set('permissions', parsedValues.permissions);
+  runtimeContext.set('authzVersion', parsedValues.authzVersion);
   runtimeContext.set('accessToken', parsedValues.accessToken);
   runtimeContext.set('requestId', parsedValues.requestId);
   runtimeContext.set('locale', parsedValues.locale);
