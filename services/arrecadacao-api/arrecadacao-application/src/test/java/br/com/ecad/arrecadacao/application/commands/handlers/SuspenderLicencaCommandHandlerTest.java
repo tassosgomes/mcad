@@ -2,6 +2,7 @@ package br.com.ecad.arrecadacao.application.commands.handlers;
 
 import br.com.ecad.arrecadacao.application.audit.AuditContextProvider;
 import br.com.ecad.arrecadacao.application.audit.GenericAuditEventFactory;
+import br.com.ecad.arrecadacao.application.actor.ActorSnapshot;
 import br.com.ecad.arrecadacao.application.commands.SuspenderLicencaCommand;
 import br.com.ecad.arrecadacao.domain.entities.HistoricoStatusLicenca;
 import br.com.ecad.arrecadacao.domain.entities.Licenca;
@@ -18,6 +19,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.ArgumentCaptor;
 import org.mockito.junit.jupiter.MockitoExtension;
 import br.org.ecad.audit.sdk.AuditClient;
 
@@ -52,11 +54,13 @@ class SuspenderLicencaCommandHandlerTest {
     private UUID licencaId;
     private SuspenderLicencaCommand command;
     private Licenca licenca;
+    private ActorSnapshot actor;
 
     @BeforeEach
     void setUp() {
         licencaId = UUID.randomUUID();
-        command = new SuspenderLicencaCommand(licencaId, "Inadimplencia", "sistema");
+        actor = new ActorSnapshot("logto-user-1", "Maria Silva (maria.silva)", "maria.silva", "Maria Silva", "maria@mcad.dev");
+        command = new SuspenderLicencaCommand(licencaId, "Inadimplencia", actor);
         
         licenca = mock(Licenca.class);
         lenient().when(licenca.getId()).thenReturn(licencaId);
@@ -69,7 +73,13 @@ class SuspenderLicencaCommandHandlerTest {
     void deveSuspenderComSucesso() {
         when(licencaRepository.findById(licencaId)).thenReturn(Optional.of(licenca));
         when(licenca.suspender(anyString(), anyString(), anyString()))
-            .thenReturn(mock(HistoricoStatusLicenca.class));
+            .thenAnswer(invocation -> HistoricoStatusLicenca.criar(
+                licencaId,
+                StatusLicenca.ATIVA,
+                StatusLicenca.SUSPENSA,
+                invocation.getArgument(0),
+                invocation.getArgument(1),
+                invocation.getArgument(2)));
         when(licenca.getStatus()).thenReturn(StatusLicenca.SUSPENSA);
         
         var usuario = mock(UsuarioMusica.class);
@@ -85,7 +95,12 @@ class SuspenderLicencaCommandHandlerTest {
         assertEquals("SUSPENSA", response.status());
         verify(licenca).suspender(command.justificativa(), command.actor().subject(), command.autor());
         verify(licencaRepository).save(licenca);
-        verify(historicoRepository).save(any());
+        var historicoCaptor = ArgumentCaptor.forClass(HistoricoStatusLicenca.class);
+        verify(historicoRepository).save(historicoCaptor.capture());
+        var historico = historicoCaptor.getValue();
+        assertEquals(actor.subject(), historico.getAtorSubject());
+        assertEquals(actor.label(), historico.getAutorRotulo());
+        assertEquals(actor.label(), historico.getAutor());
     }
 
     @Test

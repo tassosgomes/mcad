@@ -2,6 +2,7 @@ package br.com.ecad.arrecadacao.application.commands.handlers;
 
 import br.com.ecad.arrecadacao.application.audit.AuditContextProvider;
 import br.com.ecad.arrecadacao.application.audit.GenericAuditEventFactory;
+import br.com.ecad.arrecadacao.application.actor.ActorSnapshot;
 import br.com.ecad.arrecadacao.application.commands.CriarLicencaCommand;
 import br.com.ecad.arrecadacao.domain.entities.HistoricoStatusLicenca;
 import br.com.ecad.arrecadacao.domain.entities.Licenca;
@@ -18,6 +19,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.ArgumentCaptor;
 import org.mockito.junit.jupiter.MockitoExtension;
 import br.org.ecad.audit.sdk.AuditClient;
 
@@ -55,12 +57,14 @@ class CriarLicencaCommandHandlerTest {
     private CriarLicencaCommand command;
     private UsuarioMusica usuarioMusica;
     private Rubrica rubrica;
+    private ActorSnapshot actor;
 
     @BeforeEach
     void setUp() {
         usuarioMusicaId = UUID.randomUUID();
         rubricaId = UUID.randomUUID();
-        command = new CriarLicencaCommand(usuarioMusicaId, rubricaId, LocalDate.now(), LocalDate.now().plusYears(1), "sistema");
+        actor = new ActorSnapshot("logto-user-1", "Maria Silva (maria.silva)", "maria.silva", "Maria Silva", "maria@mcad.dev");
+        command = new CriarLicencaCommand(usuarioMusicaId, rubricaId, LocalDate.now(), LocalDate.now().plusYears(1), actor);
         
         usuarioMusica = mock(UsuarioMusica.class);
         lenient().when(usuarioMusica.getId()).thenReturn(usuarioMusicaId);
@@ -91,7 +95,12 @@ class CriarLicencaCommandHandlerTest {
         assertEquals("ATIVA", response.status());
         
         verify(licencaRepository).save(any(Licenca.class));
-        verify(historicoRepository).save(any(HistoricoStatusLicenca.class));
+        var historicoCaptor = ArgumentCaptor.forClass(HistoricoStatusLicenca.class);
+        verify(historicoRepository).save(historicoCaptor.capture());
+        var historico = historicoCaptor.getValue();
+        assertEquals(actor.subject(), historico.getAtorSubject());
+        assertEquals(actor.label(), historico.getAutorRotulo());
+        assertEquals(actor.label(), historico.getAutor());
     }
 
     @Test
