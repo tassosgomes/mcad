@@ -30,7 +30,7 @@ Atualiza tipos e cria `ActorDisplay`, aplica o componente nas telas de Arrecadac
 ## Tarefas
 
 - [X] 1.0 Migration V14 e campos de ator historico no dominio
-- [ ] 2.0 Modelos, ports e resolucao de exibicao de ator na Application/Infra
+- [X] 2.0 Modelos, ports e resolucao de exibicao de ator na Application/Infra
 - [ ] 3.0 `CurrentActorResolver` na API e comandos com `ActorSnapshot`
 - [ ] 4.0 Licencas: gravacao e leitura enriquecida do historico de status
 - [ ] 5.0 Usuarios de Musica: gravacao e leitura enriquecida do historico de status

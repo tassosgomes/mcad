@@ -17,6 +17,11 @@
     <dependencies>
         <dependency>
             <groupId>br.com.ecad</groupId>
+            <artifactId>arrecadacao-application</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>br.com.ecad</groupId>
             <artifactId>arrecadacao-domain</artifactId>
             <version>${project.version}</version>
         </dependency>
