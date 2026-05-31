@@ -7,10 +7,14 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.springframework.boot.test.system.CapturedOutput;
+import org.springframework.boot.test.system.OutputCaptureExtension;
 import org.springframework.security.authentication.TestingAuthenticationToken;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 
+@ExtendWith(OutputCaptureExtension.class)
 class CurrentActorResolverTest {
 
     private final CurrentActorResolver resolver = new CurrentActorResolver();
@@ -61,7 +65,7 @@ class CurrentActorResolverTest {
     }
 
     @Test
-    void resolve_WithNonJwtAuthentication_ShouldFallbackToAuthenticationName() {
+    void resolve_WithNonJwtAuthentication_ShouldFallbackToAuthenticationNameAndLogInfo(CapturedOutput output) {
         TestingAuthenticationToken authentication = new TestingAuthenticationToken("operador", "credentials");
 
         CurrentActor actor = resolver.resolve(authentication);
@@ -70,6 +74,8 @@ class CurrentActorResolverTest {
         assertThat(actor.username()).isNull();
         assertThat(actor.displayName()).isNull();
         assertThat(actor.email()).isNull();
+        assertThat(output.getAll())
+                .contains("Resolving current actor from non-JWT authentication for subject=operador");
     }
 
     @Test

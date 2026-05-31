@@ -18,8 +18,11 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.ArgumentMatchers;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.boot.test.system.CapturedOutput;
+import org.springframework.boot.test.system.OutputCaptureExtension;
 
 @ExtendWith(MockitoExtension.class)
+@ExtendWith(OutputCaptureExtension.class)
 class ActorDisplayResolverTest {
 
     @Mock
@@ -149,7 +152,7 @@ class ActorDisplayResolverTest {
     }
 
     @Test
-    void resolve_WhenLookupFails_ShouldReturnSafeFallback() {
+    void resolve_WhenLookupFails_ShouldReturnSafeFallbackAndWarn(CapturedOutput output) {
         // Arrange
         when(identityUserLookup.findBySubject("logto-user-1"))
                 .thenThrow(new IllegalStateException("database unavailable"));
@@ -161,6 +164,31 @@ class ActorDisplayResolverTest {
         assertThat(response.subject()).isEqualTo("logto-user-1");
         assertThat(response.label()).isEqualTo("autor legado");
         assertThat(response.status()).isEqualTo("DESCONHECIDO");
+        assertThat(output.getAll())
+                .contains("Actor projection lookup failed for subject=logto-user-1");
+    }
+
+    @Test
+    void resolveAll_WhenProjectionIsMissing_ShouldReturnSafeFallbackAndWarn(CapturedOutput output) {
+        // Arrange
+        List<ActorSnapshot> snapshots = List.of(
+                new ActorSnapshot("missing-subject", "Autor congelado", null, null, null));
+        when(identityUserLookup.findBySubjects(ArgumentMatchers.<Collection<String>>any()))
+                .thenReturn(Map.of());
+
+        // Act
+        List<ActorDisplayResponse> responses = resolver.resolveAll(snapshots);
+
+        // Assert
+        assertThat(responses)
+                .singleElement()
+                .satisfies(response -> {
+                    assertThat(response.subject()).isEqualTo("missing-subject");
+                    assertThat(response.label()).isEqualTo("Autor congelado");
+                    assertThat(response.status()).isEqualTo("DESCONHECIDO");
+                });
+        assertThat(output.getAll())
+                .contains("Actor projection not found for subject=missing-subject");
     }
 
     @Test

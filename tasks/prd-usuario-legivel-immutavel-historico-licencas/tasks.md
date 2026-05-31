@@ -37,7 +37,7 @@ Atualiza tipos e cria `ActorDisplay`, aplica o componente nas telas de Arrecadac
 - [X] 6.0 UDA e Pagamento/Estorno: snapshots de criacao/estorno e DTOs enriquecidos
 - [X] 7.0 Frontend: tipos de ator e componente compartilhado `ActorDisplay`
 - [X] 8.0 Frontend: aplicar `ActorDisplay` nas telas de Arrecadacao afetadas
-- [ ] 9.0 Testes integrados, contrato, observabilidade e validacao final
+- [X] 9.0 Testes integrados, contrato, observabilidade e validacao final
 
 ## Rastreabilidade US -> Tasks
 

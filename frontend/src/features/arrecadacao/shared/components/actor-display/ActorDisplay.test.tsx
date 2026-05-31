@@ -52,4 +52,18 @@ describe('ActorDisplay', () => {
     expect(screen.getByText('Removido')).toBeInTheDocument();
     expect(screen.queryByTitle(/removido/i)).not.toBeInTheDocument();
   });
+
+  it('renders unknown status with the resolved label and no status badge', () => {
+    const unknownActor: ActorDisplayResponse = {
+      ...activeActor,
+      label: 'legacy-author',
+      status: 'DESCONHECIDO',
+    };
+
+    render(<ActorDisplay actor={unknownActor} fallbackLabel="fallback-author" />);
+
+    expect(screen.getByLabelText('legacy-author')).toBeInTheDocument();
+    expect(screen.queryByText('Suspenso')).not.toBeInTheDocument();
+    expect(screen.queryByText('Removido')).not.toBeInTheDocument();
+  });
 });
