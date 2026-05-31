@@ -23,16 +23,22 @@ class UsuarioMusicaTest {
     @Test
     void shouldInativar() {
         UsuarioMusica u = UsuarioMusica.criar("Empresa X", "Fantasia X", criarCnpj(), criarEndereco(), criarContato());
-        u.inativar("justificativa valida", "autor");
+        HistoricoStatusUsuario historico = u.inativar("justificativa valida", "logto-user-1", "Maria Silva");
         assertThat(u.getStatus()).isEqualTo(StatusUsuarioMusica.INATIVO);
+        assertThat(historico.getAtorSubject()).isEqualTo("logto-user-1");
+        assertThat(historico.getAutorRotulo()).isEqualTo("Maria Silva");
+        assertThat(historico.getAutor()).isEqualTo("Maria Silva");
     }
 
     @Test
     void shouldAtivar() {
         UsuarioMusica u = UsuarioMusica.criar("Empresa X", "Fantasia X", criarCnpj(), criarEndereco(), criarContato());
         u.inativar("justificativa valida", "autor");
-        u.ativar("justificativa valida", "autor");
+        HistoricoStatusUsuario historico = u.ativar("justificativa valida", "logto-user-2", "Joao Souza");
         assertThat(u.getStatus()).isEqualTo(StatusUsuarioMusica.ATIVO);
+        assertThat(historico.getAtorSubject()).isEqualTo("logto-user-2");
+        assertThat(historico.getAutorRotulo()).isEqualTo("Joao Souza");
+        assertThat(historico.getAutor()).isEqualTo("Joao Souza");
     }
 
     @Test

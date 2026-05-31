@@ -33,7 +33,7 @@ Atualiza tipos e cria `ActorDisplay`, aplica o componente nas telas de Arrecadac
 - [X] 2.0 Modelos, ports e resolucao de exibicao de ator na Application/Infra
 - [X] 3.0 `CurrentActorResolver` na API e comandos com `ActorSnapshot`
 - [X] 4.0 Licencas: gravacao e leitura enriquecida do historico de status
-- [ ] 5.0 Usuarios de Musica: gravacao e leitura enriquecida do historico de status
+- [X] 5.0 Usuarios de Musica: gravacao e leitura enriquecida do historico de status
 - [ ] 6.0 UDA e Pagamento/Estorno: snapshots de criacao/estorno e DTOs enriquecidos
 - [ ] 7.0 Frontend: tipos de ator e componente compartilhado `ActorDisplay`
 - [ ] 8.0 Frontend: aplicar `ActorDisplay` nas telas de Arrecadacao afetadas
