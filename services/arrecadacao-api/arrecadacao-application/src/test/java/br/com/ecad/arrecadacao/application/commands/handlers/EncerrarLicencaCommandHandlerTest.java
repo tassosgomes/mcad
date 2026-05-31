@@ -68,7 +68,8 @@ class EncerrarLicencaCommandHandlerTest {
     @Test
     void deveEncerrarComSucesso() {
         when(licencaRepository.findById(licencaId)).thenReturn(Optional.of(licenca));
-        when(licenca.encerrar(anyString(), anyString())).thenReturn(mock(HistoricoStatusLicenca.class));
+        when(licenca.encerrar(anyString(), anyString(), anyString()))
+            .thenReturn(mock(HistoricoStatusLicenca.class));
         when(licenca.getStatus()).thenReturn(StatusLicenca.ENCERRADA);
         
         var usuario = mock(UsuarioMusica.class);
@@ -82,7 +83,7 @@ class EncerrarLicencaCommandHandlerTest {
         var response = handler.handle(command);
 
         assertEquals("ENCERRADA", response.status());
-        verify(licenca).encerrar(command.justificativa(), command.autor());
+        verify(licenca).encerrar(command.justificativa(), command.actor().subject(), command.autor());
         verify(licencaRepository).save(licenca);
         verify(historicoRepository).save(any());
     }
@@ -98,7 +99,8 @@ class EncerrarLicencaCommandHandlerTest {
     @Test
     void propagaErroSeLicencaJaEncerrada() {
         when(licencaRepository.findById(licencaId)).thenReturn(Optional.of(licenca));
-        when(licenca.encerrar(anyString(), anyString())).thenThrow(new IllegalStateException("ja esta encerrada"));
+        when(licenca.encerrar(anyString(), anyString(), anyString()))
+            .thenThrow(new IllegalStateException("ja esta encerrada"));
 
         var ex = assertThrows(IllegalStateException.class, () -> handler.handle(command));
         assertTrue(ex.getMessage().contains("ja esta encerrada"));
@@ -108,7 +110,8 @@ class EncerrarLicencaCommandHandlerTest {
     @Test
     void propagaErroSeLicencaSendoAtiva() {
         when(licencaRepository.findById(licencaId)).thenReturn(Optional.of(licenca));
-        when(licenca.encerrar(anyString(), anyString())).thenThrow(new IllegalStateException("suspensa antes"));
+        when(licenca.encerrar(anyString(), anyString(), anyString()))
+            .thenThrow(new IllegalStateException("suspensa antes"));
 
         var ex = assertThrows(IllegalStateException.class, () -> handler.handle(command));
         assertTrue(ex.getMessage().contains("suspensa antes"));

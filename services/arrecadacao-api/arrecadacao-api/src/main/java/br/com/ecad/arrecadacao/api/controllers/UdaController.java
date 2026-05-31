@@ -1,5 +1,8 @@
 package br.com.ecad.arrecadacao.api.controllers;
 
+import br.com.ecad.arrecadacao.api.security.CurrentActorResolver;
+import br.com.ecad.arrecadacao.application.actor.ActorDisplayResolver;
+import br.com.ecad.arrecadacao.application.actor.ActorSnapshot;
 import br.com.ecad.arrecadacao.application.commands.AjustarUdaCommand;
 import br.com.ecad.arrecadacao.application.cqrs.CommandDispatcher;
 import br.com.ecad.arrecadacao.application.cqrs.QueryDispatcher;
@@ -27,10 +30,16 @@ public class UdaController {
 
     private final CommandDispatcher commandDispatcher;
     private final QueryDispatcher queryDispatcher;
+    private final CurrentActorResolver currentActorResolver;
+    private final ActorDisplayResolver actorDisplayResolver;
 
-    public UdaController(CommandDispatcher commandDispatcher, QueryDispatcher queryDispatcher) {
+    public UdaController(CommandDispatcher commandDispatcher, QueryDispatcher queryDispatcher,
+                         CurrentActorResolver currentActorResolver,
+                         ActorDisplayResolver actorDisplayResolver) {
         this.commandDispatcher = commandDispatcher;
         this.queryDispatcher = queryDispatcher;
+        this.currentActorResolver = currentActorResolver;
+        this.actorDisplayResolver = actorDisplayResolver;
     }
 
     @GetMapping("/vigente")
@@ -43,9 +52,10 @@ public class UdaController {
     @RequiresPermission("arrecadacao:default:cobranca:emitir")
     public ResponseEntity<UdaResponse> ajustar(@Valid @RequestBody AjustarUdaRequest request,
                                                Authentication auth) {
+        ActorSnapshot actor = resolveActorSnapshot(auth);
         LOGGER.info("Adjusting UDA value: valor={}, dataVigencia={}, user={}",
-            request.valor(), request.dataVigencia(), auth.getName());
-        var cmd = new AjustarUdaCommand(request.valor(), request.dataVigencia(), auth.getName());
+            request.valor(), request.dataVigencia(), actor.label());
+        var cmd = new AjustarUdaCommand(request.valor(), request.dataVigencia(), actor);
         return ResponseEntity.status(HttpStatus.CREATED).body(commandDispatcher.dispatch(cmd));
     }
 
@@ -53,5 +63,9 @@ public class UdaController {
     @RequiresPermission("arrecadacao:default:cobranca:listar")
     public ResponseEntity<List<UdaResponse>> listarHistorico() {
         return ResponseEntity.ok(queryDispatcher.dispatch(new ListarHistoricoUdaQuery()));
+    }
+
+    private ActorSnapshot resolveActorSnapshot(Authentication authentication) {
+        return actorDisplayResolver.snapshotFrom(currentActorResolver.resolve(authentication));
     }
 }

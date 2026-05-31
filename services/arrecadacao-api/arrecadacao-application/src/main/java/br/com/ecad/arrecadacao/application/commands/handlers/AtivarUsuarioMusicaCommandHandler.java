@@ -4,6 +4,7 @@ import br.com.ecad.arrecadacao.application.audit.AuditContextProvider;
 import br.com.ecad.arrecadacao.application.audit.UsuarioMusicaAuditEventFactory.UsuarioMusicaAuditChange;
 import br.com.ecad.arrecadacao.application.audit.UsuarioMusicaAuditEventFactory;
 import br.com.ecad.arrecadacao.application.audit.UsuarioMusicaAuditEventFactory.UsuarioMusicaAuditOperation;
+import br.com.ecad.arrecadacao.application.actor.ActorSnapshots;
 import br.com.ecad.arrecadacao.application.commands.AtivarUsuarioMusicaCommand;
 import br.com.ecad.arrecadacao.application.cqrs.CommandHandler;
 import br.com.ecad.arrecadacao.domain.entities.HistoricoStatusUsuario;
@@ -45,7 +46,8 @@ public class AtivarUsuarioMusicaCommandHandler implements CommandHandler<AtivarU
                 .orElseThrow(() -> new EntidadeNaoEncontradaException("Usuário de música não encontrado"));
         Map<String, Object> before = auditEventFactory.usuarioMap(entity);
 
-        HistoricoStatusUsuario historico = entity.ativar(cmd.justificativa(), cmd.autor());
+        HistoricoStatusUsuario historico = entity.ativar(
+                cmd.justificativa(), ActorSnapshots.subjectOf(cmd.actor()), cmd.autor());
         repository.save(entity);
         historicoRepository.save(historico);
 

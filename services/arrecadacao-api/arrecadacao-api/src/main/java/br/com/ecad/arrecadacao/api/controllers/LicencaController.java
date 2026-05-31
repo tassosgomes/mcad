@@ -1,5 +1,8 @@
 package br.com.ecad.arrecadacao.api.controllers;
 
+import br.com.ecad.arrecadacao.api.security.CurrentActorResolver;
+import br.com.ecad.arrecadacao.application.actor.ActorDisplayResolver;
+import br.com.ecad.arrecadacao.application.actor.ActorSnapshot;
 import br.com.ecad.arrecadacao.application.commands.CriarLicencaCommand;
 import br.com.ecad.arrecadacao.application.commands.EncerrarLicencaCommand;
 import br.com.ecad.arrecadacao.application.commands.ReativarLicencaCommand;
@@ -20,8 +23,7 @@ import br.org.ecad.authz.sdk.annotation.RequiresPermission;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -33,11 +35,17 @@ public class LicencaController {
 
     private final CommandDispatcher commandDispatcher;
     private final QueryDispatcher queryDispatcher;
+    private final CurrentActorResolver currentActorResolver;
+    private final ActorDisplayResolver actorDisplayResolver;
 
     public LicencaController(CommandDispatcher commandDispatcher,
-                              QueryDispatcher queryDispatcher) {
+                              QueryDispatcher queryDispatcher,
+                              CurrentActorResolver currentActorResolver,
+                              ActorDisplayResolver actorDisplayResolver) {
         this.commandDispatcher = commandDispatcher;
         this.queryDispatcher = queryDispatcher;
+        this.currentActorResolver = currentActorResolver;
+        this.actorDisplayResolver = actorDisplayResolver;
     }
 
     @GetMapping
@@ -59,11 +67,12 @@ public class LicencaController {
     @PostMapping
     @RequiresPermission("arrecadacao:default:contrato:criar")
     public ResponseEntity<LicencaResponse> criar(
-            @Valid @RequestBody CriarLicencaRequest request) {
-        var autor = extrairAutor();
+            @Valid @RequestBody CriarLicencaRequest request,
+            Authentication authentication) {
+        var actor = resolveActorSnapshot(authentication);
         var command = new CriarLicencaCommand(
             request.usuarioMusicaId(), request.rubricaId(),
-            request.dataInicio(), request.dataFim(), autor);
+            request.dataInicio(), request.dataFim(), actor);
         return ResponseEntity.status(HttpStatus.CREATED)
             .body(commandDispatcher.dispatch(command));
     }
@@ -78,9 +87,10 @@ public class LicencaController {
     @RequiresPermission("arrecadacao:default:contrato:editar")
     public ResponseEntity<LicencaResponse> suspender(
             @PathVariable("id") UUID id,
-            @Valid @RequestBody TransicaoStatusRequest request) {
-        var autor = extrairAutor();
-        var command = new SuspenderLicencaCommand(id, request.justificativa(), autor);
+            @Valid @RequestBody TransicaoStatusRequest request,
+            Authentication authentication) {
+        var command = new SuspenderLicencaCommand(
+            id, request.justificativa(), resolveActorSnapshot(authentication));
         return ResponseEntity.ok(commandDispatcher.dispatch(command));
     }
 
@@ -88,9 +98,10 @@ public class LicencaController {
     @RequiresPermission("arrecadacao:default:contrato:editar")
     public ResponseEntity<LicencaResponse> reativar(
             @PathVariable("id") UUID id,
-            @Valid @RequestBody TransicaoStatusRequest request) {
-        var autor = extrairAutor();
-        var command = new ReativarLicencaCommand(id, request.justificativa(), autor);
+            @Valid @RequestBody TransicaoStatusRequest request,
+            Authentication authentication) {
+        var command = new ReativarLicencaCommand(
+            id, request.justificativa(), resolveActorSnapshot(authentication));
         return ResponseEntity.ok(commandDispatcher.dispatch(command));
     }
 
@@ -98,9 +109,10 @@ public class LicencaController {
     @RequiresPermission("arrecadacao:default:contrato:cancelar")
     public ResponseEntity<LicencaResponse> encerrar(
             @PathVariable("id") UUID id,
-            @Valid @RequestBody TransicaoStatusRequest request) {
-        var autor = extrairAutor();
-        var command = new EncerrarLicencaCommand(id, request.justificativa(), autor);
+            @Valid @RequestBody TransicaoStatusRequest request,
+            Authentication authentication) {
+        var command = new EncerrarLicencaCommand(
+            id, request.justificativa(), resolveActorSnapshot(authentication));
         return ResponseEntity.ok(commandDispatcher.dispatch(command));
     }
 
@@ -112,13 +124,7 @@ public class LicencaController {
             queryDispatcher.dispatch(new ListarHistoricoStatusLicencaQuery(id)));
     }
 
-    private String extrairAutor() {
-        var auth = SecurityContextHolder.getContext().getAuthentication();
-        if (auth instanceof JwtAuthenticationToken jwt) {
-            var claims = jwt.getToken().getClaims();
-            String username = (String) claims.get("preferred_username");
-            return username != null ? username : (String) claims.get("sub");
-        }
-        return (auth != null && auth.getName() != null) ? auth.getName() : "sistema";
+    private ActorSnapshot resolveActorSnapshot(Authentication authentication) {
+        return actorDisplayResolver.snapshotFrom(currentActorResolver.resolve(authentication));
     }
 }

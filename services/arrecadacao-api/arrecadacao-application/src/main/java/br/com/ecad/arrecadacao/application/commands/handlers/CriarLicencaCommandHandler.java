@@ -3,6 +3,7 @@ package br.com.ecad.arrecadacao.application.commands.handlers;
 import br.com.ecad.arrecadacao.application.audit.AuditContextProvider;
 import br.com.ecad.arrecadacao.application.audit.GenericAuditEventFactory;
 import br.com.ecad.arrecadacao.application.audit.LicencaAuditMapper;
+import br.com.ecad.arrecadacao.application.actor.ActorSnapshots;
 import br.com.ecad.arrecadacao.application.commands.CriarLicencaCommand;
 import br.com.ecad.arrecadacao.application.cqrs.CommandHandler;
 import br.com.ecad.arrecadacao.application.dto.LicencaResponse;
@@ -83,7 +84,7 @@ public class CriarLicencaCommandHandler implements CommandHandler<CriarLicencaCo
         // 4. Criar historico inicial
         var historico = HistoricoStatusLicenca.criar(
             licenca.getId(), null, StatusLicenca.ATIVA,
-            "Licenca criada", cmd.autor());
+            "Licenca criada", ActorSnapshots.subjectOf(cmd.actor()), cmd.autor());
         historicoRepository.save(historico);
 
         // 5. Auditoria

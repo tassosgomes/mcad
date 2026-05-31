@@ -2,6 +2,7 @@ package br.com.ecad.arrecadacao.application.commands.handlers;
 
 import br.com.ecad.arrecadacao.application.audit.AuditContextProvider;
 import br.com.ecad.arrecadacao.application.audit.GenericAuditEventFactory;
+import br.com.ecad.arrecadacao.application.actor.ActorSnapshots;
 import br.com.ecad.arrecadacao.application.commands.EstornarPagamentoCommand;
 import br.com.ecad.arrecadacao.application.cqrs.CommandHandler;
 import br.com.ecad.arrecadacao.application.dto.LicencaResumoResponse;
@@ -69,7 +70,7 @@ public class EstornarPagamentoCommandHandler
         verbaService.validarLockParaAlteracao(rubricaId, pagamento.getPeriodo());
 
         // 3. Estornar via domain method — valida status + preenche campos atomicamente
-        pagamento.estornar(cmd.justificativa(), cmd.autor());
+        pagamento.estornar(cmd.justificativa(), ActorSnapshots.subjectOf(cmd.actor()), cmd.autor());
 
         // 4. Salvar pagamento estornado
         pagamento = pagamentoRepository.save(pagamento);

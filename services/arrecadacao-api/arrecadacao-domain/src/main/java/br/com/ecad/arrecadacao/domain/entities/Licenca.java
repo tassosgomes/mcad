@@ -80,6 +80,18 @@ public class Licenca {
         return HistoricoStatusLicenca.criar(id, anterior, StatusLicenca.SUSPENSA, justificativa, autor);
     }
 
+    public HistoricoStatusLicenca suspender(String justificativa, String atorSubject, String autorRotulo) {
+        if (status != StatusLicenca.ATIVA) {
+            throw new IllegalStateException(
+                "Licenca nao pode ser suspensa pois nao esta ATIVA. Status atual: " + status);
+        }
+        var anterior = this.status;
+        this.status = StatusLicenca.SUSPENSA;
+        this.atualizadoEm = Instant.now();
+        return HistoricoStatusLicenca.criar(
+            id, anterior, StatusLicenca.SUSPENSA, justificativa, atorSubject, autorRotulo);
+    }
+
     public HistoricoStatusLicenca reativar(String justificativa, String autor) {
         if (status != StatusLicenca.SUSPENSA) {
             throw new IllegalStateException(
@@ -89,6 +101,18 @@ public class Licenca {
         this.status = StatusLicenca.ATIVA;
         this.atualizadoEm = Instant.now();
         return HistoricoStatusLicenca.criar(id, anterior, StatusLicenca.ATIVA, justificativa, autor);
+    }
+
+    public HistoricoStatusLicenca reativar(String justificativa, String atorSubject, String autorRotulo) {
+        if (status != StatusLicenca.SUSPENSA) {
+            throw new IllegalStateException(
+                "Licenca nao pode ser reativada pois nao esta SUSPENSA. Status atual: " + status);
+        }
+        var anterior = this.status;
+        this.status = StatusLicenca.ATIVA;
+        this.atualizadoEm = Instant.now();
+        return HistoricoStatusLicenca.criar(
+            id, anterior, StatusLicenca.ATIVA, justificativa, atorSubject, autorRotulo);
     }
 
     public HistoricoStatusLicenca encerrar(String justificativa, String autor) {
@@ -103,6 +127,21 @@ public class Licenca {
         this.status = StatusLicenca.ENCERRADA;
         this.atualizadoEm = Instant.now();
         return HistoricoStatusLicenca.criar(id, anterior, StatusLicenca.ENCERRADA, justificativa, autor);
+    }
+
+    public HistoricoStatusLicenca encerrar(String justificativa, String atorSubject, String autorRotulo) {
+        if (status == StatusLicenca.ATIVA) {
+            throw new IllegalStateException(
+                "Licenca deve ser suspensa antes de ser encerrada");
+        }
+        if (status == StatusLicenca.ENCERRADA) {
+            throw new IllegalStateException("Licenca ja esta encerrada");
+        }
+        var anterior = this.status;
+        this.status = StatusLicenca.ENCERRADA;
+        this.atualizadoEm = Instant.now();
+        return HistoricoStatusLicenca.criar(
+            id, anterior, StatusLicenca.ENCERRADA, justificativa, atorSubject, autorRotulo);
     }
 
     public UUID getId() { return id; }

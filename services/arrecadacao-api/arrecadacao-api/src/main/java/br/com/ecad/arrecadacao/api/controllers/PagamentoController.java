@@ -1,5 +1,8 @@
 package br.com.ecad.arrecadacao.api.controllers;
 
+import br.com.ecad.arrecadacao.api.security.CurrentActorResolver;
+import br.com.ecad.arrecadacao.application.actor.ActorDisplayResolver;
+import br.com.ecad.arrecadacao.application.actor.ActorSnapshot;
 import br.com.ecad.arrecadacao.application.commands.EstornarPagamentoCommand;
 import br.com.ecad.arrecadacao.application.commands.RegistrarPagamentoCommand;
 import br.com.ecad.arrecadacao.application.cqrs.CommandDispatcher;
@@ -31,10 +34,16 @@ public class PagamentoController {
 
     private final CommandDispatcher commandDispatcher;
     private final QueryDispatcher queryDispatcher;
+    private final CurrentActorResolver currentActorResolver;
+    private final ActorDisplayResolver actorDisplayResolver;
 
-    public PagamentoController(CommandDispatcher commandDispatcher, QueryDispatcher queryDispatcher) {
+    public PagamentoController(CommandDispatcher commandDispatcher, QueryDispatcher queryDispatcher,
+                               CurrentActorResolver currentActorResolver,
+                               ActorDisplayResolver actorDisplayResolver) {
         this.commandDispatcher = commandDispatcher;
         this.queryDispatcher = queryDispatcher;
+        this.currentActorResolver = currentActorResolver;
+        this.actorDisplayResolver = actorDisplayResolver;
     }
 
     @GetMapping
@@ -58,10 +67,11 @@ public class PagamentoController {
     public ResponseEntity<PagamentoResponse> registrar(
             @Valid @RequestBody RegistrarPagamentoRequest request,
             Authentication auth) {
+        ActorSnapshot actor = resolveActorSnapshot(auth);
         LOGGER.info("Registering payment: licencaId={}, quantidadeUdas={}, user={}",
-            request.licencaId(), request.quantidadeUdas(), auth.getName());
+            request.licencaId(), request.quantidadeUdas(), actor.label());
         var cmd = new RegistrarPagamentoCommand(
-            request.licencaId(), request.quantidadeUdas(), auth.getName());
+            request.licencaId(), request.quantidadeUdas(), actor);
         return ResponseEntity.status(HttpStatus.CREATED).body(commandDispatcher.dispatch(cmd));
     }
 
@@ -77,8 +87,13 @@ public class PagamentoController {
             @PathVariable("id") UUID id,
             @Valid @RequestBody EstornarPagamentoRequest request,
             Authentication auth) {
-        LOGGER.info("Reversing payment: id={}, user={}", id, auth.getName());
-        var cmd = new EstornarPagamentoCommand(id, request.justificativa(), auth.getName());
+        ActorSnapshot actor = resolveActorSnapshot(auth);
+        LOGGER.info("Reversing payment: id={}, user={}", id, actor.label());
+        var cmd = new EstornarPagamentoCommand(id, request.justificativa(), actor);
         return ResponseEntity.ok(commandDispatcher.dispatch(cmd));
+    }
+
+    private ActorSnapshot resolveActorSnapshot(Authentication authentication) {
+        return actorDisplayResolver.snapshotFrom(currentActorResolver.resolve(authentication));
     }
 }

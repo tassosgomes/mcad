@@ -2,6 +2,7 @@ package br.com.ecad.arrecadacao.application.commands.handlers;
 
 import br.com.ecad.arrecadacao.application.audit.AuditContextProvider;
 import br.com.ecad.arrecadacao.application.audit.GenericAuditEventFactory;
+import br.com.ecad.arrecadacao.application.actor.ActorSnapshots;
 import br.com.ecad.arrecadacao.application.commands.AjustarUdaCommand;
 import br.com.ecad.arrecadacao.application.cqrs.CommandHandler;
 import br.com.ecad.arrecadacao.application.dto.UdaResponse;
@@ -41,7 +42,8 @@ public class AjustarUdaCommandHandler implements CommandHandler<AjustarUdaComman
     @Transactional
     public UdaResponse handle(AjustarUdaCommand cmd) {
         // 1. Criar novo registro de UDA via factory (valida valor > 0 e dataVigencia != null)
-        UdaValor udaValor = UdaValor.criar(cmd.valor(), cmd.dataVigencia(), cmd.autor());
+        UdaValor udaValor = UdaValor.criar(
+            cmd.valor(), cmd.dataVigencia(), ActorSnapshots.subjectOf(cmd.actor()), cmd.autor());
 
         // 2. Persistir
         udaValor = udaValorRepository.save(udaValor);

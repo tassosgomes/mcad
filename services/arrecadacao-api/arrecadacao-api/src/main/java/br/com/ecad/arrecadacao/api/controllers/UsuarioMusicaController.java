@@ -1,5 +1,8 @@
 package br.com.ecad.arrecadacao.api.controllers;
 
+import br.com.ecad.arrecadacao.api.security.CurrentActorResolver;
+import br.com.ecad.arrecadacao.application.actor.ActorDisplayResolver;
+import br.com.ecad.arrecadacao.application.actor.ActorSnapshot;
 import br.com.ecad.arrecadacao.application.commands.AtivarUsuarioMusicaCommand;
 import br.com.ecad.arrecadacao.application.commands.InativarUsuarioMusicaCommand;
 import br.com.ecad.arrecadacao.application.commands.AtualizarUsuarioMusicaCommand;
@@ -19,8 +22,7 @@ import br.com.ecad.arrecadacao.domain.enums.StatusUsuarioMusica;
 import br.org.ecad.authz.sdk.annotation.RequiresPermission;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -45,10 +47,16 @@ public class UsuarioMusicaController {
 
     private final CommandDispatcher commandDispatcher;
     private final QueryDispatcher queryDispatcher;
+    private final CurrentActorResolver currentActorResolver;
+    private final ActorDisplayResolver actorDisplayResolver;
 
-    public UsuarioMusicaController(CommandDispatcher commandDispatcher, QueryDispatcher queryDispatcher) {
+    public UsuarioMusicaController(CommandDispatcher commandDispatcher, QueryDispatcher queryDispatcher,
+                                   CurrentActorResolver currentActorResolver,
+                                   ActorDisplayResolver actorDisplayResolver) {
         this.commandDispatcher = commandDispatcher;
         this.queryDispatcher = queryDispatcher;
+        this.currentActorResolver = currentActorResolver;
+        this.actorDisplayResolver = actorDisplayResolver;
     }
 
     @GetMapping
@@ -85,12 +93,12 @@ public class UsuarioMusicaController {
 
     @PostMapping
     @RequiresPermission("arrecadacao:default:cliente:criar")
-    public ResponseEntity<UsuarioMusicaResponse> criar(@Valid @RequestBody CriarUsuarioMusicaRequest request) {
+    public ResponseEntity<UsuarioMusicaResponse> criar(@Valid @RequestBody CriarUsuarioMusicaRequest request,
+                                                       Authentication authentication) {
         log.info("Criando usuário de música {}", request.razaoSocial());
-        String autor = extrairAutorDoJwt();
         var command = new CriarUsuarioMusicaCommand(
                 request.razaoSocial(), request.nomeFantasia(), request.cnpj(),
-                request.endereco(), request.contato(), autor);
+                request.endereco(), request.contato(), resolveActorSnapshot(authentication));
         var response = (UsuarioMusicaResponse) commandDispatcher.dispatch(command);
         return ResponseEntity.created(URI.create("/api/v1/usuarios-musica/" + response.id())).body(response);
     }
@@ -98,12 +106,12 @@ public class UsuarioMusicaController {
     @PutMapping("/{id}")
     @RequiresPermission("arrecadacao:default:cliente:editar")
     public ResponseEntity<UsuarioMusicaResponse> atualizar(
-            @PathVariable("id") UUID id, @Valid @RequestBody AtualizarUsuarioMusicaRequest request) {
+            @PathVariable("id") UUID id, @Valid @RequestBody AtualizarUsuarioMusicaRequest request,
+            Authentication authentication) {
         log.info("Atualizando usuário de música {}", id);
-        String autor = extrairAutorDoJwt();
         var command = new AtualizarUsuarioMusicaCommand(
                 id, request.razaoSocial(), request.nomeFantasia(),
-                request.endereco(), request.contato(), autor);
+                request.endereco(), request.contato(), resolveActorSnapshot(authentication));
         var response = (UsuarioMusicaResponse) commandDispatcher.dispatch(command);
         return ResponseEntity.ok(response);
     }
@@ -111,10 +119,11 @@ public class UsuarioMusicaController {
     @PostMapping("/{id}/inativar")
     @RequiresPermission("arrecadacao:default:cliente:editar")
     public ResponseEntity<UsuarioMusicaResponse> inativar(
-            @PathVariable("id") UUID id, @Valid @RequestBody AlterarStatusRequest request) {
+            @PathVariable("id") UUID id, @Valid @RequestBody AlterarStatusRequest request,
+            Authentication authentication) {
         log.info("Inativando usuário de música {}", id);
-        String autor = extrairAutorDoJwt();
-        var command = new InativarUsuarioMusicaCommand(id, request.justificativa(), autor);
+        var command = new InativarUsuarioMusicaCommand(
+                id, request.justificativa(), resolveActorSnapshot(authentication));
         commandDispatcher.dispatch(command);
         return buscarPorId(id);
     }
@@ -122,21 +131,16 @@ public class UsuarioMusicaController {
     @PostMapping("/{id}/ativar")
     @RequiresPermission("arrecadacao:default:cliente:editar")
     public ResponseEntity<UsuarioMusicaResponse> ativar(
-            @PathVariable("id") UUID id, @Valid @RequestBody AlterarStatusRequest request) {
+            @PathVariable("id") UUID id, @Valid @RequestBody AlterarStatusRequest request,
+            Authentication authentication) {
         log.info("Ativando usuário de música {}", id);
-        String autor = extrairAutorDoJwt();
-        var command = new AtivarUsuarioMusicaCommand(id, request.justificativa(), autor);
+        var command = new AtivarUsuarioMusicaCommand(
+                id, request.justificativa(), resolveActorSnapshot(authentication));
         commandDispatcher.dispatch(command);
         return buscarPorId(id);
     }
 
-    private String extrairAutorDoJwt() {
-        var auth = SecurityContextHolder.getContext().getAuthentication();
-        if (auth instanceof JwtAuthenticationToken jwt) {
-            var claims = jwt.getToken().getClaims();
-            String username = (String) claims.get("preferred_username");
-            return username != null ? username : (String) claims.get("sub");
-        }
-        return (auth != null && auth.getName() != null) ? auth.getName() : "sistema";
+    private ActorSnapshot resolveActorSnapshot(Authentication authentication) {
+        return actorDisplayResolver.snapshotFrom(currentActorResolver.resolve(authentication));
     }
 }

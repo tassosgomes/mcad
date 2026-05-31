@@ -4,6 +4,7 @@ import br.com.ecad.arrecadacao.application.audit.AuditContextProvider;
 import br.com.ecad.arrecadacao.application.audit.UsuarioMusicaAuditEventFactory.UsuarioMusicaAuditChange;
 import br.com.ecad.arrecadacao.application.audit.UsuarioMusicaAuditEventFactory;
 import br.com.ecad.arrecadacao.application.audit.UsuarioMusicaAuditEventFactory.UsuarioMusicaAuditOperation;
+import br.com.ecad.arrecadacao.application.actor.ActorSnapshots;
 import br.com.ecad.arrecadacao.application.commands.CriarUsuarioMusicaCommand;
 import br.com.ecad.arrecadacao.application.cqrs.CommandHandler;
 import br.com.ecad.arrecadacao.application.dto.ContatoResponse;
@@ -66,7 +67,8 @@ public class CriarUsuarioMusicaCommandHandler implements CommandHandler<CriarUsu
         UsuarioMusica saved = repository.save(entity);
 
         HistoricoStatusUsuario historico = HistoricoStatusUsuario.criar(
-                saved.getId(), null, StatusUsuarioMusica.ATIVO, "Cadastro inicial", cmd.autor());
+                saved.getId(), null, StatusUsuarioMusica.ATIVO, "Cadastro inicial",
+                ActorSnapshots.subjectOf(cmd.actor()), cmd.autor());
         historicoRepository.save(historico);
 
         var auditContext = auditContextProvider.current(cmd.autor());

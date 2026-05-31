@@ -68,7 +68,8 @@ class SuspenderLicencaCommandHandlerTest {
     @Test
     void deveSuspenderComSucesso() {
         when(licencaRepository.findById(licencaId)).thenReturn(Optional.of(licenca));
-        when(licenca.suspender(anyString(), anyString())).thenReturn(mock(HistoricoStatusLicenca.class));
+        when(licenca.suspender(anyString(), anyString(), anyString()))
+            .thenReturn(mock(HistoricoStatusLicenca.class));
         when(licenca.getStatus()).thenReturn(StatusLicenca.SUSPENSA);
         
         var usuario = mock(UsuarioMusica.class);
@@ -82,7 +83,7 @@ class SuspenderLicencaCommandHandlerTest {
         var response = handler.handle(command);
 
         assertEquals("SUSPENSA", response.status());
-        verify(licenca).suspender(command.justificativa(), command.autor());
+        verify(licenca).suspender(command.justificativa(), command.actor().subject(), command.autor());
         verify(licencaRepository).save(licenca);
         verify(historicoRepository).save(any());
     }
@@ -98,7 +99,8 @@ class SuspenderLicencaCommandHandlerTest {
     @Test
     void propagaErroSeLicencaJaSuspensa() {
         when(licencaRepository.findById(licencaId)).thenReturn(Optional.of(licenca));
-        when(licenca.suspender(anyString(), anyString())).thenThrow(new IllegalStateException("nao esta ATIVA"));
+        when(licenca.suspender(anyString(), anyString(), anyString()))
+            .thenThrow(new IllegalStateException("nao esta ATIVA"));
 
         var ex = assertThrows(IllegalStateException.class, () -> handler.handle(command));
         assertTrue(ex.getMessage().contains("nao esta ATIVA"));

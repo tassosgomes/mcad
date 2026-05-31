@@ -3,6 +3,7 @@ package br.com.ecad.arrecadacao.application.commands.handlers;
 import br.com.ecad.arrecadacao.application.audit.AuditContextProvider;
 import br.com.ecad.arrecadacao.application.audit.GenericAuditEventFactory;
 import br.com.ecad.arrecadacao.application.audit.LicencaAuditMapper;
+import br.com.ecad.arrecadacao.application.actor.ActorSnapshots;
 import br.com.ecad.arrecadacao.application.commands.ReativarLicencaCommand;
 import br.com.ecad.arrecadacao.application.cqrs.CommandHandler;
 import br.com.ecad.arrecadacao.application.dto.LicencaResponse;
@@ -61,7 +62,8 @@ public class ReativarLicencaCommandHandler implements CommandHandler<ReativarLic
         var before = LicencaAuditMapper.map(licenca);
 
         // Domain method com guard -> throws IllegalStateException se transicao invalida
-        var historico = licenca.reativar(cmd.justificativa(), cmd.autor());
+        var historico = licenca.reativar(
+            cmd.justificativa(), ActorSnapshots.subjectOf(cmd.actor()), cmd.autor());
 
         licencaRepository.save(licenca);
         historicoRepository.save(historico);

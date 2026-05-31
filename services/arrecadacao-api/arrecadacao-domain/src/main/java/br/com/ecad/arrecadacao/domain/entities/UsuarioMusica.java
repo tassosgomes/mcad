@@ -86,6 +86,16 @@ public class UsuarioMusica {
         return HistoricoStatusUsuario.criar(this.id, statusAnterior, this.status, justificativa, autor);
     }
 
+    public HistoricoStatusUsuario inativar(String justificativa, String atorSubject, String autorRotulo) {
+        if (this.status == StatusUsuarioMusica.INATIVO) {
+            throw new IllegalStateException("ja INATIVO");
+        }
+        StatusUsuarioMusica statusAnterior = this.status;
+        this.status = StatusUsuarioMusica.INATIVO;
+        this.atualizadoEm = Instant.now();
+        return HistoricoStatusUsuario.criar(this.id, statusAnterior, this.status, justificativa, atorSubject, autorRotulo);
+    }
+
     public HistoricoStatusUsuario ativar(String justificativa, String autor) {
         if (this.status == StatusUsuarioMusica.ATIVO) {
             throw new IllegalStateException("ja ATIVO");
@@ -94,6 +104,16 @@ public class UsuarioMusica {
         this.status = StatusUsuarioMusica.ATIVO;
         this.atualizadoEm = Instant.now();
         return HistoricoStatusUsuario.criar(this.id, statusAnterior, this.status, justificativa, autor);
+    }
+
+    public HistoricoStatusUsuario ativar(String justificativa, String atorSubject, String autorRotulo) {
+        if (this.status == StatusUsuarioMusica.ATIVO) {
+            throw new IllegalStateException("ja ATIVO");
+        }
+        StatusUsuarioMusica statusAnterior = this.status;
+        this.status = StatusUsuarioMusica.ATIVO;
+        this.atualizadoEm = Instant.now();
+        return HistoricoStatusUsuario.criar(this.id, statusAnterior, this.status, justificativa, atorSubject, autorRotulo);
     }
 
     public UUID getId() { return id; }
