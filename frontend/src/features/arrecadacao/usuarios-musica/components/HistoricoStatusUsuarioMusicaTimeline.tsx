@@ -1,4 +1,5 @@
 import { ArrowRight } from 'lucide-react';
+import { ActorDisplay } from '../../shared/components/actor-display';
 import { StatusBadgeUsuarioMusica } from './StatusBadgeUsuarioMusica';
 import type { HistoricoStatusUsuarioMusica } from '../types/usuario-musica';
 import { formatDateTime } from '../utils/formatters';
@@ -40,7 +41,7 @@ export function HistoricoStatusUsuarioMusicaTimeline({
               <time className={styles.timestamp}>{formatDateTime(entry.data)}</time>
             </div>
             <div className={styles.meta}>
-              <span className={styles.autor}>{entry.autor}</span>
+              <ActorDisplay actor={entry.ator} fallbackLabel={entry.autor} />
               <p className={styles.justificativa}>{entry.justificativa}</p>
             </div>
           </div>

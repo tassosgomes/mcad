@@ -1,4 +1,5 @@
 import { ArrowRight } from 'lucide-react';
+import { ActorDisplay } from '../../shared/components/actor-display';
 import { StatusBadgeLicenca } from './StatusBadgeLicenca';
 import type { HistoricoStatusLicenca } from '../types/licenca';
 import styles from './HistoricoStatusTimeline.module.css';
@@ -48,7 +49,7 @@ export function HistoricoStatusTimeline({ historico }: HistoricoStatusTimelinePr
               <time className={styles.timestamp}>{formatDateTime(entry.data)}</time>
             </div>
             <div className={styles.meta}>
-              <span className={styles.autor}>{entry.autor}</span>
+              <ActorDisplay actor={entry.ator} fallbackLabel={entry.autor} />
               {entry.justificativa && (
                 <p className={styles.justificativa}>{entry.justificativa}</p>
               )}

@@ -2,6 +2,7 @@ import { useNavigate } from 'react-router-dom';
 import { Eye } from 'lucide-react';
 import { RowAuditHistoryButton } from '@features/auditoria/components/RowAuditHistoryButton';
 import { auditEntityTypes } from '@features/auditoria/constants/auditEntityTypes';
+import { ActorDisplay } from '../../shared/components/actor-display';
 import { StatusBadgePagamento } from './StatusBadgePagamento';
 import { formatBRL, formatUdas } from '../../shared/utils/formatCurrency';
 import type { Pagamento } from '../types/pagamento';
@@ -57,7 +58,18 @@ export function PagamentosTable({ data }: PagamentosTableProps) {
                 <span className={styles.valor}>{formatBRL(pagamento.valorBruto)}</span>
               </td>
               <td className={styles.td}>
-                <StatusBadgePagamento status={pagamento.status} />
+                <div className={styles.statusCell}>
+                  <StatusBadgePagamento status={pagamento.status} />
+                  {pagamento.status === 'ESTORNADO' && (pagamento.estornadoPorAtor || pagamento.estornadoPor) ? (
+                    <span className={styles.estornoAutor}>
+                      <span className={styles.estornoLabel}>Estornado por</span>
+                      <ActorDisplay
+                        actor={pagamento.estornadoPorAtor}
+                        fallbackLabel={pagamento.estornadoPor}
+                      />
+                    </span>
+                  ) : null}
+                </div>
               </td>
               <td className={styles.td}>
                 <div className={styles.actions}>

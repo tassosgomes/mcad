@@ -1,5 +1,6 @@
 import { AlertTriangle } from 'lucide-react';
 import { Button } from '@components/ui/button';
+import { ActorDisplay } from '../../shared/components/actor-display';
 import { useUdaVigente } from '../hooks/useUdaVigente';
 import { formatBRL } from '../../shared/utils/formatCurrency';
 import styles from './UdaVigenteCard.module.css';
@@ -48,8 +49,11 @@ export function UdaVigenteCard({ onAjustar, isAnalista }: UdaVigenteCardProps) {
       </div>
       <div className={styles.valorDestaque}>{formatBRL(uda.valor)}</div>
       <span className={styles.vigencia}>Vigente desde {formatDate(uda.dataVigencia)}</span>
-      {uda.criadoPor && (
-        <span className={styles.meta}>Configurado por {uda.criadoPor}</span>
+      {(uda.criadoPorAtor || uda.criadoPor) && (
+        <span className={styles.meta}>
+          <span>Configurado por</span>
+          <ActorDisplay actor={uda.criadoPorAtor} fallbackLabel={uda.criadoPor} />
+        </span>
       )}
     </div>
   );

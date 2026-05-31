@@ -6,6 +6,7 @@ import { Button } from '@components/ui/button';
 import { Loading } from '@components/ui/loading';
 import { ErrorState } from '@components/ui/error-state';
 import { usePermissions } from '@shared/authz';
+import { ActorDisplay } from '../../shared/components/actor-display';
 import { usePagamento } from '../hooks/usePagamento';
 import { StatusBadgePagamento } from '../components/StatusBadgePagamento';
 import { EstornarPagamentoModal } from '../components/EstornarPagamentoModal';
@@ -120,7 +121,13 @@ export function PagamentoDetailPage() {
             </div>
             <div className={styles.field}>
               <span className={styles.fieldLabel}>Estornado por</span>
-              <span className={styles.fieldValue}>{pagamento.estornadoPor}</span>
+              <span className={styles.fieldValue}>
+                <ActorDisplay
+                  actor={pagamento.estornadoPorAtor}
+                  fallbackLabel={pagamento.estornadoPor}
+                  size="md"
+                />
+              </span>
             </div>
             <div className={styles.field}>
               <span className={styles.fieldLabel}>Data do estorno</span>

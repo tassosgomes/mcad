@@ -80,12 +80,6 @@
   gap: var(--space-1);
 }
 
-.autor {
-  font-size: var(--text-xs);
-  color: var(--color-text-secondary);
-  font-weight: 500;
-}
-
 .justificativa {
   font-size: var(--text-sm);
   color: var(--color-text-secondary);

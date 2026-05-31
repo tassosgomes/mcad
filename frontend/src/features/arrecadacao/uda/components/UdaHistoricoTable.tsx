@@ -1,5 +1,6 @@
 import { RowAuditHistoryButton } from '@features/auditoria/components/RowAuditHistoryButton';
 import { auditEntityTypes } from '@features/auditoria/constants/auditEntityTypes';
+import { ActorDisplay } from '../../shared/components/actor-display';
 import { useHistoricoUda } from '../hooks/useHistoricoUda';
 import { useUdaVigente } from '../hooks/useUdaVigente';
 import { formatBRL } from '../../shared/utils/formatCurrency';
@@ -63,7 +64,7 @@ export function UdaHistoricoTable() {
                 </td>
                 <td className={styles.td}>
                   <span className={styles.criadoPor}>
-                    {uda.criadoPor ?? 'Sistema'}
+                    <ActorDisplay actor={uda.criadoPorAtor} fallbackLabel={uda.criadoPor} size="md" />
                   </span>
                 </td>
                 <td className={styles.td}>

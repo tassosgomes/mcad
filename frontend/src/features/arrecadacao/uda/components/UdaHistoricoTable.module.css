@@ -76,6 +76,8 @@
 }
 
 .criadoPor {
+  display: inline-block;
+  max-width: 18rem;
   color: var(--color-text-secondary);
   font-size: var(--text-sm);
 }

@@ -58,6 +58,7 @@
   font-size: var(--text-sm);
   color: var(--color-text-primary);
   font-weight: 500;
+  overflow-wrap: anywhere;
 }
 
 .fieldSub {
