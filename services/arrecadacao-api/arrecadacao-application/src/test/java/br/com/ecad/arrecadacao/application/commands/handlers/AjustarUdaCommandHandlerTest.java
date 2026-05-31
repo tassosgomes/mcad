@@ -1,5 +1,6 @@
 package br.com.ecad.arrecadacao.application.commands.handlers;
 
+import br.com.ecad.arrecadacao.application.actor.ActorSnapshot;
 import br.com.ecad.arrecadacao.application.audit.AuditContextProvider;
 import br.com.ecad.arrecadacao.application.audit.GenericAuditEventFactory;
 import br.com.ecad.arrecadacao.application.commands.AjustarUdaCommand;
@@ -35,15 +36,17 @@ class AjustarUdaCommandHandlerTest {
     @InjectMocks
     private AjustarUdaCommandHandler handler;
 
+    private static final String ACTOR_SUBJECT = "logto-user-uda";
+    private static final String ACTOR_LABEL = "Ana Lima (ana.lima)";
+
     @Test
     void handle_ComValorValido_DeveCriarERetornarUdaResponse() {
         // Arrange
         BigDecimal valor = new BigDecimal("115.00");
         LocalDate dataVigencia = LocalDate.of(2026, 7, 1);
-        AjustarUdaCommand cmd = new AjustarUdaCommand(valor, dataVigencia, "analista");
+        AjustarUdaCommand cmd = new AjustarUdaCommand(valor, dataVigencia, actorSnapshot());
 
-        UdaValor udaCriada = UdaValor.criar(valor, dataVigencia, "analista");
-        when(udaValorRepository.save(any(UdaValor.class))).thenReturn(udaCriada);
+        when(udaValorRepository.save(any(UdaValor.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         // Act
         UdaResponse response = handler.handle(cmd);
@@ -52,8 +55,28 @@ class AjustarUdaCommandHandlerTest {
         assertThat(response).isNotNull();
         assertThat(response.valor()).isEqualTo(valor.toPlainString());
         assertThat(response.dataVigencia()).isEqualTo(dataVigencia);
-        assertThat(response.criadoPor()).isEqualTo("analista");
+        assertThat(response.criadoPor()).isEqualTo(ACTOR_LABEL);
         verify(udaValorRepository).save(any(UdaValor.class));
+    }
+
+    @Test
+    void handle_ComActorSnapshot_DevePersistirSubjectRotuloELegado() {
+        // Arrange
+        BigDecimal valor = new BigDecimal("115.00");
+        LocalDate dataVigencia = LocalDate.of(2026, 7, 1);
+        AjustarUdaCommand cmd = new AjustarUdaCommand(valor, dataVigencia, actorSnapshot());
+        when(udaValorRepository.save(any(UdaValor.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        // Act
+        handler.handle(cmd);
+
+        // Assert
+        var captor = org.mockito.ArgumentCaptor.forClass(UdaValor.class);
+        verify(udaValorRepository).save(captor.capture());
+        UdaValor saved = captor.getValue();
+        assertThat(saved.getCriadoPorSubject()).isEqualTo(ACTOR_SUBJECT);
+        assertThat(saved.getCriadoPorRotulo()).isEqualTo(ACTOR_LABEL);
+        assertThat(saved.getCriadoPor()).isEqualTo(ACTOR_LABEL);
     }
 
     @Test
@@ -80,5 +103,9 @@ class AjustarUdaCommandHandlerTest {
                 .hasMessageContaining("nao pode ser nula");
 
         verify(udaValorRepository, never()).save(any());
+    }
+
+    private ActorSnapshot actorSnapshot() {
+        return new ActorSnapshot(ACTOR_SUBJECT, ACTOR_LABEL, "ana.lima", "Ana Lima", "ana@mcad.dev");
     }
 }

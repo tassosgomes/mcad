@@ -1,5 +1,6 @@
 package br.com.ecad.arrecadacao.application.commands.handlers;
 
+import br.com.ecad.arrecadacao.application.actor.ActorSnapshot;
 import br.com.ecad.arrecadacao.application.audit.AuditContextProvider;
 import br.com.ecad.arrecadacao.application.audit.GenericAuditEventFactory;
 import br.com.ecad.arrecadacao.application.commands.EstornarPagamentoCommand;
@@ -48,6 +49,8 @@ class EstornarPagamentoCommandHandlerTest {
     private static final UUID LICENCA_ID = UUID.randomUUID();
     private static final String JUSTIFICATIVA = "Pagamento registrado em duplicidade com valor incorreto.";
     private static final String AUTOR = "analista@ecad.org.br";
+    private static final String ACTOR_SUBJECT = "logto-user-estorno";
+    private static final String ACTOR_LABEL = "Carlos Melo (carlos.melo)";
 
     private static final UUID RUBRICA_ID = UUID.randomUUID();
 
@@ -84,7 +87,7 @@ class EstornarPagamentoCommandHandlerTest {
         when(pagamentoRepository.findById(PAGAMENTO_ID)).thenReturn(Optional.of(pagamento));
         when(pagamentoRepository.save(any(Pagamento.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        EstornarPagamentoCommand cmd = new EstornarPagamentoCommand(PAGAMENTO_ID, JUSTIFICATIVA, AUTOR);
+        EstornarPagamentoCommand cmd = new EstornarPagamentoCommand(PAGAMENTO_ID, JUSTIFICATIVA, actorSnapshot());
 
         // Act
         PagamentoResponse response = handler.handle(cmd);
@@ -93,8 +96,15 @@ class EstornarPagamentoCommandHandlerTest {
         assertThat(response).isNotNull();
         assertThat(response.status()).isEqualTo("ESTORNADO");
         assertThat(response.justificativaEstorno()).isEqualTo(JUSTIFICATIVA);
-        assertThat(response.estornadoPor()).isEqualTo(AUTOR);
+        assertThat(response.estornadoPor()).isEqualTo(ACTOR_LABEL);
         assertThat(response.estornadoEm()).isNotNull();
+
+        var captor = org.mockito.ArgumentCaptor.forClass(Pagamento.class);
+        verify(pagamentoRepository).save(captor.capture());
+        Pagamento saved = captor.getValue();
+        assertThat(saved.getEstornadoPorSubject()).isEqualTo(ACTOR_SUBJECT);
+        assertThat(saved.getEstornadoPorRotulo()).isEqualTo(ACTOR_LABEL);
+        assertThat(saved.getEstornadoPor()).isEqualTo(ACTOR_LABEL);
 
         // Verify — evento Outbox publicado
         verify(outboxEventWriter).addEvent(
@@ -196,5 +206,14 @@ class EstornarPagamentoCommandHandlerTest {
         inOrder.verify(verbaService).validarLockParaAlteracao(eq(RUBRICA_ID), anyString());
         inOrder.verify(verbaService).recalcularVerba(eq(RUBRICA_ID), anyString());
         inOrder.verifyNoMoreInteractions();
+    }
+
+    private ActorSnapshot actorSnapshot() {
+        return new ActorSnapshot(
+                ACTOR_SUBJECT,
+                ACTOR_LABEL,
+                "carlos.melo",
+                "Carlos Melo",
+                "carlos@mcad.dev");
     }
 }

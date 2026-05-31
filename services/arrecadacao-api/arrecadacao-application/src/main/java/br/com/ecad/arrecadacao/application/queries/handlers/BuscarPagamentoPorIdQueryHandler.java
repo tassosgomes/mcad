@@ -1,5 +1,7 @@
 package br.com.ecad.arrecadacao.application.queries.handlers;
 
+import br.com.ecad.arrecadacao.application.actor.ActorDisplayResponse;
+import br.com.ecad.arrecadacao.application.actor.ActorDisplayResolver;
 import br.com.ecad.arrecadacao.application.cqrs.QueryHandler;
 import br.com.ecad.arrecadacao.application.dto.LicencaResumoResponse;
 import br.com.ecad.arrecadacao.application.dto.PagamentoResponse;
@@ -18,9 +20,14 @@ public class BuscarPagamentoPorIdQueryHandler
         implements QueryHandler<BuscarPagamentoPorIdQuery, PagamentoResponse> {
 
     private final PagamentoRepository pagamentoRepository;
+    private final ActorDisplayResolver actorDisplayResolver;
 
-    public BuscarPagamentoPorIdQueryHandler(PagamentoRepository pagamentoRepository) {
+    public BuscarPagamentoPorIdQueryHandler(
+            PagamentoRepository pagamentoRepository,
+            ActorDisplayResolver actorDisplayResolver
+    ) {
         this.pagamentoRepository = pagamentoRepository;
+        this.actorDisplayResolver = actorDisplayResolver;
     }
 
     @Override
@@ -35,6 +42,7 @@ public class BuscarPagamentoPorIdQueryHandler
 
     private PagamentoResponse toResponse(Pagamento pagamento) {
         LicencaResumoResponse licencaResumo = buildLicencaResumo(pagamento.getLicenca());
+        ActorDisplayResponse estornadoPorAtor = resolveEstornoActor(pagamento);
         return new PagamentoResponse(
             pagamento.getId(),
             licencaResumo,
@@ -49,8 +57,31 @@ public class BuscarPagamentoPorIdQueryHandler
             // F06 — campos de estorno (null quando CONFIRMADO)
             pagamento.getJustificativaEstorno(),
             pagamento.getEstornadoPor(),
+            estornadoPorAtor,
             pagamento.getEstornadoEm()
         );
+    }
+
+    private ActorDisplayResponse resolveEstornoActor(Pagamento pagamento) {
+        if (!hasEstornoActor(pagamento)) {
+            return null;
+        }
+        return actorDisplayResolver.resolve(pagamento.getEstornadoPorSubject(), actorLabelOf(pagamento));
+    }
+
+    private boolean hasEstornoActor(Pagamento pagamento) {
+        return hasText(pagamento.getEstornadoPorSubject()) || hasText(actorLabelOf(pagamento));
+    }
+
+    private String actorLabelOf(Pagamento pagamento) {
+        if (pagamento.getEstornadoPorRotulo() != null && !pagamento.getEstornadoPorRotulo().isBlank()) {
+            return pagamento.getEstornadoPorRotulo();
+        }
+        return pagamento.getEstornadoPor();
+    }
+
+    private boolean hasText(String value) {
+        return value != null && !value.isBlank();
     }
 
     private LicencaResumoResponse buildLicencaResumo(Licenca licenca) {

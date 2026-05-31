@@ -1,5 +1,8 @@
 package br.com.ecad.arrecadacao.application.queries.handlers;
 
+import br.com.ecad.arrecadacao.application.actor.ActorDisplayResponse;
+import br.com.ecad.arrecadacao.application.actor.ActorDisplayResolver;
+import br.com.ecad.arrecadacao.application.actor.ActorSnapshot;
 import br.com.ecad.arrecadacao.application.cqrs.QueryHandler;
 import br.com.ecad.arrecadacao.application.dto.LicencaResumoResponse;
 import br.com.ecad.arrecadacao.application.dto.PageResponse;
@@ -17,15 +20,23 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Component
 @SuppressWarnings("null")
 public class ListarPagamentosQueryHandler
         implements QueryHandler<ListarPagamentosQuery, PageResponse<PagamentoResponse>> {
 
     private final PagamentoRepository pagamentoRepository;
+    private final ActorDisplayResolver actorDisplayResolver;
 
-    public ListarPagamentosQueryHandler(PagamentoRepository pagamentoRepository) {
+    public ListarPagamentosQueryHandler(
+            PagamentoRepository pagamentoRepository,
+            ActorDisplayResolver actorDisplayResolver
+    ) {
         this.pagamentoRepository = pagamentoRepository;
+        this.actorDisplayResolver = actorDisplayResolver;
     }
 
     @Override
@@ -37,10 +48,13 @@ public class ListarPagamentosQueryHandler
 
         var pageable = PageRequest.of(query.page(), query.size(), parseSort(query.sort()));
         var page = pagamentoRepository.findAll(spec, pageable);
+        var pagamentos = page.getContent();
+        var atores = resolveEstornoActors(pagamentos);
 
-        var content = page.getContent().stream()
-            .map(this::toResponse)
-            .toList();
+        List<PagamentoResponse> content = new ArrayList<>();
+        for (int index = 0; index < pagamentos.size(); index++) {
+            content.add(toResponse(pagamentos.get(index), atores.get(index)));
+        }
 
         return new PageResponse<>(content, new PaginationInfo(
             page.getNumber(), page.getSize(), page.getTotalElements(), page.getTotalPages()));
@@ -64,7 +78,31 @@ public class ListarPagamentosQueryHandler
         return Sort.by(Sort.Direction.ASC, sort);
     }
 
-    private PagamentoResponse toResponse(Pagamento pagamento) {
+    private List<ActorDisplayResponse> resolveEstornoActors(List<Pagamento> pagamentos) {
+        List<ActorSnapshot> snapshots = pagamentos.stream()
+                .filter(this::hasEstornoActor)
+                .map(this::toEstornoActorSnapshot)
+                .toList();
+        List<ActorDisplayResponse> resolvedActors = actorDisplayResolver.resolveAll(snapshots);
+
+        List<ActorDisplayResponse> actors = new ArrayList<>();
+        int resolvedIndex = 0;
+        for (Pagamento pagamento : pagamentos) {
+            if (hasEstornoActor(pagamento)) {
+                actors.add(resolvedActors.get(resolvedIndex));
+                resolvedIndex++;
+            } else {
+                actors.add(null);
+            }
+        }
+        return actors;
+    }
+
+    private boolean hasEstornoActor(Pagamento pagamento) {
+        return hasText(pagamento.getEstornadoPorSubject()) || hasText(actorLabelOf(pagamento));
+    }
+
+    private PagamentoResponse toResponse(Pagamento pagamento, ActorDisplayResponse estornadoPorAtor) {
         LicencaResumoResponse licencaResumo = buildLicencaResumo(pagamento.getLicenca());
         return new PagamentoResponse(
             pagamento.getId(),
@@ -80,8 +118,29 @@ public class ListarPagamentosQueryHandler
             // F06 — campos de estorno (null quando CONFIRMADO)
             pagamento.getJustificativaEstorno(),
             pagamento.getEstornadoPor(),
+            estornadoPorAtor,
             pagamento.getEstornadoEm()
         );
+    }
+
+    private ActorSnapshot toEstornoActorSnapshot(Pagamento pagamento) {
+        return new ActorSnapshot(
+                pagamento.getEstornadoPorSubject(),
+                actorLabelOf(pagamento),
+                null,
+                null,
+                null);
+    }
+
+    private String actorLabelOf(Pagamento pagamento) {
+        if (pagamento.getEstornadoPorRotulo() != null && !pagamento.getEstornadoPorRotulo().isBlank()) {
+            return pagamento.getEstornadoPorRotulo();
+        }
+        return pagamento.getEstornadoPor();
+    }
+
+    private boolean hasText(String value) {
+        return value != null && !value.isBlank();
     }
 
     private LicencaResumoResponse buildLicencaResumo(Licenca licenca) {
