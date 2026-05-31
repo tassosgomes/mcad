@@ -1,3 +1,5 @@
+import type { ActorDisplayResponse } from '../../shared/types/actor';
+
 export type StatusLicenca = 'ATIVA' | 'SUSPENSA' | 'ENCERRADA';
 
 export interface UsuarioMusicaResumo {
@@ -50,6 +52,7 @@ export interface HistoricoStatusLicenca {
   statusNovo: StatusLicenca;
   justificativa: string;
   autor: string;
+  ator?: ActorDisplayResponse | null;
   data: string;
 }
 

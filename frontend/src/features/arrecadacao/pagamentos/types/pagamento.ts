@@ -1,3 +1,5 @@
+import type { ActorDisplayResponse } from '../../shared/types/actor';
+
 export type StatusPagamento = 'CONFIRMADO' | 'ESTORNADO';
 
 export interface LicencaResumo {
@@ -19,6 +21,7 @@ export interface Pagamento {
   atualizadoEm: string;
   justificativaEstorno: string | null;
   estornadoPor: string | null;
+  estornadoPorAtor?: ActorDisplayResponse | null;
   estornadoEm: string | null;
 }
 

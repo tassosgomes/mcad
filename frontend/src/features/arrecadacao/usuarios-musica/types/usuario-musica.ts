@@ -1,3 +1,5 @@
+import type { ActorDisplayResponse } from '../../shared/types/actor';
+
 export type StatusUsuarioMusica = 'ATIVO' | 'INATIVO';
 
 export interface Endereco {
@@ -64,6 +66,7 @@ export interface HistoricoStatusUsuarioMusica {
   statusNovo: StatusUsuarioMusica;
   justificativa: string;
   autor: string;
+  ator?: ActorDisplayResponse | null;
   data: string;
 }
 
