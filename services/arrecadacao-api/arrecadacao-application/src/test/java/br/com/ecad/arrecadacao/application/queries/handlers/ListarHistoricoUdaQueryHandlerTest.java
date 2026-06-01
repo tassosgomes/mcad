@@ -9,6 +9,7 @@ import br.com.ecad.arrecadacao.application.queries.ListarHistoricoUdaQuery;
 import br.com.ecad.arrecadacao.domain.entities.UdaValor;
 import br.com.ecad.arrecadacao.domain.interfaces.UdaValorRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.Collection;
@@ -105,7 +106,8 @@ class ListarHistoricoUdaQueryHandlerTest {
                         "ana@mcad.dev",
                         "ATIVO"));
 
-        var objectMapper = new ObjectMapper();
+        var objectMapper = new ObjectMapper()
+                .registerModule(new JavaTimeModule());
         var json = objectMapper.writeValueAsString(response);
         var tree = objectMapper.readTree(json);
 
