@@ -1,10 +1,14 @@
 import { useMemo, useState } from 'react';
 import type { FormEvent } from 'react';
-import { Pencil, Plus, RefreshCw, Search, ShieldCheck } from 'lucide-react';
+import { Pencil, Plus, RefreshCw, Search, ShieldCheck, Users } from 'lucide-react';
 import { Button } from '@components/ui/button';
 import { Loading } from '@components/ui/loading';
 import { PageHeader } from '@components/ui/page-header';
 import { Pagination } from '@components/ui/pagination';
+import {
+  countAssignmentsPerRole,
+  useAssignments,
+} from '@features/autorizacao/api/acessosApi';
 import { RoleDetailPanel } from '../components/RoleDetailPanel';
 import { usePermissionsCatalog } from '../hooks/usePermissionsCatalog';
 import { useAddPermissionToRole, useCreateRole, useRolesCatalog } from '../hooks/useRolesCatalog';
@@ -79,10 +83,12 @@ function StatusBadge({ status }: { status: RoleStatus }) {
 interface RoleRowProps {
   role: RoleSummary;
   selected: boolean;
+  userCount: number;
   onSelect: (roleId: string) => void;
 }
 
-function RoleRow({ role, selected, onSelect }: RoleRowProps) {
+function RoleRow({ role, selected, userCount, onSelect }: RoleRowProps) {
+  const usersLabel = userCount === 1 ? 'usuário' : 'usuários';
   return (
     <tr
       className={`${styles.row} ${selected ? styles.selected : ''}`}
@@ -97,6 +103,15 @@ function RoleRow({ role, selected, onSelect }: RoleRowProps) {
       </td>
       <td className={styles.td}>
         <span className={styles.chip}>{role.area || '-'}</span>
+      </td>
+      <td className={styles.td}>
+        <span
+          className={`${styles.userCountBadge} ${userCount > 0 ? styles.userCountStrong : ''}`}
+          aria-label={`${userCount} ${usersLabel} com este papel`}
+        >
+          <Users size={12} aria-hidden="true" />
+          {userCount}
+        </span>
       </td>
       <td className={styles.td}>
         <StatusBadge status={role.status} />
@@ -174,9 +189,14 @@ export function RolesPage() {
   const [feedback, setFeedback] = useState<{ tone: 'success' | 'error'; message: string } | null>(null);
 
   const rolesQuery = useRolesCatalog(submittedFilters, page, PAGE_SIZE);
+  const assignmentsQuery = useAssignments({ page: 0, size: 200 });
   const createRoleMutation = useCreateRole();
   const addPermissionMutation = useAddPermissionToRole();
   const roleKey = buildRoleKey(form);
+  const userCountsByRoleKey = useMemo(
+    () => countAssignmentsPerRole(assignmentsQuery.data?.items ?? []),
+    [assignmentsQuery.data],
+  );
 
   const permissionFilters: PermissionFilters = {
     domain: normalizeSegment(form.domain),
@@ -278,14 +298,17 @@ export function RolesPage() {
   return (
     <div className={styles.page}>
       <PageHeader
-        title="Papéis"
-        description="Cadastro de papéis e composição inicial com permissões do catálogo AuthZ."
+        title="Papéis & Acessos"
+        description="Gestão de papéis, suas permissões e os usuários atribuídos a cada um."
         action={(
           <Button
             variant="secondary"
             type="button"
-            onClick={() => rolesQuery.refetch()}
-            disabled={rolesQuery.isFetching}
+            onClick={() => {
+              void rolesQuery.refetch();
+              void assignmentsQuery.refetch();
+            }}
+            disabled={rolesQuery.isFetching || assignmentsQuery.isFetching}
           >
             <RefreshCw size={16} />
             Atualizar
@@ -367,6 +390,7 @@ export function RolesPage() {
                       <th className={styles.th}>Papel</th>
                       <th className={styles.th}>Domínio</th>
                       <th className={styles.th}>Área</th>
+                      <th className={styles.th}>Usuários</th>
                       <th className={styles.th}>Status</th>
                       <th className={styles.th} aria-label="Ações">Ações</th>
                     </tr>
@@ -376,6 +400,7 @@ export function RolesPage() {
                       <RoleRow
                         key={role.id}
                         role={role}
+                        userCount={userCountsByRoleKey.get(role.key) ?? 0}
                         selected={panelMode === 'edit' && selectedRoleId === role.id}
                         onSelect={handleSelectRole}
                       />

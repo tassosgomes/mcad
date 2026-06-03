@@ -1,7 +1,6 @@
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { RequirePermission } from '@shared/auth/RequirePermission';
 import { usePermissions } from '@shared/authz';
-import { AtribuicoesPage } from '@features/autorizacao/atribuicoes/AtribuicoesPage';
 import { MeuDominioPage } from '@features/autorizacao/meu-dominio/MeuDominioPage';
 import { PermissionsPage } from './pages/PermissionsPage';
 import { RolesPage } from './pages/RolesPage';
@@ -30,12 +29,8 @@ function AutorizacaoIndex() {
     return <Navigate to="permissoes" replace />;
   }
 
-  if (can('authz:admin:role:visualizar')) {
+  if (can('authz:admin:role:visualizar') || can('acessos:default:papel:listar')) {
     return <Navigate to="papeis" replace />;
-  }
-
-  if (can('acessos:default:papel:listar')) {
-    return <Navigate to="atribuicoes" replace />;
   }
 
   if (hasAny(MEU_DOMINIO_PERMISSIONS)) {
@@ -60,19 +55,13 @@ export default function AuthzRoutes() {
       <Route
         path="papeis"
         element={(
-          <RequirePermission anyOf={AUTHZ_ADMIN_PERMISSIONS}>
+          <RequirePermission anyOf={[...AUTHZ_ADMIN_PERMISSIONS, 'acessos:default:papel:listar']}>
             <RolesPage />
           </RequirePermission>
         )}
       />
-      <Route
-        path="atribuicoes"
-        element={(
-          <RequirePermission permission="acessos:default:papel:listar">
-            <AtribuicoesPage />
-          </RequirePermission>
-        )}
-      />
+      {/* Legacy path: kept so old bookmarks land on the unified Papéis & Acessos screen. */}
+      <Route path="atribuicoes" element={<Navigate to="../papeis" replace />} />
       <Route
         path="meu-dominio"
         element={(

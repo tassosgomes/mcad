@@ -138,14 +138,12 @@ const navigation: SidebarGroup[] = [
         requiredPermission: 'authz:admin:permission:visualizar',
       },
       {
-        label: 'Papéis',
+        label: 'Papéis & Acessos',
         path: '/autorizacao/papeis',
-        requiredPermission: 'authz:admin:role:visualizar',
-      },
-      {
-        label: 'Atribuir Acessos',
-        path: '/autorizacao/atribuicoes',
-        requiredPermission: 'acessos:default:papel:atribuir',
+        requiredPermissions: [
+          'authz:admin:role:visualizar',
+          'acessos:default:papel:listar',
+        ],
       },
       {
         label: 'Meu Domínio',

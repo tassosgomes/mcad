@@ -3,7 +3,7 @@ import { Button } from '@components/ui/button';
 import { Loading } from '@components/ui/loading';
 import { PageHeader } from '@components/ui/page-header';
 import { useAssignments } from '../api/acessosApi';
-import styles from '../atribuicoes/AtribuicoesPage.module.css';
+import styles from './MeuDominioPage.module.css';
 
 const PAGE_SIZE = 100;
 

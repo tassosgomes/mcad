@@ -307,6 +307,115 @@
   gap: var(--space-2);
 }
 
+.tabs {
+  display: flex;
+  gap: var(--space-1);
+  padding: var(--space-1);
+  background: var(--color-bg-floor);
+  border-radius: var(--radius-md);
+}
+
+.tab {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-height: 36px;
+  padding: var(--space-1) var(--space-3);
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-sm);
+  color: var(--color-text-muted);
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  letter-spacing: 0;
+  cursor: pointer;
+  outline: none;
+}
+
+.tab:hover {
+  color: var(--color-text-primary);
+}
+
+.tabActive {
+  background: var(--color-bg-elevated);
+  color: var(--color-text-primary);
+}
+
+.tabCount {
+  display: inline-flex;
+  align-items: center;
+  min-height: 18px;
+  padding: 0 var(--space-2);
+  background: var(--color-bg-primary);
+  border-radius: 999px;
+  color: var(--color-text-muted);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+}
+
+.tabActive .tabCount {
+  color: var(--color-text-primary);
+}
+
+.userList {
+  display: grid;
+  gap: var(--space-2);
+  max-height: 360px;
+  overflow: auto;
+  padding-right: var(--space-1);
+}
+
+.userLine {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--space-3);
+  align-items: center;
+  padding: var(--space-3);
+  background: var(--color-bg-floor);
+  border-radius: var(--radius-md);
+}
+
+.userLine:hover {
+  background: var(--color-bg-elevated);
+}
+
+.userMeta {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.userCountBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 22px;
+  padding: 0 var(--space-2);
+  background: var(--color-bg-floor);
+  border-radius: 999px;
+  color: var(--color-text-secondary);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+}
+
+.userCountBadge.userCountStrong {
+  background: var(--color-secondary-container);
+  color: var(--color-text-primary);
+}
+
+.addUser {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.addUserHint {
+  color: var(--color-text-muted);
+  font-size: var(--text-xs);
+}
+
 .empty,
 .error,
 .success {

@@ -195,6 +195,37 @@ export function useAssignments(params: AssignmentsQuery) {
   });
 }
 
+export interface RoleAssignmentRow {
+  assignment: Assignment;
+  role: AssignmentRole;
+}
+
+export function filterAssignmentsByRole(
+  assignments: Assignment[],
+  roleKey: string | null | undefined,
+): RoleAssignmentRow[] {
+  if (!roleKey) return [];
+
+  const rows: RoleAssignmentRow[] = [];
+  for (const assignment of assignments) {
+    const role = assignment.roles.find((candidate) => candidate.key === roleKey);
+    if (role) {
+      rows.push({ assignment, role });
+    }
+  }
+  return rows;
+}
+
+export function countAssignmentsPerRole(assignments: Assignment[]): Map<string, number> {
+  const counts = new Map<string, number>();
+  for (const assignment of assignments) {
+    for (const role of assignment.roles) {
+      counts.set(role.key, (counts.get(role.key) ?? 0) + 1);
+    }
+  }
+  return counts;
+}
+
 export function useUsuarios(params: UsuariosQuery, enabled = true) {
   return useQuery({
     queryKey: [...usuariosQueryKey, params],

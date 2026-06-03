@@ -59,6 +59,6 @@ describe('Sidebar', () => {
   it('shows Autorização group for any authz:admin:*:visualizar permission', () => {
     renderSidebar(<Sidebar isOpen />, ['authz:admin:role:visualizar']);
     expect(screen.getByText('Autorização')).toBeInTheDocument();
-    expect(screen.getByText('Papéis')).toBeInTheDocument();
+    expect(screen.getByText('Papéis & Acessos')).toBeInTheDocument();
   });
 });

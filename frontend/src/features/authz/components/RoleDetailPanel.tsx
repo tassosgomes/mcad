@@ -1,8 +1,13 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { FormEvent } from 'react';
-import { Archive, MinusCircle, Plus, Save, Search } from 'lucide-react';
+import { Archive, MinusCircle, Plus, Save, Search, ShieldCheck, Users } from 'lucide-react';
 import { Button } from '@components/ui/button';
 import { Loading } from '@components/ui/loading';
+import { usePermissions } from '@shared/authz';
+import {
+  filterAssignmentsByRole,
+  useAssignments,
+} from '@features/autorizacao/api/acessosApi';
 import { usePermissionsCatalog } from '../hooks/usePermissionsCatalog';
 import {
   useAddPermissionToRole,
@@ -15,6 +20,7 @@ import {
 import type { PermissionFilters, PermissionSummary } from '../types/permission';
 import type { Role } from '../types/role';
 import styles from '../pages/RolesPage.module.css';
+import { RoleUsersTab } from './RoleUsersTab';
 
 const PERMISSION_PAGE_SIZE = 100;
 
@@ -75,10 +81,24 @@ function PermissionLine({
   );
 }
 
+type DetailTab = 'users' | 'permissions';
+
+const SCOPED_LIST_PERMISSIONS = [
+  'acessos:default:papel:listar',
+  'acessos:cadastro:papel:visualizar',
+  'acessos:identificacao:papel:visualizar',
+  'acessos:arrecadacao:papel:visualizar',
+  'acessos:distribuicao:papel:visualizar',
+];
+
 export function RoleDetailPanel({ roleId, onCreateNew }: RoleDetailPanelProps) {
   const [form, setForm] = useState<EditFormState>({ displayName: '', description: '' });
   const [permissionSearch, setPermissionSearch] = useState('');
   const [feedback, setFeedback] = useState<{ tone: 'success' | 'error'; message: string } | null>(null);
+  const [tab, setTab] = useState<DetailTab>('users');
+
+  const { hasAny } = usePermissions();
+  const canSeeUsers = hasAny(SCOPED_LIST_PERMISSIONS);
 
   const roleQuery = useRoleDetails(roleId);
   const rolePermissionsQuery = useRolePermissions(roleId);
@@ -86,12 +106,17 @@ export function RoleDetailPanel({ roleId, onCreateNew }: RoleDetailPanelProps) {
   const deactivateRoleMutation = useDeactivateRole();
   const addPermissionMutation = useAddPermissionToRole();
   const removePermissionMutation = useRemovePermissionFromRole();
+  const assignmentsQuery = useAssignments({ page: 0, size: 200 });
 
   const role = roleQuery.data;
   const rolePermissions = rolePermissionsQuery.data ?? [];
   const linkedPermissionIds = useMemo(
     () => new Set(rolePermissions.map((permission) => permission.id)),
     [rolePermissions],
+  );
+  const userCount = useMemo(
+    () => filterAssignmentsByRole(assignmentsQuery.data?.items ?? [], role?.key).length,
+    [assignmentsQuery.data, role?.key],
   );
 
   const permissionFilters: PermissionFilters = {
@@ -121,7 +146,8 @@ export function RoleDetailPanel({ roleId, onCreateNew }: RoleDetailPanelProps) {
     setForm(toEditForm(role));
     setPermissionSearch('');
     setFeedback(null);
-  }, [role?.id]);
+    setTab(canSeeUsers ? 'users' : 'permissions');
+  }, [role?.id, canSeeUsers]);
 
   if (!roleId) {
     return (
@@ -292,75 +318,128 @@ export function RoleDetailPanel({ roleId, onCreateNew }: RoleDetailPanelProps) {
         </div>
       </form>
 
-      <section className={styles.permissionPicker} aria-label="Permissões do papel">
-        <div className={styles.pickerHeader}>
-          <div>
-            <h3 className={styles.panelTitle}>Permissões do papel</h3>
-            <p className={styles.panelDescription}>
-              {rolePermissions.length} permissões associadas.
-            </p>
-          </div>
+      <div className={styles.tabs} role="tablist" aria-label="Configuração do papel">
+        {canSeeUsers && (
+          <button
+            type="button"
+            role="tab"
+            id={`role-tab-users-${role.id}`}
+            aria-selected={tab === 'users'}
+            aria-controls={`role-tabpanel-users-${role.id}`}
+            className={`${styles.tab} ${tab === 'users' ? styles.tabActive : ''}`}
+            onClick={() => setTab('users')}
+          >
+            <Users size={14} aria-hidden="true" />
+            Usuários
+            <span className={styles.tabCount}>{userCount}</span>
+          </button>
+        )}
+        <button
+          type="button"
+          role="tab"
+          id={`role-tab-permissions-${role.id}`}
+          aria-selected={tab === 'permissions'}
+          aria-controls={`role-tabpanel-permissions-${role.id}`}
+          className={`${styles.tab} ${tab === 'permissions' ? styles.tabActive : ''}`}
+          onClick={() => setTab('permissions')}
+        >
+          <ShieldCheck size={14} aria-hidden="true" />
+          Permissões
+          <span className={styles.tabCount}>{rolePermissions.length}</span>
+        </button>
+      </div>
+
+      {tab === 'users' && canSeeUsers && (
+        <div
+          role="tabpanel"
+          id={`role-tabpanel-users-${role.id}`}
+          aria-labelledby={`role-tab-users-${role.id}`}
+        >
+          <RoleUsersTab
+            roleKey={role.key}
+            roleDisplayName={role.displayName}
+            isInactive={role.status === 'INACTIVE'}
+          />
         </div>
+      )}
 
-        {rolePermissionsQuery.isLoading && <Loading />}
-        {rolePermissionsQuery.data && rolePermissions.length === 0 && (
-          <div className={styles.empty}>Nenhuma permissão associada.</div>
-        )}
-        {rolePermissions.length > 0 && (
-          <div className={styles.permissionList}>
-            {rolePermissions.map((permission) => (
-              <PermissionLine
-                key={permission.id}
-                permission={permission}
-                action="remove"
-                disabled={compositionDisabled}
-                onAction={handleRemovePermission}
-              />
-            ))}
-          </div>
-        )}
-      </section>
+      {tab === 'permissions' && (
+        <div
+          role="tabpanel"
+          id={`role-tabpanel-permissions-${role.id}`}
+          aria-labelledby={`role-tab-permissions-${role.id}`}
+        >
+          <section className={styles.permissionPicker} aria-label="Permissões do papel">
+            <div className={styles.pickerHeader}>
+              <div>
+                <h3 className={styles.panelTitle}>Permissões do papel</h3>
+                <p className={styles.panelDescription}>
+                  {rolePermissions.length} permissões associadas.
+                </p>
+              </div>
+            </div>
 
-      <section className={styles.permissionPicker} aria-label="Adicionar permissões ao papel">
-        <div className={styles.field}>
-          <label className={styles.label} htmlFor="edit-permission-search">Adicionar permissão</label>
-          <div className={styles.searchField}>
-            <Search size={16} />
-            <input
-              id="edit-permission-search"
-              className={styles.input}
-              value={permissionSearch}
-              onChange={(event) => setPermissionSearch(event.target.value)}
-              placeholder="Buscar permissão ativa"
-              disabled={compositionDisabled}
-            />
-          </div>
+            {rolePermissionsQuery.isLoading && <Loading />}
+            {rolePermissionsQuery.data && rolePermissions.length === 0 && (
+              <div className={styles.empty}>Nenhuma permissão associada.</div>
+            )}
+            {rolePermissions.length > 0 && (
+              <div className={styles.permissionList}>
+                {rolePermissions.map((permission) => (
+                  <PermissionLine
+                    key={permission.id}
+                    permission={permission}
+                    action="remove"
+                    disabled={compositionDisabled}
+                    onAction={handleRemovePermission}
+                  />
+                ))}
+              </div>
+            )}
+          </section>
+
+          <section className={styles.permissionPicker} aria-label="Adicionar permissões ao papel">
+            <div className={styles.field}>
+              <label className={styles.label} htmlFor="edit-permission-search">Adicionar permissão</label>
+              <div className={styles.searchField}>
+                <Search size={16} />
+                <input
+                  id="edit-permission-search"
+                  className={styles.input}
+                  value={permissionSearch}
+                  onChange={(event) => setPermissionSearch(event.target.value)}
+                  placeholder="Buscar permissão ativa"
+                  disabled={compositionDisabled}
+                />
+              </div>
+            </div>
+
+            {role.status === 'INACTIVE' && (
+              <div className={styles.empty}>Papéis inativos não recebem novas permissões.</div>
+            )}
+            {permissionsQuery.isLoading && <Loading />}
+            {permissionsQuery.isError && (
+              <div className={styles.error}>Não foi possível consultar permissões disponíveis.</div>
+            )}
+            {permissionsQuery.data && availablePermissions.length === 0 && role.status === 'ACTIVE' && (
+              <div className={styles.empty}>Nenhuma permissão disponível para adicionar.</div>
+            )}
+            {availablePermissions.length > 0 && role.status === 'ACTIVE' && (
+              <div className={styles.permissionList}>
+                {availablePermissions.map((permission) => (
+                  <PermissionLine
+                    key={permission.id}
+                    permission={permission}
+                    action="add"
+                    disabled={compositionDisabled}
+                    onAction={handleAddPermission}
+                  />
+                ))}
+              </div>
+            )}
+          </section>
         </div>
-
-        {role.status === 'INACTIVE' && (
-          <div className={styles.empty}>Papéis inativos não recebem novas permissões.</div>
-        )}
-        {permissionsQuery.isLoading && <Loading />}
-        {permissionsQuery.isError && (
-          <div className={styles.error}>Não foi possível consultar permissões disponíveis.</div>
-        )}
-        {permissionsQuery.data && availablePermissions.length === 0 && role.status === 'ACTIVE' && (
-          <div className={styles.empty}>Nenhuma permissão disponível para adicionar.</div>
-        )}
-        {availablePermissions.length > 0 && role.status === 'ACTIVE' && (
-          <div className={styles.permissionList}>
-            {availablePermissions.map((permission) => (
-              <PermissionLine
-                key={permission.id}
-                permission={permission}
-                action="add"
-                disabled={compositionDisabled}
-                onAction={handleAddPermission}
-              />
-            ))}
-          </div>
-        )}
-      </section>
+      )}
     </aside>
   );
 }

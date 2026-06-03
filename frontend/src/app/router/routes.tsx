@@ -87,7 +87,7 @@ const DOMAIN_LANDING: Array<{ permission: string; path: string }> = [
   { permission: 'distribuicao:default:rubrica:listar', path: '/distribuicao/rubricas' },
   { permission: 'distribuicao:default:processo:listar', path: '/distribuicao/processos' },
   { permission: 'authz:admin:role:visualizar', path: '/autorizacao/papeis' },
-  { permission: 'acessos:default:papel:listar', path: '/autorizacao/atribuicoes' },
+  { permission: 'acessos:default:papel:listar', path: '/autorizacao/papeis' },
   { permission: 'acessos:distribuicao:papel:visualizar', path: '/autorizacao/meu-dominio' },
   { permission: 'acessos:cadastro:papel:visualizar', path: '/autorizacao/meu-dominio' },
   { permission: 'acessos:identificacao:papel:visualizar', path: '/autorizacao/meu-dominio' },

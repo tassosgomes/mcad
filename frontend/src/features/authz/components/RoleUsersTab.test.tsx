@@ -4,13 +4,12 @@ import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { PermissionsContext, type PermissionsState } from '@shared/authz';
-import { AtribuicoesPage } from './AtribuicoesPage';
+import { RoleUsersTab } from './RoleUsersTab';
 
 const MANAGER_PERMISSIONS = [
   'acessos:default:papel:listar',
   'acessos:default:papel:atribuir',
   'acessos:default:papel:remover',
-  'acessos:default:atribuicao:ver-historico',
 ];
 
 function buildPermissionsState(permissions: string[]): PermissionsState {
@@ -27,17 +26,13 @@ function buildPermissionsState(permissions: string[]): PermissionsState {
   };
 }
 
-function renderWithProviders(children: ReactNode, permissions: string[]) {
+function renderWithProviders(node: ReactNode, permissions: string[]) {
   const queryClient = new QueryClient({
-    defaultOptions: {
-      queries: { retry: false },
-      mutations: { retry: false },
-    },
+    defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
   });
-
   return render(
     <PermissionsContext.Provider value={buildPermissionsState(permissions)}>
-      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+      <QueryClientProvider client={queryClient}>{node}</QueryClientProvider>
     </PermissionsContext.Provider>,
   );
 }
@@ -60,21 +55,36 @@ function installAcessosFetchMock() {
             subject: 'usuario-1',
             userId: 'user-1',
             email: 'usuario@mcad.local',
-            name: 'Usuário Teste',
+            name: 'Usuário Existente',
             roles: [
               {
-                assignmentId: 'user-1:role-operador',
-                roleId: 'role-operador',
+                assignmentId: 'user-1:role-distribuicao-operador',
+                roleId: 'role-distribuicao-operador',
                 key: 'distribuicao.default.operador',
                 domain: 'distribuicao',
                 displayName: 'Operador de Distribuição',
               },
             ],
           },
+          {
+            subject: 'usuario-99',
+            userId: 'user-99',
+            email: 'noise@mcad.local',
+            name: 'Usuário Sem Esse Papel',
+            roles: [
+              {
+                assignmentId: 'user-99:role-outro',
+                roleId: 'role-outro',
+                key: 'cadastro.default.consultor',
+                domain: 'cadastro',
+                displayName: 'Consultor de Cadastro',
+              },
+            ],
+          },
         ],
         page: 0,
-        size: 50,
-        total: 1,
+        size: 200,
+        total: 2,
       });
     }
 
@@ -95,51 +105,6 @@ function installAcessosFetchMock() {
       });
     }
 
-    if (url.startsWith('/api/acessos/papeis')) {
-      return jsonResponse({
-        items: [
-          {
-            key: 'distribuicao.default.gerente',
-            domain: 'distribuicao',
-            type: 'BUSINESS',
-            status: 'ACTIVE',
-            critical: true,
-            displayName: 'Gerente de Distribuição',
-            description: 'Permite administrar rotinas de distribuição.',
-          },
-          {
-            key: 'cadastro.default.consultor',
-            domain: 'cadastro',
-            type: 'BUSINESS',
-            status: 'ACTIVE',
-            critical: false,
-            displayName: 'Consultor de Cadastro',
-          },
-        ],
-        page: 0,
-        size: 200,
-        total: 2,
-      });
-    }
-
-    if (url.startsWith('/api/acessos/atribuicoes/historico')) {
-      return jsonResponse({
-        items: [
-          {
-            id: 'audit-1',
-            occurredAt: '2026-05-29T10:00:00.000Z',
-            actorSubject: 'gestor-1',
-            targetUserId: 'user-1',
-            roleKey: 'distribuicao.default.operador',
-            action: 'ASSIGNED',
-          },
-        ],
-        page: 0,
-        size: 10,
-        total: 1,
-      });
-    }
-
     if (url === '/api/acessos/papeis/atribuir' && init?.method === 'POST') {
       return new Response(null, { status: 204 });
     }
@@ -152,21 +117,41 @@ function installAcessosFetchMock() {
   });
 }
 
-describe('AtribuicoesPage', () => {
-  it('searches a user, filters roles and submits a BFF assignment', async () => {
+describe('RoleUsersTab', () => {
+  it('only lists users that already have the target role', async () => {
+    installAcessosFetchMock();
+    renderWithProviders(
+      <RoleUsersTab
+        roleKey="distribuicao.default.operador"
+        roleDisplayName="Operador de Distribuição"
+        isInactive={false}
+      />,
+      MANAGER_PERMISSIONS,
+    );
+
+    expect(await screen.findByText('Usuário Existente')).toBeInTheDocument();
+    expect(screen.queryByText('Usuário Sem Esse Papel')).not.toBeInTheDocument();
+    expect(screen.getByText(/1 usuário possui este papel/i)).toBeInTheDocument();
+  });
+
+  it('assigns a new user to the role through the role-centric flow', async () => {
     const fetchMock = installAcessosFetchMock();
     const user = userEvent.setup();
 
-    renderWithProviders(<AtribuicoesPage />, MANAGER_PERMISSIONS);
+    renderWithProviders(
+      <RoleUsersTab
+        roleKey="distribuicao.default.operador"
+        roleDisplayName="Operador de Distribuição"
+        isInactive={false}
+      />,
+      MANAGER_PERMISSIONS,
+    );
 
-    expect(await screen.findByText('Usuário Teste')).toBeInTheDocument();
+    expect(await screen.findByText('Usuário Existente')).toBeInTheDocument();
 
-    await user.type(screen.getByLabelText('Usuário'), 'novo');
+    await user.type(screen.getByLabelText('Adicionar usuário'), 'novo');
     await user.click(await screen.findByText('Usuário Novo'));
-    await user.selectOptions(screen.getByLabelText('Domínio'), 'distribuicao');
-    await user.selectOptions(screen.getByLabelText('Criticidade'), 'critical');
-    await user.selectOptions(screen.getByLabelText('Papel'), 'distribuicao.default.gerente');
-    await user.click(screen.getByRole('button', { name: /^atribuir$/i }));
+    await user.click(screen.getByRole('button', { name: /atribuir papel/i }));
 
     await waitFor(() => {
       const postCall = fetchMock.mock.calls.find(
@@ -175,29 +160,34 @@ describe('AtribuicoesPage', () => {
       expect(postCall).toBeDefined();
       expect(postCall?.[1]?.body).toBe(JSON.stringify({
         userId: 'user-2',
-        roleKey: 'distribuicao.default.gerente',
+        roleKey: 'distribuicao.default.operador',
       }));
     });
     expect(
-      await screen.findByText(/A propagação das permissões pode levar até 5 minutos/i),
+      await screen.findByText(/recebeu o papel/i),
     ).toBeInTheDocument();
   });
 
-  it('requires explicit removal confirmation and shows assignment history', async () => {
+  it('confirms removal before calling the BFF DELETE', async () => {
     const fetchMock = installAcessosFetchMock();
     const user = userEvent.setup();
 
-    renderWithProviders(<AtribuicoesPage />, MANAGER_PERMISSIONS);
+    renderWithProviders(
+      <RoleUsersTab
+        roleKey="distribuicao.default.operador"
+        roleDisplayName="Operador de Distribuição"
+        isInactive={false}
+      />,
+      MANAGER_PERMISSIONS,
+    );
 
-    expect(await screen.findByText('Usuário Teste')).toBeInTheDocument();
-    expect(await screen.findByText('gestor-1')).toBeInTheDocument();
-
-    await user.click(screen.getByRole('button', { name: /remover operador de distribuição/i }));
+    await user.click(
+      await screen.findByRole('button', { name: /remover operador de distribuição de usuário existente/i }),
+    );
 
     const dialog = await screen.findByRole('dialog', { name: /confirmar remoção de papel/i });
     expect(within(dialog).getByText(/Operador de Distribuição/)).toBeInTheDocument();
-    expect(within(dialog).getByText(/Usuário Teste/)).toBeInTheDocument();
-
+    expect(within(dialog).getByText(/Usuário Existente/)).toBeInTheDocument();
     await user.click(within(dialog).getByRole('button', { name: /remover papel/i }));
 
     await waitFor(() => {
@@ -206,20 +196,22 @@ describe('AtribuicoesPage', () => {
       );
       expect(deleteCall).toBeDefined();
     });
-    expect(
-      await screen.findByText(/A revogação pode levar até 5 minutos/i),
-    ).toBeInTheDocument();
   });
 
-  it('hides write and history actions for read-only access consultants while keeping the list visible', async () => {
+  it('hides write actions when the actor only has read permissions', async () => {
     installAcessosFetchMock();
+    renderWithProviders(
+      <RoleUsersTab
+        roleKey="distribuicao.default.operador"
+        roleDisplayName="Operador de Distribuição"
+        isInactive={false}
+      />,
+      ['acessos:default:papel:listar'],
+    );
 
-    renderWithProviders(<AtribuicoesPage />, ['acessos:default:papel:listar']);
-
-    expect(await screen.findByText('Usuário Teste')).toBeInTheDocument();
-    expect(screen.queryByRole('form', { name: /nova atribuição/i })).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /^atribuir$/i })).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /remover/i })).not.toBeInTheDocument();
-    expect(screen.queryByRole('region', { name: /histórico de atribuições/i })).not.toBeInTheDocument();
+    expect(await screen.findByText('Usuário Existente')).toBeInTheDocument();
+    expect(screen.queryByLabelText('Adicionar usuário')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /atribuir papel/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /^remover/i })).not.toBeInTheDocument();
   });
 });

@@ -5,7 +5,7 @@ const authorizedRouteByPermission: Array<{ permission: string; path: string }> =
   { permission: 'distribuicao:default:rubrica:listar', path: '/distribuicao/rubricas' },
   { permission: 'distribuicao:default:processo:listar', path: '/distribuicao/processos' },
   { permission: 'authz:admin:role:visualizar', path: '/autorizacao/papeis' },
-  { permission: 'acessos:default:papel:listar', path: '/autorizacao/atribuicoes' },
+  { permission: 'acessos:default:papel:listar', path: '/autorizacao/papeis' },
 ];
 
 export function getDefaultAuthorizedPath(permissions: readonly string[]): string {
