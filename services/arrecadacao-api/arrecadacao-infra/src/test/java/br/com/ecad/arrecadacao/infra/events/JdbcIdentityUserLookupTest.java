@@ -17,6 +17,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
@@ -95,6 +96,15 @@ class JdbcIdentityUserLookupTest {
 
         Object subjects = parameterCaptor.getValue().getValue("subjects");
         assertThat((Set<String>) subjects).containsExactly("logto-user-1", "logto-user-2");
+    }
+
+    @Test
+    void constructor_ForSpringBeanInstantiation_ShouldBeAutowired() throws NoSuchMethodException {
+        // Arrange
+        var constructor = JdbcIdentityUserLookup.class.getConstructor(JdbcTemplate.class);
+
+        // Assert
+        assertThat(constructor.getAnnotation(Autowired.class)).isNotNull();
     }
 
     private IdentityUserProjection activeUser(String subject) {
