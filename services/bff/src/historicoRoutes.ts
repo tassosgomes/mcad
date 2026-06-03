@@ -1,6 +1,7 @@
 import type { FastifyInstance, FastifyRequest } from 'fastify';
 import type { BffConfig } from './config.js';
 import { type FetchLike, resolveAuthzContext, sendError } from './authzContext.js';
+import { toUuidCorrelationId } from './correlationId.js';
 
 /**
  * Proxies the audit-service timeline response for Processo:
@@ -31,10 +32,9 @@ function isJsonObject(value: unknown): boolean {
 }
 
 function correlationIdFromHeader(value: string | string[] | undefined, fallback: string): string {
-  if (Array.isArray(value)) {
-    return value[0] && value[0].trim() ? value[0].trim() : fallback;
-  }
-  return value && value.trim() ? value.trim() : fallback;
+  const raw = Array.isArray(value) ? value[0] : value;
+  const candidate = raw && raw.trim() ? raw.trim() : fallback;
+  return toUuidCorrelationId(candidate);
 }
 
 function queryValue(value: unknown): string | undefined {

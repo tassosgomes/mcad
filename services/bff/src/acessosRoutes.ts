@@ -1,6 +1,7 @@
 import type { FastifyInstance, FastifyRequest } from 'fastify';
 import type { BffConfig } from './config.js';
 import { type FetchLike, resolveAuthzContext, sendError } from './authzContext.js';
+import { toUuidCorrelationId } from './correlationId.js';
 import type { MeCache } from './meCache.js';
 
 /**
@@ -308,7 +309,7 @@ async function fetchAuthz(
   };
 
   if (init.correlationId) {
-    headers['x-correlation-id'] = init.correlationId;
+    headers['x-correlation-id'] = toUuidCorrelationId(init.correlationId);
   }
 
   let body: string | undefined;

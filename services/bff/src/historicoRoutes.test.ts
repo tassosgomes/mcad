@@ -164,15 +164,15 @@ test('GET historico with permission proxies audit payload and correlation-id', a
       url: '/api/distribuicao/processos/proc-1/historico',
       headers: {
         authorization: 'Bearer token',
-        'x-correlation-id': 'corr-123',
+        'x-correlation-id': '11111111-1111-4111-8111-111111111111',
       },
     });
     const auditCall = calls.find((call) => call.url.includes('/entities/Processo/'));
 
     assert.equal(response.statusCode, 200);
-    assert.equal(response.headers['x-correlation-id'], 'corr-123');
+    assert.equal(response.headers['x-correlation-id'], '11111111-1111-4111-8111-111111111111');
     assert.equal(auditCall?.headers.authorization, 'Bearer token');
-    assert.equal(auditCall?.headers['x-correlation-id'], 'corr-123');
+    assert.equal(auditCall?.headers['x-correlation-id'], '11111111-1111-4111-8111-111111111111');
     assert.equal(response.json().events.length, 1);
   } finally {
     await server.close();
@@ -289,13 +289,13 @@ test('GET assignment history proxies audit payload with filters and correlation-
       url: '/api/acessos/atribuicoes/historico?userId=user-1&roleKey=distribuicao.default.gerente&page=0&size=20',
       headers: {
         authorization: 'Bearer token',
-        'x-correlation-id': 'corr-assignment',
+        'x-correlation-id': '22222222-2222-4222-8222-222222222222',
       },
     });
     const auditCall = calls.find((call) => call.url.includes('/assignments/history'));
 
     assert.equal(response.statusCode, 200);
-    assert.equal(response.headers['x-correlation-id'], 'corr-assignment');
+    assert.equal(response.headers['x-correlation-id'], '22222222-2222-4222-8222-222222222222');
     assert.equal(
       auditCall?.url,
       'http://audit.local/api/v1/audit/assignments/history?userId=user-1&roleKey=distribuicao.default.gerente&page=0&size=20',
