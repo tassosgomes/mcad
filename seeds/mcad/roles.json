@@ -282,5 +282,28 @@
       "acessos:default:usuario:visualizar-papeis-completo",
       "acessos:default:atribuicao:ver-historico"
     ]
+  },
+  {
+    "key": "auditoria.default.compliance",
+    "displayName": "Compliance Auditoria",
+    "description": "[Built-in] Consulta catálogo e eventos de auditoria. Não visualiza snapshots Ouro.",
+    "domain": "auditoria",
+    "area": "default",
+    "permissionKeys": [
+      "auditoria:default:catalogo:visualizar",
+      "auditoria:default:evento:listar"
+    ]
+  },
+  {
+    "key": "auditoria.default.responsavel-incidente",
+    "displayName": "Responsável por Incidente",
+    "description": "[Built-in] Consulta eventos de auditoria e visualiza snapshots Ouro para investigação aprovada.",
+    "domain": "auditoria",
+    "area": "default",
+    "permissionKeys": [
+      "auditoria:default:catalogo:visualizar",
+      "auditoria:default:evento:listar",
+      "auditoria:default:snapshot:visualizar"
+    ]
   }
 ]

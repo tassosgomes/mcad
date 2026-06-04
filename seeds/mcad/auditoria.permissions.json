@@ -1,0 +1,29 @@
+{
+  "service": "bff",
+  "domain": "auditoria",
+  "area": "default",
+  "version": "1.0.0",
+  "permissions": [
+    {
+      "key": "auditoria:default:catalogo:visualizar",
+      "displayName": "Visualizar catálogo de auditoria",
+      "description": "[Leitura] Lista telas e operações classificadas como Bronze, Prata ou Ouro.",
+      "resource": "catalogo",
+      "action": "visualizar"
+    },
+    {
+      "key": "auditoria:default:evento:listar",
+      "displayName": "Listar eventos de auditoria",
+      "description": "[Leitura] Consulta eventos e acessos auditáveis para investigação.",
+      "resource": "evento",
+      "action": "listar"
+    },
+    {
+      "key": "auditoria:default:snapshot:visualizar",
+      "displayName": "Visualizar snapshot Ouro",
+      "description": "[Ação sensível] Visualiza o snapshot completo de consultas Ouro.",
+      "resource": "snapshot",
+      "action": "visualizar"
+    }
+  ]
+}

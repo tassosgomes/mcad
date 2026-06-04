@@ -1,9 +1,7 @@
+import { AUDITORIA_PERMISSIONS } from '@shared/auth/auditoriaPermissions';
+
 export const AUDIT_HISTORY_PERMISSIONS = [
-  'cadastro:default:status:visualizar-historico-obra',
-  'cadastro:default:status:visualizar-historico-fonograma',
-  'identificacao:default:captacao:listar',
-  'arrecadacao:default:cliente:listar',
-  'authz:admin:audit:visualizar',
+  AUDITORIA_PERMISSIONS.eventList,
 ] as const;
 
 export const auditEntityTypes = {

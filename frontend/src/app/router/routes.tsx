@@ -2,7 +2,14 @@ import { lazy, Suspense } from 'react';
 import { createBrowserRouter, isRouteErrorResponse, useRouteError } from 'react-router-dom';
 import { MainLayout } from '@components/layout/main-layout';
 import { Loading } from '@components/ui/loading';
-import { CallbackPage, LoggedOutPage, ProtectedRoute, RequirePermission, SilentCallbackPage } from '@shared/auth';
+import {
+  AUDITORIA_ROUTE_PERMISSIONS,
+  CallbackPage,
+  LoggedOutPage,
+  ProtectedRoute,
+  RequirePermission,
+  SilentCallbackPage,
+} from '@shared/auth';
 
 const CadastroRoutes = lazy(() => import('@features/cadastro'));
 const IdentificacaoRoutes = lazy(() => import('@features/identificacao'));
@@ -16,25 +23,6 @@ const CopilotoPage = lazy(() =>
 const DashboardPage = lazy(() =>
   import('@features/dashboard').then((module) => ({ default: module.DashboardPage })),
 );
-
-/**
- * Auditoria precisa abranger usuários de qualquer domínio. Como ainda não
- * existe uma permissão dedicada de auditoria, derivamos de permissões de
- * histórico/status nos catálogos de cadastro e identificação. Quando a
- * arrecadacao-api expuser histórico, incluir aqui.
- *
- * TODO B3: validar permissões de auditoria com o backend (catálogo definitivo
- * de auditoria ainda não existe).
- */
-const AUDIT_PERMISSIONS = [
-  'cadastro:default:status:visualizar-historico-obra',
-  'cadastro:default:status:visualizar-historico-fonograma',
-  'identificacao:default:captacao:listar',
-  'arrecadacao:default:cliente:listar',
-  // Inclui tambem visualizar-audit do dominio authz (eventos da plataforma
-  // de autorizacao). Usuarios "admin de authz" precisam alcancar Auditoria.
-  'authz:admin:audit:visualizar',
-];
 
 /**
  * Administração da plataforma de autorização (catálogo, papéis, atribuições,
@@ -172,7 +160,7 @@ export const router = createBrowserRouter([
       {
         path: 'auditoria/*',
         element: (
-          <RequirePermission anyOf={AUDIT_PERMISSIONS}>
+          <RequirePermission anyOf={[...AUDITORIA_ROUTE_PERMISSIONS]}>
             <Suspense fallback={<Loading />}>
               <AuditoriaRoutes />
             </Suspense>

@@ -1,4 +1,5 @@
 export { AuthProvider } from './AuthProvider';
+export { AUDITORIA_PERMISSIONS, AUDITORIA_ROUTE_PERMISSIONS } from './auditoriaPermissions';
 export { CallbackPage } from './CallbackPage';
 export { LoggedOutPage } from './LoggedOutPage';
 export { ProtectedRoute } from './ProtectedRoute';

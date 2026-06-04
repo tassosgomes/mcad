@@ -54,6 +54,22 @@
     ]
   },
   {
+    "email": "auditor.dev@mcad.local",
+    "name": "Auditor Dev",
+    "subjectHint": "auditor.dev",
+    "roleKeys": [
+      "auditoria.default.compliance"
+    ]
+  },
+  {
+    "email": "responsavel-incidente.dev@mcad.local",
+    "name": "Responsável por Incidente Dev",
+    "subjectHint": "responsavel-incidente.dev",
+    "roleKeys": [
+      "auditoria.default.responsavel-incidente"
+    ]
+  },
+  {
     "email": "sem-papel.dev@mcad.local",
     "name": "Sem Papel Dev",
     "subjectHint": "sem-papel.dev",

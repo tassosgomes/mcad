@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import type { BffConfig } from './config.js';
 import { buildServer } from './server.js';
+import { AUDITORIA_PERMISSIONS } from './auditoria/auditoriaPermissions.js';
 
 const BASE_CONFIG: BffConfig = {
   host: '127.0.0.1',
@@ -23,7 +24,7 @@ const BASE_CONFIG: BffConfig = {
   ],
 };
 
-function authzContext() {
+function authzContext(permissions: string[] = []) {
   return {
     user: {
       id: 'user-42',
@@ -32,7 +33,7 @@ function authzContext() {
       name: 'Tasso Gomes',
     },
     roles: [],
-    permissions: [],
+    permissions,
     scopes: [],
     menus: [],
     remotes: [],
@@ -182,6 +183,231 @@ test('POST /api/auditoria/v1/audit/reports without Authorization returns 401', a
 
     assert.equal(response.statusCode, 401);
     assert.equal(response.json().code, 'UNAUTHORIZED');
+  } finally {
+    await server.close();
+  }
+});
+
+test('GET /api/auditoria/v1/catalogo requires catalog permission', async () => {
+  const { fetchImpl } = buildFakeFetch((url) => {
+    if (url === 'http://authz.local/v1/me/authorization-context') {
+      return { status: 200, body: authzContext() };
+    }
+    return { status: 500, body: { code: 'should-not-reach' } };
+  });
+
+  const server = await buildServer(BASE_CONFIG, { fetchImpl });
+
+  try {
+    const response = await server.inject({
+      method: 'GET',
+      url: '/api/auditoria/v1/catalogo',
+      headers: { authorization: 'Bearer token' },
+    });
+
+    assert.equal(response.statusCode, 403);
+    assert.equal(response.json().code, 'FORBIDDEN');
+  } finally {
+    await server.close();
+  }
+});
+
+test('GET /api/auditoria/v1/catalogo returns governed catalog with catalog permission', async () => {
+  const { fetchImpl } = buildFakeFetch((url) => {
+    if (url === 'http://authz.local/v1/me/authorization-context') {
+      return { status: 200, body: authzContext([AUDITORIA_PERMISSIONS.catalogView]) };
+    }
+    return { status: 500, body: { code: 'should-not-reach' } };
+  });
+
+  const server = await buildServer(BASE_CONFIG, { fetchImpl });
+
+  try {
+    const response = await server.inject({
+      method: 'GET',
+      url: '/api/auditoria/v1/catalogo',
+      headers: { authorization: 'Bearer token' },
+    });
+
+    assert.equal(response.statusCode, 200);
+    const body = response.json() as { items: Array<{ id: string; level: string }> };
+    assert.ok(body.items.some((item) => item.id === 'auditoria.eventos.lista'));
+    assert.ok(body.items.some((item) => item.id === 'cadastro.titulares.lista' && item.level === 'GOLD'));
+  } finally {
+    await server.close();
+  }
+});
+
+test('GET /api/auditoria/v1/audit/events without Authorization returns 401', async () => {
+  const { fetchImpl } = buildFakeFetch(() => ({ status: 500 }));
+  const server = await buildServer(BASE_CONFIG, { fetchImpl });
+
+  try {
+    const response = await server.inject({
+      method: 'GET',
+      url: '/api/auditoria/v1/audit/events',
+    });
+
+    assert.equal(response.statusCode, 401);
+    assert.equal(response.json().code, 'UNAUTHORIZED');
+  } finally {
+    await server.close();
+  }
+});
+
+test('GET /api/auditoria/v1/audit/events requires event list permission', async () => {
+  const { fetchImpl, calls } = buildFakeFetch((url) => {
+    if (url === 'http://authz.local/v1/me/authorization-context') {
+      return { status: 200, body: authzContext([AUDITORIA_PERMISSIONS.catalogView]) };
+    }
+    return { status: 500, body: { code: 'should-not-reach' } };
+  });
+
+  const server = await buildServer(BASE_CONFIG, { fetchImpl });
+
+  try {
+    const response = await server.inject({
+      method: 'GET',
+      url: '/api/auditoria/v1/audit/events',
+      headers: { authorization: 'Bearer token' },
+    });
+
+    assert.equal(response.statusCode, 403);
+    assert.equal(response.json().code, 'FORBIDDEN');
+    assert.equal(calls.some((call) => call.url.includes('/audit/events')), false);
+  } finally {
+    await server.close();
+  }
+});
+
+test('GET /api/auditoria/v1/audit/events proxies list and redacts snapshots without snapshot permission', async () => {
+  const upstreamUrl = 'http://audit.local/api/v1/audit/events?screenId=cadastro.titulares.lista';
+  const { fetchImpl, calls } = buildFakeFetch((url) => {
+    if (url === 'http://authz.local/v1/me/authorization-context') {
+      return { status: 200, body: authzContext([AUDITORIA_PERMISSIONS.eventList]) };
+    }
+    if (url === upstreamUrl) {
+      return {
+        status: 200,
+        body: {
+          items: [
+            {
+              eventId: 'evt-1',
+              payload: {
+                screen: {
+                  businessContext: {
+                    auditLevel: 'GOLD',
+                    snapshot: { body: { secret: 'cpf-completo' } },
+                  },
+                },
+              },
+            },
+          ],
+        },
+      };
+    }
+    return { status: 404, body: { code: 'NOT_FOUND' } };
+  });
+
+  const server = await buildServer(BASE_CONFIG, { fetchImpl });
+
+  try {
+    const response = await server.inject({
+      method: 'GET',
+      url: '/api/auditoria/v1/audit/events?screenId=cadastro.titulares.lista',
+      headers: { authorization: 'Bearer token' },
+    });
+
+    assert.equal(response.statusCode, 200);
+    assert.equal(calls.some((call) => call.url === upstreamUrl), true);
+    const body = response.json();
+    assert.equal(JSON.stringify(body).includes('cpf-completo'), false);
+    assert.equal(JSON.stringify(body).includes('snapshot'), false);
+  } finally {
+    await server.close();
+  }
+});
+
+test('GET /api/auditoria/v1/audit/events/:eventId returns 403 for snapshot without snapshot permission', async () => {
+  const upstreamUrl = 'http://audit.local/api/v1/audit/events/evt-ouro';
+  const { fetchImpl } = buildFakeFetch((url) => {
+    if (url === 'http://authz.local/v1/me/authorization-context') {
+      return { status: 200, body: authzContext([AUDITORIA_PERMISSIONS.eventList]) };
+    }
+    if (url === upstreamUrl) {
+      return {
+        status: 200,
+        body: {
+          eventId: 'evt-ouro',
+          screen: {
+            businessContext: {
+              auditLevel: 'GOLD',
+              snapshot: { body: { secret: 'cpf-completo' } },
+            },
+          },
+        },
+      };
+    }
+    return { status: 404, body: { code: 'NOT_FOUND' } };
+  });
+
+  const server = await buildServer(BASE_CONFIG, { fetchImpl });
+
+  try {
+    const response = await server.inject({
+      method: 'GET',
+      url: '/api/auditoria/v1/audit/events/evt-ouro',
+      headers: { authorization: 'Bearer token' },
+    });
+
+    assert.equal(response.statusCode, 403);
+    assert.equal(response.json().code, 'FORBIDDEN');
+    assert.equal(response.body.includes('cpf-completo'), false);
+  } finally {
+    await server.close();
+  }
+});
+
+test('GET /api/auditoria/v1/audit/events/:eventId returns snapshot with snapshot permission', async () => {
+  const upstreamUrl = 'http://audit.local/api/v1/audit/events/evt-ouro';
+  const { fetchImpl } = buildFakeFetch((url) => {
+    if (url === 'http://authz.local/v1/me/authorization-context') {
+      return {
+        status: 200,
+        body: authzContext([
+          AUDITORIA_PERMISSIONS.eventList,
+          AUDITORIA_PERMISSIONS.snapshotView,
+        ]),
+      };
+    }
+    if (url === upstreamUrl) {
+      return {
+        status: 200,
+        body: {
+          eventId: 'evt-ouro',
+          screen: {
+            businessContext: {
+              auditLevel: 'GOLD',
+              snapshot: { body: { secret: 'cpf-completo' } },
+            },
+          },
+        },
+      };
+    }
+    return { status: 404, body: { code: 'NOT_FOUND' } };
+  });
+
+  const server = await buildServer(BASE_CONFIG, { fetchImpl });
+
+  try {
+    const response = await server.inject({
+      method: 'GET',
+      url: '/api/auditoria/v1/audit/events/evt-ouro',
+      headers: { authorization: 'Bearer token' },
+    });
+
+    assert.equal(response.statusCode, 200);
+    assert.equal(response.json().screen.businessContext.snapshot.body.secret, 'cpf-completo');
   } finally {
     await server.close();
   }

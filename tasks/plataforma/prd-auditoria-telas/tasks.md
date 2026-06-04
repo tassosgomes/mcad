@@ -36,7 +36,7 @@ Cobrir as telas iniciais dos dominios, propagar correlacao para comandos, adicio
 ## Tarefas
 
 - [X] 1.0 Criar catalogo governado de telas e operacoes auditadas
-- [ ] 2.0 Adicionar permissoes e guards de auditoria/compliance
+- [X] 2.0 Adicionar permissoes e guards de auditoria/compliance
 - [ ] 3.0 Implementar produtor HTTP e builder de `SCREEN_ACCESS` no BFF
 - [ ] 4.0 Evoluir proxy BFF para captura de `GET` Prata/Ouro com fail-closed
 - [ ] 5.0 Expor endpoints BFF de catalogo, eventos e detalhe de auditoria

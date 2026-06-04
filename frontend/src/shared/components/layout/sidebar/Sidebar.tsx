@@ -3,6 +3,7 @@ import type { ComponentType } from 'react';
 import { NavLink } from 'react-router-dom';
 import type { LucideProps } from 'lucide-react';
 import { Database, Search, Banknote, Split, ChevronDown, ScrollText, ShieldCheck, Home } from 'lucide-react';
+import { AUDITORIA_PERMISSIONS, AUDITORIA_ROUTE_PERMISSIONS } from '@shared/auth/auditoriaPermissions';
 import { usePermissions } from '@shared/authz';
 import styles from './Sidebar.module.css';
 
@@ -98,19 +99,29 @@ const navigation: SidebarGroup[] = [
     icon: ScrollText,
     basePath: '/auditoria',
     disabled: false,
-    // TODO B3: validar permissões de auditoria com o backend.
-    requiredPermissions: [
-      'cadastro:default:status:visualizar-historico-obra',
-      'cadastro:default:status:visualizar-historico-fonograma',
-      'identificacao:default:captacao:listar',
-      'arrecadacao:default:cliente:listar',
-      'authz:admin:audit:visualizar',
-    ],
+    requiredPermissions: [...AUDITORIA_ROUTE_PERMISSIONS],
     children: [
-      { label: 'Início', path: '/auditoria', end: true },
-      { label: 'Histórico de alterações', path: '/auditoria/eventos' },
-      { label: 'Quem acessou o quê', path: '/auditoria/acessos' },
-      { label: 'Relatórios em PDF', path: '/auditoria/relatorios' },
+      {
+        label: 'Início',
+        path: '/auditoria',
+        end: true,
+        requiredPermissions: [...AUDITORIA_ROUTE_PERMISSIONS],
+      },
+      {
+        label: 'Histórico de alterações',
+        path: '/auditoria/eventos',
+        requiredPermission: AUDITORIA_PERMISSIONS.eventList,
+      },
+      {
+        label: 'Quem acessou o quê',
+        path: '/auditoria/acessos',
+        requiredPermission: AUDITORIA_PERMISSIONS.eventList,
+      },
+      {
+        label: 'Relatórios em PDF',
+        path: '/auditoria/relatorios',
+        requiredPermission: AUDITORIA_PERMISSIONS.eventList,
+      },
     ],
   },
   {

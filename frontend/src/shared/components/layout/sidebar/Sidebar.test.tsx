@@ -61,4 +61,13 @@ describe('Sidebar', () => {
     expect(screen.getByText('Autorização')).toBeInTheDocument();
     expect(screen.getByText('Papéis & Acessos')).toBeInTheDocument();
   });
+
+  it('shows Auditoria only for official auditoria permissions', () => {
+    renderSidebar(<Sidebar isOpen />, ['cadastro:default:status:visualizar-historico-obra']);
+    expect(screen.queryByText('Auditoria')).not.toBeInTheDocument();
+
+    renderSidebar(<Sidebar isOpen />, ['auditoria:default:evento:listar']);
+    expect(screen.getByText('Auditoria')).toBeInTheDocument();
+    expect(screen.getByText('Histórico de alterações')).toBeInTheDocument();
+  });
 });

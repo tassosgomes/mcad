@@ -1,4 +1,8 @@
+import { AUDITORIA_PERMISSIONS } from './auditoriaPermissions';
+
 const authorizedRouteByPermission: Array<{ permission: string; path: string }> = [
+  { permission: AUDITORIA_PERMISSIONS.eventList, path: '/auditoria/eventos' },
+  { permission: AUDITORIA_PERMISSIONS.catalogView, path: '/auditoria' },
   { permission: 'cadastro:default:associacao:listar', path: '/cadastro/associacoes' },
   { permission: 'identificacao:default:captacao:listar', path: '/identificacao/captacoes' },
   { permission: 'arrecadacao:default:cliente:listar', path: '/arrecadacao/licencas' },
