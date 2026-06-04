@@ -1,0 +1,49 @@
+{
+  "session": {
+    "created_at": "2026-05-30T20:34:19Z",
+    "prd_path": "tasks/plataforma/prd-authz-fonte-unica-assignments/prd.md",
+    "techspec_path": "tasks/plataforma/prd-authz-fonte-unica-assignments/techspec.md",
+    "orchestrator_version": "1.0"
+  },
+  "scope": {
+    "user_stories_in_scope": [
+      {
+        "task_id": "qa_task_01",
+        "slug": "login_tokens_env_qa",
+        "description": "Validate .env_qa users can authenticate and receive tokens without business roles"
+      },
+      {
+        "task_id": "qa_task_02",
+        "slug": "permissions_matrix_env_qa",
+        "description": "Validate /api/me and /api/me/permissions for each .env_qa user"
+      },
+      {
+        "task_id": "qa_task_03",
+        "slug": "acessos_operations",
+        "description": "Validate Atribuicoes access-management read operations via BFF"
+      },
+      {
+        "task_id": "qa_task_04",
+        "slug": "dynamic_assignment_revocation",
+        "description": "Validate assignment grant and revocation without relogin for the no-role user"
+      }
+    ],
+    "excluded": []
+  },
+  "environment": {
+    "base_url": "https://mcad.tasso.dev.br",
+    "bff_base_url": "https://mcad.tasso.dev.br",
+    "auth": {
+      "enabled": true,
+      "type": "oidc_logto_browser",
+      "authority": "https://9lcinu.logto.app/oidc",
+      "credentials_file": ".env_qa",
+      "credentials_format": "human-readable blocks; secrets must not be logged"
+    }
+  },
+  "database": {
+    "enabled": false
+  },
+  "evidence_dir": "tasks/plataforma/prd-authz-fonte-unica-assignments/qa-evidence",
+  "report_format": "markdown"
+}

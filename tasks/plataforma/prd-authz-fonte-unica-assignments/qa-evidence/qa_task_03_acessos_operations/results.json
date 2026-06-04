@@ -1,0 +1,26 @@
+{
+  "baseUrl": "https://mcad.tasso.dev.br",
+  "bffUrl": "https://mcad-bff.tasso.dev.br",
+  "results": [
+    {
+      "ct": "CT-01",
+      "hint": "gestor-acessos.dev",
+      "status": "FAIL",
+      "route": {
+        "screenshot": "/home/tsgomes/mcad/tasks/plataforma/prd-authz-fonte-unica-assignments/qa-evidence/qa_task_03_acessos_operations/screenshots/ct-01_gestor_acessos_dev_ui.png",
+        "textPreview": "mini-ECAD\nSistema de Gestão de Direitos Autorais\nGestor de Acessos\nUsuário autenticado\n\nAcesso negado. Você não tem permissão para acessar esta área.",
+        "denied": true,
+        "accessible": false,
+        "expected": "accessible",
+        "pass": false,
+        "url": "https://mcad.tasso.dev.br/autorizacao/atribuicoes"
+      },
+      "endpoints": [],
+      "consoleMessages": [],
+      "pageErrors": [],
+      "failure": "Error: CT-01 UI route expectation failed: expected accessible, accessible=false, denied=true\n    at runTarget (file:///home/tsgomes/mcad/tasks/plataforma/prd-authz-fonte-unica-assignments/qa-evidence/qa_task_03_acessos_operations/qa_task_03_runner.mjs:249:13)\n    at async main (file:///home/tsgomes/mcad/tasks/plataforma/prd-authz-fonte-unica-assignments/qa-evidence/qa_task_03_acessos_operations/qa_task_03_runner.mjs:296:22)",
+      "video": "/home/tsgomes/mcad/tasks/plataforma/prd-authz-fonte-unica-assignments/qa-evidence/qa_task_03_acessos_operations/videos/page@1715d624de2715355114b48fee05b90b.webm",
+      "failureScreenshot": "/home/tsgomes/mcad/tasks/plataforma/prd-authz-fonte-unica-assignments/qa-evidence/qa_task_03_acessos_operations/screenshots/ct-01_gestor_acessos_dev_fail.png"
+    }
+  ]
+}

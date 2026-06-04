@@ -92,6 +92,10 @@ services:
       OIDC_AUTHORITY: ${OIDC_AUTHORITY:-}
       OIDC_AUDIENCE: ${OIDC_AUDIENCE:-mcad-frontend}
       AUTH_ENABLED: ${AUTH_ENABLED:-false}
+      EcadAuthz__Enabled: ${AUTH_ENABLED:-false}
+      EcadAuthz__BaseUrl: ${ECAD_AUTHZ_BASE_URL:-${AUTHZ_UPSTREAM_BASE_URL:-https://mcad-authz.tasso.dev.br/v1}}
+      EcadAuthz__TimeoutSeconds: ${AUTHZ_TIMEOUT_SECONDS:-3}
+      EcadAuthz__CacheTtlSeconds: ${AUTHZ_CACHE_TTL_SECONDS:-60}
       ISWC_BASE_URL: ${ISWC_BASE_URL:-https://iswc.tasso.dev.br/}
       CORS_ALLOWED_ORIGINS: https://mcad.tasso.dev.br
     networks:
@@ -147,6 +151,10 @@ services:
       OIDC_AUTHORITY: ${OIDC_AUTHORITY:-}
       OIDC_AUDIENCE: ${OIDC_AUDIENCE:-mcad-frontend}
       AUTH_ENABLED: ${AUTH_ENABLED:-false}
+      EcadAuthz__Enabled: ${AUTH_ENABLED:-false}
+      EcadAuthz__BaseUrl: ${ECAD_AUTHZ_BASE_URL:-${AUTHZ_UPSTREAM_BASE_URL:-https://mcad-authz.tasso.dev.br/v1}}
+      EcadAuthz__TimeoutSeconds: ${AUTHZ_TIMEOUT_SECONDS:-3}
+      EcadAuthz__CacheTtlSeconds: ${AUTHZ_CACHE_TTL_SECONDS:-60}
       CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-https://mcad.tasso.dev.br}
     networks:
       - mcad-internal
@@ -313,6 +321,8 @@ services:
       ARRECADACAO_API_BASE_URL: https://mcad-arrecadacao.tasso.dev.br/api/v1
       DISTRIBUICAO_API_BASE_URL: https://mcad-distribuicao.tasso.dev.br/api/v1
       AUDITORIA_API_BASE_URL: https://api-audit.tasso.dev.br/api/v1
+      AUDIT_BASE_URL: ${AUDIT_BASE_URL:-https://api-audit.tasso.dev.br/api/v1}
+      AUDIT_TIMEOUT_MS: ${AUDIT_TIMEOUT_MS:-5000}
       AUTHZ_BASE_URL: ${AUTHZ_BASE_URL:-https://mcad-authz.tasso.dev.br}
       AUTHZ_TIMEOUT_MS: ${AUTHZ_TIMEOUT_MS:-3000}
       ME_CACHE_TTL_SECONDS: ${ME_CACHE_TTL_SECONDS:-60}

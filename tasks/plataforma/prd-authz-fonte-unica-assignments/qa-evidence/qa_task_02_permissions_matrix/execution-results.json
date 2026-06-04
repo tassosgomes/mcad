@@ -1,0 +1,300 @@
+{
+  "taskId": "qa_task_02",
+  "slug": "permissions_matrix_env_qa",
+  "baseUrl": "https://mcad.tasso.dev.br",
+  "startedAt": "2026-05-30T20:44:41.653Z",
+  "profileCount": 10,
+  "cases": [
+    {
+      "id": "CT-01",
+      "username": "admin_authz",
+      "email": "admin_authz@mcad.dev",
+      "noRoleProfile": false,
+      "status": "PASS",
+      "bearerSeen": true,
+      "me": {
+        "status": 200,
+        "subjectId": "t3crjdamuir4",
+        "email": "admin_authz@mcad.dev",
+        "primaryRole": null,
+        "rolesCount": null,
+        "authzVersionHeader": null
+      },
+      "permissions": {
+        "status": 200,
+        "subjectId": "t3crjdamuir4",
+        "permissionCount": 15,
+        "authzVersion": 6,
+        "authzVersionHeader": "6"
+      },
+      "screenshots": [
+        "screenshots/ct-01_admin_authz_app_after_login.png"
+      ],
+      "consoleMessages": [],
+      "pageErrors": [],
+      "completedAt": "2026-05-30T20:44:49.453Z"
+    },
+    {
+      "id": "CT-02",
+      "username": "admin_authz2",
+      "email": "admin_authz2@mcad.dev",
+      "noRoleProfile": false,
+      "status": "PASS",
+      "bearerSeen": true,
+      "me": {
+        "status": 200,
+        "subjectId": "06b78wdoljk0",
+        "email": "admin_authz2@mcad.dev",
+        "primaryRole": null,
+        "rolesCount": null,
+        "authzVersionHeader": null
+      },
+      "permissions": {
+        "status": 200,
+        "subjectId": "06b78wdoljk0",
+        "permissionCount": 15,
+        "authzVersion": 4,
+        "authzVersionHeader": "4"
+      },
+      "screenshots": [
+        "screenshots/ct-02_admin_authz2_app_after_login.png"
+      ],
+      "consoleMessages": [],
+      "pageErrors": [],
+      "completedAt": "2026-05-30T20:45:01.056Z"
+    },
+    {
+      "id": "CT-03",
+      "username": "analista_distribuicao",
+      "email": "analista_distribuicao@mcad.dev",
+      "noRoleProfile": false,
+      "status": "PASS",
+      "bearerSeen": true,
+      "me": {
+        "status": 200,
+        "subjectId": "4en93x96yvlc",
+        "email": "analista_distribuicao@mcad.dev",
+        "primaryRole": null,
+        "rolesCount": null,
+        "authzVersionHeader": null
+      },
+      "permissions": {
+        "status": 200,
+        "subjectId": "4en93x96yvlc",
+        "permissionCount": 102,
+        "authzVersion": 7,
+        "authzVersionHeader": "7"
+      },
+      "screenshots": [
+        "screenshots/ct-03_analista_dev_app_after_login.png"
+      ],
+      "consoleMessages": [],
+      "pageErrors": [],
+      "completedAt": "2026-05-30T20:45:13.644Z"
+    },
+    {
+      "id": "CT-04",
+      "username": "consultor_acessosdev",
+      "email": "consultor-acessos.dev@mcad.local",
+      "noRoleProfile": false,
+      "status": "PASS",
+      "bearerSeen": true,
+      "me": {
+        "status": 200,
+        "subjectId": "hu6ozs6cenps",
+        "email": "consultor-acessos.dev@mcad.local",
+        "primaryRole": null,
+        "rolesCount": null,
+        "authzVersionHeader": null
+      },
+      "permissions": {
+        "status": 200,
+        "subjectId": "hu6ozs6cenps",
+        "permissionCount": 5,
+        "authzVersion": 2,
+        "authzVersionHeader": "2"
+      },
+      "screenshots": [
+        "screenshots/ct-04_consultor_acessos_dev_app_after_login.png"
+      ],
+      "consoleMessages": [],
+      "pageErrors": [],
+      "completedAt": "2026-05-30T20:45:21.470Z"
+    },
+    {
+      "id": "CT-05",
+      "username": "consultor_dev",
+      "email": "consultor.dev@mcad.local",
+      "noRoleProfile": false,
+      "status": "PASS",
+      "bearerSeen": true,
+      "me": {
+        "status": 200,
+        "subjectId": "g4t9qdni0wad",
+        "email": "consultor.dev@mcad.local",
+        "primaryRole": null,
+        "rolesCount": null,
+        "authzVersionHeader": null
+      },
+      "permissions": {
+        "status": 200,
+        "subjectId": "g4t9qdni0wad",
+        "permissionCount": 40,
+        "authzVersion": 5,
+        "authzVersionHeader": "5"
+      },
+      "screenshots": [
+        "screenshots/ct-05_consultor_dev_app_after_login.png"
+      ],
+      "consoleMessages": [],
+      "pageErrors": [],
+      "completedAt": "2026-05-30T20:45:30.462Z"
+    },
+    {
+      "id": "CT-06",
+      "username": "gerente_dev",
+      "email": "gerente.dev@mcad.local",
+      "noRoleProfile": false,
+      "status": "PASS",
+      "bearerSeen": true,
+      "me": {
+        "status": 200,
+        "subjectId": "xyqtmmvr10tq",
+        "email": "gerente.dev@mcad.local",
+        "primaryRole": null,
+        "rolesCount": null,
+        "authzVersionHeader": null
+      },
+      "permissions": {
+        "status": 200,
+        "subjectId": "xyqtmmvr10tq",
+        "permissionCount": 16,
+        "authzVersion": 2,
+        "authzVersionHeader": "2"
+      },
+      "screenshots": [
+        "screenshots/ct-06_gerente_dev_app_after_login.png"
+      ],
+      "consoleMessages": [],
+      "pageErrors": [],
+      "completedAt": "2026-05-30T20:45:39.758Z"
+    },
+    {
+      "id": "CT-07",
+      "username": "gestor_acessosdev",
+      "email": "gestor-acessos.dev@mcad.local",
+      "noRoleProfile": false,
+      "status": "PASS",
+      "bearerSeen": true,
+      "me": {
+        "status": 200,
+        "subjectId": "amhgegfa35om",
+        "email": "gestor-acessos.dev@mcad.local",
+        "primaryRole": null,
+        "rolesCount": null,
+        "authzVersionHeader": null
+      },
+      "permissions": {
+        "status": 200,
+        "subjectId": "amhgegfa35om",
+        "permissionCount": 7,
+        "authzVersion": 2,
+        "authzVersionHeader": "2"
+      },
+      "screenshots": [
+        "screenshots/ct-07_gestor_acessos_dev_app_after_login.png"
+      ],
+      "consoleMessages": [],
+      "pageErrors": [],
+      "completedAt": "2026-05-30T20:45:48.521Z"
+    },
+    {
+      "id": "CT-08",
+      "username": "operador_dev",
+      "email": "operador.dev@mcad.local",
+      "noRoleProfile": false,
+      "status": "PASS",
+      "bearerSeen": true,
+      "me": {
+        "status": 200,
+        "subjectId": "i0dvxgezdenx",
+        "email": "operador.dev@mcad.local",
+        "primaryRole": null,
+        "rolesCount": null,
+        "authzVersionHeader": null
+      },
+      "permissions": {
+        "status": 200,
+        "subjectId": "i0dvxgezdenx",
+        "permissionCount": 9,
+        "authzVersion": 2,
+        "authzVersionHeader": "2"
+      },
+      "screenshots": [
+        "screenshots/ct-08_operador_dev_app_after_login.png"
+      ],
+      "consoleMessages": [],
+      "pageErrors": [],
+      "completedAt": "2026-05-30T20:45:56.299Z"
+    },
+    {
+      "id": "CT-09",
+      "username": "tsgomes",
+      "email": "tasso.gomes@tasso.dev.br",
+      "noRoleProfile": false,
+      "status": "PASS",
+      "bearerSeen": true,
+      "me": {
+        "status": 200,
+        "subjectId": "com6n6dide7n",
+        "email": "tasso.gomes@tasso.dev.br",
+        "primaryRole": null,
+        "rolesCount": null,
+        "authzVersionHeader": null
+      },
+      "permissions": {
+        "status": 200,
+        "subjectId": "com6n6dide7n",
+        "permissionCount": 47,
+        "authzVersion": 5,
+        "authzVersionHeader": "5"
+      },
+      "screenshots": [
+        "screenshots/ct-09_tsgomes_app_after_login.png"
+      ],
+      "consoleMessages": [],
+      "pageErrors": [],
+      "completedAt": "2026-05-30T20:46:05.938Z"
+    },
+    {
+      "id": "CT-10",
+      "username": "sem_papel",
+      "email": "sem-papel.dev@mcad.local",
+      "noRoleProfile": true,
+      "status": "PASS",
+      "bearerSeen": true,
+      "me": {
+        "status": 200,
+        "subjectId": "3gmc73nsulio",
+        "email": "sem-papel.dev@mcad.local",
+        "primaryRole": null,
+        "rolesCount": null,
+        "authzVersionHeader": null
+      },
+      "permissions": {
+        "status": 200,
+        "subjectId": "3gmc73nsulio",
+        "permissionCount": 0,
+        "authzVersion": 1,
+        "authzVersionHeader": "1"
+      },
+      "screenshots": [
+        "screenshots/ct-10_sem_papel_app_after_login.png"
+      ],
+      "consoleMessages": [],
+      "pageErrors": [],
+      "completedAt": "2026-05-30T20:46:14.334Z"
+    }
+  ],
+  "updatedAt": "2026-05-30T20:46:14.334Z"
+}
