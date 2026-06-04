@@ -30,7 +30,19 @@ function registerCors(server: FastifyInstance, allowedOrigins: string[]) {
       );
       reply.header(
         'access-control-expose-headers',
-        'content-disposition,x-mcad-bff-upstream,x-mcad-request-id,x-authz-version',
+        [
+          'content-disposition',
+          'traceparent',
+          'x-authz-version',
+          'x-audit-command-id',
+          'x-audit-route',
+          'x-audit-screen-access-id',
+          'x-audit-screen-id',
+          'x-audit-screen-name',
+          'x-audit-session-id',
+          'x-mcad-bff-upstream',
+          'x-mcad-request-id',
+        ].join(','),
       );
       reply.header('access-control-max-age', '600');
     }

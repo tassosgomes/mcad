@@ -8,6 +8,7 @@ export interface BffConfig {
   host: string;
   port: number;
   requestBodyLimitBytes: number;
+  auditScreenAccessMaxResponseBytes: number;
   corsAllowedOrigins: string[];
   upstreams: UpstreamConfig[];
   enableLegacyCadastroRoute: boolean;
@@ -20,6 +21,7 @@ export interface BffConfig {
 }
 
 const DEFAULT_REQUEST_BODY_LIMIT_BYTES = 50 * 1024 * 1024;
+const DEFAULT_AUDIT_SCREEN_ACCESS_MAX_RESPONSE_BYTES = 1024 * 1024;
 const DEFAULT_AUTHZ_BASE_URL = 'http://localhost:8085';
 const DEFAULT_AUTHZ_TIMEOUT_MS = 3000;
 const DEFAULT_ME_CACHE_TTL_SECONDS = 60;
@@ -96,6 +98,10 @@ export function loadConfig(): BffConfig {
     host: getEnv('BFF_HOST', '0.0.0.0'),
     port: getNumberEnv('BFF_PORT', 5200),
     requestBodyLimitBytes: getNumberEnv('BFF_BODY_LIMIT_BYTES', DEFAULT_REQUEST_BODY_LIMIT_BYTES),
+    auditScreenAccessMaxResponseBytes: getNumberEnv(
+      'AUDIT_SCREEN_ACCESS_MAX_RESPONSE_BYTES',
+      DEFAULT_AUDIT_SCREEN_ACCESS_MAX_RESPONSE_BYTES,
+    ),
     corsAllowedOrigins: getListEnv('BFF_CORS_ALLOWED_ORIGINS', [
       'http://localhost:5173',
       'https://mcad.tasso.dev.br',

@@ -9,6 +9,7 @@ const BASE_CONFIG: BffConfig = {
   host: '127.0.0.1',
   port: 0,
   requestBodyLimitBytes: 1024,
+  auditScreenAccessMaxResponseBytes: 1024,
   corsAllowedOrigins: ['https://mcad.tasso.dev.br'],
   enableLegacyCadastroRoute: false,
   authzBaseUrl: 'http://authz.local',
