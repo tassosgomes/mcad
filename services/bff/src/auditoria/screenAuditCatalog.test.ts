@@ -3,6 +3,7 @@ import { test } from 'node:test';
 import {
   AUDIT_RETENTION_DAYS,
   CATALOG_GOVERNANCE_NOTE,
+  auditCatalogCoverageBacklog,
   findDuplicateRouteMethodRules,
   screenAuditCatalog,
 } from './screenAuditCatalog.js';
@@ -70,4 +71,27 @@ test('catalog documents PR and deploy governance', () => {
   assert.match(CATALOG_GOVERNANCE_NOTE, /pull request/i);
   assert.match(CATALOG_GOVERNANCE_NOTE, /deploy/i);
   assert.match(CATALOG_GOVERNANCE_NOTE, /Git/i);
+});
+
+test('catalog covers real sensitive route variants discovered for initial domains', () => {
+  const routesByOperation = new Map(
+    screenAuditCatalog.map((operation) => [operation.id, new Set(operation.routePatterns)]),
+  );
+
+  assert.ok(routesByOperation.get('cadastro.titularidades.lista')?.has('/api/cadastro/v1/obras/:obraId/titularidades'));
+  assert.ok(routesByOperation.get('identificacao.captacoes.lista')?.has('/api/identificacao/v1/captacoes/:captacaoId/uploads'));
+  assert.ok(routesByOperation.get('arrecadacao.licencas.lista')?.has('/api/arrecadacao/v1/licencas/:id/historico-status'));
+  assert.ok(routesByOperation.get('arrecadacao.uda.lista')?.has('/api/arrecadacao/v1/uda/vigente'));
+  assert.ok(routesByOperation.get('auditoria.eventos.lista')?.has('/api/auditoria/eventos/:eventId'));
+});
+
+test('catalog exposes explicit backlog for PRD screens not present in current routes', () => {
+  assert.ok(auditCatalogCoverageBacklog.length > 0);
+
+  for (const item of auditCatalogCoverageBacklog) {
+    assert.ok(item.domain.trim().length > 0);
+    assert.ok(item.screen.trim().length > 0);
+    assert.ok(item.reason.trim().length > 0);
+    assert.notEqual(item.expectedMinimumLevel, 'BRONZE');
+  }
 });

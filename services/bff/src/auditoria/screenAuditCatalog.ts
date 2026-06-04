@@ -42,6 +42,13 @@ export interface CatalogRouteMethodRule {
   method: AuditHttpMethod;
 }
 
+export interface AuditCatalogCoverageBacklogItem {
+  domain: AuditDomain;
+  screen: string;
+  reason: string;
+  expectedMinimumLevel: AuditLevel;
+}
+
 export const AUDIT_CATALOG_VERSION = '2026-06-04.prd-auditoria-telas.task-1';
 export const AUDIT_RETENTION_DAYS = 90;
 export const BRONZE_RETENTION_DAYS = 0;
@@ -49,6 +56,26 @@ export const CATALOG_GOVERNANCE_NOTE =
   'Audit screen catalog changes are made only through pull request, code review and deploy; Git history is the traceability source for approval metadata changes.';
 export const SILVER_CLASSIFICATION_PENDING_REVIEW_NOTE =
   'Initial SILVER entries are based on the current MCAD screen catalog and must be revisited by Product/Compliance when the official SILVER list is published.';
+export const auditCatalogCoverageBacklog: readonly AuditCatalogCoverageBacklogItem[] = [
+  {
+    domain: 'identificacao',
+    screen: 'Identificacao - Rol',
+    reason: 'PRD cita Rol, mas nao ha rota/tela real encontrada na V1 de Identificacao durante o inventario da task 7.',
+    expectedMinimumLevel: 'SILVER',
+  },
+  {
+    domain: 'distribuicao',
+    screen: 'Distribuicao - Creditos, Creditos Retidos, Liberacoes e Demonstrativos',
+    reason: 'Domain doc cita exposicao financeira de creditos de titulares, mas a API atual expoe apenas Processos e Rubricas.',
+    expectedMinimumLevel: 'SILVER',
+  },
+  {
+    domain: 'arrecadacao',
+    screen: 'Arrecadacao - Relatorios financeiros consolidados',
+    reason: 'Nao ha rota dedicada de relatorio financeiro no BFF/API atual; Pagamentos e Verbas permanecem Ouro como cobertura obrigatoria.',
+    expectedMinimumLevel: 'SILVER',
+  },
+];
 
 const defaultPaginationParams = {
   page: ['page', 'pagina'],
@@ -135,7 +162,11 @@ export const screenAuditCatalog: readonly AuditScreenOperation[] = [
     aliases: ['CADASTRO_TITULARES'],
     domain: 'cadastro',
     friendlyName: 'Cadastro - Titulares',
-    routePatterns: ['/api/cadastro/v1/titulares', '/api/cadastro/v1/titulares/:id'],
+    routePatterns: [
+      '/api/cadastro/v1/titulares',
+      '/api/cadastro/v1/titulares/:id',
+      '/api/cadastro/v1/titulares/busca',
+    ],
     methods: ['GET'],
     justification: 'Consulta obrigatoria Ouro por expor dados pessoais de titulares e exigir snapshot fiel para investigacao de vazamento.',
     businessContext: contextRule('Titular', {
@@ -148,7 +179,11 @@ export const screenAuditCatalog: readonly AuditScreenOperation[] = [
     aliases: ['CADASTRO_OBRAS'],
     domain: 'cadastro',
     friendlyName: 'Cadastro - Obras',
-    routePatterns: ['/api/cadastro/v1/obras', '/api/cadastro/v1/obras/:id'],
+    routePatterns: [
+      '/api/cadastro/v1/obras',
+      '/api/cadastro/v1/obras/:id',
+      '/api/cadastro/v1/obras/:id/historico-bloqueios',
+    ],
     methods: ['GET'],
     justification: 'Consulta de obras pode expor titulares, titularidades e contexto autoral de terceiros.',
     businessContext: contextRule('ObraMusical', {
@@ -161,7 +196,12 @@ export const screenAuditCatalog: readonly AuditScreenOperation[] = [
     aliases: ['CADASTRO_FONOGRAMAS'],
     domain: 'cadastro',
     friendlyName: 'Cadastro - Fonogramas',
-    routePatterns: ['/api/cadastro/v1/fonogramas', '/api/cadastro/v1/fonogramas/:id'],
+    routePatterns: [
+      '/api/cadastro/v1/fonogramas',
+      '/api/cadastro/v1/fonogramas/:id',
+      '/api/cadastro/v1/fonogramas/:id/historico-bloqueios',
+      '/api/cadastro/v1/obras/:obraId/fonogramas',
+    ],
     methods: ['GET'],
     justification: 'Consulta de fonogramas pode expor obras, produtores, interpretes e dados de terceiros.',
     businessContext: contextRule('Fonograma', {
@@ -174,7 +214,12 @@ export const screenAuditCatalog: readonly AuditScreenOperation[] = [
     aliases: ['CADASTRO_PARTICIPACOES'],
     domain: 'cadastro',
     friendlyName: 'Cadastro - Participacoes',
-    routePatterns: ['/api/cadastro/v1/participacoes', '/api/cadastro/v1/participacoes/:id'],
+    routePatterns: [
+      '/api/cadastro/v1/participacoes',
+      '/api/cadastro/v1/participacoes/:id',
+      '/api/cadastro/v1/fonogramas/:fonogramaId/participacoes',
+      '/api/cadastro/v1/fonogramas/:fonogramaId/participacoes/:id',
+    ],
     methods: ['GET'],
     justification: 'Consulta de participacoes pode expor relacoes de titulares e percentuais de terceiros.',
     businessContext: contextRule('Participacao', {
@@ -186,7 +231,12 @@ export const screenAuditCatalog: readonly AuditScreenOperation[] = [
     aliases: ['CADASTRO_TITULARIDADES'],
     domain: 'cadastro',
     friendlyName: 'Cadastro - Titularidades',
-    routePatterns: ['/api/cadastro/v1/titularidades', '/api/cadastro/v1/titularidades/:id'],
+    routePatterns: [
+      '/api/cadastro/v1/titularidades',
+      '/api/cadastro/v1/titularidades/:id',
+      '/api/cadastro/v1/obras/:obraId/titularidades',
+      '/api/cadastro/v1/obras/:obraId/titularidades/:id',
+    ],
     methods: ['GET'],
     justification: 'Consulta de titularidades pode expor titulares, percentuais e relacoes autorais sensiveis.',
     businessContext: contextRule('TitularidadeAutoral', {
@@ -211,7 +261,16 @@ export const screenAuditCatalog: readonly AuditScreenOperation[] = [
     aliases: ['IDENTIFICACAO_CAPTACOES'],
     domain: 'identificacao',
     friendlyName: 'Identificacao - Captacoes',
-    routePatterns: ['/api/identificacao/v1/captacoes', '/api/identificacao/v1/captacoes/:id'],
+    routePatterns: [
+      '/api/identificacao/v1/captacoes',
+      '/api/identificacao/v1/captacoes/:id',
+      '/api/identificacao/v1/captacoes/:captacaoId/execucoes',
+      '/api/identificacao/v1/captacoes/:captacaoId/uploads',
+      '/api/identificacao/v1/captacoes/:captacaoId/uploads/:id',
+      '/api/identificacao/v1/captacoes/:captacaoId/uploads/:id/erros',
+      '/api/identificacao/v1/captacoes/:captacaoId/pre-requisitos',
+      '/api/identificacao/v1/captacoes/:captacaoId/pode-cancelar',
+    ],
     methods: ['GET'],
     justification: 'Consulta de captacoes pode expor execucoes, obras, fonogramas e correlacoes de terceiros.',
     businessContext: contextRule('Captacao', {
@@ -224,11 +283,41 @@ export const screenAuditCatalog: readonly AuditScreenOperation[] = [
     aliases: ['IDENTIFICACAO_PENDENTES'],
     domain: 'identificacao',
     friendlyName: 'Identificacao - Pendentes',
-    routePatterns: ['/api/identificacao/v1/pendentes', '/api/identificacao/v1/pendentes/:id'],
+    routePatterns: [
+      '/api/identificacao/v1/pendentes',
+      '/api/identificacao/v1/pendentes/:id',
+      '/api/identificacao/v1/pendentes/impacto',
+    ],
     methods: ['GET'],
     justification: 'Consulta de pendencias pode expor resultados de identificacao e vinculos com obras ou fonogramas.',
     businessContext: contextRule('PendenteIdentificacao', {
       entityIdQueryParams: ['id', 'pendenteId', 'captacaoId'],
+    }),
+  }),
+  bronzeOperation({
+    id: 'identificacao.rubricas.lista',
+    aliases: ['IDENTIFICACAO_RUBRICAS'],
+    domain: 'identificacao',
+    friendlyName: 'Identificacao - Rubricas',
+    routePatterns: ['/api/identificacao/v1/rubricas', '/api/identificacao/v1/rubricas/:id'],
+    methods: ['GET'],
+    justification: 'Catalogo operacional de rubricas de identificacao sem exposicao de dados pessoais ou financeiros definida para a V1.',
+    businessContext: contextRule('Rubrica', {
+      entityIdQueryParams: ['id', 'rubricaId'],
+      businessCodeQueryParams: ['sigla', 'codigo'],
+    }),
+  }),
+  bronzeOperation({
+    id: 'identificacao.tipos-utilizacao.lista',
+    aliases: ['IDENTIFICACAO_TIPOS_UTILIZACAO'],
+    domain: 'identificacao',
+    friendlyName: 'Identificacao - Tipos de utilizacao',
+    routePatterns: ['/api/identificacao/v1/tipos-utilizacao', '/api/identificacao/v1/tipos-utilizacao/:id'],
+    methods: ['GET'],
+    justification: 'Tabela de apoio operacional sem leitura sensivel definida para a V1.',
+    businessContext: contextRule('TipoUtilizacao', {
+      entityIdQueryParams: ['id', 'tipoUtilizacaoId'],
+      businessCodeQueryParams: ['codigo', 'sigla', 'nome'],
     }),
   }),
   silverOperation({
@@ -236,7 +325,11 @@ export const screenAuditCatalog: readonly AuditScreenOperation[] = [
     aliases: ['ARRECADACAO_USUARIOS_MUSICA'],
     domain: 'arrecadacao',
     friendlyName: 'Arrecadacao - Usuarios de musica',
-    routePatterns: ['/api/arrecadacao/v1/usuarios-musica', '/api/arrecadacao/v1/usuarios-musica/:id'],
+    routePatterns: [
+      '/api/arrecadacao/v1/usuarios-musica',
+      '/api/arrecadacao/v1/usuarios-musica/:id',
+      '/api/arrecadacao/v1/usuarios-musica/:id/historico-status',
+    ],
     methods: ['GET'],
     justification: 'Consulta de usuarios de musica pode expor dados cadastrais e comerciais de terceiros.',
     businessContext: contextRule('UsuarioMusica', {
@@ -249,12 +342,29 @@ export const screenAuditCatalog: readonly AuditScreenOperation[] = [
     aliases: ['ARRECADACAO_LICENCAS'],
     domain: 'arrecadacao',
     friendlyName: 'Arrecadacao - Licencas',
-    routePatterns: ['/api/arrecadacao/v1/licencas', '/api/arrecadacao/v1/licencas/:id'],
+    routePatterns: [
+      '/api/arrecadacao/v1/licencas',
+      '/api/arrecadacao/v1/licencas/:id',
+      '/api/arrecadacao/v1/licencas/:id/historico-status',
+    ],
     methods: ['GET'],
     justification: 'Consulta de licencas pode expor contratos, usuarios de musica e valores comerciais.',
     businessContext: contextRule('Licenca', {
       entityIdQueryParams: ['id', 'licencaId', 'usuarioMusicaId'],
       businessCodeQueryParams: ['numero', 'codigo', 'periodo'],
+    }),
+  }),
+  bronzeOperation({
+    id: 'arrecadacao.rubricas.lista',
+    aliases: ['ARRECADACAO_RUBRICAS'],
+    domain: 'arrecadacao',
+    friendlyName: 'Arrecadacao - Rubricas',
+    routePatterns: ['/api/arrecadacao/v1/rubricas', '/api/arrecadacao/v1/rubricas/:id'],
+    methods: ['GET'],
+    justification: 'Catalogo operacional de rubricas de arrecadacao; valores financeiros permanecem cobertos por Verbas Ouro.',
+    businessContext: contextRule('RubricaArrecadacao', {
+      entityIdQueryParams: ['id', 'rubricaId'],
+      businessCodeQueryParams: ['sigla', 'codigo'],
     }),
   }),
   goldOperation({
@@ -294,7 +404,12 @@ export const screenAuditCatalog: readonly AuditScreenOperation[] = [
     aliases: ['ARRECADACAO_UDA'],
     domain: 'arrecadacao',
     friendlyName: 'Arrecadacao - UDA',
-    routePatterns: ['/api/arrecadacao/v1/uda', '/api/arrecadacao/v1/uda/:id'],
+    routePatterns: [
+      '/api/arrecadacao/v1/uda',
+      '/api/arrecadacao/v1/uda/:id',
+      '/api/arrecadacao/v1/uda/vigente',
+      '/api/arrecadacao/v1/uda/historico',
+    ],
     methods: ['GET'],
     justification: 'Consulta de UDA pode expor dados de arrecadacao e relacoes comerciais de terceiros.',
     businessContext: contextRule('UnidadeDeArrecadacao', {
@@ -350,12 +465,30 @@ export const screenAuditCatalog: readonly AuditScreenOperation[] = [
     aliases: ['AUDITORIA_EVENTOS'],
     domain: 'auditoria',
     friendlyName: 'Auditoria - Historico de alteracoes',
-    routePatterns: ['/api/auditoria/v1/audit/events', '/api/auditoria/v1/audit/events/:eventId'],
+    routePatterns: [
+      '/api/auditoria/eventos',
+      '/api/auditoria/eventos/:eventId',
+      '/api/auditoria/v1/audit/events',
+      '/api/auditoria/v1/audit/events/:eventId',
+      '/api/auditoria/v1/audit/entities/:entityType/:entityId/timeline',
+    ],
     methods: ['GET'],
     justification: 'Consulta de eventos de auditoria expõe trilhas de acesso, alteracao e contexto de negocio.',
     businessContext: contextRule('AuditEvent', {
       entityIdPathParams: ['eventId'],
       entityIdQueryParams: ['eventId', 'entityId', 'actorUserId', 'screenId'],
+    }),
+  }),
+  bronzeOperation({
+    id: 'auditoria.catalogo.lista',
+    aliases: ['AUDITORIA_CATALOGO'],
+    domain: 'auditoria',
+    friendlyName: 'Auditoria - Catalogo de telas',
+    routePatterns: ['/api/auditoria/catalogo', '/api/auditoria/v1/catalogo'],
+    methods: ['GET'],
+    justification: 'Consulta governada de classificacoes sem snapshot; nao expõe conteudo de eventos ou dados de negocio.',
+    businessContext: contextRule('AuditCatalog', {
+      entityIdQueryParams: ['screenId', 'domain', 'level'],
     }),
   }),
   silverOperation({

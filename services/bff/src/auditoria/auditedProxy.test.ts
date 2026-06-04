@@ -18,6 +18,12 @@ interface TestHttpServer {
   close(): Promise<void>;
 }
 
+interface TestUpstreamOptions {
+  name: string;
+  prefix: string;
+  basePath?: string;
+}
+
 const AUTHZ_PAYLOAD = {
   user: {
     id: 'usr-123',
@@ -110,6 +116,11 @@ function buildConfig(
   authz: TestHttpServer,
   audit: TestHttpServer,
   overrides: Partial<BffConfig> = {},
+  upstreamOptions: TestUpstreamOptions = {
+    name: 'cadastro',
+    prefix: '/api/cadastro/v1',
+    basePath: '/api/v1',
+  },
 ): BffConfig {
   return {
     host: '127.0.0.1',
@@ -125,9 +136,9 @@ function buildConfig(
     auditTimeoutMs: 5000,
     upstreams: [
       {
-        name: 'cadastro',
-        prefix: '/api/cadastro/v1',
-        baseUrl: `${upstream.url}/api/v1`,
+        name: upstreamOptions.name,
+        prefix: upstreamOptions.prefix,
+        baseUrl: `${upstream.url}${upstreamOptions.basePath ?? '/api/v1'}`,
       },
     ],
     ...overrides,
@@ -264,6 +275,255 @@ test('audited proxy publishes GOLD snapshot and ignores divergent frontend hint'
       'x-total-count': '1',
     });
     assert.equal(event.screen.businessContext.snapshot.statusCode, 200);
+  } finally {
+    await server.close();
+    await closeAll([upstream, authz, audit]);
+  }
+});
+
+const mandatoryGoldSmokeCases = [
+  {
+    name: 'Cadastro Titulares',
+    upstream: { name: 'cadastro', prefix: '/api/cadastro/v1' },
+    url: '/api/cadastro/v1/titulares?nome=Maria',
+    expectedUpstreamUrl: '/api/v1/titulares?nome=Maria',
+    screenId: 'cadastro.titulares.lista',
+  },
+  {
+    name: 'Arrecadacao Pagamentos',
+    upstream: { name: 'arrecadacao', prefix: '/api/arrecadacao/v1' },
+    url: '/api/arrecadacao/v1/pagamentos?periodo=2026-05',
+    expectedUpstreamUrl: '/api/v1/pagamentos?periodo=2026-05',
+    screenId: 'arrecadacao.pagamentos.lista',
+  },
+  {
+    name: 'Arrecadacao Verbas',
+    upstream: { name: 'arrecadacao', prefix: '/api/arrecadacao/v1' },
+    url: '/api/arrecadacao/v1/verbas/agregado-por-rubrica?periodo=2026-05',
+    expectedUpstreamUrl: '/api/v1/verbas/agregado-por-rubrica?periodo=2026-05',
+    screenId: 'arrecadacao.verbas.lista',
+  },
+] as const;
+
+for (const smokeCase of mandatoryGoldSmokeCases) {
+  test(`audited proxy smoke publishes GOLD snapshot for ${smokeCase.name}`, async (t) => {
+    const body = { data: [{ id: smokeCase.screenId, valor: 100 }], total: 1 };
+    const upstream = await startTestServer((_request, response) => {
+      response.setHeader('content-type', 'application/json');
+      response.end(JSON.stringify(body));
+    });
+    const authz = await startAuthzServer();
+    const audit = await startTestServer((_request, response) => {
+      response.statusCode = 202;
+      response.end();
+    });
+
+    if (!upstream || !authz || !audit) {
+      t.skip('sandbox does not allow opening local HTTP sockets');
+      await closeAll([upstream, authz, audit]);
+      return;
+    }
+
+    const server = await buildServer(buildConfig(upstream, authz, audit, {}, smokeCase.upstream));
+
+    try {
+      const response = await server.inject({
+        method: 'GET',
+        url: smokeCase.url,
+        headers: { authorization: 'Bearer test-token' },
+      });
+
+      assert.equal(response.statusCode, 200);
+      assert.deepEqual(response.json(), body);
+      assert.equal(upstream.requests[0]?.url, smokeCase.expectedUpstreamUrl);
+      assert.equal(upstream.requests[0]?.headers['x-audit-screen-id'], smokeCase.screenId);
+      assert.equal(response.headers['x-audit-screen-id'], smokeCase.screenId);
+      assert.equal(audit.requests.length, 1);
+
+      const event = JSON.parse(audit.requests[0]?.body ?? '{}') as {
+        metadata: { auditLevel: string; retentionDays: number };
+        screen: {
+          screenId: string;
+          businessContext: {
+            snapshot?: {
+              body: unknown;
+              statusCode: number;
+            };
+          };
+        };
+      };
+
+      assert.equal(event.metadata.auditLevel, 'GOLD');
+      assert.equal(event.metadata.retentionDays, 90);
+      assert.equal(event.screen.screenId, smokeCase.screenId);
+      assert.deepEqual(event.screen.businessContext.snapshot?.body, body);
+      assert.equal(event.screen.businessContext.snapshot?.statusCode, 200);
+    } finally {
+      await server.close();
+      await closeAll([upstream, authz, audit]);
+    }
+  });
+}
+
+const silverSmokeCases = [
+  {
+    name: 'Cadastro Obras',
+    upstream: { name: 'cadastro', prefix: '/api/cadastro/v1' },
+    url: '/api/cadastro/v1/obras?titulo=Samba',
+    screenId: 'cadastro.obras.lista',
+  },
+  {
+    name: 'Identificacao Captacoes',
+    upstream: { name: 'identificacao', prefix: '/api/identificacao/v1' },
+    url: '/api/identificacao/v1/captacoes?periodo=2026-05',
+    screenId: 'identificacao.captacoes.lista',
+  },
+  {
+    name: 'Arrecadacao Licencas',
+    upstream: { name: 'arrecadacao', prefix: '/api/arrecadacao/v1' },
+    url: '/api/arrecadacao/v1/licencas?usuarioMusicaId=um-1',
+    screenId: 'arrecadacao.licencas.lista',
+  },
+  {
+    name: 'Distribuicao Processos',
+    upstream: { name: 'distribuicao', prefix: '/api/distribuicao/v1' },
+    url: '/api/distribuicao/v1/processos?status=ABERTO',
+    screenId: 'distribuicao.processos.lista',
+  },
+  {
+    name: 'Auditoria Relatorios',
+    upstream: { name: 'auditoria', prefix: '/api/auditoria/v1' },
+    url: '/api/auditoria/v1/audit/reports?reportType=SCREEN_ACCESS',
+    screenId: 'auditoria.relatorios.lista',
+  },
+] as const;
+
+for (const smokeCase of silverSmokeCases) {
+  test(`audited proxy smoke publishes SILVER access without snapshot for ${smokeCase.name}`, async (t) => {
+    const upstream = await startTestServer((_request, response) => {
+      response.setHeader('content-type', 'application/json');
+      response.end(JSON.stringify({ data: [{ id: smokeCase.screenId }] }));
+    });
+    const authz = await startAuthzServer();
+    const audit = await startTestServer((_request, response) => {
+      response.statusCode = 202;
+      response.end();
+    });
+
+    if (!upstream || !authz || !audit) {
+      t.skip('sandbox does not allow opening local HTTP sockets');
+      await closeAll([upstream, authz, audit]);
+      return;
+    }
+
+    const server = await buildServer(buildConfig(upstream, authz, audit, {}, smokeCase.upstream));
+
+    try {
+      const response = await server.inject({
+        method: 'GET',
+        url: smokeCase.url,
+        headers: { authorization: 'Bearer test-token' },
+      });
+
+      assert.equal(response.statusCode, 200);
+      assert.equal(response.headers['x-audit-screen-id'], smokeCase.screenId);
+      assert.equal(audit.requests.length, 1);
+
+      const event = JSON.parse(audit.requests[0]?.body ?? '{}') as {
+        metadata: { auditLevel: string; retentionDays: number };
+        screen: { screenId: string; businessContext: Record<string, unknown> };
+      };
+
+      assert.equal(event.metadata.auditLevel, 'SILVER');
+      assert.equal(event.metadata.retentionDays, 90);
+      assert.equal(event.screen.screenId, smokeCase.screenId);
+      assert.equal(Object.prototype.hasOwnProperty.call(event.screen.businessContext, 'snapshot'), false);
+    } finally {
+      await server.close();
+      await closeAll([upstream, authz, audit]);
+    }
+  });
+}
+
+test('audited proxy forwards screen access correlation headers to a later write command', async (t) => {
+  const upstream = await startTestServer((_request, response, captured) => {
+    response.setHeader('content-type', 'application/json');
+
+    if (captured.method === 'POST') {
+      response.statusCode = 201;
+      response.end(JSON.stringify({ id: 'pag-2', status: 'CRIADO' }));
+      return;
+    }
+
+    response.end(JSON.stringify({ data: [{ id: 'pag-1' }] }));
+  });
+  const authz = await startAuthzServer();
+  const audit = await startTestServer((_request, response) => {
+    response.statusCode = 202;
+    response.end();
+  });
+
+  if (!upstream || !authz || !audit) {
+    t.skip('sandbox does not allow opening local HTTP sockets');
+    await closeAll([upstream, authz, audit]);
+    return;
+  }
+
+  const server = await buildServer(buildConfig(
+    upstream,
+    authz,
+    audit,
+    {},
+    { name: 'arrecadacao', prefix: '/api/arrecadacao/v1' },
+  ));
+
+  try {
+    const traceparent = '00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01';
+    const readResponse = await server.inject({
+      method: 'GET',
+      url: '/api/arrecadacao/v1/pagamentos?periodo=2026-05',
+      headers: {
+        authorization: 'Bearer test-token',
+        traceparent,
+      },
+    });
+
+    assert.equal(readResponse.statusCode, 200);
+    assert.equal(readResponse.headers.traceparent, traceparent);
+
+    const writeResponse = await server.inject({
+      method: 'POST',
+      url: '/api/arrecadacao/v1/pagamentos',
+      headers: {
+        authorization: 'Bearer test-token',
+        'content-type': 'application/json',
+        traceparent,
+        'x-audit-screen-access-id': String(readResponse.headers['x-audit-screen-access-id']),
+        'x-audit-screen-id': String(readResponse.headers['x-audit-screen-id']),
+        'x-audit-screen-name': String(readResponse.headers['x-audit-screen-name']),
+        'x-audit-route': String(readResponse.headers['x-audit-route']),
+        'x-audit-session-id': String(readResponse.headers['x-audit-session-id']),
+        'x-audit-command-id': String(readResponse.headers['x-audit-command-id']),
+      },
+      payload: { valor: 200 },
+    });
+
+    assert.equal(writeResponse.statusCode, 201);
+    assert.equal(upstream.requests.length, 2);
+
+    const readRequest = upstream.requests[0]!;
+    const writeRequest = upstream.requests[1]!;
+
+    assert.equal(writeRequest.method, 'POST');
+    assert.equal(writeRequest.url, '/api/v1/pagamentos');
+    assert.equal(writeRequest.headers['x-audit-screen-access-id'], readRequest.headers['x-audit-screen-access-id']);
+    assert.equal(writeRequest.headers['x-audit-screen-id'], 'arrecadacao.pagamentos.lista');
+    assert.equal(writeRequest.headers['x-audit-screen-name'], 'Arrecadacao - Pagamentos');
+    assert.equal(writeRequest.headers['x-audit-route'], '/api/arrecadacao/v1/pagamentos?periodo=2026-05');
+    assert.equal(writeRequest.headers['x-audit-session-id'], readRequest.headers['x-audit-session-id']);
+    assert.equal(writeRequest.headers['x-audit-command-id'], readRequest.headers['x-audit-command-id']);
+    assert.equal(writeRequest.headers.traceparent, traceparent);
+    assert.equal(audit.requests.length, 1);
   } finally {
     await server.close();
     await closeAll([upstream, authz, audit]);

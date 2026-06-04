@@ -1,4 +1,5 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
+import { randomUUID } from 'node:crypto';
 import type { BffConfig } from './config.js';
 import {
   type FetchLike,
@@ -14,7 +15,10 @@ import {
   createAuditQueryClient,
   parseAuditEventListQuery,
 } from './auditoria/auditQueryClient.js';
-import { AUDIT_CATALOG_VERSION, screenAuditCatalog } from './auditoria/screenAuditCatalog.js';
+import { publishAuditEvent } from './auditoria/auditEventPublisher.js';
+import { buildScreenAccessEvent, type ScreenAccessActor } from './auditoria/screenAccessEventBuilder.js';
+import { classifyScreenAuditRequest } from './auditoria/screenAuditClassifier.js';
+import { AUDIT_CATALOG_VERSION, type AuditScreenOperation, screenAuditCatalog } from './auditoria/screenAuditCatalog.js';
 
 export interface AuditoriaRoutesOptions {
   config: BffConfig;
@@ -38,6 +42,8 @@ interface UpstreamReportPayload {
 }
 
 const REPORT_TYPES = new Set(['DATA_CHANGE', 'SCREEN_ACCESS', 'MIXED']);
+const AUDIT_UNAVAILABLE = 'AUDIT_UNAVAILABLE';
+
 function correlationIdFromHeader(value: string | string[] | undefined, fallback: string): string {
   const raw = Array.isArray(value) ? value[0] : value;
   const candidate = raw && raw.trim() ? raw.trim() : fallback;
@@ -72,6 +78,14 @@ function resolveRequestedBy(user: { name?: string; email?: string; subject: stri
   return (
     asString(user.name) ?? asString(user.email) ?? asString(user.subject) ?? asString(user.id) ?? 'unknown'
   );
+}
+
+function normalizeHeaderValue(value: string | string[] | undefined): string | undefined {
+  if (Array.isArray(value)) {
+    return value.find((item) => item.trim().length > 0);
+  }
+
+  return value?.trim() || undefined;
 }
 
 function hasPermission(ctx: ResolvedAuthzContext, permission: AuditoriaPermission): boolean {
@@ -150,6 +164,155 @@ function buildCatalogResponse() {
       retentionDays: operation.retentionDays,
     })),
   };
+}
+
+function buildActor(context: ResolvedAuthzContext): ScreenAccessActor {
+  return {
+    id: context.payload.user.id,
+    subject: context.payload.user.subject,
+    email: context.payload.user.email,
+    name: context.payload.user.name,
+    roles: context.payload.roles,
+    authProvider: 'ecad-authz',
+  };
+}
+
+function buildAuditHeaders(
+  request: FastifyRequest,
+  operation: AuditScreenOperation,
+): Record<string, string> {
+  return {
+    'x-audit-screen-access-id': randomUUID(),
+    'x-audit-screen-id': operation.id,
+    'x-audit-screen-name': operation.friendlyName,
+    'x-audit-route': request.url,
+    'x-audit-session-id': randomUUID(),
+    'x-audit-command-id': randomUUID(),
+  };
+}
+
+function addAuditResponseHeaders(
+  reply: FastifyReply,
+  auditHeaders: Record<string, string>,
+  request: FastifyRequest,
+): void {
+  for (const [name, value] of Object.entries(auditHeaders)) {
+    reply.header(name, value);
+  }
+
+  const traceparent = normalizeHeaderValue(request.headers.traceparent);
+
+  if (traceparent) {
+    reply.header('traceparent', traceparent);
+  }
+}
+
+function responseBytes(body: unknown): number | undefined {
+  if (body === undefined) {
+    return undefined;
+  }
+
+  return Buffer.byteLength(JSON.stringify(body));
+}
+
+async function captureOwnBffScreenAccess(
+  request: FastifyRequest,
+  reply: FastifyReply,
+  options: AuditoriaRoutesOptions,
+  context: ResolvedAuthzContext,
+  statusCode: number,
+  body: unknown,
+): Promise<boolean> {
+  if (request.method !== 'GET' || statusCode < 200 || statusCode >= 300) {
+    return false;
+  }
+
+  const classification = classifyScreenAuditRequest({
+    method: request.method,
+    path: request.url,
+    screenIdHint: normalizeHeaderValue(request.headers['x-audit-screen-id']),
+  });
+
+  if (
+    !classification.operation
+    || (classification.level !== 'SILVER' && classification.level !== 'GOLD')
+  ) {
+    return false;
+  }
+
+  const auditHeaders = buildAuditHeaders(request, classification.operation);
+  const event = buildScreenAccessEvent({
+    request: {
+      headers: {
+        ...request.headers,
+        ...auditHeaders,
+      },
+      id: request.id,
+      ip: request.ip,
+      method: request.method,
+      url: request.url,
+    },
+    operation: classification.operation,
+    businessContext: classification.businessContext,
+    actor: buildActor(context),
+    auditLevel: classification.level,
+    upstream: {
+      name: 'mcad-bff',
+      route: request.url,
+      statusCode,
+      body,
+      responseBytes: responseBytes(body),
+      capturedAtUtc: new Date().toISOString(),
+    },
+    screenAccessId: auditHeaders['x-audit-screen-access-id'],
+  });
+
+  try {
+    await publishAuditEvent(event, {
+      auditBaseUrl: options.config.auditBaseUrl,
+      auditTimeoutMs: options.config.auditTimeoutMs,
+      fetchImpl: options.fetchImpl as Parameters<typeof publishAuditEvent>[1]['fetchImpl'],
+      log: request.log,
+    });
+  } catch (error) {
+    request.log.error(
+      {
+        screenId: classification.operation.id,
+        level: classification.level,
+        err: error,
+      },
+      'audit.screen_access.bff_route_fail_closed',
+    );
+    reply.code(503).send({ code: AUDIT_UNAVAILABLE });
+    return true;
+  }
+
+  addAuditResponseHeaders(reply, auditHeaders, request);
+  return false;
+}
+
+async function sendOwnBffResponse(
+  request: FastifyRequest,
+  reply: FastifyReply,
+  options: AuditoriaRoutesOptions,
+  context: ResolvedAuthzContext,
+  statusCode: number,
+  body: unknown,
+) {
+  const failedClosed = await captureOwnBffScreenAccess(
+    request,
+    reply,
+    options,
+    context,
+    statusCode,
+    body,
+  );
+
+  if (failedClosed) {
+    return reply;
+  }
+
+  return reply.code(statusCode).send(body);
 }
 
 function buildUpstreamPayload(
@@ -293,7 +456,7 @@ export async function registerAuditoriaRoutes(
       ? presentedBody
       : redactSnapshots(presentedBody);
 
-    return reply.code(upstream.status).send(body);
+    return sendOwnBffResponse(request, reply, options, ctx, upstream.status, body);
   }
 
   async function handleFriendlyAuditList(request: FastifyRequest, reply: FastifyReply) {
@@ -330,7 +493,7 @@ export async function registerAuditoriaRoutes(
       ? presentedBody
       : redactSnapshots(presentedBody);
 
-    return reply.code(upstream.status).send(body);
+    return sendOwnBffResponse(request, reply, options, ctx, upstream.status, body);
   }
 
   async function handleAuditEventDetail(
@@ -369,7 +532,14 @@ export async function registerAuditoriaRoutes(
       );
     }
 
-    return reply.code(upstream.status).send(presentAuditEvent(upstream.body));
+    return sendOwnBffResponse(
+      request,
+      reply,
+      options,
+      ctx,
+      upstream.status,
+      presentAuditEvent(upstream.body),
+    );
   }
 
   server.get('/api/auditoria/catalogo', handleCatalog);

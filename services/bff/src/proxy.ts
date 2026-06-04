@@ -40,6 +40,7 @@ const AUDITED_UPSTREAM_NAMES = new Set([
   'arrecadacao',
   'identificacao',
   'distribuicao',
+  'auditoria',
 ]);
 const AUDIT_HEADER_NAMES = [
   'x-audit-screen-access-id',

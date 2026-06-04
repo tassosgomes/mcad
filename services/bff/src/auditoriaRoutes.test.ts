@@ -24,6 +24,7 @@ const BASE_CONFIG: BffConfig = {
     },
   ],
 };
+const AUDIT_EVENTS_INGESTION_URL = 'http://audit.local/api/v1/audit/events';
 
 function authzContext(permissions: string[] = []) {
   return {
@@ -67,6 +68,17 @@ function buildFakeFetch(
       body: init?.body,
     };
     calls.push(call);
+
+    if (input === AUDIT_EVENTS_INGESTION_URL && call.method === 'POST') {
+      return {
+        status: 202,
+        headers: { get: () => null },
+        async json() {
+          return undefined;
+        },
+      };
+    }
+
     const result = handler(input, init ?? {});
     return {
       status: result.status,
@@ -357,6 +369,63 @@ test('GET /api/auditoria/eventos maps friendly filters, presents aliases and fil
       mode: 'client-side',
       reason: 'audit-service-v1-does-not-expose-native-audit-level-filter',
     });
+  } finally {
+    await server.close();
+  }
+});
+
+test('GET /api/auditoria/eventos publishes own BFF SILVER SCREEN_ACCESS without snapshot', async () => {
+  const upstreamUrl = 'http://audit.local/api/v1/audit/events?eventType=DATA_CHANGE';
+  const { fetchImpl, calls } = buildFakeFetch((url) => {
+    if (url === 'http://authz.local/v1/me/authorization-context') {
+      return { status: 200, body: authzContext([AUDITORIA_PERMISSIONS.eventList]) };
+    }
+    if (url === upstreamUrl) {
+      return {
+        status: 200,
+        body: {
+          items: [
+            {
+              eventId: 'evt-change',
+              eventType: 'DATA_CHANGE',
+              screen: { screenId: 'cadastro.obras.lista' },
+            },
+          ],
+          page: 0,
+          size: 20,
+        },
+      };
+    }
+    return { status: 404, body: { code: 'NOT_FOUND' } };
+  });
+
+  const server = await buildServer(BASE_CONFIG, { fetchImpl });
+
+  try {
+    const response = await server.inject({
+      method: 'GET',
+      url: '/api/auditoria/eventos?eventType=DATA_CHANGE',
+      headers: { authorization: 'Bearer token' },
+    });
+
+    assert.equal(response.statusCode, 200);
+    assert.equal(response.headers['x-audit-screen-id'], 'auditoria.eventos.lista');
+
+    const publishCall = calls.find((call) =>
+      call.method === 'POST' && call.url === AUDIT_EVENTS_INGESTION_URL);
+    assert.ok(publishCall, 'should publish SCREEN_ACCESS for own BFF route');
+
+    const event = JSON.parse(publishCall.body ?? '{}') as {
+      eventType: string;
+      metadata: { auditLevel: string; upstreamName: string };
+      screen: { screenId: string; businessContext: Record<string, unknown> };
+    };
+
+    assert.equal(event.eventType, 'SCREEN_ACCESS');
+    assert.equal(event.metadata.auditLevel, 'SILVER');
+    assert.equal(event.metadata.upstreamName, 'mcad-bff');
+    assert.equal(event.screen.screenId, 'auditoria.eventos.lista');
+    assert.equal(Object.prototype.hasOwnProperty.call(event.screen.businessContext, 'snapshot'), false);
   } finally {
     await server.close();
   }
