@@ -5,7 +5,8 @@ import { Loading } from '@components/ui/loading';
 import { AuditEventDetailPanel } from './AuditEventDetailPanel';
 import { AuditEventTypeBadge } from './AuditEventTypeBadge';
 import { useAuditEntityTimeline } from '../hooks/useAuditEntityTimeline';
-import { formatAuditDate, formatAuditValue } from '../utils/auditFormatters';
+import { formatAuditDate, formatAuditRelative } from '../utils/auditFormatters';
+import { summarizeTimelineItem } from '../utils/auditNarrative';
 import styles from './RowAuditHistoryModal.module.css';
 
 interface RowAuditHistoryModalProps {
@@ -36,14 +37,9 @@ export function RowAuditHistoryModal({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={`Histórico ${entityLabel ? `— ${entityLabel}` : ''}`}
+      title={`Histórico${entityLabel ? ` — ${entityLabel}` : ''}`}
       size="lg"
     >
-      <div className={styles.header}>
-        <span>{entityType}</span>
-        <strong>{entityId}</strong>
-      </div>
-
       {isLoading && <Loading />}
 
       {isError && (
@@ -51,7 +47,7 @@ export function RowAuditHistoryModal({
       )}
 
       {!isLoading && !isError && items.length === 0 && (
-        <div className={styles.empty}>Nenhum histórico de auditoria encontrado para esta linha.</div>
+        <div className={styles.empty}>Ainda não há alterações registradas nesta linha.</div>
       )}
 
       {items.length > 0 && (
@@ -68,20 +64,11 @@ export function RowAuditHistoryModal({
                 type="button"
               >
                 <div className={styles.timelineTop}>
-                  <AuditEventTypeBadge eventType={item.eventType} />
-                  <span>{formatAuditDate(item.occurredAt)}</span>
+                  <AuditEventTypeBadge eventType={item.eventType} action={item.action} />
+                  <span>{formatAuditRelative(item.occurredAt)}</span>
                 </div>
-                <strong>{item.summary ?? item.action ?? 'Alteração registrada'}</strong>
-                <span>{item.actor?.displayName ?? item.actor?.username ?? item.actor?.userId ?? '-'}</span>
-                {item.changedFields && item.changedFields.length > 0 && (
-                  <div className={styles.changedFields}>
-                    {item.changedFields.slice(0, 2).map((field) => (
-                      <span key={field.field}>
-                        {field.field}: {formatAuditValue(field.before)} → {formatAuditValue(field.after)}
-                      </span>
-                    ))}
-                  </div>
-                )}
+                <strong>{summarizeTimelineItem(item, entityType)}</strong>
+                <span className={styles.timelineMeta}>{formatAuditDate(item.occurredAt)}</span>
                 <ChevronRight size={16} className={styles.chevron} />
               </button>
             ))}

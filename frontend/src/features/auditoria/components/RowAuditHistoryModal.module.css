@@ -82,12 +82,8 @@
   font-size: var(--text-xs);
 }
 
-.changedFields {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-1);
+.timelineMeta {
   color: var(--color-text-muted);
-  font-family: var(--font-mono);
   font-size: var(--text-xs);
 }
 

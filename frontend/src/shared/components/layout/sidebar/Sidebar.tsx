@@ -13,6 +13,8 @@ interface SidebarChild {
   requiredPermission?: string;
   /** anyOf-semantics: child is visible if the subject has at least one permission. */
   requiredPermissions?: string[];
+  /** when true, NavLink só fica ativa em correspondência exata do path. */
+  end?: boolean;
 }
 
 interface SidebarGroup {
@@ -105,9 +107,10 @@ const navigation: SidebarGroup[] = [
       'authz:admin:audit:visualizar',
     ],
     children: [
-      { label: 'Eventos por entidade', path: '/auditoria/eventos' },
-      { label: 'Acessos a telas', path: '/auditoria/acessos' },
-      { label: 'Relatórios', path: '/auditoria/relatorios' },
+      { label: 'Início', path: '/auditoria', end: true },
+      { label: 'Histórico de alterações', path: '/auditoria/eventos' },
+      { label: 'Quem acessou o quê', path: '/auditoria/acessos' },
+      { label: 'Relatórios em PDF', path: '/auditoria/relatorios' },
     ],
   },
   {
@@ -235,6 +238,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                       <NavLink
                         key={child.path}
                         to={child.path}
+                        end={child.end}
                         className={({ isActive }) => `${styles.link} ${isActive ? styles.active : ''}`}
                         onClick={() => {
                           if (window.innerWidth < 768 && onClose) {

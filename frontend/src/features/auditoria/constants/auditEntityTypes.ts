@@ -27,21 +27,36 @@ export const auditEntityTypes = {
 
 export type AuditEntityType = typeof auditEntityTypes[keyof typeof auditEntityTypes];
 
-export const auditEntityTypeOptions = [
-  { value: auditEntityTypes.associacao, label: 'Associação' },
-  { value: auditEntityTypes.titular, label: 'Titular' },
-  { value: auditEntityTypes.obra, label: 'Obra musical' },
-  { value: auditEntityTypes.fonograma, label: 'Fonograma' },
-  { value: auditEntityTypes.participacao, label: 'Participação' },
-  { value: auditEntityTypes.titularidade, label: 'Titularidade' },
-  { value: auditEntityTypes.usuarioMusica, label: 'Usuário de música' },
-  { value: auditEntityTypes.licenca, label: 'Licença' },
-  { value: auditEntityTypes.pagamento, label: 'Pagamento' },
-  { value: auditEntityTypes.uda, label: 'UDA' },
-  { value: auditEntityTypes.captacao, label: 'Captação' },
-  { value: auditEntityTypes.execucao, label: 'Execução' },
-  { value: auditEntityTypes.upload, label: 'Upload' },
-  { value: auditEntityTypes.pendente, label: 'Pendente' },
-  { value: auditEntityTypes.rubrica, label: 'Rubrica' },
-  { value: auditEntityTypes.credito, label: 'Crédito' },
-] as const;
+export interface AuditEntityOption {
+  value: string;
+  label: string;
+  domain: 'Cadastro' | 'Identificação' | 'Arrecadação' | 'Distribuição';
+}
+
+export const auditEntityTypeOptions: AuditEntityOption[] = [
+  { value: auditEntityTypes.associacao, label: 'Associação', domain: 'Cadastro' },
+  { value: auditEntityTypes.titular, label: 'Titular', domain: 'Cadastro' },
+  { value: auditEntityTypes.obra, label: 'Obra musical', domain: 'Cadastro' },
+  { value: auditEntityTypes.fonograma, label: 'Fonograma', domain: 'Cadastro' },
+  { value: auditEntityTypes.participacao, label: 'Participação', domain: 'Cadastro' },
+  { value: auditEntityTypes.titularidade, label: 'Titularidade', domain: 'Cadastro' },
+  { value: auditEntityTypes.captacao, label: 'Captação', domain: 'Identificação' },
+  { value: auditEntityTypes.execucao, label: 'Execução', domain: 'Identificação' },
+  { value: auditEntityTypes.upload, label: 'Upload', domain: 'Identificação' },
+  { value: auditEntityTypes.pendente, label: 'Pendente', domain: 'Identificação' },
+  { value: auditEntityTypes.usuarioMusica, label: 'Usuário de música', domain: 'Arrecadação' },
+  { value: auditEntityTypes.licenca, label: 'Licença', domain: 'Arrecadação' },
+  { value: auditEntityTypes.pagamento, label: 'Pagamento', domain: 'Arrecadação' },
+  { value: auditEntityTypes.uda, label: 'UDA', domain: 'Arrecadação' },
+  { value: auditEntityTypes.rubrica, label: 'Rubrica', domain: 'Distribuição' },
+  { value: auditEntityTypes.credito, label: 'Crédito', domain: 'Distribuição' },
+];
+
+const ENTITY_LABEL_BY_VALUE = new Map(
+  auditEntityTypeOptions.map((option) => [option.value, option.label]),
+);
+
+export function formatEntityType(value?: string | null): string {
+  if (!value) return '—';
+  return ENTITY_LABEL_BY_VALUE.get(value) ?? value;
+}

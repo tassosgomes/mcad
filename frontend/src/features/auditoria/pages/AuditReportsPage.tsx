@@ -1,44 +1,121 @@
-import { useState } from 'react';
-import { Download, FileText } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { Download, FileText, History, RotateCcw } from 'lucide-react';
 import { Button } from '@components/ui/button';
 import { PageHeader } from '@components/ui/page-header';
-import { AuditTabs } from '../components/AuditTabs';
+import { DEFAULT_PERIOD, PeriodPicker, resolvePeriod, type PeriodValue } from '../components/PeriodPicker';
+import { ScreenSelect } from '../components/ScreenSelect';
+import { UserAutocomplete, type SelectedUser } from '../components/UserAutocomplete';
+import { auditEntityTypeOptions } from '../constants/auditEntityTypes';
 import { getAuditReportPdfUrl } from '../api/auditoriaApi';
 import { useAuditReport, useCreateAuditReport } from '../hooks/useAuditReport';
-import type { AuditReportType } from '../types/audit-event';
+import type { AuditReportStatus, AuditReportType } from '../types/audit-event';
 import { formatAuditDate, toIsoDateTime } from '../utils/auditFormatters';
 import styles from './AuditPage.module.css';
 
 interface ReportForm {
   reportType: AuditReportType;
-  from: string;
-  to: string;
+  period: PeriodValue;
   entityType: string;
-  actorUserId: string;
+  user: SelectedUser | null;
   screenId: string;
 }
 
-export function AuditReportsPage() {
-  const [form, setForm] = useState<ReportForm>({
+interface ReportHistoryEntry {
+  reportId: string;
+  reportType: AuditReportType;
+  requestedAt: string;
+  description: string;
+}
+
+const REPORT_TYPE_LABEL: Record<AuditReportType, string> = {
+  DATA_CHANGE: 'Alterações em dados',
+  SCREEN_ACCESS: 'Acessos a telas',
+  MIXED: 'Alterações + Acessos',
+};
+
+const REPORT_STATUS_LABEL: Record<AuditReportStatus, string> = {
+  PENDING: 'Na fila',
+  RUNNING: 'Gerando…',
+  DONE: 'Pronto',
+  FAILED: 'Falhou',
+  CANCELLED: 'Cancelado',
+};
+
+const HISTORY_KEY = 'mcad.auditoria.reports.history';
+const HISTORY_LIMIT = 8;
+
+function loadHistory(): ReportHistoryEntry[] {
+  if (typeof window === 'undefined') return [];
+  try {
+    const raw = window.localStorage.getItem(HISTORY_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw) as ReportHistoryEntry[];
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveHistory(entries: ReportHistoryEntry[]) {
+  if (typeof window === 'undefined') return;
+  try {
+    window.localStorage.setItem(HISTORY_KEY, JSON.stringify(entries.slice(0, HISTORY_LIMIT)));
+  } catch {
+    // ignore quota errors
+  }
+}
+
+function buildInitialForm(): ReportForm {
+  return {
     reportType: 'DATA_CHANGE',
-    from: '',
-    to: '',
+    period: { ...DEFAULT_PERIOD },
     entityType: '',
-    actorUserId: '',
+    user: null,
     screenId: '',
-  });
+  };
+}
+
+export function AuditReportsPage() {
+  const [form, setForm] = useState<ReportForm>(buildInitialForm);
   const [reportId, setReportId] = useState<string | null>(null);
+  const [history, setHistory] = useState<ReportHistoryEntry[]>(() => loadHistory());
+  const [validationError, setValidationError] = useState<string | null>(null);
+
   const createReport = useCreateAuditReport();
   const reportQuery = useAuditReport(reportId);
 
+  useEffect(() => {
+    saveHistory(history);
+  }, [history]);
+
+  const resolvedPeriod = useMemo(() => resolvePeriod(form.period), [form.period]);
+
+  const buildDescription = (snapshot: ReportForm): string => {
+    const parts = [REPORT_TYPE_LABEL[snapshot.reportType]];
+    if (snapshot.entityType) {
+      const label = auditEntityTypeOptions.find((opt) => opt.value === snapshot.entityType)?.label
+        ?? snapshot.entityType;
+      parts.push(`entidade ${label}`);
+    }
+    if (snapshot.user) {
+      parts.push(`usuário ${snapshot.user.label}`);
+    }
+    if (snapshot.screenId) {
+      parts.push(`tela ${snapshot.screenId}`);
+    }
+    return parts.join(' · ');
+  };
+
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const from = toIsoDateTime(form.from);
-    const to = toIsoDateTime(form.to);
+    const from = toIsoDateTime(resolvedPeriod.from);
+    const to = toIsoDateTime(resolvedPeriod.to);
 
     if (!from || !to) {
+      setValidationError('Selecione um período válido antes de gerar o relatório.');
       return;
     }
+    setValidationError(null);
 
     createReport.mutate(
       {
@@ -47,79 +124,143 @@ export function AuditReportsPage() {
         to,
         filters: {
           entityType: form.entityType || undefined,
-          actorUserId: form.actorUserId || undefined,
+          actorUserId: form.user?.id,
           screenId: form.screenId || undefined,
         },
         format: 'PDF',
       },
       {
-        onSuccess: (response) => setReportId(response.reportId),
+        onSuccess: (response) => {
+          setReportId(response.reportId);
+          setHistory((prev) => [
+            {
+              reportId: response.reportId,
+              reportType: form.reportType,
+              requestedAt: new Date().toISOString(),
+              description: buildDescription(form),
+            },
+            ...prev.filter((entry) => entry.reportId !== response.reportId),
+          ]);
+        },
       },
     );
+  };
+
+  const handleReset = () => {
+    setForm(buildInitialForm());
+    setReportId(null);
+    setValidationError(null);
   };
 
   return (
     <div className={styles.page}>
       <PageHeader
-        title="Relatórios de auditoria"
-        description="Geração assíncrona de PDF pelo serviço central de auditoria."
+        title="Relatórios em PDF"
+        description="Monte um filtro, gere o relatório e baixe o PDF quando estiver pronto."
       />
-      <AuditTabs />
 
       <div className={styles.reportPanel}>
-        <form className={styles.filters} onSubmit={handleSubmit}>
-          <div className={styles.field}>
-            <label htmlFor="reportType">Tipo</label>
-            <select
-              id="reportType"
-              className={styles.select}
-              value={form.reportType}
-              onChange={(event) => setForm((prev) => ({ ...prev, reportType: event.target.value as AuditReportType }))}
-            >
-              <option value="DATA_CHANGE">Alteração de dados</option>
-              <option value="SCREEN_ACCESS">Acesso a telas</option>
-              <option value="MIXED">Misto</option>
-            </select>
+        <form className={styles.filterCard} onSubmit={handleSubmit}>
+          <div className={styles.filterRow}>
+            <div className={styles.field}>
+              <label htmlFor="reportType">Conteúdo do relatório</label>
+              <select
+                id="reportType"
+                className={styles.select}
+                value={form.reportType}
+                onChange={(event) =>
+                  setForm((prev) => ({ ...prev, reportType: event.target.value as AuditReportType }))
+                }
+              >
+                {(Object.keys(REPORT_TYPE_LABEL) as AuditReportType[]).map((type) => (
+                  <option key={type} value={type}>
+                    {REPORT_TYPE_LABEL[type]}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className={styles.field}>
+              <label htmlFor="entityType">Limitar a uma entidade (opcional)</label>
+              <select
+                id="entityType"
+                className={styles.select}
+                value={form.entityType}
+                onChange={(event) =>
+                  setForm((prev) => ({ ...prev, entityType: event.target.value }))
+                }
+              >
+                <option value="">Todas as entidades</option>
+                {auditEntityTypeOptions.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className={styles.field}>
+              <UserAutocomplete
+                label="Limitar a um usuário (opcional)"
+                value={form.user}
+                onChange={(user) => setForm((prev) => ({ ...prev, user }))}
+              />
+            </div>
+            <div className={styles.field}>
+              <ScreenSelect
+                label="Limitar a uma tela (opcional)"
+                value={form.screenId}
+                onChange={(screenId) => setForm((prev) => ({ ...prev, screenId }))}
+                placeholder="Todas as telas"
+              />
+            </div>
           </div>
-          <div className={styles.field}>
-            <label htmlFor="from">De</label>
-            <input id="from" className={styles.input} type="datetime-local" value={form.from} onChange={(event) => setForm((prev) => ({ ...prev, from: event.target.value }))} required />
+          <PeriodPicker
+            value={form.period}
+            onChange={(period) => setForm((prev) => ({ ...prev, period }))}
+          />
+          {validationError && (
+            <div className={styles.errorState}>{validationError}</div>
+          )}
+          <div className={styles.filterActions}>
+            <Button type="submit" disabled={createReport.isPending}>
+              <FileText size={16} />
+              {createReport.isPending ? 'Solicitando…' : 'Gerar relatório'}
+            </Button>
+            <Button type="button" variant="ghost" onClick={handleReset}>
+              <RotateCcw size={16} />
+              Limpar
+            </Button>
           </div>
-          <div className={styles.field}>
-            <label htmlFor="to">Até</label>
-            <input id="to" className={styles.input} type="datetime-local" value={form.to} onChange={(event) => setForm((prev) => ({ ...prev, to: event.target.value }))} required />
-          </div>
-          <div className={styles.field}>
-            <label htmlFor="entityType">Entidade</label>
-            <input id="entityType" className={styles.input} value={form.entityType} onChange={(event) => setForm((prev) => ({ ...prev, entityType: event.target.value }))} />
-          </div>
-          <div className={styles.field}>
-            <label htmlFor="actorUserId">Usuário</label>
-            <input id="actorUserId" className={styles.input} value={form.actorUserId} onChange={(event) => setForm((prev) => ({ ...prev, actorUserId: event.target.value }))} />
-          </div>
-          <div className={styles.field}>
-            <label htmlFor="screenId">Tela</label>
-            <input id="screenId" className={styles.input} value={form.screenId} onChange={(event) => setForm((prev) => ({ ...prev, screenId: event.target.value }))} />
-          </div>
-          <Button type="submit" disabled={createReport.isPending}>
-            <FileText size={16} />
-            Gerar PDF
-          </Button>
         </form>
 
-        <aside className={styles.statusPanel}>
+        <aside className={styles.statusPanel} aria-label="Status do relatório atual">
           <h2>Status</h2>
-          {!reportId && <p className={styles.secondaryText}>Nenhum relatório solicitado nesta sessão.</p>}
-          {createReport.isError && <p className={styles.secondaryText}>Não foi possível solicitar o relatório.</p>}
+          {!reportId && (
+            <p className={styles.secondaryText}>
+              Nenhum relatório solicitado agora. Configure os filtros à esquerda e clique em
+              <strong> Gerar relatório</strong>.
+            </p>
+          )}
+          {createReport.isError && !reportId && (
+            <p className={styles.errorState}>Não foi possível solicitar o relatório.</p>
+          )}
           {reportId && (
-            <>
-              <p><span className={styles.secondaryText}>ID</span> <span className={styles.mono}>{reportId}</span></p>
-              <p><span className={styles.secondaryText}>Status</span> {reportQuery.data?.status ?? 'Consultando...'}</p>
+            <div className={styles.statusBody}>
+              <p>
+                <span className={styles.statusBadge}>
+                  {REPORT_STATUS_LABEL[reportQuery.data?.status ?? 'PENDING']}
+                </span>
+              </p>
               {reportQuery.data?.requestedAt && (
-                <p><span className={styles.secondaryText}>Solicitado em</span> {formatAuditDate(reportQuery.data.requestedAt)}</p>
+                <p>
+                  <span className={styles.secondaryText}>Solicitado em </span>
+                  {formatAuditDate(reportQuery.data.requestedAt)}
+                </p>
               )}
               {reportQuery.data?.finishedAt && (
-                <p><span className={styles.secondaryText}>Finalizado em</span> {formatAuditDate(reportQuery.data.finishedAt)}</p>
+                <p>
+                  <span className={styles.secondaryText}>Finalizado em </span>
+                  {formatAuditDate(reportQuery.data.finishedAt)}
+                </p>
               )}
               {reportQuery.data?.status === 'DONE' && (
                 <Button
@@ -132,12 +273,47 @@ export function AuditReportsPage() {
                 </Button>
               )}
               {reportQuery.data?.status === 'FAILED' && (
-                <p className={styles.secondaryText}>{reportQuery.data.errorMessage ?? 'Relatório falhou.'}</p>
+                <p className={styles.errorState}>
+                  {reportQuery.data.errorMessage ?? 'O relatório não pôde ser gerado.'}
+                </p>
               )}
-            </>
+            </div>
           )}
         </aside>
       </div>
+
+      {history.length > 0 && (
+        <section className={styles.historySection} aria-label="Últimos relatórios">
+          <h2 className={styles.historyTitle}>
+            <History size={16} aria-hidden="true" /> Últimos relatórios
+          </h2>
+          <ul className={styles.historyList}>
+            {history.map((entry) => (
+              <li key={entry.reportId} className={styles.historyItem}>
+                <div className={styles.historyMeta}>
+                  <span className={styles.primaryText}>{REPORT_TYPE_LABEL[entry.reportType]}</span>
+                  <span className={styles.secondaryText}>{entry.description}</span>
+                  <span className={styles.secondaryText}>{formatAuditDate(entry.requestedAt)}</span>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  type="button"
+                  onClick={() =>
+                    window.open(getAuditReportPdfUrl(entry.reportId), '_blank', 'noopener,noreferrer')
+                  }
+                >
+                  <Download size={14} />
+                  Baixar
+                </Button>
+              </li>
+            ))}
+          </ul>
+          <p className={styles.historyFooter}>
+            Lista guardada neste navegador. Disponível enquanto o relatório existir no servidor.
+          </p>
+        </section>
+      )}
     </div>
   );
 }
