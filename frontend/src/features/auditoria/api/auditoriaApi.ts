@@ -47,7 +47,7 @@ type AuditTimelineApiResponse = AuditTimelineResponse | Array<AuditTimelineItem 
 type ScreenAccessApiResponse = ScreenAccessResponse | Array<ScreenAccessItem | AuditEventViewApiItem>;
 
 export function getAuditReportPdfUrl(reportId: string): string {
-  return `${BASE_URL}/audit/reports/${encodeURIComponent(reportId)}/pdf`;
+  return `${BASE_URL}/audit/reports/${encodeURIComponent(reportId)}/file`;
 }
 
 export async function getAuditTimeline(params: AuditTimelineParams): Promise<AuditTimelineResponse> {

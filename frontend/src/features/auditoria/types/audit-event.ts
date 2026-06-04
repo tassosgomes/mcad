@@ -131,14 +131,22 @@ export interface CreateAuditReportRequest {
 
 export interface CreateAuditReportResponse {
   reportId: string;
+  reportType?: AuditReportType | string;
   status: AuditReportStatus;
+  requestedBy?: string;
+  requestedAtUtc?: string;
+  fromUtc?: string;
+  toUtc?: string;
+  errorMessage?: string | null;
 }
 
 export interface AuditReportStatusResponse {
   reportId: string;
+  reportType?: AuditReportType | string;
   status: AuditReportStatus;
-  requestedAt?: string;
-  finishedAt?: string | null;
-  downloadUrl?: string | null;
+  requestedBy?: string;
+  requestedAtUtc?: string;
+  fromUtc?: string;
+  toUtc?: string;
   errorMessage?: string | null;
 }

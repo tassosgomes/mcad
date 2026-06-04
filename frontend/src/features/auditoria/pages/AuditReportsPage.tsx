@@ -250,16 +250,10 @@ export function AuditReportsPage() {
                   {REPORT_STATUS_LABEL[reportQuery.data?.status ?? 'PENDING']}
                 </span>
               </p>
-              {reportQuery.data?.requestedAt && (
+              {reportQuery.data?.requestedAtUtc && (
                 <p>
                   <span className={styles.secondaryText}>Solicitado em </span>
-                  {formatAuditDate(reportQuery.data.requestedAt)}
-                </p>
-              )}
-              {reportQuery.data?.finishedAt && (
-                <p>
-                  <span className={styles.secondaryText}>Finalizado em </span>
-                  {formatAuditDate(reportQuery.data.finishedAt)}
+                  {formatAuditDate(reportQuery.data.requestedAtUtc)}
                 </p>
               )}
               {reportQuery.data?.status === 'DONE' && (
