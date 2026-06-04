@@ -1,9 +1,8 @@
 import { lazy, Suspense } from 'react';
-import { createBrowserRouter, isRouteErrorResponse, Navigate, useRouteError } from 'react-router-dom';
+import { createBrowserRouter, isRouteErrorResponse, useRouteError } from 'react-router-dom';
 import { MainLayout } from '@components/layout/main-layout';
 import { Loading } from '@components/ui/loading';
-import { CallbackPage, LoggedOutPage, PermissionDeniedFallback, ProtectedRoute, RequirePermission, SilentCallbackPage } from '@shared/auth';
-import { usePermissions } from '@shared/authz/usePermissions';
+import { CallbackPage, LoggedOutPage, ProtectedRoute, RequirePermission, SilentCallbackPage } from '@shared/auth';
 
 const CadastroRoutes = lazy(() => import('@features/cadastro'));
 const IdentificacaoRoutes = lazy(() => import('@features/identificacao'));
@@ -13,6 +12,9 @@ const AuditoriaRoutes = lazy(() => import('@features/auditoria'));
 const AuthzRoutes = lazy(() => import('@features/authz'));
 const CopilotoPage = lazy(() =>
   import('@features/copiloto').then((module) => ({ default: module.CopilotoPage })),
+);
+const DashboardPage = lazy(() =>
+  import('@features/dashboard').then((module) => ({ default: module.DashboardPage })),
 );
 
 /**
@@ -74,46 +76,6 @@ const COPILOTO_PERMISSIONS = [
   'distribuicao:default:processo:listar',
 ];
 
-/**
- * Mapping of "listing" permissions to the corresponding landing page.
- * Used by HomeRedirect to pick the first domain the user has access to.
- * Order: domínios de negócio primeiro; admin de autorização entra como
- * fallback para usuários que só tenham permissões `authz:admin:*`.
- */
-const DOMAIN_LANDING: Array<{ permission: string; path: string }> = [
-  { permission: 'cadastro:default:associacao:listar', path: '/cadastro/associacoes' },
-  { permission: 'identificacao:default:captacao:listar', path: '/identificacao/captacoes' },
-  { permission: 'arrecadacao:default:cliente:listar', path: '/arrecadacao/licencas' },
-  { permission: 'distribuicao:default:rubrica:listar', path: '/distribuicao/rubricas' },
-  { permission: 'distribuicao:default:processo:listar', path: '/distribuicao/processos' },
-  { permission: 'authz:admin:role:visualizar', path: '/autorizacao/papeis' },
-  { permission: 'acessos:default:papel:listar', path: '/autorizacao/papeis' },
-  { permission: 'acessos:distribuicao:papel:visualizar', path: '/autorizacao/meu-dominio' },
-  { permission: 'acessos:cadastro:papel:visualizar', path: '/autorizacao/meu-dominio' },
-  { permission: 'acessos:identificacao:papel:visualizar', path: '/autorizacao/meu-dominio' },
-  { permission: 'acessos:arrecadacao:papel:visualizar', path: '/autorizacao/meu-dominio' },
-];
-
-/**
- * Resolve a landing path purely from permissions. Returns null when the
- * user has none of the listing permissions — caller should render an
- * access-denied/awaiting-setup UI instead of redirecting (a Navigate to "/"
- * would re-enter HomeRedirect and could loop).
- */
-function HomeRedirect() {
-  const { can, isLoading } = usePermissions();
-
-  if (isLoading) {
-    return <Loading />;
-  }
-
-  const landing = DOMAIN_LANDING.find(({ permission }) => can(permission));
-  if (landing) {
-    return <Navigate to={landing.path} replace />;
-  }
-
-  return <PermissionDeniedFallback />;
-}
 
 function RouteErrorFallback() {
   const error = useRouteError();
@@ -154,7 +116,14 @@ export const router = createBrowserRouter([
     ),
     errorElement: <RouteErrorFallback />,
     children: [
-      { index: true, element: <HomeRedirect /> },
+      {
+        index: true,
+        element: (
+          <Suspense fallback={<Loading />}>
+            <DashboardPage />
+          </Suspense>
+        ),
+      },
       {
         path: 'cadastro/*',
         element: (

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import type { ComponentType } from 'react';
 import { NavLink } from 'react-router-dom';
 import type { LucideProps } from 'lucide-react';
-import { Database, Search, Banknote, Split, ChevronDown, ScrollText, ShieldCheck } from 'lucide-react';
+import { Database, Search, Banknote, Split, ChevronDown, ScrollText, ShieldCheck, Home } from 'lucide-react';
 import { usePermissions } from '@shared/authz';
 import styles from './Sidebar.module.css';
 
@@ -197,6 +197,21 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
       />
       <aside className={`${styles.sidebar} ${isOpen ? styles.open : ''}`}>
         <nav className={styles.nav}>
+          <NavLink
+            to="/"
+            end
+            className={({ isActive }) => `${styles.homeLink} ${isActive ? styles.activeHome : ''}`}
+            onClick={() => {
+              if (window.innerWidth < 768 && onClose) {
+                onClose();
+              }
+            }}
+          >
+            <div className={styles.groupHeader}>
+              <Home size={18} className={styles.groupIcon} />
+              <span className={styles.groupLabel}>Início</span>
+            </div>
+          </NavLink>
           {navigation.map((group) => {
             const Icon = group.icon;
             const isGroupOpen = openSections[group.label];

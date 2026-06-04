@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import { LogOut, Menu } from 'lucide-react';
 import { Badge } from '@components/ui/badge';
 import { useAuth } from '@shared/auth';
@@ -21,10 +22,10 @@ export function Header({ onMenuClick }: HeaderProps) {
         <button className={styles.menuButton} onClick={onMenuClick} aria-label="Menu" type="button">
           <Menu size={20} />
         </button>
-        <div className={styles.brand}>
+        <Link to="/" className={styles.brand}>
           <h1 className={styles.title}>mini-ECAD</h1>
           <span className={styles.subtitle}>Sistema de Gestão de Direitos Autorais</span>
-        </div>
+        </Link>
       </div>
 
       {isAuthenticated && (

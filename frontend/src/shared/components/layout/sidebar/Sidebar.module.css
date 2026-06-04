@@ -128,3 +128,27 @@
   background-color: var(--color-accent-subtle);
   font-weight: 500;
 }
+
+.homeLink {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px;
+  text-decoration: none;
+  color: var(--color-text-secondary);
+  border-radius: var(--radius-md);
+  transition: all 0.2s ease;
+  margin-bottom: 4px;
+}
+
+.homeLink:hover {
+  background-color: var(--color-bg-neutral-hover);
+  color: var(--color-text-primary);
+}
+
+.activeHome {
+  color: var(--color-text-primary);
+  background-color: var(--color-accent-subtle);
+  font-weight: 500;
+}
+
