@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { ArrowRight, ClipboardList, FileText, Monitor, ScrollText } from 'lucide-react';
+import { ArrowRight, ClipboardList, FileText, Library, Monitor, ScrollText } from 'lucide-react';
 import { PageHeader } from '@components/ui/page-header';
 import styles from './AuditDashboard.module.css';
 
@@ -12,10 +12,16 @@ interface ActionCard {
 
 const ACTIONS: ActionCard[] = [
   {
+    to: '/auditoria/catalogo',
+    icon: Library,
+    title: 'Catálogo Bronze/Prata/Ouro',
+    description: 'Consulte a classificação das telas, justificativas, domínios e aliases de suporte.',
+  },
+  {
     to: '/auditoria/eventos',
     icon: ScrollText,
-    title: 'Histórico de alterações',
-    description: 'O que aconteceu com uma obra, titular, licença ou outra entidade — quem alterou, o que mudou e quando.',
+    title: 'Eventos de auditoria',
+    description: 'Filtre acessos e alterações por usuário, tela, período, entidade, contexto de negócio e nível.',
   },
   {
     to: '/auditoria/acessos',
@@ -39,14 +45,14 @@ interface Shortcut {
 
 const SHORTCUTS: Shortcut[] = [
   {
-    to: '/auditoria/acessos',
-    label: 'Quem entrou em telas de Cadastro hoje',
-    hint: 'Abre o filtro pronto: você só precisa escolher o usuário (ou deixar em branco para todos).',
+    to: '/auditoria/catalogo',
+    label: 'Quais telas são Ouro',
+    hint: 'Abra o catálogo e filtre por nível para revisar as telas que registram snapshot.',
   },
   {
     to: '/auditoria/eventos',
-    label: 'Histórico de uma obra musical',
-    hint: 'Cole o identificador da obra (Copiar ID na tela de Obras) e veja a cronologia completa.',
+    label: 'Eventos de uma obra musical',
+    hint: 'Use entidade e contexto de negócio para reduzir a investigação sem abrir payload interno.',
   },
   {
     to: '/auditoria/relatorios',

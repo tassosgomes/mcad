@@ -60,6 +60,23 @@
   outline: none;
 }
 
+.inputWithIcon {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.inputWithIcon svg {
+  position: absolute;
+  left: var(--space-3);
+  color: var(--color-text-muted);
+  pointer-events: none;
+}
+
+.inputWithIcon .input {
+  padding-left: calc(var(--space-6) + var(--space-2));
+}
+
 .input:focus,
 .select:focus {
   box-shadow: 0 0 0 1px var(--color-accent);
@@ -192,6 +209,78 @@
   min-height: 320px;
 }
 
+.catalogGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-4);
+}
+
+.catalogItem {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  background: var(--color-bg-surface);
+  border-radius: var(--radius-lg);
+}
+
+.catalogHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.catalogHeader h2 {
+  margin: var(--space-1) 0 0;
+  color: var(--color-text-primary);
+  font-family: var(--font-display);
+  font-size: var(--text-lg);
+}
+
+.catalogJustification {
+  margin: 0;
+  color: var(--color-text-secondary);
+  line-height: 1.5;
+}
+
+.catalogMeta {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+}
+
+.catalogMeta div {
+  display: grid;
+  grid-template-columns: 92px minmax(0, 1fr);
+  gap: var(--space-3);
+}
+
+.catalogMeta dt {
+  color: var(--color-text-muted);
+  font-size: var(--text-xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.catalogMeta dd {
+  margin: 0;
+  color: var(--color-text-secondary);
+  overflow-wrap: anywhere;
+}
+
+.goldNotice {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  background: rgba(234, 179, 8, 0.12);
+  border-radius: var(--radius-md);
+  color: var(--color-text-primary);
+  font-size: var(--text-sm);
+}
+
 .reportPanel {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(260px, 0.55fr);
@@ -294,7 +383,8 @@
 }
 
 @media (max-width: 1100px) {
-  .reportPanel {
+  .reportPanel,
+  .catalogGrid {
     grid-template-columns: 1fr;
   }
 }

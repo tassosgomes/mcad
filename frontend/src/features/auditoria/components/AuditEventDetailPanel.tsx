@@ -4,6 +4,7 @@ import { AuditEventTypeBadge } from './AuditEventTypeBadge';
 import { formatEntityType } from '../constants/auditEntityTypes';
 import { formatScreenLabel } from '../constants/screenCatalog';
 import { useAuditEvent } from '../hooks/useAuditEvent';
+import type { AuditEventDetail, AuditLevel } from '../types/audit-event';
 import { formatAuditDate, formatAuditRelative, formatAuditValue } from '../utils/auditFormatters';
 import { describeEventDetail } from '../utils/auditNarrative';
 import styles from './AuditEventDetailPanel.module.css';
@@ -12,8 +13,71 @@ interface AuditEventDetailPanelProps {
   eventId: string | null;
 }
 
+const LEVEL_LABELS: Record<AuditLevel, string> = {
+  BRONZE: 'Bronze',
+  SILVER: 'Prata',
+  GOLD: 'Ouro',
+};
+
+const CONTEXT_LABELS: Record<string, string> = {
+  auditLevel: 'Nível',
+  catalogVersion: 'Versão do catálogo',
+  entityType: 'Entidade',
+  entityId: 'Identificador de negócio',
+  businessCode: 'Código de negócio',
+  filters: 'Filtros',
+  params: 'Parâmetros',
+  query: 'Filtros da consulta',
+  page: 'Página',
+  size: 'Tamanho da página',
+  limit: 'Limite',
+  sort: 'Ordenação',
+  orderBy: 'Ordenação',
+};
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+}
+
+function isForbiddenError(error: unknown): boolean {
+  return isRecord(error) && error.status === 403;
+}
+
+function getBusinessContext(data: AuditEventDetail): Record<string, unknown> {
+  const context = data.screen?.businessContext;
+  return isRecord(context) ? context : {};
+}
+
+function getAuditLevel(data: AuditEventDetail, context: Record<string, unknown>): string | null {
+  const level = data.screen?.auditLevel ?? data.catalog?.level ?? data.metadata?.auditLevel ?? context.auditLevel;
+  return typeof level === 'string' && level ? level : null;
+}
+
+function formatAuditLevel(level: string | null): string {
+  if (!level) return '—';
+  return LEVEL_LABELS[level as AuditLevel] ?? level;
+}
+
+function formatContextKey(key: string): string {
+  return CONTEXT_LABELS[key] ?? key.replace(/([A-Z])/g, ' $1').replace(/^./, (char) => char.toUpperCase());
+}
+
+function getContextEntries(context: Record<string, unknown>): Array<[string, unknown]> {
+  return Object.entries(context).filter(([key, value]) =>
+    key !== 'snapshot' && value !== undefined && value !== null && value !== '',
+  );
+}
+
+function getSnapshot(context: Record<string, unknown>): Record<string, unknown> | null {
+  return isRecord(context.snapshot) ? context.snapshot : null;
+}
+
+function getSnapshotBody(snapshot: Record<string, unknown>): unknown {
+  return Object.prototype.hasOwnProperty.call(snapshot, 'body') ? snapshot.body : snapshot;
+}
+
 export function AuditEventDetailPanel({ eventId }: AuditEventDetailPanelProps) {
-  const { data, isLoading, isError } = useAuditEvent(eventId);
+  const { data, isLoading, isError, error } = useAuditEvent(eventId);
 
   if (!eventId) {
     return <div className={styles.empty}>Selecione um evento para ver os detalhes.</div>;
@@ -21,6 +85,18 @@ export function AuditEventDetailPanel({ eventId }: AuditEventDetailPanelProps) {
 
   if (isLoading) {
     return <Loading />;
+  }
+
+  if (isForbiddenError(error)) {
+    return (
+      <div className={styles.snapshotDenied}>
+        <strong>Snapshot Ouro restrito.</strong>
+        <p>
+          Você pode listar o evento, mas não tem permissão para visualizar o conteúdo retornado na consulta.
+          Solicite a permissão de snapshot à área responsável por auditoria/compliance.
+        </p>
+      </div>
+    );
   }
 
   if (isError || !data) {
@@ -35,6 +111,11 @@ export function AuditEventDetailPanel({ eventId }: AuditEventDetailPanelProps) {
     data.origin?.screenName ?? data.screen?.screenName,
   );
   const entityLabel = formatEntityType(data.data?.entityType ?? null);
+  const businessContext = getBusinessContext(data);
+  const contextEntries = getContextEntries(businessContext);
+  const auditLevel = getAuditLevel(data, businessContext);
+  const snapshot = getSnapshot(businessContext);
+  const snapshotBody = snapshot ? getSnapshotBody(snapshot) : null;
 
   return (
     <div className={styles.panel}>
@@ -69,7 +150,69 @@ export function AuditEventDetailPanel({ eventId }: AuditEventDetailPanelProps) {
             <span className={styles.contextValue}>{data.source.service}</span>
           </div>
         )}
+        <div>
+          <span className={styles.label}>Nível</span>
+          <span className={styles.contextValue}>{formatAuditLevel(auditLevel)}</span>
+        </div>
+        {data.origin?.route && (
+          <div>
+            <span className={styles.label}>Rota consultada</span>
+            <span className={styles.contextValue}>{data.origin.route}</span>
+          </div>
+        )}
       </section>
+
+      {data.eventType === 'SCREEN_ACCESS' && contextEntries.length > 0 && (
+        <section className={styles.section}>
+          <h3>Filtros e contexto de negócio</h3>
+          <dl className={styles.contextList}>
+            {contextEntries.map(([key, value]) => (
+              <div key={key} className={styles.contextItem}>
+                <dt>{formatContextKey(key)}</dt>
+                <dd>{formatAuditValue(value)}</dd>
+              </div>
+            ))}
+          </dl>
+        </section>
+      )}
+
+      {snapshot && (
+        <section className={styles.snapshotSection}>
+          <div>
+            <h3>Snapshot Ouro</h3>
+            <p>
+              Conteúdo retornado para {actor} em {formatAuditDate(data.occurredAt)}.
+            </p>
+          </div>
+          <dl className={styles.snapshotMeta}>
+            {typeof snapshot.statusCode === 'number' && (
+              <div>
+                <dt>Status</dt>
+                <dd>{snapshot.statusCode}</dd>
+              </div>
+            )}
+            {typeof snapshot.capturedAtUtc === 'string' && (
+              <div>
+                <dt>Capturado em</dt>
+                <dd>{formatAuditDate(snapshot.capturedAtUtc)}</dd>
+              </div>
+            )}
+            {typeof snapshot.contentHash === 'string' && (
+              <div>
+                <dt>Hash</dt>
+                <dd className={styles.mono}>{snapshot.contentHash}</dd>
+              </div>
+            )}
+          </dl>
+          <pre className={styles.snapshotBody}>{JSON.stringify(snapshotBody, null, 2)}</pre>
+        </section>
+      )}
+
+      {auditLevel === 'GOLD' && !snapshot && (
+        <div className={styles.snapshotUnavailable}>
+          Este evento está classificado como Ouro, mas o BFF não retornou snapshot para o seu perfil atual.
+        </div>
+      )}
 
       {changedFields.length > 0 && (
         <section className={styles.section}>

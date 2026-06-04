@@ -2,6 +2,7 @@ export type AuditEventType = 'DATA_CHANGE' | 'SCREEN_ACCESS' | 'USER_ACTION';
 export type AuditDataAction = 'CREATE' | 'UPDATE' | 'DELETE';
 export type AuditReportType = 'DATA_CHANGE' | 'SCREEN_ACCESS' | 'MIXED';
 export type AuditReportStatus = 'PENDING' | 'RUNNING' | 'DONE' | 'FAILED' | 'CANCELLED';
+export type AuditLevel = 'BRONZE' | 'SILVER' | 'GOLD';
 
 export interface AuditActorSummary {
   userId?: string | null;
@@ -12,6 +13,8 @@ export interface AuditActorSummary {
 export interface AuditScreenSummary {
   screenId?: string | null;
   screenName?: string | null;
+  domain?: string | null;
+  auditLevel?: AuditLevel | string | null;
 }
 
 export interface AuditCorrelation {
@@ -83,7 +86,18 @@ export interface AuditUserAction {
 export interface AuditScreenAccess {
   screenId?: string | null;
   screenName?: string | null;
+  domain?: string | null;
+  auditLevel?: AuditLevel | string | null;
   businessContext?: Record<string, unknown> | null;
+}
+
+export interface AuditCatalogSummary {
+  screenId: string;
+  aliases: string[];
+  domain: string;
+  friendlyName: string;
+  level: AuditLevel;
+  justification: string;
 }
 
 export interface AuditEventDetail {
@@ -100,6 +114,28 @@ export interface AuditEventDetail {
   action?: AuditUserAction | null;
   metadata?: Record<string, unknown> | null;
   security?: Record<string, unknown> | null;
+  catalog?: AuditCatalogSummary | null;
+}
+
+export interface AuditEventListItem {
+  eventId: string;
+  eventType: AuditEventType;
+  occurredAt: string;
+  actor?: AuditActorSummary | null;
+  origin?: AuditOrigin | null;
+  screen?: AuditScreenAccess | null;
+  data?: AuditData | null;
+  action?: AuditUserAction | null;
+  correlation?: AuditCorrelation | null;
+  metadata?: Record<string, unknown> | null;
+  catalog?: AuditCatalogSummary | null;
+}
+
+export interface AuditEventsResponse {
+  page: number;
+  size: number;
+  items: AuditEventListItem[];
+  meta?: Record<string, unknown>;
 }
 
 export interface ScreenAccessItem {
@@ -149,4 +185,25 @@ export interface AuditReportStatusResponse {
   fromUtc?: string;
   toUtc?: string;
   errorMessage?: string | null;
+}
+
+export interface AuditCatalogItem {
+  id: string;
+  aliases: string[];
+  domain: 'cadastro' | 'identificacao' | 'arrecadacao' | 'distribuicao' | 'auditoria';
+  friendlyName: string;
+  routePatterns: string[];
+  methods: Array<'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'>;
+  level: AuditLevel;
+  justification: string;
+  owner?: string;
+  approvedBy?: string;
+  approvedAt?: string;
+  changeReason?: string;
+  retentionDays?: number;
+}
+
+export interface AuditCatalogResponse {
+  version: string;
+  items: AuditCatalogItem[];
 }
