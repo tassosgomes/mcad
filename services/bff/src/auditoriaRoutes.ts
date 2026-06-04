@@ -8,6 +8,12 @@ import {
 } from './authzContext.js';
 import { toUuidCorrelationId } from './correlationId.js';
 import { AUDITORIA_PERMISSIONS, type AuditoriaPermission } from './auditoria/auditoriaPermissions.js';
+import { presentAuditEvent, presentAuditEventsBody } from './auditoria/auditEventPresenter.js';
+import {
+  buildAuditServiceUrl,
+  createAuditQueryClient,
+  parseAuditEventListQuery,
+} from './auditoria/auditQueryClient.js';
 import { AUDIT_CATALOG_VERSION, screenAuditCatalog } from './auditoria/screenAuditCatalog.js';
 
 export interface AuditoriaRoutesOptions {
@@ -32,13 +38,6 @@ interface UpstreamReportPayload {
 }
 
 const REPORT_TYPES = new Set(['DATA_CHANGE', 'SCREEN_ACCESS', 'MIXED']);
-const BFF_AUDITORIA_V1_PREFIX = '/api/auditoria/v1';
-
-interface AuditJsonResult {
-  status: number;
-  body?: unknown;
-}
-
 function correlationIdFromHeader(value: string | string[] | undefined, fallback: string): string {
   const raw = Array.isArray(value) ? value[0] : value;
   const candidate = raw && raw.trim() ? raw.trim() : fallback;
@@ -95,32 +94,6 @@ function requirePermission(
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
-}
-
-function buildAuditServiceUrl(baseUrl: string, endpointPath: string): string {
-  const normalizedPath = endpointPath.startsWith('/') ? endpointPath : `/${endpointPath}`;
-
-  if (baseUrl.endsWith('/audit') && normalizedPath.startsWith('/audit/')) {
-    return `${baseUrl}${normalizedPath.slice('/audit'.length)}`;
-  }
-
-  return `${baseUrl}${normalizedPath}`;
-}
-
-function buildAuditServiceUrlFromRequest(
-  config: BffConfig,
-  request: FastifyRequest,
-  endpointPath?: string,
-): string {
-  const sourceUrl = new URL(request.url, 'http://mcad-bff.local');
-  const path = endpointPath
-    ?? (sourceUrl.pathname.startsWith(BFF_AUDITORIA_V1_PREFIX)
-      ? sourceUrl.pathname.slice(BFF_AUDITORIA_V1_PREFIX.length)
-      : sourceUrl.pathname);
-  const targetUrl = new URL(buildAuditServiceUrl(config.auditBaseUrl, path || '/'));
-  targetUrl.search = sourceUrl.search;
-
-  return targetUrl.toString();
 }
 
 function hasSnapshotPayload(value: unknown): boolean {
@@ -272,74 +245,12 @@ async function postAuditReport(
   }
 }
 
-async function fetchAuditJson(
-  request: FastifyRequest,
-  fetchImpl: FetchLike,
-  token: string,
-  url: string,
-  correlationId: string,
-  timeoutMs: number,
-): Promise<AuditJsonResult> {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), timeoutMs);
-
-  try {
-    const response = await fetchImpl(url, {
-      method: 'GET',
-      headers: {
-        authorization: `Bearer ${token}`,
-        accept: 'application/json',
-        'x-correlation-id': correlationId,
-      },
-      signal: controller.signal,
-    });
-
-    if (response.status >= 200 && response.status < 300) {
-      let body: unknown;
-      try {
-        body = response.status === 204 ? undefined : await response.json();
-      } catch {
-        request.log.warn({ url }, 'audit returned malformed json');
-        return { status: 502, body: { code: 'AUDIT_UNEXPECTED' } };
-      }
-      return { status: response.status, body };
-    }
-
-    if ([400, 401, 403, 404, 422].includes(response.status)) {
-      let body: unknown;
-      try {
-        body = await response.json();
-      } catch {
-        body = { code: 'AUDIT_INVALID_REQUEST' };
-      }
-      request.log.warn({ url, status: response.status }, 'audit rejected request');
-      return { status: response.status, body };
-    }
-
-    if (response.status >= 500 || response.status === 408 || response.status === 429) {
-      request.log.warn({ url, status: response.status }, 'audit upstream error');
-      return { status: 503, body: { code: 'AUDIT_UNAVAILABLE' } };
-    }
-
-    request.log.warn({ url, status: response.status }, 'audit returned unexpected status');
-    return { status: 502, body: { code: 'AUDIT_UNEXPECTED' } };
-  } catch (error) {
-    const isAbort = (error as { name?: string })?.name === 'AbortError';
-    request.log.error(
-      { url, err: error, timeout: isAbort },
-      isAbort ? 'audit request timed out' : 'audit request failed',
-    );
-    return { status: 503, body: { code: 'AUDIT_UNAVAILABLE' } };
-  } finally {
-    clearTimeout(timer);
-  }
-}
-
 export async function registerAuditoriaRoutes(
   server: FastifyInstance,
   options: AuditoriaRoutesOptions,
 ): Promise<void> {
   const fetchImpl: FetchLike = options.fetchImpl ?? (globalThis.fetch as unknown as FetchLike);
+  const auditQueryClient = createAuditQueryClient(options.config, fetchImpl);
 
   if (!fetchImpl) {
     throw new Error('No fetch implementation available for auditoria routes');
@@ -371,18 +282,53 @@ export async function registerAuditoriaRoutes(
     const correlationId = correlationIdFromHeader(request.headers['x-correlation-id'], request.id);
     reply.header('x-correlation-id', correlationId);
 
-    const url = buildAuditServiceUrlFromRequest(options.config, request, endpointPath);
-    const upstream = await fetchAuditJson(
+    const upstream = await auditQueryClient.fetchJsonFromRequest(
       request,
-      fetchImpl,
       ctx.token,
-      url,
       correlationId,
-      options.config.auditTimeoutMs,
+      endpointPath,
     );
+    const presentedBody = presentAuditEventsBody(upstream.body);
     const body = hasPermission(ctx, AUDITORIA_PERMISSIONS.snapshotView)
-      ? upstream.body
-      : redactSnapshots(upstream.body);
+      ? presentedBody
+      : redactSnapshots(presentedBody);
+
+    return reply.code(upstream.status).send(body);
+  }
+
+  async function handleFriendlyAuditList(request: FastifyRequest, reply: FastifyReply) {
+    const ctx = await resolveAuthzContext(request, reply, options, fetchImpl);
+    if (!ctx) return;
+
+    if (!requirePermission(reply, ctx, AUDITORIA_PERMISSIONS.eventList)) {
+      return;
+    }
+
+    const parsedQuery = parseAuditEventListQuery((request.query as Record<string, unknown>) ?? {});
+    if (!parsedQuery.ok) {
+      return sendError(reply, 400, 'INVALID_REQUEST', parsedQuery.message);
+    }
+
+    const correlationId = correlationIdFromHeader(request.headers['x-correlation-id'], request.id);
+    reply.header('x-correlation-id', correlationId);
+
+    if (parsedQuery.query.auditLevel) {
+      reply.header('x-audit-level-filter', 'client-side');
+    }
+
+    const upstream = await auditQueryClient.fetchJson(
+      request,
+      ctx.token,
+      correlationId,
+      '/audit/events',
+      parsedQuery.query.upstreamParams,
+    );
+    const presentedBody = presentAuditEventsBody(upstream.body, {
+      auditLevel: parsedQuery.query.auditLevel,
+    });
+    const body = hasPermission(ctx, AUDITORIA_PERMISSIONS.snapshotView)
+      ? presentedBody
+      : redactSnapshots(presentedBody);
 
     return reply.code(upstream.status).send(body);
   }
@@ -402,14 +348,11 @@ export async function registerAuditoriaRoutes(
     const correlationId = correlationIdFromHeader(request.headers['x-correlation-id'], request.id);
     reply.header('x-correlation-id', correlationId);
 
-    const url = buildAuditServiceUrlFromRequest(options.config, request, endpointPath);
-    const upstream = await fetchAuditJson(
+    const upstream = await auditQueryClient.fetchJsonFromRequest(
       request,
-      fetchImpl,
       ctx.token,
-      url,
       correlationId,
-      options.config.auditTimeoutMs,
+      endpointPath,
     );
 
     if (
@@ -426,13 +369,12 @@ export async function registerAuditoriaRoutes(
       );
     }
 
-    return reply.code(upstream.status).send(upstream.body);
+    return reply.code(upstream.status).send(presentAuditEvent(upstream.body));
   }
 
   server.get('/api/auditoria/catalogo', handleCatalog);
   server.get('/api/auditoria/v1/catalogo', handleCatalog);
-  server.get('/api/auditoria/eventos', (request, reply) =>
-    handleAuditList(request, reply, '/audit/events'));
+  server.get('/api/auditoria/eventos', handleFriendlyAuditList);
   server.get('/api/auditoria/eventos/:eventId', (request, reply) => {
     const params = request.params as { eventId: string };
     return handleAuditEventDetail(

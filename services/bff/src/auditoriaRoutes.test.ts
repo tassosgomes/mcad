@@ -281,6 +281,112 @@ test('GET /api/auditoria/v1/audit/events requires event list permission', async 
   }
 });
 
+test('GET /api/auditoria/eventos maps friendly filters, presents aliases and filters auditLevel client-side', async () => {
+  const upstreamUrl = [
+    'http://audit.local/api/v1/audit/events?',
+    'actorUserId=user-1',
+    '&screenId=cadastro.titulares.lista',
+    '&fromUtc=2026-06-01T00%3A00%3A00Z',
+    '&toUtc=2026-06-04T00%3A00%3A00Z',
+    '&entityType=Titular',
+    '&entityId=tit-1',
+  ].join('');
+  const { fetchImpl, calls } = buildFakeFetch((url) => {
+    if (url === 'http://authz.local/v1/me/authorization-context') {
+      return { status: 200, body: authzContext([AUDITORIA_PERMISSIONS.eventList]) };
+    }
+    if (url === upstreamUrl) {
+      return {
+        status: 200,
+        body: {
+          items: [
+            {
+              eventId: 'evt-gold',
+              metadata: { auditLevel: 'GOLD' },
+              screen: { screenId: 'CADASTRO_TITULARES' },
+            },
+            {
+              eventId: 'evt-silver',
+              metadata: { auditLevel: 'SILVER' },
+              screen: { screenId: 'cadastro.obras.lista' },
+            },
+          ],
+          page: 0,
+          size: 20,
+        },
+      };
+    }
+    return { status: 404, body: { code: 'NOT_FOUND' } };
+  });
+
+  const server = await buildServer(BASE_CONFIG, { fetchImpl });
+
+  try {
+    const response = await server.inject({
+      method: 'GET',
+      url: [
+        '/api/auditoria/eventos?',
+        'usuario=user-1',
+        '&tela=CADASTRO_TITULARES',
+        '&from=2026-06-01T00%3A00%3A00Z',
+        '&to=2026-06-04T00%3A00%3A00Z',
+        '&entityType=Titular',
+        '&entityId=tit-1',
+        '&nivel=ouro',
+      ].join(''),
+      headers: { authorization: 'Bearer token' },
+    });
+
+    assert.equal(response.statusCode, 200);
+    assert.equal(calls.some((call) => call.url === upstreamUrl), true);
+    assert.equal(response.headers['x-audit-level-filter'], 'client-side');
+
+    const body = response.json() as {
+      items: Array<{
+        eventId: string;
+        screen: { screenId: string; screenName: string; auditLevel: string };
+      }>;
+      _meta: { auditLevelFilter: { value: string; mode: string } };
+    };
+    assert.deepEqual(body.items.map((item) => item.eventId), ['evt-gold']);
+    assert.equal(body.items[0]?.screen.screenId, 'cadastro.titulares.lista');
+    assert.equal(body.items[0]?.screen.screenName, 'Cadastro - Titulares');
+    assert.equal(body.items[0]?.screen.auditLevel, 'GOLD');
+    assert.deepEqual(body._meta.auditLevelFilter, {
+      value: 'GOLD',
+      mode: 'client-side',
+      reason: 'audit-service-v1-does-not-expose-native-audit-level-filter',
+    });
+  } finally {
+    await server.close();
+  }
+});
+
+test('GET /api/auditoria/eventos rejects unsupported filters before hitting audit-service', async () => {
+  const { fetchImpl, calls } = buildFakeFetch((url) => {
+    if (url === 'http://authz.local/v1/me/authorization-context') {
+      return { status: 200, body: authzContext([AUDITORIA_PERMISSIONS.eventList]) };
+    }
+    return { status: 500, body: { code: 'should-not-reach' } };
+  });
+
+  const server = await buildServer(BASE_CONFIG, { fetchImpl });
+
+  try {
+    const response = await server.inject({
+      method: 'GET',
+      url: '/api/auditoria/eventos?senha=secret',
+      headers: { authorization: 'Bearer token' },
+    });
+
+    assert.equal(response.statusCode, 400);
+    assert.equal(response.json().code, 'INVALID_REQUEST');
+    assert.equal(calls.some((call) => call.url.includes('/audit/events')), false);
+  } finally {
+    await server.close();
+  }
+});
+
 test('GET /api/auditoria/v1/audit/events proxies list and redacts snapshots without snapshot permission', async () => {
   const upstreamUrl = 'http://audit.local/api/v1/audit/events?screenId=cadastro.titulares.lista';
   const { fetchImpl, calls } = buildFakeFetch((url) => {
@@ -409,6 +515,54 @@ test('GET /api/auditoria/v1/audit/events/:eventId returns snapshot with snapshot
 
     assert.equal(response.statusCode, 200);
     assert.equal(response.json().screen.businessContext.snapshot.body.secret, 'cpf-completo');
+  } finally {
+    await server.close();
+  }
+});
+
+test('GET /api/auditoria/eventos/:eventId returns friendly detail with snapshot permission', async () => {
+  const upstreamUrl = 'http://audit.local/api/v1/audit/events/evt-ouro';
+  const { fetchImpl } = buildFakeFetch((url) => {
+    if (url === 'http://authz.local/v1/me/authorization-context') {
+      return {
+        status: 200,
+        body: authzContext([
+          AUDITORIA_PERMISSIONS.eventList,
+          AUDITORIA_PERMISSIONS.snapshotView,
+        ]),
+      };
+    }
+    if (url === upstreamUrl) {
+      return {
+        status: 200,
+        body: {
+          eventId: 'evt-ouro',
+          screen: {
+            screenId: 'ARRECADACAO_PAGAMENTOS',
+            businessContext: {
+              auditLevel: 'GOLD',
+              snapshot: { body: { valor: 100 } },
+            },
+          },
+        },
+      };
+    }
+    return { status: 404, body: { code: 'NOT_FOUND' } };
+  });
+
+  const server = await buildServer(BASE_CONFIG, { fetchImpl });
+
+  try {
+    const response = await server.inject({
+      method: 'GET',
+      url: '/api/auditoria/eventos/evt-ouro',
+      headers: { authorization: 'Bearer token' },
+    });
+
+    assert.equal(response.statusCode, 200);
+    assert.equal(response.json().screen.screenId, 'arrecadacao.pagamentos.lista');
+    assert.equal(response.json().screen.screenName, 'Arrecadacao - Pagamentos');
+    assert.equal(response.json().screen.businessContext.snapshot.body.valor, 100);
   } finally {
     await server.close();
   }

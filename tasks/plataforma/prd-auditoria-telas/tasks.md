@@ -39,7 +39,7 @@ Cobrir as telas iniciais dos dominios, propagar correlacao para comandos, adicio
 - [X] 2.0 Adicionar permissoes e guards de auditoria/compliance
 - [X] 3.0 Implementar produtor HTTP e builder de `SCREEN_ACCESS` no BFF
 - [X] 4.0 Evoluir proxy BFF para captura de `GET` Prata/Ouro com fail-closed
-- [ ] 5.0 Expor endpoints BFF de catalogo, eventos e detalhe de auditoria
+- [X] 5.0 Expor endpoints BFF de catalogo, eventos e detalhe de auditoria
 - [ ] 6.0 Implementar UI React de catalogo, eventos e snapshot Ouro
 - [ ] 7.0 Aplicar cobertura inicial por dominio e correlacao com alteracoes
 - [ ] 8.0 Fechar observabilidade, documentacao e validacao E2E
