@@ -6,7 +6,7 @@ import { DEFAULT_PERIOD, PeriodPicker, resolvePeriod, type PeriodValue } from '.
 import { ScreenSelect } from '../components/ScreenSelect';
 import { UserAutocomplete, type SelectedUser } from '../components/UserAutocomplete';
 import { auditEntityTypeOptions } from '../constants/auditEntityTypes';
-import { getAuditReportPdfUrl } from '../api/auditoriaApi';
+import { downloadAuditReportPdf } from '../api/auditoriaApi';
 import { useAuditReport, useCreateAuditReport } from '../hooks/useAuditReport';
 import type { AuditReportStatus, AuditReportType } from '../types/audit-event';
 import { formatAuditDate, toIsoDateTime } from '../utils/auditFormatters';
@@ -75,14 +75,47 @@ function buildInitialForm(): ReportForm {
   };
 }
 
+async function triggerPdfDownload(reportId: string): Promise<void> {
+  const { blob, filename } = await downloadAuditReportPdf(reportId);
+  const url = URL.createObjectURL(blob);
+  try {
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = filename;
+    anchor.rel = 'noopener noreferrer';
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+  } finally {
+    setTimeout(() => URL.revokeObjectURL(url), 0);
+  }
+}
+
 export function AuditReportsPage() {
   const [form, setForm] = useState<ReportForm>(buildInitialForm);
   const [reportId, setReportId] = useState<string | null>(null);
   const [history, setHistory] = useState<ReportHistoryEntry[]>(() => loadHistory());
   const [validationError, setValidationError] = useState<string | null>(null);
+  const [downloadError, setDownloadError] = useState<string | null>(null);
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
 
   const createReport = useCreateAuditReport();
   const reportQuery = useAuditReport(reportId);
+
+  const handleDownload = async (id: string) => {
+    setDownloadError(null);
+    setDownloadingId(id);
+    try {
+      await triggerPdfDownload(id);
+    } catch (error) {
+      const detail = (error as { detail?: string; title?: string } | null)?.detail
+        ?? (error as { title?: string } | null)?.title
+        ?? 'Não foi possível baixar o PDF.';
+      setDownloadError(detail);
+    } finally {
+      setDownloadingId(null);
+    }
+  };
 
   useEffect(() => {
     saveHistory(history);
@@ -260,11 +293,15 @@ export function AuditReportsPage() {
                 <Button
                   variant="secondary"
                   type="button"
-                  onClick={() => window.open(getAuditReportPdfUrl(reportId), '_blank', 'noopener,noreferrer')}
+                  disabled={downloadingId === reportId}
+                  onClick={() => void handleDownload(reportId)}
                 >
                   <Download size={16} />
-                  Baixar PDF
+                  {downloadingId === reportId ? 'Baixando…' : 'Baixar PDF'}
                 </Button>
+              )}
+              {downloadError && downloadingId === null && (
+                <p className={styles.errorState}>{downloadError}</p>
               )}
               {reportQuery.data?.status === 'FAILED' && (
                 <p className={styles.errorState}>
@@ -293,12 +330,11 @@ export function AuditReportsPage() {
                   variant="ghost"
                   size="sm"
                   type="button"
-                  onClick={() =>
-                    window.open(getAuditReportPdfUrl(entry.reportId), '_blank', 'noopener,noreferrer')
-                  }
+                  disabled={downloadingId === entry.reportId}
+                  onClick={() => void handleDownload(entry.reportId)}
                 >
                   <Download size={14} />
-                  Baixar
+                  {downloadingId === entry.reportId ? 'Baixando…' : 'Baixar'}
                 </Button>
               </li>
             ))}

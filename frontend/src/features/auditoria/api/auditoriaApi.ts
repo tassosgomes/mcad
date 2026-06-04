@@ -1,4 +1,4 @@
-import { BASE_URL, apiGetAudit, apiPostAudit } from '@services/apiAuditoriaClient';
+import { BASE_URL, apiGetAudit, apiGetAuditBlob, apiPostAudit } from '@services/apiAuditoriaClient';
 import type {
   AuditEventDetail,
   AuditTimelineItem,
@@ -48,6 +48,21 @@ type ScreenAccessApiResponse = ScreenAccessResponse | Array<ScreenAccessItem | A
 
 export function getAuditReportPdfUrl(reportId: string): string {
   return `${BASE_URL}/audit/reports/${encodeURIComponent(reportId)}/file`;
+}
+
+export interface AuditReportPdf {
+  blob: Blob;
+  filename: string;
+}
+
+export async function downloadAuditReportPdf(reportId: string): Promise<AuditReportPdf> {
+  const { blob, filename } = await apiGetAuditBlob(
+    `/audit/reports/${encodeURIComponent(reportId)}/file`,
+  );
+  return {
+    blob,
+    filename: filename ?? `relatorio-auditoria-${reportId}.pdf`,
+  };
 }
 
 export async function getAuditTimeline(params: AuditTimelineParams): Promise<AuditTimelineResponse> {
