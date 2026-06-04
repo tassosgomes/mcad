@@ -14,8 +14,13 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
+import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.util.UUID;
 
@@ -35,6 +40,7 @@ import static org.mockito.Mockito.verify;
  * </ul>
  * </p>
  */
+@Testcontainers(disabledWithoutDocker = true)
 @SpringBootTest(
         classes = ArrecadacaoApplication.class,
         webEnvironment = SpringBootTest.WebEnvironment.NONE,
@@ -43,6 +49,19 @@ import static org.mockito.Mockito.verify;
 @Import(TestSecurityConfig.class)
 @SuppressWarnings("null")
 class RubricaSyncEventFlowIT {
+
+    @Container
+    static final PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:16-alpine")
+            .withDatabaseName("mcad")
+            .withUsername("gestauto")
+            .withPassword("gestauto123");
+
+    @DynamicPropertySource
+    static void configureTestDatabase(DynamicPropertyRegistry registry) {
+        registry.add("spring.datasource.url", postgres::getJdbcUrl);
+        registry.add("spring.datasource.username", postgres::getUsername);
+        registry.add("spring.datasource.password", postgres::getPassword);
+    }
 
     @Autowired
     private SpringDataRubricaRepository rubricaRepository;
