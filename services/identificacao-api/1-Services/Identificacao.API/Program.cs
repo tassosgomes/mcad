@@ -266,6 +266,7 @@ app.MapExecucaoEndpoints(authEnabled);
 app.MapTipoUtilizacaoEndpoints(authEnabled);
 app.MapUploadEndpoints(authEnabled);
 app.MapPendenteEndpoints(authEnabled);
+app.MapDashboardEndpoints(authEnabled);
 
 // Executa Migrations no Startup
 using (var scope = app.Services.CreateScope())

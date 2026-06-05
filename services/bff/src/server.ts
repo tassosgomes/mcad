@@ -6,6 +6,7 @@ import { registerHistoricoRoutes } from './historicoRoutes.js';
 import { createMeCache, type MeCache } from './meCache.js';
 import { registerMeRoutes } from './meRoutes.js';
 import { registerProxy } from './proxy.js';
+import { registerDashboardRoutes } from './dashboardRoutes.js';
 import { AuditMetricsRegistry } from './auditoria/auditMetrics.js';
 
 export interface BuildServerOptions {
@@ -107,6 +108,11 @@ export async function buildServer(
     config,
     fetchImpl: options.fetchImpl as unknown as Parameters<typeof registerAuditoriaRoutes>[1]['fetchImpl'],
     auditMetrics,
+  });
+  await registerDashboardRoutes(server, {
+    config,
+    cache: meCache,
+    fetchImpl: options.fetchImpl as unknown as Parameters<typeof registerDashboardRoutes>[1]['fetchImpl'],
   });
 
   for (const upstream of config.upstreams) {

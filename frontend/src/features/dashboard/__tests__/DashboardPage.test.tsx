@@ -2,38 +2,23 @@ import { render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { DashboardPage } from '../pages/DashboardPage';
-import type { PermissionsState } from '@shared/authz/types';
 
 // Mock hooks
-const usePermissionsMock = vi.hoisted(() => vi.fn());
 const useEffectiveProfileMock = vi.hoisted(() => vi.fn());
-
-vi.mock('@shared/authz', () => ({
-  usePermissions: usePermissionsMock,
-}));
+const useDashboardSummaryMock = vi.hoisted(() => vi.fn());
 
 vi.mock('@shared/auth/meApi', () => ({
   useEffectiveProfile: useEffectiveProfileMock,
 }));
 
-function permissionsState(permissions: string[]): PermissionsState {
-  const permSet = new Set(permissions);
-  return {
-    permissions: permSet,
-    version: 1,
-    isLoading: false,
-    error: null,
-    can: (p) => permSet.has(p),
-    hasAny: (perms) => perms.some((p) => permSet.has(p)),
-    hasAll: (perms) => perms.every((p) => permSet.has(p)),
-    reload: vi.fn(),
-  };
-}
+vi.mock('../hooks/useDashboardSummary', () => ({
+  useDashboardSummary: useDashboardSummaryMock,
+}));
 
 describe('DashboardPage', () => {
   afterEach(() => {
-    usePermissionsMock.mockReset();
     useEffectiveProfileMock.mockReset();
+    useDashboardSummaryMock.mockReset();
   });
 
   it('renders welcome message with user profile data', () => {
@@ -46,7 +31,18 @@ describe('DashboardPage', () => {
       },
     });
 
-    usePermissionsMock.mockReturnValue(permissionsState(['cadastro:default:associacao:listar']));
+    useDashboardSummaryMock.mockReturnValue({
+      isLoading: false,
+      data: {
+        cadastro: {
+          totalObras: 84200,
+          totalFonogramas: 67150,
+          totalTitulares: 12840,
+          totalAssociacoes: 7,
+          alertas: [],
+        },
+      },
+    });
 
     render(
       <MemoryRouter>
@@ -56,9 +52,10 @@ describe('DashboardPage', () => {
 
     expect(screen.getByText('Olá, Maria Silva')).toBeInTheDocument();
     expect(screen.getByText('Analista de Cadastro')).toBeInTheDocument();
+    expect(screen.getByText('Cadastro & Catálogo')).toBeInTheDocument();
   });
 
-  it('displays authorized domain widgets normally and unauthorized widgets as restricted', () => {
+  it('displays authorized domain widgets normally and hides unauthorized widgets completely', () => {
     useEffectiveProfileMock.mockReturnValue({
       data: {
         name: 'João Mendes',
@@ -66,10 +63,19 @@ describe('DashboardPage', () => {
       },
     });
 
-    // João has access to Arrecadação only, and has no access to Cadastro, Identificação, or Distribuição
-    usePermissionsMock.mockReturnValue(
-      permissionsState(['arrecadacao:default:cliente:listar']),
-    );
+    // João has access to Arrecadação only (so other fields are undefined)
+    useDashboardSummaryMock.mockReturnValue({
+      isLoading: false,
+      data: {
+        arrecadacao: {
+          arrecadacaoMes: 12450000.00,
+          totalLicencasAtivas: 1842,
+          totalLicencasSuspensas: 34,
+          verbaLiquidaEstimada: 10580000.00,
+          alertas: [],
+        },
+      },
+    });
 
     render(
       <MemoryRouter>
@@ -77,17 +83,62 @@ describe('DashboardPage', () => {
       </MemoryRouter>,
     );
 
-    // Arrecadação Widget should be fully active and show its action links
-    expect(screen.getByText('Licenças')).toBeInTheDocument();
-    expect(screen.getByText('Usuários de Música')).toBeInTheDocument();
+    // Arrecadação Widget should be fully active
+    expect(screen.getByText('Arrecadação')).toBeInTheDocument();
+    expect(screen.getByText('Licenças Ativas')).toBeInTheDocument();
 
-    // Cadastro, Identificação and Distribuição Widgets should have "Acesso Restrito" overlays
-    const restrictedOverlays = screen.getAllByText('Acesso Restrito');
-    expect(restrictedOverlays.length).toBe(3);
+    // Other widgets (Cadastro, Identificação, Distribuição) should NOT be rendered at all
+    expect(screen.queryByText('Cadastro & Catálogo')).not.toBeInTheDocument();
+    expect(screen.queryByText('Identificação & Match')).not.toBeInTheDocument();
+    expect(screen.queryByText('Distribuição')).not.toBeInTheDocument();
 
-    // Verify presence of required permission warnings
-    expect(screen.getByText('cadastro:default:associacao:listar')).toBeInTheDocument();
-    expect(screen.getByText('identificacao:default:captacao:listar')).toBeInTheDocument();
-    expect(screen.getByText('distribuicao:default:processo:listar')).toBeInTheDocument();
+    // There should be no "Acesso Restrito" overlays
+    expect(screen.queryByText('Acesso Restrito')).not.toBeInTheDocument();
+  });
+
+  it('displays loading state skeletons', () => {
+    useEffectiveProfileMock.mockReturnValue({
+      data: {
+        name: 'Maria Silva',
+      },
+    });
+
+    useDashboardSummaryMock.mockReturnValue({
+      isLoading: true,
+      data: undefined,
+    });
+
+    render(
+      <MemoryRouter>
+        <DashboardPage />
+      </MemoryRouter>,
+    );
+
+    // Should render skeletons
+    const skeletons = screen.getAllByTestId('widget-skeleton');
+    expect(skeletons.length).toBeGreaterThan(0);
+  });
+
+  it('displays empty state when no domains are authorized', () => {
+    useEffectiveProfileMock.mockReturnValue({
+      data: {
+        name: 'Maria Silva',
+      },
+    });
+
+    useDashboardSummaryMock.mockReturnValue({
+      isLoading: false,
+      data: {}, // No authorized domains returned by BFF
+    });
+
+    render(
+      <MemoryRouter>
+        <DashboardPage />
+      </MemoryRouter>,
+    );
+
+    expect(
+      screen.getByText('Nenhum domínio disponível para o seu perfil. Solicite permissões ao administrador.'),
+    ).toBeInTheDocument();
   });
 });

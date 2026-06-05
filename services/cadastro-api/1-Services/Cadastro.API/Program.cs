@@ -225,6 +225,7 @@ app.MapFonogramaEndpoints(authEnabled);
 app.MapParticipacaoEndpoints(authEnabled);
 app.MapBuscaEndpoints(authEnabled);
 app.MapDistribuicaoEndpoints(authEnabled);
+app.MapDashboardEndpoints(authEnabled);
 
 // ─── AsyncAPI (documentação de eventos — pública) ─────────────────────
 app.MapAsyncApiDocs();
