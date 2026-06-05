@@ -200,6 +200,14 @@ test('audited proxy publishes SILVER SCREEN_ACCESS without snapshot before retur
     assert.equal(event.metadata.responseBytes, Buffer.byteLength(upstreamBody));
     assert.equal(event.screen.screenId, 'cadastro.obras.lista');
     assert.equal(Object.prototype.hasOwnProperty.call(event.screen.businessContext, 'snapshot'), false);
+
+    const metricsResponse = await server.inject({ method: 'GET', url: '/metrics' });
+    assert.equal(metricsResponse.statusCode, 200);
+    assert.match(
+      metricsResponse.body,
+      /bff_audit_screen_access_total\{level="SILVER",outcome="captured",screenId="cadastro\.obras\.lista"\} 1/,
+    );
+    assert.match(metricsResponse.body, /bff_audit_publish_latency_ms_count 1/);
   } finally {
     await server.close();
     await closeAll([upstream, authz, audit]);
@@ -560,6 +568,13 @@ test('audited proxy fail-closes when audit service is unavailable after upstream
     assert.deepEqual(response.json(), { code: 'AUDIT_UNAVAILABLE' });
     assert.equal(response.body.includes('nao-vazar'), false);
     assert.equal(audit.requests.length, 1);
+
+    const metricsResponse = await server.inject({ method: 'GET', url: '/metrics' });
+    assert.match(
+      metricsResponse.body,
+      /bff_audit_screen_access_total\{level="GOLD",outcome="fail_closed",screenId="cadastro\.titulares\.lista"\} 1/,
+    );
+    assert.match(metricsResponse.body, /bff_audit_fail_closed_total\{level="GOLD"\} 1/);
   } finally {
     await server.close();
     await closeAll([upstream, authz, audit]);

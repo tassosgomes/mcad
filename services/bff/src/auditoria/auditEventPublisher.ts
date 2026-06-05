@@ -80,6 +80,9 @@ function isValidScreenAccessEvent(event: ScreenAccessAuditEvent): boolean {
 function logPayload(event: ScreenAccessAuditEvent, extra: Record<string, unknown> = {}): Record<string, unknown> {
   return {
     eventId: event.eventId,
+    requestId: event.correlation.requestId,
+    screenAccessId: event.correlation.screenAccessId,
+    traceId: event.correlation.traceId,
     screenId: event.screen.screenId,
     level: event.metadata.auditLevel,
     ...extra,

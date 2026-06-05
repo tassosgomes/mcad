@@ -19,10 +19,12 @@ import { publishAuditEvent } from './auditoria/auditEventPublisher.js';
 import { buildScreenAccessEvent, type ScreenAccessActor } from './auditoria/screenAccessEventBuilder.js';
 import { classifyScreenAuditRequest } from './auditoria/screenAuditClassifier.js';
 import { AUDIT_CATALOG_VERSION, type AuditScreenOperation, screenAuditCatalog } from './auditoria/screenAuditCatalog.js';
+import type { AuditMetricLevel, AuditMetricsRegistry, AuditScreenAccessOutcome } from './auditoria/auditMetrics.js';
 
 export interface AuditoriaRoutesOptions {
   config: BffConfig;
   fetchImpl?: FetchLike;
+  auditMetrics?: AuditMetricsRegistry;
 }
 
 interface FrontendCreateReportPayload {
@@ -215,6 +217,30 @@ function responseBytes(body: unknown): number | undefined {
   return Buffer.byteLength(JSON.stringify(body));
 }
 
+function auditLogContext(
+  request: FastifyRequest,
+  extra: Record<string, unknown> = {},
+): Record<string, unknown> {
+  return {
+    requestId: request.id,
+    traceparent: normalizeHeaderValue(request.headers.traceparent),
+    ...extra,
+  };
+}
+
+function recordScreenAccessMetric(
+  options: AuditoriaRoutesOptions,
+  level: AuditMetricLevel,
+  outcome: AuditScreenAccessOutcome,
+  screenId: string,
+): void {
+  options.auditMetrics?.recordScreenAccess(level, outcome, screenId);
+
+  if (outcome === 'fail_closed') {
+    options.auditMetrics?.recordFailClosed(level);
+  }
+}
+
 async function captureOwnBffScreenAccess(
   request: FastifyRequest,
   reply: FastifyReply,
@@ -232,15 +258,40 @@ async function captureOwnBffScreenAccess(
     path: request.url,
     screenIdHint: normalizeHeaderValue(request.headers['x-audit-screen-id']),
   });
+  const screenIdHint = normalizeHeaderValue(request.headers['x-audit-screen-id']);
+
+  if (classification.hint.status === 'ignored') {
+    request.log.warn(
+      auditLogContext(request, {
+        method: request.method,
+        url: request.url,
+        screenIdHint,
+        reason: classification.hint.reason,
+      }),
+      'audit.catalog.match_failed',
+    );
+  }
 
   if (
     !classification.operation
     || (classification.level !== 'SILVER' && classification.level !== 'GOLD')
   ) {
+    if (screenIdHint && !classification.operation) {
+      request.log.warn(
+        auditLogContext(request, {
+          method: request.method,
+          url: request.url,
+          screenIdHint,
+          reason: 'unknown',
+        }),
+        'audit.catalog.match_failed',
+      );
+    }
     return false;
   }
 
   const auditHeaders = buildAuditHeaders(request, classification.operation);
+  const bodyBytes = responseBytes(body);
   const event = buildScreenAccessEvent({
     request: {
       headers: {
@@ -261,26 +312,39 @@ async function captureOwnBffScreenAccess(
       route: request.url,
       statusCode,
       body,
-      responseBytes: responseBytes(body),
+      responseBytes: bodyBytes,
       capturedAtUtc: new Date().toISOString(),
     },
     screenAccessId: auditHeaders['x-audit-screen-access-id'],
   });
+  const publishStartedAt = Date.now();
 
   try {
-    await publishAuditEvent(event, {
+    const publishResult = await publishAuditEvent(event, {
       auditBaseUrl: options.config.auditBaseUrl,
       auditTimeoutMs: options.config.auditTimeoutMs,
       fetchImpl: options.fetchImpl as Parameters<typeof publishAuditEvent>[1]['fetchImpl'],
       log: request.log,
     });
+    options.auditMetrics?.recordPublishLatency(publishResult.latencyMs);
+    recordScreenAccessMetric(options, classification.level, 'captured', classification.operation.id);
+
+    if (classification.level === 'GOLD') {
+      options.auditMetrics?.recordSnapshotBytes(classification.operation.id, bodyBytes);
+    }
   } catch (error) {
+    const latencyMs = Date.now() - publishStartedAt;
+    options.auditMetrics?.recordPublishLatency(latencyMs);
+    recordScreenAccessMetric(options, classification.level, 'fail_closed', classification.operation.id);
     request.log.error(
-      {
+      auditLogContext(request, {
         screenId: classification.operation.id,
         level: classification.level,
+        latencyMs,
+        requestId: event.correlation.requestId,
+        screenAccessId: event.correlation.screenAccessId,
         err: error,
-      },
+      }),
       'audit.screen_access.bff_route_fail_closed',
     );
     reply.code(503).send({ code: AUDIT_UNAVAILABLE });

@@ -109,6 +109,8 @@ test('publishAuditEvent posts SCREEN_ACCESS payload and logs only metadata', asy
   assert.equal(captured.headers?.['x-correlation-id'], '22222222-2222-4222-8222-222222222222');
   assert.equal(JSON.parse(captured.body ?? '{}').eventType, 'SCREEN_ACCESS');
   assert.equal(logger.records[0]?.message, 'audit.screen_access.captured');
+  assert.equal(logger.records[0]?.payload.requestId, '22222222-2222-4222-8222-222222222222');
+  assert.equal(logger.records[0]?.payload.screenAccessId, 'screen-access-publisher');
   assert.equal(JSON.stringify(logger.records).includes('rubrica'), false);
   assert.equal(JSON.stringify(logger.records).includes('valores'), false);
 });

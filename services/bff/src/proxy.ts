@@ -11,6 +11,7 @@ import { publishAuditEvent } from './auditoria/auditEventPublisher.js';
 import { buildScreenAccessEvent, type ScreenAccessActor } from './auditoria/screenAccessEventBuilder.js';
 import { classifyScreenAuditRequest } from './auditoria/screenAuditClassifier.js';
 import type { AuditScreenOperation } from './auditoria/screenAuditCatalog.js';
+import type { AuditMetricLevel, AuditMetricsRegistry, AuditScreenAccessOutcome } from './auditoria/auditMetrics.js';
 
 interface ProxyTarget {
   upstream: string;
@@ -26,6 +27,7 @@ interface UpstreamResponse {
 interface RegisterProxyOptions {
   config: BffConfig;
   fetchImpl?: FetchLike;
+  auditMetrics?: AuditMetricsRegistry;
 }
 
 const aiRuntimeAuthorization = new WeakMap<object, ResolvedAuthzContext>();
@@ -143,6 +145,48 @@ function isJsonContentType(contentType: string | null): boolean {
 
 function sendProxyError(reply: FastifyReply, status: number, code: string): void {
   reply.code(status).send({ code });
+}
+
+function auditLogContext(
+  request: FastifyRequest,
+  extra: Record<string, unknown> = {},
+): Record<string, unknown> {
+  return {
+    requestId: request.id,
+    traceparent: normalizeHeaderValue(request.headers.traceparent),
+    ...extra,
+  };
+}
+
+function recordScreenAccessMetric(
+  options: RegisterProxyOptions,
+  level: AuditMetricLevel,
+  outcome: AuditScreenAccessOutcome,
+  screenId: string,
+): void {
+  options.auditMetrics?.recordScreenAccess(level, outcome, screenId);
+
+  if (outcome === 'fail_closed') {
+    options.auditMetrics?.recordFailClosed(level);
+  }
+}
+
+function logCatalogMatchFailure(
+  request: FastifyRequest,
+  upstreamConfig: UpstreamConfig,
+  screenIdHint: string | undefined,
+  reason: string | undefined,
+): void {
+  request.log.warn(
+    auditLogContext(request, {
+      upstream: upstreamConfig.name,
+      method: request.method,
+      url: request.url,
+      screenIdHint,
+      reason: reason ?? 'no_catalog_match',
+    }),
+    'audit.catalog.match_failed',
+  );
 }
 
 async function readResponseBodyWithLimit(
@@ -288,11 +332,19 @@ async function handleAuditedScreenAccess(
     path: request.url,
     screenIdHint: normalizeHeaderValue(request.headers['x-audit-screen-id']),
   });
+  const screenIdHint = normalizeHeaderValue(request.headers['x-audit-screen-id']);
+
+  if (classification.hint.status === 'ignored') {
+    logCatalogMatchFailure(request, upstreamConfig, screenIdHint, classification.hint.reason);
+  }
 
   if (
     !classification.operation
     || (classification.level !== 'SILVER' && classification.level !== 'GOLD')
   ) {
+    if (screenIdHint && !classification.operation) {
+      logCatalogMatchFailure(request, upstreamConfig, screenIdHint, 'unknown');
+    }
     return false;
   }
 
@@ -331,14 +383,23 @@ async function handleAuditedScreenAccess(
 
   if (!isJsonContentType(contentType)) {
     request.log.warn(
-      {
+      auditLogContext(request, {
         upstream: upstreamConfig.name,
         statusCode: upstreamResponse.status,
         method: request.method,
         url: request.url,
         contentType,
-      },
+        screenId: classification.operation.id,
+        level: classification.level,
+        screenAccessId: auditHeaders['x-audit-screen-access-id'],
+      }),
       'audit.screen_access.non_json_response',
+    );
+    recordScreenAccessMetric(
+      options,
+      classification.level,
+      'response_not_json',
+      classification.operation.id,
     );
     sendProxyError(reply, 502, AUDIT_RESPONSE_NOT_JSON);
     return true;
@@ -351,14 +412,23 @@ async function handleAuditedScreenAccess(
 
   if (exceeded) {
     request.log.warn(
-      {
+      auditLogContext(request, {
         upstream: upstreamConfig.name,
         statusCode: upstreamResponse.status,
         method: request.method,
         url: request.url,
         maxBytes: options.config.auditScreenAccessMaxResponseBytes,
-      },
+        screenId: classification.operation.id,
+        level: classification.level,
+        screenAccessId: auditHeaders['x-audit-screen-access-id'],
+      }),
       'audit.screen_access.response_too_large',
+    );
+    recordScreenAccessMetric(
+      options,
+      classification.level,
+      'response_too_large',
+      classification.operation.id,
     );
     sendProxyError(reply, 502, AUDIT_RESPONSE_TOO_LARGE);
     return true;
@@ -370,13 +440,22 @@ async function handleAuditedScreenAccess(
     parsedBody = JSON.parse(buffer.toString('utf8'));
   } catch {
     request.log.warn(
-      {
+      auditLogContext(request, {
         upstream: upstreamConfig.name,
         statusCode: upstreamResponse.status,
         method: request.method,
         url: request.url,
-      },
+        screenId: classification.operation.id,
+        level: classification.level,
+        screenAccessId: auditHeaders['x-audit-screen-access-id'],
+      }),
       'audit.screen_access.invalid_json_response',
+    );
+    recordScreenAccessMetric(
+      options,
+      classification.level,
+      'invalid_json',
+      classification.operation.id,
     );
     sendProxyError(reply, 502, AUDIT_RESPONSE_NOT_JSON);
     return true;
@@ -409,21 +488,35 @@ async function handleAuditedScreenAccess(
     screenAccessId: auditHeaders['x-audit-screen-access-id'],
   });
 
+  const publishStartedAt = Date.now();
+
   try {
-    await publishAuditEvent(event, {
+    const publishResult = await publishAuditEvent(event, {
       auditBaseUrl: options.config.auditBaseUrl,
       auditTimeoutMs: options.config.auditTimeoutMs,
       fetchImpl: options.fetchImpl as Parameters<typeof publishAuditEvent>[1]['fetchImpl'],
       log: request.log,
     });
+    options.auditMetrics?.recordPublishLatency(publishResult.latencyMs);
+    recordScreenAccessMetric(options, classification.level, 'captured', classification.operation.id);
+
+    if (classification.level === 'GOLD') {
+      options.auditMetrics?.recordSnapshotBytes(classification.operation.id, buffer.byteLength);
+    }
   } catch (error) {
+    const latencyMs = Date.now() - publishStartedAt;
+    options.auditMetrics?.recordPublishLatency(latencyMs);
+    recordScreenAccessMetric(options, classification.level, 'fail_closed', classification.operation.id);
     request.log.error(
-      {
+      auditLogContext(request, {
         upstream: upstreamConfig.name,
         screenId: classification.operation.id,
         level: classification.level,
+        latencyMs,
+        requestId: event.correlation.requestId,
+        screenAccessId: event.correlation.screenAccessId,
         err: error,
-      },
+      }),
       'audit.screen_access.fail_closed',
     );
     sendProxyError(reply, 503, AUDIT_UNAVAILABLE);

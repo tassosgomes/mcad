@@ -426,6 +426,12 @@ test('GET /api/auditoria/eventos publishes own BFF SILVER SCREEN_ACCESS without 
     assert.equal(event.metadata.upstreamName, 'mcad-bff');
     assert.equal(event.screen.screenId, 'auditoria.eventos.lista');
     assert.equal(Object.prototype.hasOwnProperty.call(event.screen.businessContext, 'snapshot'), false);
+
+    const metricsResponse = await server.inject({ method: 'GET', url: '/metrics' });
+    assert.match(
+      metricsResponse.body,
+      /bff_audit_screen_access_total\{level="SILVER",outcome="captured",screenId="auditoria\.eventos\.lista"\} 1/,
+    );
   } finally {
     await server.close();
   }

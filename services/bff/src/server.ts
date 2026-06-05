@@ -6,10 +6,12 @@ import { registerHistoricoRoutes } from './historicoRoutes.js';
 import { createMeCache, type MeCache } from './meCache.js';
 import { registerMeRoutes } from './meRoutes.js';
 import { registerProxy } from './proxy.js';
+import { AuditMetricsRegistry } from './auditoria/auditMetrics.js';
 
 export interface BuildServerOptions {
   meCache?: MeCache;
   fetchImpl?: typeof globalThis.fetch;
+  auditMetrics?: AuditMetricsRegistry;
 }
 
 function isCorsOriginAllowed(origin: string, allowedOrigins: string[]): boolean {
@@ -67,6 +69,7 @@ export async function buildServer(
   });
 
   registerCors(server, config.corsAllowedOrigins);
+  const auditMetrics = options.auditMetrics ?? new AuditMetricsRegistry();
 
   server.get('/health/live', async () => ({
     status: 'UP',
@@ -77,6 +80,11 @@ export async function buildServer(
     status: 'UP',
     upstreams: config.upstreams.map((upstream) => upstream.name),
   }));
+
+  server.get('/metrics', async (_request, reply) => {
+    reply.type('text/plain; version=0.0.4; charset=utf-8');
+    return auditMetrics.renderPrometheus();
+  });
 
   // Rotas proprias do BFF — devem ser registradas antes dos proxies para
   // garantir que /api/me/* nao seja capturado por nenhum upstream.
@@ -98,12 +106,14 @@ export async function buildServer(
   await registerAuditoriaRoutes(server, {
     config,
     fetchImpl: options.fetchImpl as unknown as Parameters<typeof registerAuditoriaRoutes>[1]['fetchImpl'],
+    auditMetrics,
   });
 
   for (const upstream of config.upstreams) {
     await registerProxy(server, upstream, {
       config,
       fetchImpl: options.fetchImpl as unknown as Parameters<typeof registerProxy>[2]['fetchImpl'],
+      auditMetrics,
     });
   }
 
@@ -121,6 +131,7 @@ export async function buildServer(
         {
           config,
           fetchImpl: options.fetchImpl as unknown as Parameters<typeof registerProxy>[2]['fetchImpl'],
+          auditMetrics,
         },
       );
     }
