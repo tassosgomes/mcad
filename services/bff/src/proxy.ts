@@ -494,6 +494,7 @@ async function handleAuditedScreenAccess(
     const publishResult = await publishAuditEvent(event, {
       auditBaseUrl: options.config.auditBaseUrl,
       auditTimeoutMs: options.config.auditTimeoutMs,
+      userToken: resolvedAuthz.token,
       fetchImpl: options.fetchImpl as Parameters<typeof publishAuditEvent>[1]['fetchImpl'],
       log: request.log,
     });

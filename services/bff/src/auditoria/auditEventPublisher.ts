@@ -3,6 +3,7 @@ import type { ScreenAccessAuditEvent } from './screenAccessEventBuilder.js';
 export interface AuditEventPublisherOptions {
   auditBaseUrl: string;
   auditTimeoutMs: number;
+  userToken?: string;
   fetchImpl?: AuditEventFetch;
   log?: AuditEventLogger;
 }
@@ -112,6 +113,7 @@ export async function publishAuditEvent(
         accept: 'application/json',
         'content-type': 'application/json',
         'x-correlation-id': event.correlation.requestId,
+        ...(options.userToken ? { authorization: `Bearer ${options.userToken}` } : {}),
       },
       body: JSON.stringify(event),
       signal: controller.signal,
