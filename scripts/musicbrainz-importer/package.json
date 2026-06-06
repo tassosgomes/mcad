@@ -1,0 +1,13 @@
+{
+  "name": "musicbrainz-importer",
+  "version": "1.0.0",
+  "description": "Script para importar dados da API REST do MusicBrainz para o Cadastro API",
+  "type": "module",
+  "main": "01-import-obras-titulares.mjs",
+  "scripts": {
+    "start": "node 01-import-obras-titulares.mjs",
+    "gerar-iswc": "node 02-gerar-iswc.mjs",
+    "importar-fonogramas": "node 03-import-fonogramas.mjs",
+    "liberar-fonogramas": "node 04-liberar-fonogramas.mjs"
+  }
+}
