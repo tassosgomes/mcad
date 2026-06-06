@@ -1,0 +1,12 @@
+{
+  "name": "arrecadacao-generator",
+  "version": "1.0.0",
+  "description": "Script para gerar dados fakes de Arrecadação (Usuários, Licenças e Pagamentos)",
+  "type": "module",
+  "scripts": {
+    "gerar-usuarios": "node 01-gerar-usuarios.mjs",
+    "gerar-licencas": "node 02-gerar-licencas.mjs",
+    "gerar-pagamentos": "node 03-gerar-pagamentos.mjs",
+    "start": "npm run gerar-usuarios && npm run gerar-licencas && npm run gerar-pagamentos"
+  }
+}
