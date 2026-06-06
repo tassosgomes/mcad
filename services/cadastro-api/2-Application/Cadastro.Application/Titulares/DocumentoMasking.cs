@@ -2,11 +2,6 @@ namespace Cadastro.Application.Titulares;
 
 public static class DocumentoMasking
 {
-    private const string CpfMaskedRaw = "XXXXXXXXXXX";
-    private const string CnpjMaskedRaw = "XXXXXXXXXXXXXX";
-    private const string CpfMaskedFormatted = "XXX.***.***-XX";
-    private const string CnpjMaskedFormatted = "XX.XXX.***/****-XX";
-
     public static (string Documento, string DocumentoFormatado) Apply(
         string documento,
         string documentoFormatado,
@@ -17,10 +12,18 @@ public static class DocumentoMasking
             return (documento, documentoFormatado);
         }
 
+        // CPF: exibe os 3 primeiros dígitos para confirmação de identidade.
+        // CNPJ: exibe os 5 primeiros dígitos (raiz da empresa).
         return documento.Length switch
         {
-            11 => (CpfMaskedRaw, CpfMaskedFormatted),
-            14 => (CnpjMaskedRaw, CnpjMaskedFormatted),
+            11 => (
+                documento[..3] + "XXXXXXXX",
+                documento[..3] + ".***.***-XX"
+            ),
+            14 => (
+                documento[..5] + "XXXXXXXXX",
+                documento[..2] + "." + documento[2..5] + ".***/****-XX"
+            ),
             _ => (new string('X', documento.Length), documentoFormatado)
         };
     }

@@ -39,7 +39,7 @@ public class TitularCpfMaskingTests : IClassFixture<CadastroApiFactory>
     [Fact]
     public async Task GetTitular_CallerWithoutVerCpfCompleto_ReturnsDocumentoMascarado()
     {
-        var (titularId, _, _) = await CreateTitularAsync();
+        var (titularId, documento, _) = await CreateTitularAsync();
         var client = _factory.CreateAuthenticatedClientWithPermissions("consultor.dev", "consultor");
 
         var response = await client.GetAsync($"/api/v1/titulares/{titularId}");
@@ -47,8 +47,8 @@ public class TitularCpfMaskingTests : IClassFixture<CadastroApiFactory>
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var titular = await response.Content.ReadFromJsonAsync<TitularResponse>();
         titular.Should().NotBeNull();
-        titular!.Documento.Should().Be("XXXXXXXXXXX");
-        titular.DocumentoFormatado.Should().Be("XXX.***.***-XX");
+        titular!.Documento.Should().Be(documento[..3] + "XXXXXXXX");
+        titular.DocumentoFormatado.Should().Be(documento[..3] + ".***.***-XX");
     }
 
     [Fact]
@@ -64,8 +64,8 @@ public class TitularCpfMaskingTests : IClassFixture<CadastroApiFactory>
         titulares.Should().NotBeNull();
         titulares!.Data.Should().ContainSingle();
         var titular = titulares.Data.Single();
-        titular.Documento.Should().Be("XXXXXXXXXXX");
-        titular.DocumentoFormatado.Should().Be("XXX.***.***-XX");
+        titular.Documento.Should().Be(documento[..3] + "XXXXXXXX");
+        titular.DocumentoFormatado.Should().Be(documento[..3] + ".***.***-XX");
     }
 
     [Fact]

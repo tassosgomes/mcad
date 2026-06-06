@@ -22,8 +22,8 @@ public class DocumentoMaskingTests
     {
         var (doc, docFmt) = DocumentoMasking.Apply("12345678909", "123.456.789-09", fullAllowed: false);
 
-        doc.Should().Be("XXXXXXXXXXX");
-        docFmt.Should().Be("XXX.***.***-XX");
+        doc.Should().Be("123XXXXXXXX");
+        docFmt.Should().Be("123.***.***-XX");
     }
 
     [Fact]
@@ -31,8 +31,8 @@ public class DocumentoMaskingTests
     {
         var (doc, docFmt) = DocumentoMasking.Apply("12345678000199", "12.345.678/0001-99", fullAllowed: false);
 
-        doc.Should().Be("XXXXXXXXXXXXXX");
-        docFmt.Should().Be("XX.XXX.***/****-XX");
+        doc.Should().Be("12345XXXXXXXXX");
+        docFmt.Should().Be("12.345.***/****-XX");
     }
 
     [Fact]
