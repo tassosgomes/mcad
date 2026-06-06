@@ -106,7 +106,7 @@ public class CriarTitularCommandHandler : ICommandHandler<CriarTitularCommand, T
         // Reload com Associação para o response
         titular = await _titularRepository.GetByIdAsync(titular.Id, cancellationToken) ?? titular;
 
-        var fullDocumentAllowed = _permissions.Has(CadastroPermissionNames.TitularVerCpfCompleto);
+        var fullDocumentAllowed = await _permissions.HasAsync(CadastroPermissionNames.TitularVerCpfCompleto);
 
         return ListarTitularesQueryHandler.MapToResponse(titular, fullDocumentAllowed);
     }

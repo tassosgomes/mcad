@@ -8,6 +8,7 @@ using Cadastro.Domain.ValueObjects;
 using FluentAssertions;
 using Moq;
 using Xunit;
+using Cadastro.UnitTests;
 
 namespace Cadastro.UnitTests.Titularidades;
 
@@ -24,7 +25,7 @@ public class ListarTitularidadesHandlerTests
         _handler = new ListarTitularidadesQueryHandler(
             _titularidadeRepoMock.Object,
             _obraRepoMock.Object,
-            Mock.Of<ICurrentUserPermissions>(p => p.Has(CadastroPermissionNames.TitularVerCpfCompleto)));
+            PermissionsTestHelper.With(true));
     }
 
     [Fact]

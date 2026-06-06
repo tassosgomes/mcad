@@ -68,7 +68,7 @@ public class AdicionarParticipacaoCommandHandler : ICommandHandler<AdicionarPart
         await _repository.SaveChangesAsync(cancellationToken);
 
         var todas = (await _repository.GetByFonogramaIdAsync(command.FonogramaId, cancellationToken)).ToList();
-        var fullDocumentAllowed = _permissions.Has(CadastroPermissionNames.TitularVerCpfCompleto);
+        var fullDocumentAllowed = await _permissions.HasAsync(CadastroPermissionNames.TitularVerCpfCompleto);
         return ListarParticipacoesQueryHandler.BuildResponse(
             command.FonogramaId,
             todas,

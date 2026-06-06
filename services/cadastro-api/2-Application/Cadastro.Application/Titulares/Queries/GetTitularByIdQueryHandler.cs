@@ -27,7 +27,7 @@ public class GetTitularByIdQueryHandler : IQueryHandler<GetTitularByIdQuery, Tit
         var titular = await _repository.GetByIdAsync(query.Id, cancellationToken)
             ?? throw new NotFoundException("Titular", query.Id);
 
-        var fullDocumentAllowed = _permissions.Has(CadastroPermissionNames.TitularVerCpfCompleto);
+        var fullDocumentAllowed = await _permissions.HasAsync(CadastroPermissionNames.TitularVerCpfCompleto);
 
         return ListarTitularesQueryHandler.MapToResponse(titular, fullDocumentAllowed);
     }

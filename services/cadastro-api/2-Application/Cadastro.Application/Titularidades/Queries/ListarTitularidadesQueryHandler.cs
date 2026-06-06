@@ -35,7 +35,7 @@ public class ListarTitularidadesQueryHandler : IQueryHandler<ListarTitularidades
         var soma = titularidades.Sum(t => t.Percentual);
         var somaCompleta = soma == 100.0000m;
 
-        var fullDocumentAllowed = _permissions.Has(CadastroPermissionNames.TitularVerCpfCompleto);
+        var fullDocumentAllowed = await _permissions.HasAsync(CadastroPermissionNames.TitularVerCpfCompleto);
         var items = titularidades.Select(t => MapToItemResponse(t, fullDocumentAllowed)).ToList();
 
         return new TitularidadesResponse(

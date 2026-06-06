@@ -38,7 +38,7 @@ public class ListarParticipacoesQueryHandler : IQueryHandler<ListarParticipacoes
         bool somaCalculada = lista.Any() && lista.All(p => p.Percentual.HasValue);
         decimal? soma = somaCalculada ? lista.Sum(p => p.Percentual!.Value) : null;
 
-        var fullDocumentAllowed = _permissions.Has(CadastroPermissionNames.TitularVerCpfCompleto);
+        var fullDocumentAllowed = await _permissions.HasAsync(CadastroPermissionNames.TitularVerCpfCompleto);
 
         return new ParticipacoesResponse(
             query.FonogramaId,

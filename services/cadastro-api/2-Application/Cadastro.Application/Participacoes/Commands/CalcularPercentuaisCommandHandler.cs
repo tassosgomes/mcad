@@ -58,7 +58,7 @@ public class CalcularPercentuaisCommandHandler : ICommandHandler<CalcularPercent
 
         await _repository.SaveChangesAsync(cancellationToken);
 
-        var fullDocumentAllowed = _permissions.Has(CadastroPermissionNames.TitularVerCpfCompleto);
+        var fullDocumentAllowed = await _permissions.HasAsync(CadastroPermissionNames.TitularVerCpfCompleto);
         return ListarParticipacoesQueryHandler.BuildResponse(
             command.FonogramaId,
             participacoes,

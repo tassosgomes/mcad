@@ -10,6 +10,7 @@ using Cadastro.Domain.ValueObjects;
 using FluentAssertions;
 using Moq;
 using Xunit;
+using Cadastro.UnitTests;
 
 namespace Cadastro.UnitTests.Participacoes;
 
@@ -27,7 +28,7 @@ public class AdicionarParticipacaoHandlerTests
             _fonogramaRepo.Object,
             _titularRepo.Object,
             Mock.Of<IParticipacaoAuditPublisher>(),
-            Mock.Of<ICurrentUserPermissions>(p => p.Has(CadastroPermissionNames.TitularVerCpfCompleto)));
+            PermissionsTestHelper.With(true));
     }
 
     private Fonograma CriarFonograma(StatusFonograma status = StatusFonograma.PendenteValidacao)

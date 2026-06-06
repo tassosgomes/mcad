@@ -64,7 +64,7 @@ public class AdicionarTitularidadeCommandHandler : ICommandHandler<AdicionarTitu
         var titularidades = await _repository.GetByObraIdAsync(command.ObraId, cancellationToken);
         var soma = titularidades.Sum(t => t.Percentual);
         var somaCompleta = soma == 100.0000m;
-        var fullDocumentAllowed = _permissions.Has(CadastroPermissionNames.TitularVerCpfCompleto);
+        var fullDocumentAllowed = await _permissions.HasAsync(CadastroPermissionNames.TitularVerCpfCompleto);
         
         return new TitularidadesResponse(
             command.ObraId,

@@ -8,6 +8,7 @@ using Cadastro.Domain.ValueObjects;
 using FluentValidation;
 using FluentValidation.Results;
 using Moq;
+using Cadastro.UnitTests;
 
 namespace Cadastro.UnitTests.Titulares;
 
@@ -32,7 +33,7 @@ public class AtualizarTitularCommandHandlerTests
             _mockAssociacaoRepo.Object,
             _mockValidator.Object,
             Mock.Of<ITitularAuditPublisher>(),
-            Mock.Of<ICurrentUserPermissions>(p => p.Has(CadastroPermissionNames.TitularVerCpfCompleto)));
+            PermissionsTestHelper.With(true));
     }
 
     [Fact]

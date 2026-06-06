@@ -9,6 +9,7 @@ using Cadastro.Domain.Interfaces;
 using FluentAssertions;
 using Moq;
 using Xunit;
+using Cadastro.UnitTests;
 
 namespace Cadastro.UnitTests.Titularidades;
 
@@ -28,7 +29,7 @@ public class RemoverTitularidadeHandlerTests
             _titularidadeRepoMock.Object,
             _obraRepoMock.Object,
             _auditPublisherMock.Object,
-            Mock.Of<ICurrentUserPermissions>(p => p.Has(CadastroPermissionNames.TitularVerCpfCompleto)));
+            PermissionsTestHelper.With(true));
     }
 
     [Fact]

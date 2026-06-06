@@ -39,7 +39,7 @@ public class ListarTitularesQueryHandler : IQueryHandler<ListarTitularesQuery, T
 
         var totalPages = (int)Math.Ceiling((double)total / query.Size);
 
-        var fullDocumentAllowed = _permissions.Has(CadastroPermissionNames.TitularVerCpfCompleto);
+        var fullDocumentAllowed = await _permissions.HasAsync(CadastroPermissionNames.TitularVerCpfCompleto);
 
         return new TitularListResponse(
             Data: items.Select(item => MapToResponse(item, fullDocumentAllowed)),

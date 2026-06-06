@@ -24,7 +24,7 @@ public class BuscarTitularesQueryHandler : IQueryHandler<BuscarTitularesQuery, I
             return Enumerable.Empty<TitularResumoResponse>();
 
         var titulares = await _repository.BuscarParaAutocompleteAsync(query.Q, query.Limit, cancellationToken);
-        var fullDocumentAllowed = _permissions.Has(CadastroPermissionNames.TitularVerCpfCompleto);
+        var fullDocumentAllowed = await _permissions.HasAsync(CadastroPermissionNames.TitularVerCpfCompleto);
 
         return titulares.Select(t => new TitularResumoResponse(
             t.Id,
