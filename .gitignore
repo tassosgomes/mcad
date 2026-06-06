@@ -74,3 +74,4 @@ $RECYCLE.BIN/
 datadump-mb
 mapas.json
 scripts/musicbrainz-importer/mapas.json
+scripts/arrecadacao-generator/mapas.json
