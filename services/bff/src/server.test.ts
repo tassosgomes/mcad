@@ -166,7 +166,7 @@ test('proxy rewrites route prefix and forwards query string and auth header', as
   try {
     const response = await server.inject({
       method: 'GET',
-      url: '/api/identificacao/v1/captacoes?page=1&size=20&sort=-periodo',
+      url: '/api/identificacao/v1/rubricas?page=1&size=20&sort=-periodo',
       headers: {
         authorization: 'Bearer test-token',
         origin: 'https://mcad.tasso.dev.br',
@@ -174,10 +174,10 @@ test('proxy rewrites route prefix and forwards query string and auth header', as
     });
 
     assert.equal(response.statusCode, 200);
-    assert.equal(receivedUrl, '/api/v1/captacoes?page=1&size=20&sort=-periodo');
+    assert.equal(receivedUrl, '/api/v1/rubricas?page=1&size=20&sort=-periodo');
     assert.equal(receivedHeaders.authorization, 'Bearer test-token');
     assert.equal(receivedHeaders['x-mcad-bff-upstream'], 'identificacao');
-    assert.equal(receivedHeaders['x-mcad-original-url'], '/api/identificacao/v1/captacoes?page=1&size=20&sort=-periodo');
+    assert.equal(receivedHeaders['x-mcad-original-url'], '/api/identificacao/v1/rubricas?page=1&size=20&sort=-periodo');
     assert.equal(response.headers['x-mcad-bff-upstream'], 'identificacao');
     assert.equal(typeof response.headers['x-mcad-request-id'], 'string');
     assert.equal(response.headers['access-control-allow-origin'], 'https://mcad.tasso.dev.br');
