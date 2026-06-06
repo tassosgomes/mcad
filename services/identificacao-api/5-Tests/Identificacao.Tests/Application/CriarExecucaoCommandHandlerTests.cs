@@ -45,7 +45,7 @@ public class CriarExecucaoCommandHandlerTests
 
         var obraId = Guid.NewGuid();
         _cadastroClientMock.Setup(c => c.GetObraByIdAsync(obraId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new ObraResumoDto(obraId, "Minha Obra", "BR-123", "LIBERADA"));
+            .ReturnsAsync(new ObraResumoDto(obraId, "Minha Obra", "BR-123", "LIBERADO"));
 
         var command = new CriarExecucaoCommand(
             captacao.Id, obraId, null, new TimeOnly(12, 0), new TimeOnly(12, 5), 1, null, null, analistaId);
@@ -188,7 +188,7 @@ public class CriarExecucaoCommandHandlerTests
 
         _captacaoRepoMock.Setup(r => r.GetByIdAsync(captacao.Id, It.IsAny<CancellationToken>())).ReturnsAsync(captacao);
         _cadastroClientMock.Setup(c => c.GetObraByIdAsync(obraId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new ObraResumoDto(obraId, "Obra", "ISWC", "LIBERADA"));
+            .ReturnsAsync(new ObraResumoDto(obraId, "Obra", "ISWC", "LIBERADO"));
         _cadastroClientMock.Setup(c => c.GetFonogramaByIdAsync(fonogramaId, It.IsAny<CancellationToken>())).ReturnsAsync((FonogramaResumoDto?)null);
 
         var command = new CriarExecucaoCommand(
@@ -209,7 +209,7 @@ public class CriarExecucaoCommandHandlerTests
 
         _captacaoRepoMock.Setup(r => r.GetByIdAsync(captacao.Id, It.IsAny<CancellationToken>())).ReturnsAsync(captacao);
         _cadastroClientMock.Setup(c => c.GetObraByIdAsync(obraId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new ObraResumoDto(obraId, "Obra", "ISWC", "LIBERADA"));
+            .ReturnsAsync(new ObraResumoDto(obraId, "Obra", "ISWC", "LIBERADO"));
         _cadastroClientMock.Setup(c => c.GetFonogramaByIdAsync(fonogramaId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new FonogramaResumoDto(fonogramaId, outraObraId, "Fono", "BR-1", null, "LIBERADO"));
 

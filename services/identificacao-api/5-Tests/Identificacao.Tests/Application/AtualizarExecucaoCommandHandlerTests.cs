@@ -56,7 +56,7 @@ public class AtualizarExecucaoCommandHandlerTests
 
         var novaObraId = Guid.NewGuid();
         _cadastroClientMock.Setup(c => c.GetObraByIdAsync(novaObraId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new ObraResumoDto(novaObraId, "Novo Titulo", "BR-999", "LIBERADA"));
+            .ReturnsAsync(new ObraResumoDto(novaObraId, "Novo Titulo", "BR-999", "LIBERADO"));
 
         var command = new AtualizarExecucaoCommand(
             captacao.Id, execucao.Id, novaObraId, null, new TimeOnly(12, 0), new TimeOnly(12, 5), 1, null, null, analistaId);
@@ -208,7 +208,7 @@ public class AtualizarExecucaoCommandHandlerTests
         _captacaoRepoMock.Setup(r => r.GetByIdAsync(captacao.Id, It.IsAny<CancellationToken>())).ReturnsAsync(captacao);
         _execucaoRepoMock.Setup(r => r.GetByIdAsync(captacao.Id, execucao.Id, It.IsAny<CancellationToken>())).ReturnsAsync(execucao);
         _cadastroClientMock.Setup(c => c.GetObraByIdAsync(obraId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new ObraResumoDto(obraId, "Obra", "ISWC", "LIBERADA"));
+            .ReturnsAsync(new ObraResumoDto(obraId, "Obra", "ISWC", "LIBERADO"));
         _cadastroClientMock.Setup(c => c.GetFonogramaByIdAsync(fonogramaId, It.IsAny<CancellationToken>())).ReturnsAsync((FonogramaResumoDto?)null);
 
         var cmd = new AtualizarExecucaoCommand(
@@ -232,7 +232,7 @@ public class AtualizarExecucaoCommandHandlerTests
         _captacaoRepoMock.Setup(r => r.GetByIdAsync(captacao.Id, It.IsAny<CancellationToken>())).ReturnsAsync(captacao);
         _execucaoRepoMock.Setup(r => r.GetByIdAsync(captacao.Id, execucao.Id, It.IsAny<CancellationToken>())).ReturnsAsync(execucao);
         _cadastroClientMock.Setup(c => c.GetObraByIdAsync(obraId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new ObraResumoDto(obraId, "Obra", "ISWC", "LIBERADA"));
+            .ReturnsAsync(new ObraResumoDto(obraId, "Obra", "ISWC", "LIBERADO"));
         _cadastroClientMock.Setup(c => c.GetFonogramaByIdAsync(fonogramaId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new FonogramaResumoDto(fonogramaId, outraObraId, "Fono", "BR-1", null, "LIBERADO"));
 

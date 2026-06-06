@@ -84,7 +84,7 @@ public class AtualizarExecucaoCommandHandler : ICommandHandler<AtualizarExecucao
             interpretes = fonograma.Interpretes;
         }
 
-        var statusExecucao = obra.Status == "LIBERADA" ? StatusExecucao.Identificada : StatusExecucao.Pendente;
+        var statusExecucao = obra.Status == "LIBERADO" ? StatusExecucao.Identificada : StatusExecucao.Pendente;
 
         var before = IdentificacaoAuditMappers.Map(execucao);
         execucao.Atualizar(

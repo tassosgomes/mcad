@@ -26,7 +26,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class CriarProcessoCommandHandler {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(CriarProcessoCommandHandler.class);
-    private static final String EVENT_TYPE = "distribuicao.processo.criado";
+    private static final String EVENT_TYPE = "distribuicao.processo.iniciado";
 
     private final ProcessoRepository processoRepository;
     private final SnapshotRolRepository snapshotRolRepository;
@@ -94,7 +94,7 @@ public class CriarProcessoCommandHandler {
         auditClient.publish(auditEventFactory.dataChange(
                 new ProcessoAuditChange(processo, ProcessoAuditOperation.CREATE, null), auditCtx));
 
-        LOGGER.info("distribuicao.processo.criado processoId={} rubricaSigla={} periodo={} analista={}",
+        LOGGER.info("distribuicao.processo.iniciado processoId={} rubricaSigla={} periodo={} analista={}",
                 processo.getId(), processo.getRubricaSigla(), processo.getPeriodo(), cmd.analistaResponsavel());
 
         return ProcessoResponse.from(processo);

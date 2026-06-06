@@ -13,14 +13,17 @@ import br.com.ecad.distribuicao.application.services.CreditoRetidoLiberacaoServi
 import br.com.ecad.distribuicao.domain.entities.Credito;
 import br.com.ecad.distribuicao.domain.entities.CreditoLiberacao;
 import br.com.ecad.distribuicao.domain.entities.ProcessoDistribuicao;
+import br.com.ecad.distribuicao.domain.entities.SnapshotRol;
 import br.com.ecad.distribuicao.domain.exceptions.NotFoundException;
 import br.com.ecad.distribuicao.domain.interfaces.CreditoRepository;
 import br.com.ecad.distribuicao.domain.interfaces.OutboxEventWriter;
 import br.com.ecad.distribuicao.domain.interfaces.ProcessoRepository;
+import br.com.ecad.distribuicao.domain.interfaces.SnapshotRolRepository;
 import br.org.ecad.audit.sdk.AuditClient;
 import java.time.Instant;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -36,6 +39,7 @@ public class FinalizarProcessoCommandHandler {
 
     private final ProcessoRepository processoRepository;
     private final CreditoRepository creditoRepository;
+    private final SnapshotRolRepository snapshotRolRepository;
     private final CreditoRetidoLiberacaoService creditoRetidoLiberacaoService;
     private final OutboxEventWriter outboxEventWriter;
     private final AuditClient auditClient;
@@ -45,6 +49,7 @@ public class FinalizarProcessoCommandHandler {
     public FinalizarProcessoCommandHandler(
             ProcessoRepository processoRepository,
             CreditoRepository creditoRepository,
+            SnapshotRolRepository snapshotRolRepository,
             CreditoRetidoLiberacaoService creditoRetidoLiberacaoService,
             OutboxEventWriter outboxEventWriter,
             AuditClient auditClient,
@@ -52,6 +57,7 @@ public class FinalizarProcessoCommandHandler {
             ProcessoAuditEventFactory auditEventFactory) {
         this.processoRepository = processoRepository;
         this.creditoRepository = creditoRepository;
+        this.snapshotRolRepository = snapshotRolRepository;
         this.creditoRetidoLiberacaoService = creditoRetidoLiberacaoService;
         this.outboxEventWriter = outboxEventWriter;
         this.auditClient = auditClient;
@@ -74,6 +80,11 @@ public class FinalizarProcessoCommandHandler {
                 creditoRetidoLiberacaoService.efetivarLiberacoes(processo, finalizadoEm);
         processo = processoRepository.save(processo);
 
+        UUID captacaoId = processo.getSnapshotRolId() == null ? null
+                : snapshotRolRepository.findById(processo.getSnapshotRolId())
+                        .map(SnapshotRol::getCaptacaoId)
+                        .orElse(null);
+
         for (CreditoLiberacao liberacao : resultadoLiberacao.liberacoes()) {
             publishCreditoLiberado(processo, liberacao);
         }
@@ -81,7 +92,7 @@ public class FinalizarProcessoCommandHandler {
         // 2 eventos de domínio para finalização
         outboxEventWriter.addEvent(EVENT_FINALIZADO, processo.getId().toString(), buildPayloadFinalizado(processo));
         outboxEventWriter.addEvent(EVENT_ROL_PROCESSADO, processo.getId().toString(),
-                buildPayloadRolProcessado(processo));
+                buildPayloadRolProcessado(processo, captacaoId));
 
         AuditContext auditCtx = auditContextProvider.current(cmd.autor());
         auditClient.publish(auditEventFactory.userAction(processo, auditCtx, ProcessoAuditOperation.FINALIZE));
@@ -110,13 +121,13 @@ public class FinalizarProcessoCommandHandler {
         return payload;
     }
 
-    private Map<String, Object> buildPayloadRolProcessado(ProcessoDistribuicao processo) {
+    private Map<String, Object> buildPayloadRolProcessado(ProcessoDistribuicao processo, UUID captacaoId) {
         Map<String, Object> payload = new LinkedHashMap<>();
         payload.put("processoId", processo.getId().toString());
         payload.put("rubricaSigla", processo.getRubricaSigla());
         payload.put("periodo", processo.getPeriodo());
-        if (processo.getSnapshotRolId() != null) {
-            payload.put("captacaoId", processo.getSnapshotRolId().toString());
+        if (captacaoId != null) {
+            payload.put("captacaoId", captacaoId.toString());
         }
         return payload;
     }

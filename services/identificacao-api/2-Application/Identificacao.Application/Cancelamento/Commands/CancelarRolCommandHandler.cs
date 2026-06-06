@@ -55,7 +55,7 @@ public class CancelarRolCommandHandler : ICommandHandler<CancelarRolCommand, Can
         var payload = new RolCanceladoPayload(
             captacao.Id,
             captacao.Rubrica?.Sigla ?? string.Empty,
-            captacao.Periodo.ToString("yyyy-MM-dd"),
+            captacao.Periodo.ToString("yyyy-MM"),
             captacao.CanceladoEm ?? DateTime.UtcNow,
             command.AnalistaId,
             command.Justificativa);

@@ -2,9 +2,10 @@
 
 > **Documento de planejamento.** Define o objetivo, o cenário de simulação, as pendências e os pré-requisitos para executar o ciclo completo do ECAD no mini-ECAD passando pelos quatro domínios (Cadastro → Identificação → Arrecadação → Distribuição).
 >
-> **Última revisão:** 2026-05-28
+> **Última revisão:** 2026-06-06 (PEND-07 resolvido)
 > **Base documental:** `vision.md` (v1.10 — 2026-05-20), `domains/{cadastro,identificacao,arrecadacao,distribuicao}/domain.md` (2026-05-16/17)
-> **Estado da codebase auditado:** branch `main`, commit `1ad35ca`
+> **Estado da codebase auditado:** branch `main`, commit `100be7d`
+> **Auditoria do sistema publicado:** https://mcad.tasso.dev.br em 2026-06-06
 
 ---
 
@@ -19,7 +20,7 @@ Demonstrar, em um único cenário reproduzível e fiel ao Regulamento de Distrib
 5. **Distribuição**: criação de processo, cálculo de créditos com split 66,67% / 33,33%, retenção/liberação de créditos e finalização com publicação de `distribuicao.rol.processado`.
 6. **Verificação cruzada** dos resultados: somatório de créditos por titular = verba líquida ± resíduo de arredondamento; rol bloqueado para cancelamento; verba marcada como `DISTRIBUIDA`.
 
-**Objetivo secundário:** produzir um conjunto de fixtures e scripts repetíveis que sirvam como **smoke test ponta a ponta** do sistema, executável em ambiente local (Docker Compose) e em ambientes de demo.
+**Objetivo secundário:** produzir um conjunto de fixtures e scripts repetíveis que sirvam como **smoke test ponta a ponta** do sistema, executável contra o ambiente publicado (`mcad.tasso.dev.br`).
 
 ---
 
@@ -77,11 +78,11 @@ Demonstrar, em um único cenário reproduzível e fiel ao Regulamento de Distrib
 
 ## 3. Estado da Codebase vs. Cenário
 
-Auditoria cruzando `vision.md`, `domains/*/domain.md` e implementação.
+Auditoria cruzando `vision.md`, `domains/*/domain.md` e implementação. Atualizado em 2026-06-06.
 
 | Etapa do cenário | Status | Observações |
 |---|---|---|
-| Seed de associações, rubricas e tipos de utilização | ✅ done | Migrations existentes |
+| Seed de associações, rubricas e tipos de utilização | ✅ done | Migrations existentes; confirmado no ambiente publicado |
 | CRUD de titulares (PF/PJ), obras, fonogramas | ✅ done | D01 F02/F03/F05 |
 | Titularidades autorais + participações conexas + RN-12 | ✅ done | D01 F04/F06 |
 | Controle de status (LIBERADO/PENDENTE/BLOQUEADO) | ✅ done | D01 F07 |
@@ -104,133 +105,155 @@ Auditoria cruzando `vision.md`, `domains/*/domain.md` e implementação.
 
 ---
 
-## 4. Pendências Críticas (bloqueiam o ciclo)
+## 4. Pendências Críticas
 
-Estas pendências **impedem** que a simulação rode ponta a ponta com fidelidade ao Regulamento. Cada uma tem origem documentada no `vision.md` ou nos domain docs.
+Compiladas a partir da análise original do plano + auditoria ao vivo do ambiente publicado em 2026-06-06.  
+Marcadas com **[LIVE]** quando confirmadas no sistema em produção.
 
-### 4.1. PEND-01 — Normalização do contrato de período
+### 4.1. PEND-01 — Normalização do contrato de período ✅ Resolvido
 
-- **Sintoma:** Identificação publica `periodo` no formato `YYYY-MM-DD` (data diária da captação) em `identificacao.rol.fechado`; Arrecadação e Distribuição operam com período mensal `YYYY-MM`.
-- **Onde ocorre:** `services/identificacao-api/2-Application/Identificacao.Application/Fechamento/Commands/FecharRolCommandHandler.cs:86` — `captacao.Periodo.ToString("yyyy-MM-dd")`.
-- **Impacto:** O matching de snapshots de Rol com Verba em Distribuição falha (ou casa por coincidência), tornando o cruzamento Rol+Verba não confiável.
-- **Decisão necessária:** ou (a) Identificação passa a publicar `YYYY-MM` derivado da data, ou (b) Distribuição passa a derivar `YYYY-MM` ao indexar o snapshot. Recomendado **(a)**, mais alinhado ao Regulamento.
-- **Esforço estimado:** Pequeno (1 dia). Requer migration mínima e ajuste no handler + listener de Distribuição.
+- **Sintoma:** Identificação publicava `periodo` no formato `YYYY-MM-DD` em `identificacao.rol.fechado` e `identificacao.rol.cancelado`; Distribuição opera com período mensal `YYYY-MM`.
+- **Resolução:** `captacao.Periodo.ToString("yyyy-MM-dd")` → `"yyyy-MM"` em `FecharRolCommandHandler.cs` e `CancelarRolCommandHandler.cs`. Listener de Distribuição já armazenava o campo como string sem parsear — nenhum ajuste necessário no Java. 123/123 testes unitários passando.
 
-### 4.2. PEND-02 — `distribuicao.rol.processado` com `captacaoId` errado
+### 4.2. PEND-02 — `distribuicao.rol.processado` com `captacaoId` errado ✅ Resolvido
 
-- **Sintoma:** Distribuição publica `captacaoId = snapshotRolId` quando deveria publicar o id original da captação. Identificação ignora silenciosamente e o bloqueio de cancelamento do rol não funciona.
-- **Onde ocorre:** `services/distribuicao-api/distribuicao-application/.../FinalizarProcessoCommandHandler.java:119` — `payload.put("captacaoId", processo.getSnapshotRolId().toString())`.
-- **Impacto:** O Analista de Identificação consegue cancelar um Rol já processado pela Distribuição, gerando inconsistência cross-domain (regra RN-14 de D04 e RN-11 de D02 violadas).
-- **Decisão necessária:** o snapshot do Rol em Distribuição precisa persistir o `captacaoId` original recebido no evento `identificacao.rol.fechado`. Hoje o snapshot já recebe o campo `captacaoId` no payload — só precisa ser persistido e referenciado.
-- **Esforço estimado:** Pequeno (0,5 dia).
+- **Sintoma:** Distribuição publicava `captacaoId = snapshotRolId` quando deveria publicar o id original da captação. Identificação ignorava silenciosamente e o bloqueio de cancelamento do rol não funcionava.
+- **Onde ocorria:** `FinalizarProcessoCommandHandler.java` — `payload.put("captacaoId", processo.getSnapshotRolId().toString())`.
+- **Resolução:** `SnapshotRolRepository` injetado no handler; no momento da finalização, busca o `SnapshotRol` pelo ID e extrai `captacaoId` real para incluir no evento. `buildPayloadRolProcessado` recebe `UUID captacaoId` como parâmetro explícito.
 
-### 4.3. PEND-03 — `distribuicao.processo.iniciado` não é publicado
+### 4.3. PEND-03 — `distribuicao.processo.iniciado` não é publicado ✅ Resolvido
 
-- **Sintoma:** Arrecadação já consome o evento para travar a verba (`VerbaEmDistribuicaoException`), mas Distribuição nunca o publica. O lock só ocorre ao **finalizar** (via `distribuicao.processo.finalizado`).
-- **Onde ocorre:** Distribuição (`CriarProcessoCommandHandler` ou equivalente) — falta `outboxEventWriter.addEvent("distribuicao.processo.iniciado", ...)`. Listener consumidor em Arrecadação existe.
-- **Impacto:** Janela em que um pagamento pode entrar **depois** que o cálculo já leu o snapshot da verba, sem disparar erro — risco de inconsistência sutil para o demo. O Domain Doc lista como lacuna conhecida.
-- **Esforço estimado:** Pequeno (0,5 dia).
+- **Sintoma:** `CriarProcessoCommandHandler` publicava `distribuicao.processo.criado` (não `distribuicao.processo.iniciado`). Arrecadação possui consumer para `processo.iniciado` que travaria a verba, mas nunca era acionado.
+- **Resolução:** `EVENT_TYPE` renomeado de `"distribuicao.processo.criado"` para `"distribuicao.processo.iniciado"` no `CriarProcessoCommandHandler`. Nenhum outro serviço consumia `processo.criado`, então a substituição direta é segura.
 
-### 4.4. PEND-04 — Bug `LIBERADA` vs `LIBERADO` no registro manual de Identificação
+### 4.4. PEND-04 — Bug `LIBERADA` vs `LIBERADO` no registro manual de Identificação ✅ Resolvido
 
-- **Sintoma:** O handler de registro manual de execução compara `obra.Status == "LIBERADA"` enquanto Cadastro publica o status como `LIBERADO`. Resultado: toda execução manual marca a obra como pendente, mesmo quando o Cadastro a tem como liberada.
-- **Onde ocorre:** `services/identificacao-api/2-Application/Identificacao.Application/Execucoes/Commands/CriarExecucaoCommandHandler.cs:83` e `AtualizarExecucaoCommandHandler.cs:87`.
-- **Impacto:** Toda demo que usar registro manual aciona o fluxo de pendentes desnecessariamente. **Não bloqueia** o cenário CSV-only, mas distorce a demo.
-- **Esforço estimado:** Trivial (15 min). Trocar literal por constante compartilhada.
+- **Sintoma:** `CriarExecucaoCommandHandler.cs:83` e `AtualizarExecucaoCommandHandler.cs:87` comparam `obra.Status == "LIBERADA"`, mas Cadastro publica o status como `"LIBERADO"`. A comparação nunca é verdadeira, então toda execução manual marca a obra como pendente.
+- **Impacto:** Toda demo com registro manual enfileira falsos-pendentes. O cenário CSV-only ainda funciona, mas o cenário de borda com registro manual não.
+- **Decisão:** Trocar o literal `"LIBERADA"` por `"LIBERADO"` (ou por constante compartilhada) nos dois handlers.
+- **Esforço estimado:** Trivial (15 min).
 
-### 4.5. PEND-05 — Implementação de **F06 Ajustes por Estorno** (D04)
+### 4.5. PEND-05 — Implementação de F06 Ajustes por Estorno (D04)
 
-- **Sintoma:** PRD pronto (`tasks/distribuicao/prd-ajustes-estorno/prd.md`); Arrecadação já publica `arrecadacao.pagamento.estornado` desde 2026-05-15; Distribuição não consome.
-- **Impacto:** Cenário "estorno após distribuição" não pode ser demonstrado. Sem isso, simulação não cobre a regra RN-07 de D04.
-- **Decisão de escopo:** **Recomendado adiar para a v2 da simulação.** A v1 pode rodar sem estorno.
-- **Esforço estimado:** Médio (3–5 dias). Já tem PRD; falta tech spec + implementação.
+- **Sintoma:** PRD pronto (`tasks/distribuicao/prd-ajustes-estorno/prd.md`); Arrecadação já publica `arrecadacao.pagamento.estornado`; Distribuição não consome.
+- **Decisão de escopo:** **Adiado para v2.** A v1 roda sem estorno.
+- **Esforço estimado:** Médio (3–5 dias).
 
-### 4.6. PEND-06 — **F07 Demonstrativo de Créditos** (D04)
+### 4.6. PEND-06 — F07 Demonstrativo de Créditos (D04)
 
-- **Sintoma:** Sem PRD, sem implementação. É o "holerite" do titular — saída visível do ciclo.
-- **Impacto:** Sem demonstrativo, a simulação termina **silenciosamente** — não há tela de "valor que cada titular receberá". O usuário/observador da demo precisa abrir o banco para conferir os créditos.
-- **Decisão de escopo:** **Recomendado MVP do demonstrativo** para a v1 (lista por titular com obra, categoria, percentual, valor; sem PDF, sem agregações). Pode ser tela read-only consumindo créditos já persistidos.
-- **Esforço estimado:** Médio (3–5 dias) para MVP. Maior se incluir PDF e ajustes.
+- **Sintoma:** Sem PRD, sem implementação. Sem demonstrativo a simulação termina silenciosamente — não há tela mostrando o valor que cada titular receberá.
+- **Decisão de escopo:** **MVP do demonstrativo é must-have para v1** (lista por titular: obra, categoria, percentual, valor; sem PDF).
+- **Esforço estimado:** Médio (3–5 dias).
+
+### 4.7. PEND-07 — BFF em crash no ambiente publicado ✅ Resolvido
+
+- **Sintoma original (auditoria 2026-06-06 ~13h):** `mecad_mcad-bff` (2/2 réplicas) terminando com `non-zero exit (137)` (SIGKILL/unhealthy) e `non-zero exit (139)` (SIGSEGV). Logs mostravam `npm error command failed + signal SIGTERM`.
+- **Diagnóstico (2026-06-06):** Causa raiz é **SIGSEGV sistêmico no host** — mesmo exit 139 que afetou `identificacao-api` ~5h antes. Descartadas: variável `AUDIT_BASE_URL` ausente (tem `:-default` na stack), build quebrado (112/112 testes passam localmente, imagem local com env de prod sobe normalmente), falha de binding de porta.
+- **Resolução:** Rollout da imagem `tassosgomes/mcad-bff:66` concluído às 16:29 do mesmo dia. BFF responde `{"status":"UP"}` em `/health/live` e `/health/ready`.
+- **Risco residual:** O SIGSEGV era sistêmico (host/kernel); se recorrer, a causa não é código do BFF. Monitorar via restart count no Portainer.
+- **Esforço realizado:** 0,5 dia (diagnóstico completo).
+
+### 4.8. PEND-08 — Dados ruidosos no banco de produção ❌ [LIVE] — novo
+
+- **Sintoma:** O banco contém 9.854 titulares e 109 obras de execuções anteriores de QA/load test. O cenário golden path precisa de IDs determinísticos para que os asserts da Seção 8 funcionem de forma reproduzível.
+- **Impacto:** Scripts de verificação não podem usar `totalElements` ou filtrar por nome. Sem UUIDs fixos, cada run do seed cria registros novos e os asserts precisam ser reescritos.
+- **Decisão:** O `seed-golden-path.sh` deve usar UUIDs fixos com upsert (idempotente). Dados ruidosos pré-existentes não precisam ser apagados; o cenário opera sobre seus próprios IDs conhecidos.
+- **Esforço estimado:** Endereçado durante PRE-03/PRE-04 (Fase 1).
+
+### 4.9. PEND-09 — `analista_identificacao` sem credencial no `.env_qa` ✅ Resolvido
+
+- **Sintoma original:** O usuário `analista_identificacao@mcad.dev` existia no authz DB com a role `identificacao.default.analista`, mas não tinha entrada no `.env_qa`, impedindo automação.
+- **Resolução:** Credencial `analista_identificacao` / `gW-pcQ85` adicionada ao `.env_qa` em 2026-06-06.
+
+### 4.10. PEND-10 — 403 para `analista_distribuicao` no identificacao-api ✅ Resolvido
+
+- **Sintoma original:** `analista_distribuicao` recebia HTTP 403 ao acessar captações de Identificação.
+- **Diagnóstico (2026-06-06 via Playwright):**
+  - `analista_identificacao` → `GET /api/identificacao/v1/captacoes` → **200** ✅ (o frontend manda a chamada; a lista carrega normalmente).
+  - `analista_distribuicao` → frontend consulta `/api/me/permissions`, não encontra `identificacao:default:captacao:listar`, bloqueia antes de chamar a API, exibe "Acesso negado". **Comportamento correto** — esse usuário tem apenas `distribuicao.default.analista` e não deveria ter acesso a Identificação.
+- **Conclusão:** O 403 original provavelmente era estado inconsistente pós-segfault do `identificacao-api`. Com o serviço estável, as permissões funcionam como esperado. A confusão veio do plano assumir que `analista_distribuicao` deveria ter a role `identificacao.default.analista`, mas o seed não inclui essa atribuição.
+- **Para a simulação:** usar `analista_identificacao` / `gW-pcQ85` em todas as etapas de Identificação. Scripts não precisam de `analista_distribuicao` no módulo de Identificação.
 
 ---
 
 ## 5. Pré-requisitos Operacionais
 
-Itens **não funcionais** que precisam estar prontos para a simulação rodar de ponta a ponta.
+### 5.1. Infraestrutura publicada (ambiente `mcad.tasso.dev.br`)
 
-### 5.1. Infraestrutura local
-- [x] Docker Compose com PostgreSQL 16, RabbitMQ, Keycloak, MinIO (`docker-compose.dev.yml`).
-- [x] Script de provisionamento do Keycloak (`scripts/provision-keycloak.sh`).
-- [x] Script `./dev.sh start` para subir os 4 serviços + frontend.
-- [ ] **PRE-01** — `dev.sh` precisa incluir o `distribuicao-api` (verificar: não foi confirmado durante esta auditoria).
-- [ ] **PRE-02** — Healthcheck script que confirma que todos os 4 serviços estão respondendo `200` em `/health` antes de começar a seeding.
+| Item | Status | Detalhe |
+|---|---|---|
+| Serviços cadastro, identificacao, arrecadacao, distribuicao | ✅ | Respondendo em `mcad-{svc}.tasso.dev.br` |
+| PostgreSQL, RabbitMQ, Keycloak/Logto | ✅ | Operacionais no Swarm |
+| **BFF** | ✅ | PEND-07 resolvido — respondendo em `mcad-bff.tasso.dev.br` |
+| **Observabilidade (Alloy)** | ❌ 0/1 réplica | Não bloqueia simulação; bloqueia métricas |
 
-### 5.2. Seed cross-domain
-- [x] Seeds estáticos por domínio (associações, rubricas, tipos de utilização).
-- [ ] **PRE-03** — **Fixture única ponta a ponta**: arquivo JSON ou script `seed-golden-path.sh` que cria, na ordem certa, os 6 titulares + 2 obras + 2 fonogramas + 1 usuário de música + 1 licença + 1 pagamento + 1 captação + 10 execuções (via CSV). Hoje cada domínio tem seeds isolados; nenhum fluxo end-to-end consolidado.
-- [ ] **PRE-04** — Definir um **conjunto de IDs determinísticos** (UUIDs fixos) para os dados-mestre da simulação, permitindo asserts reproduzíveis.
+### 5.2. Mapeamento de usuários para a simulação
 
-### 5.3. Autenticação e autorização
-- [x] Keycloak provisionado com roles e users.
-- [x] Backends respeitam `AUTH_ENABLED=true/false`.
-- [ ] **PRE-05** — Documentar qual usuário/role da simulação faz cada papel (Analista Cadastro, Identificação, Arrecadação, Distribuição). Hoje o `provision-keycloak.sh` cria users genéricos; o cenário precisa fixar isso.
+| Papel no cenário | Usuário (`login`) | Senha | Domínio acessível |
+|---|---|---|---|
+| Analista de Cadastro | `analista_cadastro` | `Analista123!` | Cadastro |
+| Analista de Identificação | `analista_identificacao` | `gW-pcQ85` | Identificação |
+| Analista de Arrecadação | `analista_arrecadacao` | `Analista123!` | Arrecadação |
+| Analista de Distribuição | `analista_distribuicao` | `LV1Uwm1k` | Distribuição (+ Identificação a confirmar — PEND-10) |
 
-### 5.4. Observabilidade do fluxo
-- [ ] **PRE-06** — Pelo menos um consumidor visível da exchange de eventos (RabbitMQ admin UI ou um script de tail) que permita confirmar **em tempo real** os 9 eventos esperados:
-  - `cadastro.obra.liberada`, `cadastro.fonograma.liberado` (D01)
-  - `arrecadacao.verba.disponivel` (D03)
-  - `identificacao.rol.fechado` (D02)
-  - `distribuicao.processo.criado`, `distribuicao.processo.calculado`, `distribuicao.credito.retido` (D04, primeiro processo)
-  - `distribuicao.processo.finalizado`, `distribuicao.rol.processado` (D04, finalização)
+### 5.3. Seed cross-domain
 
-### 5.5. Frontend
-- [x] Telas de Cadastro, Identificação (captações/execuções), Arrecadação (usuários/licenças/pagamentos), Distribuição (processos).
-- [ ] **PRE-07** — Confirmar que **menu lateral expõe todas as 4 áreas** com permissões mínimas do usuário-demo (a auditoria viu `features/{cadastro,identificacao,arrecadacao,distribuicao}` no frontend, mas não validei o sidebar para todos os perfis).
-- [ ] Dependência de **PEND-06** (Demonstrativo) para encerrar visualmente o ciclo.
+- [x] Seeds estáticos por domínio (associações, rubricas, tipos de utilização) — confirmados no ambiente publicado.
+- [ ] **PRE-03** — `seed-golden-path.sh`: cria, na ordem certa, 6 titulares + 2 obras + 2 fonogramas + 1 usuário de música + 1 licença + 1 pagamento + 1 captação + 10 execuções (via CSV). Deve ser idempotente via UUIDs fixos.
+- [ ] **PRE-04** — Conjunto de UUIDs determinísticos para os dados-mestre do cenário (fixtures JSON em `scripts/sim/fixtures/golden-path/`).
+
+### 5.4. Scripts de automação
+
+- [ ] **PRE-02** — `healthcheck.sh`: confirma que os 4 serviços + RabbitMQ respondem antes de iniciar o seed.
+- [ ] **PRE-05** — `run-distribuicao.sh`: cria processo, aguarda cálculo, aprova, finaliza.
+- [ ] **PRE-06** — `tail-events.sh`: escuta a exchange RabbitMQ e imprime os 9 eventos esperados em tempo real (via API HTTP do RabbitMQ admin, não via Alloy que está down).
+- [ ] **PRE-07** — `verify.sh`: roda os asserts da Seção 8 contra o ambiente publicado.
 
 ---
 
-## 6. Plano em Fases
+## 6. Plano em Fases (atualizado)
 
-Estratégia **incremental**: priorizar uma v1 demonstrável e tratar estorno/demonstrativo enriquecido na v2.
+### Fase 0 — Correções de contrato + infraestrutura (2–3 dias)
 
-### Fase 0 — Higiene do contrato (1–2 dias)
+Pré-requisito absoluto: sem esses fixes os scripts produzem resultados incorretos.
 
-| Item | Esforço | Dono sugerido |
+| Item | Esforço | Status |
 |---|---|---|
-| PEND-04 — fix `LIBERADO/LIBERADA` | 15 min | Identificação |
-| PEND-02 — `captacaoId` correto em `rol.processado` | 0,5 dia | Distribuição |
-| PEND-03 — publicar `distribuicao.processo.iniciado` | 0,5 dia | Distribuição |
-| PEND-01 — normalizar período `YYYY-MM` | 1 dia | Identificação + Distribuição |
-| Teste de integração cobrindo as 4 correções | 0,5 dia | — |
+| **PEND-07** — Diagnosticar e corrigir crash do BFF | 0,5 dia | ✅ resolvido (SIGSEGV sistêmico; reimplantado :66 às 16:29 de 2026-06-06) |
+| **PEND-04** — fix `LIBERADO/LIBERADA` (`CriarExecucaoCommandHandler.cs:83` e `AtualizarExecucaoCommandHandler.cs:87`) | 15 min | ✅ resolvido |
+| **PEND-02** — `captacaoId` correto em `rol.processado` (`FinalizarProcessoCommandHandler.java:119`) | 0,5 dia | ✅ resolvido |
+| **PEND-03** — publicar `distribuicao.processo.iniciado` (`CriarProcessoCommandHandler.java`) | 0,5 dia | ✅ resolvido |
+| **PEND-01** — normalizar período `YYYY-MM` (`FecharRolCommandHandler.cs:86` + listener Distribuição) | 1 dia | ✅ resolvido |
+| **PEND-10** — validar acesso de `analista_identificacao` ao identificacao-api | 0,5 dia | ✅ resolvido |
+| Reimplantar serviços corrigidos no ambiente publicado | 0,5 dia | — |
 
-**Critério de saída:** mensagens consumidas em `arrecadacao` e `identificacao` correspondem 100% ao que `distribuicao` publica; cancelamento de Rol após `distribuicao.rol.processado` é bloqueado.
+**Critério de saída:** (a) BFF funcionando; (b) mensagens consumidas em `arrecadacao` e `identificacao` correspondem 100% ao que `distribuicao` publica; (c) cancelamento de Rol após `distribuicao.rol.processado` é bloqueado; (d) `analista_identificacao` consegue listar captações.
 
 ### Fase 1 — Fixture e orquestrador da simulação (2–3 dias)
 
 | Item | Esforço |
 |---|---|
-| PRE-03 — `seed-golden-path.sh` orquestrando as chamadas HTTP nos 4 serviços, idempotente | 1,5 dia |
 | PRE-04 — UUIDs determinísticos no fixture JSON | 0,5 dia |
-| PRE-02 — `healthcheck.sh` aguardando 4 serviços + RabbitMQ + Keycloak | 0,5 dia |
-| PRE-06 — `tail-events.sh` (CLI) escutando a exchange de eventos para evidência | 0,5 dia |
+| PRE-03 — `seed-golden-path.sh` orquestrando chamadas HTTP nos 4 serviços, idempotente | 1,5 dia |
+| PRE-02 — `healthcheck.sh` aguardando 4 serviços + RabbitMQ | 0,5 dia |
+| PRE-06 — `tail-events.sh` via RabbitMQ HTTP API | 0,5 dia |
 
-**Critério de saída:** com apenas `./dev.sh start && ./scripts/sim/seed-golden-path.sh && ./scripts/sim/run-distribuicao.sh`, conseguimos rodar o ciclo inteiro até `distribuicao.processo.finalizado` e ver os 9 eventos no terminal.
+**Critério de saída:** `./scripts/sim/seed-golden-path.sh && ./scripts/sim/run-distribuicao.sh` roda o ciclo completo até `distribuicao.processo.finalizado` e os 9 eventos aparecem no terminal.
 
 ### Fase 2 — Demonstrativo MVP (3–5 dias)
 
 | Item | Esforço |
 |---|---|
 | PRD curto de Demonstrativo de Créditos (D04 F07 MVP) | 0,5 dia |
-| Backend: `GET /api/v1/processos/{id}/demonstrativos?titular=...` | 1 dia |
+| Backend: `GET /api/v1/processos/{id}/demonstrativos` | 1 dia |
 | Frontend: tela read-only listando demonstrativos por titular | 1,5 dia |
 | Teste E2E Playwright validando demonstrativo do cenário golden path | 1 dia |
 
-**Critério de saída:** ao final da simulação v1, o avaliador abre a tela "Demonstrativos" e vê uma linha por titular com o valor calculado, batendo com a verba líquida ± resíduo.
+**Critério de saída:** ao final da simulação v1, o avaliador abre "Demonstrativos" e vê uma linha por titular com valor calculado, batendo com a verba líquida ± resíduo.
 
 ### Fase 3 — Ajustes por estorno (3–5 dias) — opcional para v1
 
-Implementar D04 F06 e estender o cenário com um estorno após a distribuição, exercitando a regra RN-07.
+Implementar D04 F06 e estender o cenário com estorno após distribuição (PEND-05).
 
 ### Fase 4 — Polimento da demo (1–2 dias)
 
@@ -247,10 +270,12 @@ Implementar D04 F06 e estender o cenário com um estorno após a distribuição,
 | Risco | Probabilidade | Impacto | Mitigação |
 |---|---|---|---|
 | Inconsistência de período entre domínios faz o cálculo achar verba zero | Alta antes de PEND-01 | Alto | Resolver PEND-01 **antes** de qualquer fixture |
+| BFF com SIGSEGV sistêmico recorrente degrada demo | Baixa (resolvido em 2026-06-06) | Médio | Monitorar restart count; causa é host/kernel, não código |
+| Dados ruidosos (9.854 titulares) confundem o script de verificação | Alta | Médio | UUIDs determinísticos no seed (PRE-04) |
 | Fixture cross-domain quebra se a ordem das chamadas ignorar Outbox latency | Média | Médio | `seed-golden-path.sh` deve fazer `wait-for-event` no RabbitMQ entre cada etapa |
-| Cálculo de créditos arredonda diferente do esperado e a verificação cruzada falha | Média | Médio | Documentar tolerância (ex: ± R$ 0,01 por titular) no script de verificação |
-| Pequenas mudanças no frontend quebram o roteiro | Baixa | Médio | Usar Playwright e versionar o roteiro junto com os testes |
-| Sem demonstrativo, a demo "morre" no estado FINALIZADO sem feedback visual | Alta sem PEND-06 | Alto | Fase 2 (Demonstrativo MVP) é **must-have** para uma demo apresentável |
+| `identificacao-api` instável (segfaults recentes) causa falhas intermitentes | Média | Médio | Monitorar logs; se recorrente, investigar causa raiz |
+| Cálculo de créditos arredonda diferente do esperado e a verificação cruzada falha | Média | Médio | Documentar tolerância (± R$ 0,01 por titular) no script de verificação |
+| Sem demonstrativo, a demo "morre" no estado FINALIZADO sem feedback visual | Alta sem PEND-06 | Alto | Fase 2 (Demonstrativo MVP) é **must-have** |
 
 ---
 
@@ -275,7 +300,7 @@ Para a simulação ser considerada **concluída**, as seguintes asserções prec
 scripts/sim/
 ├── README.md                       # como rodar
 ├── healthcheck.sh                  # PRE-02
-├── tail-events.sh                  # PRE-06
+├── tail-events.sh                  # PRE-06 (via RabbitMQ HTTP API)
 ├── fixtures/
 │   └── golden-path/
 │       ├── titulares.json
@@ -287,20 +312,25 @@ scripts/sim/
 │       ├── captacao.json
 │       └── execucoes.csv
 ├── seed-golden-path.sh             # PRE-03 — orquestrador
-├── run-distribuicao.sh             # cria, calcula, aprova, finaliza
-└── verify.sh                       # roda asserts da Seção 8
+├── run-distribuicao.sh             # PRE-05 — cria, calcula, aprova, finaliza
+└── verify.sh                       # PRE-07 — roda asserts da Seção 8
 ```
 
 ---
 
-## 10. Próximos Passos Imediatos
+## 10. Sequência de Ataque (próximos passos imediatos)
 
-1. **Aprovar este plano** e priorizar Fase 0 (correções de contrato).
-2. **Decidir formato do período** (PEND-01): `YYYY-MM` em todos os contratos? (recomendado).
-3. **Confirmar escopo da v1**: incluir Demonstrativo MVP? Tratar estorno apenas na v2? (recomendado).
-4. Criar pasta `scripts/sim/` e versionar fixtures.
-5. Atribuir os 4 itens de Fase 0 a donos no time e abrir PRDs/tasks correspondentes para PEND-05 e PEND-06.
+Ordem recomendada para desbloquear o ciclo:
+
+1. ~~**PEND-07**~~ — ✅ BFF resolvido (SIGSEGV sistêmico, reimplantado :66 em 2026-06-06).
+2. ~~**PEND-04**~~ — ✅ Fix `LIBERADA → LIBERADO` nos dois handlers + testes corrigidos.
+3. ~~**PEND-10**~~ — ✅ `analista_identificacao` retorna 200 em captações. `analista_distribuicao` não tem role de Identificação (correto).
+4. ~~**PEND-02**~~ — ✅ `captacaoId` original buscado do `SnapshotRol` e publicado corretamente em `distribuicao.rol.processado`.
+5. ~~**PEND-03**~~ — ✅ `EVENT_TYPE` renomeado para `"distribuicao.processo.iniciado"` no `CriarProcessoCommandHandler`.
+6. ~~**PEND-01**~~ — ✅ `"yyyy-MM-dd"` → `"yyyy-MM"` em `FecharRolCommandHandler` e `CancelarRolCommandHandler`; listener Distribuição sem alteração.
+7. Reimplantar os 3 serviços corrigidos (Identificação, Distribuição) no ambiente publicado.
+8. Iniciar **Fase 1** (fixtures e scripts de seed).
 
 ---
 
-*Documento gerado a partir de auditoria de `vision.md`, `domains/*/domain.md` e código em `services/` no commit `1ad35ca`. Atualizar a Seção 3 sempre que houver mudança de status de feature.*
+*Documento atualizado em 2026-06-06 com base em auditoria ao vivo do ambiente `mcad.tasso.dev.br`. Seção 3 deve ser atualizada sempre que houver mudança de status de feature. Pendências 7–10 são novas, identificadas na auditoria.*

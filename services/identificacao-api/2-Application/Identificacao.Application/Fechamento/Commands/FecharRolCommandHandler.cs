@@ -83,7 +83,7 @@ public class FecharRolCommandHandler : ICommandHandler<FecharRolCommand, Fechame
         )).ToList();
 
         return new RolFechadoPayload(
-            captacao.Id, captacao.Rubrica.Sigla, captacao.Periodo.ToString("yyyy-MM-dd"),
+            captacao.Id, captacao.Rubrica.Sigla, captacao.Periodo.ToString("yyyy-MM"),
             DateTime.UtcNow, captacao.AnalistaResponsavelId, exePayloads);
     }
 }
