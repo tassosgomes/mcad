@@ -9,13 +9,16 @@ import br.com.ecad.distribuicao.domain.enums.CategoriaCredito;
 import br.com.ecad.distribuicao.domain.enums.StatusCredito;
 import br.com.ecad.distribuicao.domain.enums.StatusProcesso;
 import br.com.ecad.distribuicao.domain.enums.SubcategoriaConexa;
+import br.com.ecad.distribuicao.domain.enums.MotivoRetencao;
 import br.com.ecad.distribuicao.domain.filters.CreditoFiltro;
 import br.com.ecad.distribuicao.domain.interfaces.CreditoRepository;
+import br.com.ecad.distribuicao.domain.projections.TitularDemonstrativoProjection;
 import br.org.ecad.audit.sdk.AuditClient;
 import jakarta.persistence.EntityManager;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -161,6 +164,51 @@ class CreditoRepositoryIntegrationTest {
     }
 
     @Test
+    void findTitularesByProcessoId_ShouldReturnGroupedAggregates() {
+        ProcessoDistribuicao processo = persistProcesso("RADIO", "2026-05");
+        creditoRepository.saveAll(List.of(
+                autoral(processo.getId(), TITULAR_A_ID, OBRA_A_ID),
+                autoral(processo.getId(), TITULAR_A_ID, OBRA_B_ID),
+                conexo(processo.getId(), TITULAR_B_ID, OBRA_A_ID)));
+        entityManager.flush();
+        entityManager.clear();
+
+        List<TitularDemonstrativoProjection> result = creditoRepository.findTitularesByProcessoId(
+                processo.getId(), null, PageRequest.of(0, 10));
+
+        assertThat(result).hasSize(2);
+        TitularDemonstrativoProjection tA = result.stream()
+                .filter(t -> t.titularId().equals(TITULAR_A_ID)).findFirst().orElseThrow();
+        assertThat(tA.titularNome()).isEqualTo("Titular " + TITULAR_A_ID.toString().substring(35));
+        assertThat(tA.totalCalculado()).isEqualByComparingTo("2000.00");
+        assertThat(tA.totalRetido()).isEqualByComparingTo("0.00");
+        assertThat(tA.quantidadeObras()).isEqualTo(2);
+    }
+
+    @Test
+    void findLiberadosByProcessoLiberacaoAndTitular_ShouldReturnLiberatedCredits() {
+        ProcessoDistribuicao processoCalc = persistProcesso("RADIO", "2026-05");
+        ProcessoDistribuicao processoLib = persistProcesso("TV_ABERTA", "2026-05");
+        Credito c1 = retido(processoCalc.getId(), TITULAR_A_ID, OBRA_A_ID, new BigDecimal("700.00"));
+        Credito c2 = retido(processoCalc.getId(), TITULAR_A_ID, OBRA_B_ID, new BigDecimal("300.00"));
+        c1.liberar(processoLib.getId(), Instant.now());
+        creditoRepository.saveAll(List.of(c1, c2));
+        entityManager.flush();
+        entityManager.clear();
+
+        List<Credito> liberados = creditoRepository.findLiberadosByProcessoLiberacaoAndTitular(
+                processoLib.getId(), TITULAR_A_ID);
+
+        assertThat(liberados).hasSize(1);
+        assertThat(liberados.get(0).getStatus()).isEqualTo(StatusCredito.LIBERADO);
+        assertThat(liberados.get(0).getProcessoId()).isEqualTo(processoCalc.getId());
+
+        Map<UUID, java.math.BigDecimal> sums = creditoRepository.sumLiberadosByProcessoLiberacaoId(processoLib.getId());
+        assertThat(sums).containsOnlyKeys(TITULAR_A_ID);
+        assertThat(sums.get(TITULAR_A_ID)).isEqualByComparingTo("1000.00");
+    }
+
+    @Test
     void findByProcessoId_WithFiltersAndPagination_ShouldFilterByCategoriaTitularAndObra() {
         ProcessoDistribuicao processo = persistProcesso("RADIO", "2026-05");
         creditoRepository.saveAll(List.of(
@@ -249,6 +297,25 @@ class CreditoRepositoryIntegrationTest {
                 new BigDecimal("500.00"),
                 new BigDecimal("250.00"),
                 new BigDecimal("10.000000"),
+                CRIADO_EM);
+    }
+
+    private Credito retido(UUID processoId, UUID titularId, UUID obraId, BigDecimal valorCredito) {
+        return Credito.retido(
+                processoId,
+                titularId,
+                "Titular " + titularId.toString().substring(35),
+                obraId,
+                "Obra " + obraId.toString().substring(35),
+                null,
+                CategoriaCredito.AUTORAL,
+                null,
+                new BigDecimal("100.000000"),
+                new BigDecimal("1000.00"),
+                valorCredito,
+                new BigDecimal("10.000000"),
+                MotivoRetencao.TITULAR_SEM_ASSOCIACAO,
+                Instant.now(),
                 CRIADO_EM);
     }
 
