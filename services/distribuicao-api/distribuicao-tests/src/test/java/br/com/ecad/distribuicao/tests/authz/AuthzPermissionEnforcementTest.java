@@ -79,7 +79,9 @@ import org.testcontainers.junit.jupiter.Testcontainers;
                     + "org.springframework.boot.autoconfigure.security.oauth2.resource.servlet.OAuth2ResourceServerAutoConfiguration,"
                     + "org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration,"
                     + "org.springframework.boot.autoconfigure.data.redis.RedisRepositoriesAutoConfiguration",
-            "spring.rabbitmq.listener.simple.auto-startup=false"
+            "spring.rabbitmq.listener.simple.auto-startup=false",
+            "otel.sdk.disabled=true",
+            "management.tracing.enabled=false"
         })
 @ActiveProfiles("test")
 @Import(TestSecurityConfig.class)
