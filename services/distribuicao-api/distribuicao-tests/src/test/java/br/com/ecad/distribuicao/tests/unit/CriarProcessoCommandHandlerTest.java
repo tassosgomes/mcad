@@ -88,7 +88,7 @@ class CriarProcessoCommandHandlerTest {
         assertThat(response.rubricaSigla()).isEqualTo(RUBRICA);
         assertThat(response.periodo()).isEqualTo(PERIODO);
 
-        verify(outboxEventWriter).addEvent(eq("distribuicao.processo.criado"), any(), any());
+        verify(outboxEventWriter).addEvent(eq("distribuicao.processo.iniciado"), any(), any());
         verify(auditClient, times(2)).publish(any(AuditEvent.class));
     }
 
