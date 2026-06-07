@@ -35,6 +35,7 @@ import br.com.ecad.distribuicao.domain.exceptions.TransicaoInvalidaException;
 import br.com.ecad.distribuicao.domain.interfaces.OutboxEventWriter;
 import br.com.ecad.distribuicao.domain.interfaces.CreditoRepository;
 import br.com.ecad.distribuicao.domain.interfaces.ProcessoRepository;
+import br.com.ecad.distribuicao.domain.interfaces.SnapshotRolRepository;
 import br.org.ecad.audit.contract.AuditEvent;
 import br.org.ecad.audit.sdk.AuditClient;
 import java.math.BigDecimal;
@@ -60,6 +61,7 @@ class TransicoesCommandHandlerTest {
 
     @Mock private ProcessoRepository processoRepository;
     @Mock private CreditoRepository creditoRepository;
+    @Mock private SnapshotRolRepository snapshotRolRepository;
     @Mock private CreditoRetidoLiberacaoService creditoRetidoLiberacaoService;
     @Mock private OutboxEventWriter outboxEventWriter;
     @Mock private AuditClient auditClient;
@@ -75,7 +77,7 @@ class TransicoesCommandHandlerTest {
         aprovarHandler = new AprovarProcessoCommandHandler(
                 processoRepository, outboxEventWriter, auditClient, auditContextProvider, auditEventFactory);
         finalizarHandler = new FinalizarProcessoCommandHandler(
-                processoRepository, creditoRepository, creditoRetidoLiberacaoService,
+                processoRepository, creditoRepository, snapshotRolRepository, creditoRetidoLiberacaoService,
                 outboxEventWriter, auditClient, auditContextProvider, auditEventFactory);
         cancelarHandler = new CancelarProcessoCommandHandler(
                 processoRepository, creditoRetidoLiberacaoService,
