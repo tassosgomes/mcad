@@ -1,13 +1,18 @@
 package br.com.ecad.distribuicao.infra.persistence;
 
 import br.com.ecad.distribuicao.domain.entities.Credito;
+import br.com.ecad.distribuicao.domain.enums.StatusCredito;
 import br.com.ecad.distribuicao.domain.filters.CreditoFiltro;
 import br.com.ecad.distribuicao.domain.interfaces.CreditoRepository;
 import br.com.ecad.distribuicao.domain.projections.CalculoResumoProjection;
+import br.com.ecad.distribuicao.domain.projections.TitularDemonstrativoProjection;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.LockModeType;
 import jakarta.persistence.TypedQuery;
+import java.math.BigDecimal;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
@@ -23,9 +28,14 @@ import org.springframework.transaction.annotation.Transactional;
 public class JpaCreditoRepository implements CreditoRepository {
 
     private final EntityManager entityManager;
+    private final SpringDataCreditoRepository springDataCreditoRepository;
 
-    public JpaCreditoRepository(EntityManager entityManager) {
+    public JpaCreditoRepository(
+            EntityManager entityManager,
+            SpringDataCreditoRepository springDataCreditoRepository) {
         this.entityManager = Objects.requireNonNull(entityManager);
+        this.springDataCreditoRepository =
+                Objects.requireNonNull(springDataCreditoRepository, "springDataCreditoRepository must not be null");
     }
 
     @Override
@@ -127,6 +137,110 @@ public class JpaCreditoRepository implements CreditoRepository {
                 .setParameter("processoId", processoId)
                 .getResultStream()
                 .findFirst();
+    }
+
+    @Override
+    public List<Credito> findByProcessoIdForAjuste(UUID processoId) {
+        return springDataCreditoRepository.findByProcessoIdForAjuste(processoId);
+    }
+
+    @Override
+    public List<TitularDemonstrativoProjection> findTitularesByProcessoId(
+            UUID processoId, String titularNomeFiltro, Pageable pageable) {
+        StringBuilder jpql = new StringBuilder("""
+            SELECT new br.com.ecad.distribuicao.domain.projections.TitularDemonstrativoProjection(
+                c.titularId,
+                c.titularNome,
+                SUM(CASE WHEN c.status = br.com.ecad.distribuicao.domain.enums.StatusCredito.CALCULADO THEN c.valorCredito ELSE 0 END),
+                SUM(CASE WHEN c.status = br.com.ecad.distribuicao.domain.enums.StatusCredito.RETIDO THEN c.valorCredito ELSE 0 END),
+                COUNT(DISTINCT CASE WHEN c.status = br.com.ecad.distribuicao.domain.enums.StatusCredito.CALCULADO THEN c.obraId ELSE NULL END)
+            )
+            FROM Credito c
+            WHERE c.processoId = :processoId
+            """);
+        if (titularNomeFiltro != null && !titularNomeFiltro.isBlank()) {
+            jpql.append(" AND LOWER(c.titularNome) LIKE LOWER(CONCAT('%', :filtroNome, '%'))");
+        }
+        jpql.append(" GROUP BY c.titularId, c.titularNome");
+        jpql.append(" ORDER BY LOWER(c.titularNome) ASC");
+
+        TypedQuery<TitularDemonstrativoProjection> query =
+                entityManager.createQuery(jpql.toString(), TitularDemonstrativoProjection.class);
+        query.setParameter("processoId", processoId);
+        if (titularNomeFiltro != null && !titularNomeFiltro.isBlank()) {
+            query.setParameter("filtroNome", titularNomeFiltro);
+        }
+        query.setFirstResult((int) pageable.getOffset());
+        query.setMaxResults(pageable.getPageSize());
+        return query.getResultList();
+    }
+
+    @Override
+    public long countTitularesByProcessoId(UUID processoId, String titularNomeFiltro) {
+        StringBuilder jpql = new StringBuilder("""
+            SELECT COUNT(DISTINCT c.titularId)
+            FROM Credito c
+            WHERE c.processoId = :processoId
+            """);
+        if (titularNomeFiltro != null && !titularNomeFiltro.isBlank()) {
+            jpql.append(" AND LOWER(c.titularNome) LIKE LOWER(CONCAT('%', :filtroNome, '%'))");
+        }
+        TypedQuery<Long> query = entityManager.createQuery(jpql.toString(), Long.class);
+        query.setParameter("processoId", processoId);
+        if (titularNomeFiltro != null && !titularNomeFiltro.isBlank()) {
+            query.setParameter("filtroNome", titularNomeFiltro);
+        }
+        return query.getSingleResult();
+    }
+
+    @Override
+    public List<Credito> findByProcessoAndTitularAndStatus(
+            UUID processoId, UUID titularId, StatusCredito status) {
+        return entityManager.createQuery("""
+            SELECT c FROM Credito c
+            WHERE c.processoId = :processoId
+              AND c.titularId = :titularId
+              AND c.status = :status
+            ORDER BY c.criadoEm ASC
+            """, Credito.class)
+            .setParameter("processoId", processoId)
+            .setParameter("titularId", titularId)
+            .setParameter("status", status)
+            .getResultList();
+    }
+
+    @Override
+    public List<Credito> findLiberadosByProcessoLiberacaoAndTitular(
+            UUID processoLiberacaoId, UUID titularId) {
+        return entityManager.createQuery("""
+            SELECT c FROM Credito c
+            WHERE c.processoLiberacaoId = :processoLiberacaoId
+              AND c.titularId = :titularId
+              AND c.status = br.com.ecad.distribuicao.domain.enums.StatusCredito.LIBERADO
+            ORDER BY c.criadoEm ASC
+            """, Credito.class)
+            .setParameter("processoLiberacaoId", processoLiberacaoId)
+            .setParameter("titularId", titularId)
+            .getResultList();
+    }
+
+    @Override
+    public Map<UUID, BigDecimal> sumLiberadosByProcessoLiberacaoId(UUID processoLiberacaoId) {
+        List<Object[]> results = entityManager.createQuery("""
+            SELECT c.titularId, SUM(c.valorCredito)
+            FROM Credito c
+            WHERE c.processoLiberacaoId = :processoLiberacaoId
+              AND c.status = br.com.ecad.distribuicao.domain.enums.StatusCredito.LIBERADO
+            GROUP BY c.titularId
+            """, Object[].class)
+            .setParameter("processoLiberacaoId", processoLiberacaoId)
+            .getResultList();
+
+        Map<UUID, BigDecimal> map = new HashMap<>();
+        for (Object[] row : results) {
+            map.put((UUID) row[0], (BigDecimal) row[1]);
+        }
+        return map;
     }
 
     private void setFiltroParameters(TypedQuery<?> query, CreditoFiltro filtro) {
