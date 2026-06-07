@@ -24,7 +24,7 @@ Testes unitarios (Task 8) acompanham as Tasks 3-4. Testes de integracao (Task 9)
 ## Tarefas
 
 - [x] 1.0 TitularDemonstrativoProjection + metodos CreditoRepository (domain + infra)
-- [ ] 2.0 DTOs de resposta (distribuicao-application)
+- [x] 2.0 DTOs de resposta (distribuicao-application)
 - [ ] 3.0 ListarTitularesDemonstrativoQueryHandler
 - [ ] 4.0 ConsultarDemonstrativoTitularQueryHandler
 - [ ] 5.0 DemonstrativoController + Authz
