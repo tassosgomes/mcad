@@ -1,7 +1,8 @@
 import fs from 'fs';
+import { faker } from '@faker-js/faker';
 
 const ARRECADACAO_API_URL = process.env.ARRECADACAO_API_URL || 'https://mcad-arrecadacao.tasso.dev.br/api/v1';
-const JWT_TOKEN = process.env.JWT_TOKEN || 'SEU_TOKEN_AQUI';
+const JWT_TOKEN = process.env.JWT_TOKEN || 'eyJhbGciOiJFUzM4NCIsInR5cCI6ImF0K2p3dCIsImtpZCI6IkE1YzFzdHNpZnJid3QxRS0zNzcyQ1V0aC14QkxCcmxRSDdCVWlVZU84TDgifQ.eyJqdGkiOiJ1eDlpcEhJVVN3cnFrUEowUzdOT2oiLCJzdWIiOiJxamoyNDZpaGU5enkiLCJpYXQiOjE3ODA4MDIzODUsImV4cCI6MTc4MDgwNTk4NSwic2NvcGUiOiIiLCJjbGllbnRfaWQiOiJiMG84dzE4c3lydjk1Z2QybzNrZWUiLCJpc3MiOiJodHRwczovLzlsY2ludS5sb2d0by5hcHAvb2lkYyIsImF1ZCI6Imh0dHBzOi8vYXBpLm1jYWQubG9jYWwifQ.LknKF-6SKIpw7J2rfYB3YC4bsBo_06nLqLFiufw-BoeF7FR8EpuWHiaNLSpVzXSN59oKMQobX6KJem2gfmddx6-HYVfe7PqfHfPvKqMZHWsaI_pZdtm7PiDoRkpFPRIN';
 
 const authHeaders = {
   'Content-Type': 'application/json',
@@ -10,17 +11,17 @@ const authHeaders = {
 
 let mapas = { usuarios: [] };
 
-if (fs.existsSync('mapas.json')) {
-    mapas = { ...mapas, ...JSON.parse(fs.readFileSync('mapas.json', 'utf8')) };
+if (fs.existsSync(new URL('mapas.json', import.meta.url))) {
+    mapas = { ...mapas, ...JSON.parse(fs.readFileSync(new URL('mapas.json', import.meta.url), 'utf8')) };
     mapas.usuarios = mapas.usuarios || [];
 }
 
 function salvarMapas() {
-    fs.writeFileSync('mapas.json', JSON.stringify(mapas, null, 2));
+    fs.writeFileSync(new URL('mapas.json', import.meta.url), JSON.stringify(mapas, null, 2));
 }
 
 function gerarCnpj() {
-    let n = Array(12).fill(0).map(() => Math.floor(Math.random() * 10));
+    let n = Array(12).fill(0).map(() => faker.number.int({ min: 0, max: 9 }));
     function calculateDigit(base, weights) {
         let sum = 0;
         for (let i = 0; i < base.length; i++) sum += base[i] * weights[i];
@@ -34,40 +35,33 @@ function gerarCnpj() {
     return `${n.join('')}${d1}${d2}`;
 }
 
-const estabelecimentos = [
-    { razaoSocial: 'Bar do Zé LTDA', nomeFantasia: 'Bar do Zé' },
-    { razaoSocial: 'Restaurante Sabor de Minas', nomeFantasia: 'Sabor de Minas' },
-    { razaoSocial: 'Casas de Show Espaço Aberto', nomeFantasia: 'Espaço Aberto' },
-    { razaoSocial: 'Academia Corpo em Forma LTDA', nomeFantasia: 'Corpo em Forma' },
-    { razaoSocial: 'Rádio FM Sucesso', nomeFantasia: 'Rádio Sucesso' },
-    { razaoSocial: 'Supermercado Compre Mais', nomeFantasia: 'Super Compre Mais' },
-    { razaoSocial: 'Hotel Estrela do Mar', nomeFantasia: 'Estrela do Mar Hotel' },
-    { razaoSocial: 'Loja de Roupas Fashion', nomeFantasia: 'Fashion Store' },
-    { razaoSocial: 'Pizzaria Bella Napoli', nomeFantasia: 'Bella Napoli' },
-    { razaoSocial: 'Clube Recreativo Municipal', nomeFantasia: 'Clube Municipal' }
-];
-
 async function main() {
     console.log(`\n--- Iniciando Geração de Usuários de Música ---`);
-    for (const est of estabelecimentos) {
+    for (let i = 0; i < 10; i++) { // Gerar 10 usuários
+        const razaoSocial = faker.company.name();
+        const nomeFantasia = faker.company.catchPhrase();
+        const cnpj = gerarCnpj();
+        const endereco = {
+            cep: faker.location.zipCode('########'),
+            logradouro: faker.location.street(),
+            numero: faker.location.buildingNumber(),
+            complemento: faker.location.secondaryAddress(),
+            bairro: faker.location.county(),
+            cidade: faker.location.city(),
+            uf: faker.location.state({ abbreviated: true })
+        };
+        const contato = {
+            nomeResponsavel: faker.person.fullName(),
+            telefone: faker.phone.number(),
+            email: faker.internet.email()
+        };
+
         const payload = {
-            razaoSocial: est.razaoSocial,
-            nomeFantasia: est.nomeFantasia,
-            cnpj: gerarCnpj(),
-            endereco: {
-                cep: "01001000",
-                logradouro: "Praça da Sé",
-                numero: "100",
-                complemento: "Sala " + Math.floor(Math.random() * 100),
-                bairro: "Sé",
-                cidade: "São Paulo",
-                uf: "SP"
-            },
-            contato: {
-                nomeResponsavel: "Gerente " + est.nomeFantasia,
-                telefone: "11999999999",
-                email: `contato@${est.nomeFantasia.toLowerCase().replace(/ /g, '')}.com`
-            }
+            razaoSocial: razaoSocial,
+            nomeFantasia: nomeFantasia,
+            cnpj: cnpj,
+            endereco: endereco,
+            contato: contato
         };
 
         const res = await fetch(`${ARRECADACAO_API_URL}/usuarios-musica`, {
@@ -78,11 +72,11 @@ async function main() {
 
         if (res.ok) {
             const json = await res.json();
-            console.log(`  [OK] Usuário Criado: ${est.nomeFantasia} (ID: ${json.id})`);
+            console.log(`  [OK] Usuário Criado: ${nomeFantasia} (ID: ${json.id})`);
             mapas.usuarios.push(json.id);
             salvarMapas();
         } else {
-            console.warn(`  [AVISO] Falha ao criar ${est.nomeFantasia}:`, await res.text());
+            console.warn(`  [AVISO] Falha ao criar ${nomeFantasia}: HTTP ${res.status} ${res.statusText} -`, await res.text());
         }
     }
     console.log(`\nGeração de Usuários finalizada.`);
