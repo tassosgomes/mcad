@@ -35,6 +35,13 @@
 | `distribuicao:default:processo:finalizar` | Finaliza o processo — transiciona de APROVADO para FINALIZADO (ação irreversível) (F02, planejado neste PRD) | POST | `/api/v1/processos/{id}/finalizar` | distribuicao.default.analista |
 | `distribuicao:default:processo:cancelar` | Cancela o processo a partir de qualquer estado exceto FINALIZADO; exige justificativa obrigatória (F02, planejado neste PRD) | POST | `/api/v1/processos/{id}/cancelar` | distribuicao.default.analista |
 
+## Demonstrativo de Créditos (F07)
+
+| Permissão | Descrição | Método | Endpoint | Papel inicial |
+|---|---|---|---|---|
+| `distribuicao:default:demonstrativo:listar` | Lista paginada de titulares com créditos em um processo, com filtros por nome e ordenação por total a receber | GET | `/api/v1/processos/{id}/demonstrativos` | distribuicao.default.consultor |
+| `distribuicao:default:demonstrativo:visualizar` | Demonstrativo detalhado de um titular em um processo — créditos calculados, retidos, liberados e ajustes por estorno | GET | `/api/v1/processos/{id}/demonstrativos/{titularId}` | distribuicao.default.consultor |
+
 ## Observações operacionais
 
 * O starter é ativado por configuração: o bloco `ecad.authz` em `application.yml` controla

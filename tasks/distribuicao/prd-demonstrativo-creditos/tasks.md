@@ -27,7 +27,7 @@ Testes unitarios (Task 8) acompanham as Tasks 3-4. Testes de integracao (Task 9)
 - [x] 2.0 DTOs de resposta (distribuicao-application)
 - [x] 3.0 ListarTitularesDemonstrativoQueryHandler
 - [x] 4.0 ConsultarDemonstrativoTitularQueryHandler
-- [ ] 5.0 DemonstrativoController + Authz
+- [x] 5.0 DemonstrativoController + Authz
 - [ ] 6.0 Frontend — tipos TypeScript + API client + hooks TanStack Query
 - [ ] 7.0 Frontend — componentes React + integracao em ProcessoDetailPage
 - [ ] 8.0 Testes unitarios dos handlers e repositorio

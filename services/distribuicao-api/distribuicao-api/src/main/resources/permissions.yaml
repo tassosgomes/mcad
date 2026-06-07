@@ -57,3 +57,15 @@ permissions:
     description: Cancela o processo a partir de qualquer estado exceto FINALIZADO; exige justificativa.
     resource: processo
     action: cancelar
+
+  # ── Demonstrativo de Créditos (F07) ──────────────────────────────────────
+  - key: distribuicao:default:demonstrativo:listar
+    name: Listar titulares do demonstrativo
+    description: Permite listar os titulares com créditos em um processo de distribuição.
+    resource: demonstrativo
+    action: listar
+  - key: distribuicao:default:demonstrativo:visualizar
+    name: Visualizar demonstrativo por titular
+    description: Permite visualizar o demonstrativo detalhado de um titular em um processo.
+    resource: demonstrativo
+    action: visualizar

@@ -8,6 +8,7 @@ import br.com.ecad.distribuicao.domain.enums.CategoriaCredito;
 import br.com.ecad.distribuicao.domain.enums.StatusCredito;
 import br.com.ecad.distribuicao.domain.enums.SubcategoriaConexa;
 import br.com.ecad.distribuicao.infra.persistence.JpaCreditoRepository;
+import br.com.ecad.distribuicao.infra.persistence.SpringDataCreditoRepository;
 import jakarta.persistence.EntityManager;
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -31,9 +32,12 @@ class JpaCreditoRepositoryTest {
     @Mock
     private EntityManager entityManager;
 
+    @Mock
+    private SpringDataCreditoRepository springDataCreditoRepository;
+
     @Test
     void saveAll_WithAutoralCredit_ShouldPreservePercentageAndMonetaryPrecision() {
-        JpaCreditoRepository repository = new JpaCreditoRepository(entityManager);
+        JpaCreditoRepository repository = new JpaCreditoRepository(entityManager, springDataCreditoRepository);
         Credito credito = credito(CategoriaCredito.AUTORAL, null, null);
 
         List<Credito> saved = repository.saveAll(List.of(credito));
@@ -50,7 +54,7 @@ class JpaCreditoRepositoryTest {
 
     @Test
     void saveAll_WithConexoCredit_ShouldPreserveSubcategoryAndFonogramaId() {
-        JpaCreditoRepository repository = new JpaCreditoRepository(entityManager);
+        JpaCreditoRepository repository = new JpaCreditoRepository(entityManager, springDataCreditoRepository);
         Credito credito = credito(CategoriaCredito.CONEXO, SubcategoriaConexa.INTERPRETE, FONOGRAMA_ID);
 
         repository.saveAll(List.of(credito));
