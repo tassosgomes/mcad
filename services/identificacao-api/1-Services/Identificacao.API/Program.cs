@@ -27,6 +27,9 @@ using Polly;
 using Microsoft.IdentityModel.Tokens;
 using Amazon.S3;
 using Amazon.Runtime;
+using OpenTelemetry.Resources;
+using OpenTelemetry.Trace;
+using Prometheus;
 // Busca o .env na raiz do serviço (../../.. relativo ao dir do projeto)
 var envPath = Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", ".env");
 var fullEnvPath = Path.GetFullPath(envPath);
@@ -228,12 +231,21 @@ builder.Services.AddAsyncApiDocs();
 // Health Checks
 builder.Services.AddHealthChecks();
 
+// ─── OpenTelemetry (traces via OTLP) + Prometheus (métricas via /metrics) ──
+builder.Services.AddOpenTelemetry()
+    .ConfigureResource(r => r.AddService("identificacao-api"))
+    .WithTracing(tracing => tracing
+        .AddAspNetCoreInstrumentation()
+        .AddHttpClientInstrumentation()
+        .AddOtlpExporter());
+
 // Application Port
 builder.WebHost.UseUrls("http://0.0.0.0:5100");
 
 var app = builder.Build();
 
 // Enable CORS
+app.UseHttpMetrics();
 app.UseCors(corsPolicyName);
 
 // Exception Handling
@@ -258,6 +270,7 @@ app.MapAsyncApiDocs();
 
 // Map Endpoints
 app.MapHealthChecks("/health").AllowAnonymous();
+app.MapMetrics("/metrics").AllowAnonymous();
 app.MapFechamentoEndpoints(authEnabled);
 app.MapCancelamentoEndpoints(authEnabled);
 app.MapRubricaEndpoints(authEnabled);

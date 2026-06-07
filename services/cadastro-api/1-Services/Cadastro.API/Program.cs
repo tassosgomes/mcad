@@ -24,7 +24,10 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using OpenTelemetry.Resources;
+using OpenTelemetry.Trace;
 using Polly;
+using Prometheus;
 
 DotEnvLoader.LoadIfPresent();
 
@@ -187,10 +190,19 @@ builder.Services.Configure<EcadAuthzOptions>(options => options.Enabled = authEn
 // ─── Logging estruturado ───────────────────────────────────────────────
 builder.Logging.AddConsole();
 
+// ─── OpenTelemetry (traces via OTLP) + Prometheus (métricas via /metrics) ──
+builder.Services.AddOpenTelemetry()
+    .ConfigureResource(r => r.AddService("cadastro-api"))
+    .WithTracing(tracing => tracing
+        .AddAspNetCoreInstrumentation()
+        .AddHttpClientInstrumentation()
+        .AddOtlpExporter());
+
 var app = builder.Build();
 
 // ─── Middleware pipeline ───────────────────────────────────────────────
 app.UseExceptionHandler();
+app.UseHttpMetrics();
 app.UseCors();
 
 // Swagger e AsyncAPI antes do auth — middleware short-circuits antes da auth rodar
@@ -230,8 +242,9 @@ app.MapDashboardEndpoints(authEnabled);
 // ─── AsyncAPI (documentação de eventos — pública) ─────────────────────
 app.MapAsyncApiDocs();
 
-// ─── Health Check ─────────────────────────────────────────────────────
+// ─── Health Check + Métricas ──────────────────────────────────────────
 app.MapHealthChecks("/health").AllowAnonymous();
+app.MapMetrics("/metrics").AllowAnonymous();
 
 app.Logger.LogInformation("Cadastro API iniciada na porta 5001");
 app.Run();
