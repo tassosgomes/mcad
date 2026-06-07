@@ -8,6 +8,7 @@ import { ErrorState } from '@components/ui/error-state';
 import { useToast } from '@components/ui/toast';
 import { Can } from '@shared/authz';
 import { useProcesso } from '../hooks/useProcesso';
+import { DemonstrativosTab } from '../../demonstrativos/components/DemonstrativosTab';
 import {
   useCalcularProcesso,
   useAprovarProcesso,
@@ -37,7 +38,7 @@ function formatDateTime(dateStr: string | null): string {
   });
 }
 
-type ActiveTab = 'detalhes' | 'historico';
+type ActiveTab = 'detalhes' | 'historico' | 'demonstrativos';
 
 export function ProcessoDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -145,6 +146,17 @@ export function ProcessoDetailPage() {
             onClick={() => setActiveTab('historico')}
           >
             Histórico de Alterações
+          </button>
+        </Can>
+        <Can permission="distribuicao:default:demonstrativo:listar">
+          <button
+            type="button"
+            role="tab"
+            aria-selected={activeTab === 'demonstrativos'}
+            className={`${styles.tab} ${activeTab === 'demonstrativos' ? styles.activeTab : ''}`}
+            onClick={() => setActiveTab('demonstrativos')}
+          >
+            Demonstrativos
           </button>
         </Can>
       </div>
@@ -255,6 +267,15 @@ export function ProcessoDetailPage() {
       {activeTab === 'historico' && (
         <Can permission="distribuicao:default:processo:ver-historico-alteracoes">
           <HistoricoAlteracoesTab processoId={processo.id} />
+        </Can>
+      )}
+
+      {activeTab === 'demonstrativos' && (
+        <Can permission="distribuicao:default:demonstrativo:listar">
+          <DemonstrativosTab
+            processoId={processo.id}
+            statusProcesso={processo.status}
+          />
         </Can>
       )}
 
