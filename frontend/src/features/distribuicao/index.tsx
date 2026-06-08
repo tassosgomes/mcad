@@ -4,6 +4,7 @@ import { ProcessosPage } from './processos/pages/ProcessosPage';
 import { ProcessoDetailPage } from './processos/pages/ProcessoDetailPage';
 import { CriarProcessoPage } from './processos/pages/CriarProcessoPage';
 import { RubricasPage } from './rubricas/pages/RubricasPage';
+import { AjustesEstornoPage } from './ajustes-estorno/pages/AjustesEstornoPage';
 
 export default function DistribuicaoRoutes() {
   return (
@@ -13,6 +14,7 @@ export default function DistribuicaoRoutes() {
       <Route path="processos/novo" element={<CriarProcessoPage />} />
       <Route path="processos/:id" element={<ProcessoDetailPage />} />
       <Route path="processos/:id/calculo" element={<ProcessoCalculoPage />} />
+      <Route path="ajustes-estorno" element={<AjustesEstornoPage />} />
     </Routes>
   );
 }

@@ -80,6 +80,7 @@ const navigation: SidebarGroup[] = [
     requiredPermissions: [
       'distribuicao:default:rubrica:listar',
       'distribuicao:default:processo:listar',
+      'distribuicao:default:ajuste:listar',
     ],
     children: [
       {
@@ -91,6 +92,11 @@ const navigation: SidebarGroup[] = [
         label: 'Processos',
         path: '/distribuicao/processos',
         requiredPermission: 'distribuicao:default:processo:listar',
+      },
+      {
+        label: 'Ajustes por Estorno',
+        path: '/distribuicao/ajustes-estorno',
+        requiredPermission: 'distribuicao:default:ajuste:listar',
       },
     ],
   },

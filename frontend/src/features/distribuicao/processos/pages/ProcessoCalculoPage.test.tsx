@@ -31,6 +31,9 @@ function calculoResponse(overrides: Partial<CalculoProcessoResponse> = {}): Calc
       totalCreditosRetidosLiberados: 0,
       valorTotalRetidosLiberados: '0.00',
       calculadoEm: '2026-05-07T18:10:00Z',
+      totalAjustesEstorno: null,
+      valorTotalAjustesEstorno: null,
+      valorLiquidoDemonstravel: null,
     },
     retidosLiberados: {
       items: [],
@@ -205,6 +208,9 @@ describe('ProcessoCalculoPage', () => {
         totalCreditosRetidosLiberados: 0,
         valorTotalRetidosLiberados: '0.00',
         calculadoEm: null,
+        totalAjustesEstorno: null,
+        valorTotalAjustesEstorno: null,
+        valorLiquidoDemonstravel: null,
       },
       creditos: {
         items: [],
@@ -246,6 +252,9 @@ describe('ProcessoCalculoPage', () => {
           valorTotalRetido: '0.00',
           totalCreditosRetidosLiberados: 0,
           valorTotalRetidosLiberados: '0.00',
+          totalAjustesEstorno: 0,
+          valorTotalAjustesEstorno: '0.00',
+          valorLiquidoDemonstravel: '0.00',
           calculadoEm: null,
         },
         creditos: {

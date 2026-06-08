@@ -30,6 +30,9 @@ export interface CalculoProcessoResumo {
   totalCreditosRetidosLiberados: number | null;
   valorTotalRetidosLiberados: string | null;
   calculadoEm: string | null;
+  totalAjustesEstorno: number | null;
+  valorTotalAjustesEstorno: number | string | null;
+  valorLiquidoDemonstravel: number | string | null;
 }
 
 export interface CreditoCalculo {
@@ -92,6 +95,40 @@ export interface CreditosPaginados {
   metadata: PaginationMetadata;
 }
 
+export interface AjusteEstornoCalculoLinha {
+  id: string;
+  titularId: string;
+  titularNome: string;
+  obraId: string;
+  obraTitulo: string;
+  fonogramaId: string | null;
+  categoria: string;
+  subcategoriaConexa: string | null;
+  valorCreditoOrigem: number | string;
+  valorAjuste: number | string;
+}
+
+export interface AjusteEstornoCalculoItem {
+  ajusteId: string;
+  pagamentoId: string;
+  licencaId: string;
+  periodoOrigem: string;
+  processoOrigemId: string;
+  status: string;
+  justificativa: string;
+  valorEstornadoBruto: number | string;
+  valorAjusteLiquido: number | string;
+  valorAplicado: number | string;
+  totalLinhas: number;
+  linhas: AjusteEstornoCalculoLinha[];
+}
+
+export interface AjustesEstornoSection {
+  items: AjusteEstornoCalculoItem[];
+  total: number;
+  valorTotal: number | string;
+}
+
 export interface CalculoProcessoResponse {
   processoId: string;
   status: StatusProcesso;
@@ -99,6 +136,7 @@ export interface CalculoProcessoResponse {
   periodo: string;
   resumo: CalculoProcessoResumo;
   retidosLiberados: RetidosLiberadosResponse;
+  ajustesEstorno?: AjustesEstornoSection;
   creditos: CreditosPaginados;
 }
 

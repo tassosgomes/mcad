@@ -6,6 +6,7 @@ import { ErrorState } from '@components/ui/error-state';
 import { Loading } from '@components/ui/loading';
 import { PageHeader } from '@components/ui/page-header';
 import { usePermissions } from '@shared/authz';
+import { AjustesEstornoCalculoTable } from '../components/AjustesEstornoCalculoTable';
 import { CalculoSummary } from '../components/CalculoSummary';
 import { CreditosFilters } from '../components/CreditosFilters';
 import { CreditosTable } from '../components/CreditosTable';
@@ -114,6 +115,7 @@ export function ProcessoCalculoPage() {
   const calculo = calculoQuery.data;
   const retidosTitle = calculo.status === 'FINALIZADO' ? 'Retidos liberados' : 'Retidos a liberar';
   const hasRetidosLiberados = calculo.retidosLiberados.items.length > 0;
+  const hasAjustesEstorno = (calculo.ajustesEstorno?.items.length ?? 0) > 0;
 
   return (
     <div className={styles.page}>
@@ -174,6 +176,21 @@ export function ProcessoCalculoPage() {
       )}
 
       <CalculoSummary calculo={calculo} />
+
+      {hasAjustesEstorno && calculo.ajustesEstorno && (
+        <section className={styles.reviewSection} aria-labelledby="ajustes-estorno-title">
+          <div className={styles.sectionHeader}>
+            <div>
+              <h2 id="ajustes-estorno-title">Ajustes por estorno</h2>
+              <p>
+                {calculo.ajustesEstorno.total} ajuste(s) · {calculo.periodo}
+              </p>
+            </div>
+          </div>
+
+          <AjustesEstornoCalculoTable items={calculo.ajustesEstorno.items} />
+        </section>
+      )}
 
       {hasRetidosLiberados && (
         <section className={styles.reviewSection} aria-labelledby="retidos-liberados-title">

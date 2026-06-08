@@ -20,6 +20,9 @@ const calculo: CalculoProcessoResponse = {
     totalCreditosRetidosLiberados: 1,
     valorTotalRetidosLiberados: '50.00',
     calculadoEm: '2026-05-07T18:10:00Z',
+    totalAjustesEstorno: null,
+    valorTotalAjustesEstorno: null,
+    valorLiquidoDemonstravel: null,
   },
   retidosLiberados: {
     items: [],

@@ -40,6 +40,29 @@ export function CalculoSummary({ calculo }: CalculoSummaryProps) {
       value: formatCurrency(resumo.valorTotalRetidosLiberados),
       tone: isFinalizado ? 'success' : 'warning',
     },
+    ...(resumo.totalAjustesEstorno !== null
+      ? [
+          {
+            label: 'Ajustes por estorno',
+            value: String(resumo.totalAjustesEstorno),
+            tone: 'warning' as const,
+          },
+          {
+            label: 'Valor ajustado',
+            value: formatCurrency(resumo.valorTotalAjustesEstorno),
+            tone: 'warning' as const,
+          },
+        ]
+      : []),
+    ...(resumo.valorLiquidoDemonstravel !== null
+      ? [
+          {
+            label: 'Valor demonstrável',
+            value: formatCurrency(resumo.valorLiquidoDemonstravel),
+            highlight: true,
+          },
+        ]
+      : []),
   ];
 
   return (
