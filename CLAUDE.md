@@ -17,7 +17,7 @@ Four domains, each a separate microservice with its own PostgreSQL schema:
 | D01 Cadastro | `services/cadastro-api` | .NET 8 Minimal API | 5001 | done |
 | D02 Identificacao | `services/identificacao-api` | .NET 8 Minimal API | 5100 | in-progress |
 | D03 Arrecadacao | `services/arrecadacao-api` | Java Spring Boot 3.3 | 5003 | in-progress |
-| D04 Distribuicao | (planned) | — | — | planned |
+| D04 Distribuicao | `services/distribuicao-api` | Java Spring Boot 3.3 | 5004 | in-progress |
 
 **Frontend**: `frontend/` — React 19 + Vite + TypeScript + TanStack Query + React Router 7. Port 5173.
 

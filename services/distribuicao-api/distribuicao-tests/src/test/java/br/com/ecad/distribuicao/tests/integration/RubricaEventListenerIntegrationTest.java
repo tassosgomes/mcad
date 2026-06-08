@@ -95,7 +95,8 @@ class RubricaEventListenerIntegrationTest {
               "data": {
                 "sigla": "RADIO",
                 "nome": "Rádio AM/FM",
-                "exigeClassificacao": false
+                "exigeClassificacao": false,
+                "ativo": true
               }
             }
             """));
@@ -104,6 +105,7 @@ class RubricaEventListenerIntegrationTest {
             var rubrica = springDataRubricaRepository.findBySigla("RADIO");
             assertThat(rubrica).isPresent();
             assertThat(rubrica.get().getNome()).isEqualTo("Rádio AM/FM");
+            assertThat(rubrica.get().isAtivo()).isTrue();
         });
     }
 
@@ -120,7 +122,8 @@ class RubricaEventListenerIntegrationTest {
               "datacontenttype": "application/json",
               "data": {
                 "nome": "Rubrica inválida",
-                "exigeClassificacao": false
+                "exigeClassificacao": false,
+                "ativo": true
               }
             }
             """));
@@ -143,7 +146,8 @@ class RubricaEventListenerIntegrationTest {
               "data": {
                 "sigla": "SHOW",
                 "nome": "Show",
-                "exigeClassificacao": false
+                "exigeClassificacao": false,
+                "ativo": true
               }
             }
             """);

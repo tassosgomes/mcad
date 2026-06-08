@@ -11,6 +11,9 @@ import { PagamentosPage } from './pagamentos/pages/PagamentosPage';
 import { PagamentoCreatePage } from './pagamentos/pages/PagamentoCreatePage';
 import { PagamentoDetailPage } from './pagamentos/pages/PagamentoDetailPage';
 import { VerbasPage } from './verbas/pages/VerbasPage';
+import { RubricasPage } from './rubricas/pages/RubricasPage';
+import { RubricaCreatePage } from './rubricas/pages/RubricaCreatePage';
+import { RubricaEditPage } from './rubricas/pages/RubricaEditPage';
 
 export default function ArrecadacaoRoutes() {
   return (
@@ -27,6 +30,9 @@ export default function ArrecadacaoRoutes() {
       <Route path="pagamentos/novo" element={<PagamentoCreatePage />} />
       <Route path="pagamentos/:id" element={<PagamentoDetailPage />} />
       <Route path="verbas" element={<VerbasPage />} />
+      <Route path="rubricas" element={<RubricasPage />} />
+      <Route path="rubricas/nova" element={<RubricaCreatePage />} />
+      <Route path="rubricas/:id/editar" element={<RubricaEditPage />} />
     </Routes>
   );
 }

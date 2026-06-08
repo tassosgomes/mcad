@@ -77,6 +77,7 @@ class CriarLicencaCommandHandlerTest {
         lenient().when(rubrica.getId()).thenReturn(rubricaId);
         lenient().when(rubrica.getSigla()).thenReturn("SIGLA");
         lenient().when(rubrica.getNome()).thenReturn("Nome");
+        lenient().when(rubrica.isAtivo()).thenReturn(true);
     }
 
     @Test

@@ -60,6 +60,7 @@ const COPILOTO_PERMISSIONS = [
   'cadastro:default:associacao:listar',
   'identificacao:default:captacao:listar',
   'arrecadacao:default:cliente:listar',
+  'arrecadacao:default:rubrica:visualizar',
   'distribuicao:default:rubrica:listar',
   'distribuicao:default:processo:listar',
 ];

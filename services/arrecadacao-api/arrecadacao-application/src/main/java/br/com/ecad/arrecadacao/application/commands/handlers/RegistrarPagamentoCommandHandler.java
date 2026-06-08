@@ -79,6 +79,13 @@ public class RegistrarPagamentoCommandHandler
                 "Nao e possivel registrar pagamento para licenca com status ENCERRADA");
         }
 
+        // 2.5. Validar Rubrica ativa — 422 se inativa
+        var rubrica = licenca.getRubrica();
+        if (rubrica == null || !rubrica.isAtivo()) {
+            throw new IllegalStateException(
+                "Rubrica está inativa e não permite novos pagamentos");
+        }
+
         // 3. Buscar UDA vigente — 422 se nao encontrada
         UdaValor udaVigente = udaValorRepository.findVigente(LocalDate.now())
             .orElseThrow(() -> new UdaVigenteNaoEncontradaException(
@@ -173,7 +180,7 @@ public class RegistrarPagamentoCommandHandler
         }
         if (licenca.getRubrica() != null) {
             var r = licenca.getRubrica();
-            rubrica = new RubricaResumoResponse(r.getId(), r.getSigla(), r.getNome());
+            rubrica = new RubricaResumoResponse(r.getId(), r.getSigla(), r.getNome(), r.isAtivo());
         }
 
         return new LicencaResumoResponse(

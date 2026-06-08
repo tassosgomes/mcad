@@ -39,8 +39,8 @@ class PermissionsCatalogStructureTest {
         List<Map<String, Object>> permissions = (List<Map<String, Object>>) loaded.get("permissions");
 
         assertThat(permissions)
-                .as("catálogo de Arrecadação deve manter as 17 permissões 4-seg declaradas")
-                .hasSize(17)
+                .as("catálogo de Arrecadação deve manter as 21 permissões 4-seg declaradas")
+                .hasSize(21)
                 .allSatisfy(
                         p -> {
                             String key = (String) p.get("key");

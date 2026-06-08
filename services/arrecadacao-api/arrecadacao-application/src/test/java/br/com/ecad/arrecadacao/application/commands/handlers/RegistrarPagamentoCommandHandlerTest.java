@@ -70,6 +70,7 @@ class RegistrarPagamentoCommandHandlerTest {
     private Licenca criarLicencaMock(StatusLicenca status) {
         Rubrica rubricaMock = mock(Rubrica.class);
         when(rubricaMock.getSigla()).thenReturn("RADIO");
+        when(rubricaMock.isAtivo()).thenReturn(true);
 
         Licenca licencaMock = mock(Licenca.class);
         when(licencaMock.getStatus()).thenReturn(status);
@@ -180,8 +181,7 @@ class RegistrarPagamentoCommandHandlerTest {
     @Test
     void handle_SemUdaVigente_DeveLancarUdaVigenteNaoEncontrada_422() {
         // Arrange
-        Licenca licencaMock = mock(Licenca.class);
-        when(licencaMock.getStatus()).thenReturn(StatusLicenca.ATIVA);
+        Licenca licencaMock = criarLicencaMock(StatusLicenca.ATIVA);
         when(licencaRepository.findById(LICENCA_ID)).thenReturn(Optional.of(licencaMock));
         when(udaValorRepository.findVigente(any(LocalDate.class))).thenReturn(Optional.empty());
 
@@ -198,8 +198,7 @@ class RegistrarPagamentoCommandHandlerTest {
     @Test
     void handle_ComPagamentoDuplicadoNoPeriodo_DeveLancarPagamentoDuplicado_409() {
         // Arrange
-        Licenca licencaMock = mock(Licenca.class);
-        when(licencaMock.getStatus()).thenReturn(StatusLicenca.ATIVA);
+        Licenca licencaMock = criarLicencaMock(StatusLicenca.ATIVA);
         UdaValor udaMock = UdaValor.criar(VALOR_UDA, LocalDate.of(2026, 1, 1), null);
 
         when(licencaRepository.findById(LICENCA_ID)).thenReturn(Optional.of(licencaMock));

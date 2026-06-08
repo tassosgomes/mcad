@@ -77,6 +77,6 @@ public class ListarVerbasQueryHandler
 
     private RubricaResumoResponse buildRubricaResumo(Rubrica rubrica) {
         if (rubrica == null) return null;
-        return new RubricaResumoResponse(rubrica.getId(), rubrica.getSigla(), rubrica.getNome());
+        return new RubricaResumoResponse(rubrica.getId(), rubrica.getSigla(), rubrica.getNome(), rubrica.isAtivo());
     }
 }

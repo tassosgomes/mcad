@@ -79,8 +79,8 @@ class RubricaControllerIntegrationTest {
     @Test
     void deveListarRubricasQuandoExistemDados() throws Exception {
         springDataRubricaRepository.saveAll(List.of(
-                Rubrica.criar("RADIO", "Rádio AM/FM", false),
-                Rubrica.criar("TV_ABERTA", "TV Aberta", true)));
+                Rubrica.criar("RADIO", "Rádio AM/FM", false, true),
+                Rubrica.criar("TV_ABERTA", "TV Aberta", true, true)));
 
         mockMvc.perform(get("/api/v1/rubricas").with(jwtComScopeAccess()))
                 .andExpect(status().isOk())
@@ -98,7 +98,7 @@ class RubricaControllerIntegrationTest {
 
     @Test
     void deveBuscarRubricaPorSigla() throws Exception {
-        springDataRubricaRepository.save(Rubrica.criar("TV_ABERTA", "TV Aberta", true));
+        springDataRubricaRepository.save(Rubrica.criar("TV_ABERTA", "TV Aberta", true, true));
 
         mockMvc.perform(get("/api/v1/rubricas/TV_ABERTA").with(jwtComScopeAccess()))
                 .andExpect(status().isOk())

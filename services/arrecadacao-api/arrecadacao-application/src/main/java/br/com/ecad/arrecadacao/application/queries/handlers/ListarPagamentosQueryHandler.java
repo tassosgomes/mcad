@@ -156,7 +156,7 @@ public class ListarPagamentosQueryHandler
         }
         if (licenca.getRubrica() != null) {
             var r = licenca.getRubrica();
-            rubrica = new RubricaResumoResponse(r.getId(), r.getSigla(), r.getNome());
+            rubrica = new RubricaResumoResponse(r.getId(), r.getSigla(), r.getNome(), r.isAtivo());
         }
 
         return new LicencaResumoResponse(licenca.getId(), licenca.getStatus().name(), usuarioMusica, rubrica);

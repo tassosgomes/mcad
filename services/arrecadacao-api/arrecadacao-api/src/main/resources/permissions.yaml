@@ -94,6 +94,28 @@ permissions:
     resource: pagamento
     action: estornar
 
+  # ── Rubrica ────────────────────────────────────────────────────
+  - key: arrecadacao:default:rubrica:visualizar
+    name: Visualizar rubricas
+    description: Lista e detalhe de rubricas.
+    resource: rubrica
+    action: visualizar
+  - key: arrecadacao:default:rubrica:criar
+    name: Criar rubrica
+    description: Cadastra uma nova rubrica.
+    resource: rubrica
+    action: criar
+  - key: arrecadacao:default:rubrica:editar
+    name: Editar rubrica
+    description: Atualiza nome, exigeClassificacao e reativa rubrica.
+    resource: rubrica
+    action: editar
+  - key: arrecadacao:default:rubrica:inativar
+    name: Inativar rubrica
+    description: Inativa uma rubrica ativa.
+    resource: rubrica
+    action: inativar
+
   # ── Relatórios / Verbas ───────────────────────────────────────────────────
   - key: arrecadacao:default:relatorio:visualizar
     name: Visualizar verbas

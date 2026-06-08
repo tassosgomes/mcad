@@ -26,14 +26,22 @@ public class Rubrica {
     @Column(name = "exige_classificacao", nullable = false)
     private boolean exigeClassificacao;
 
+    @Column(nullable = false)
+    private boolean ativo;
+
     protected Rubrica() {
     }
 
     public Rubrica(UUID id, String sigla, String nome, boolean exigeClassificacao) {
+        this(id, sigla, nome, exigeClassificacao, true);
+    }
+
+    public Rubrica(UUID id, String sigla, String nome, boolean exigeClassificacao, boolean ativo) {
         this.id = Objects.requireNonNull(id, "id must not be null");
         this.sigla = Objects.requireNonNull(sigla, "sigla must not be null");
         this.nome = Objects.requireNonNull(nome, "nome must not be null");
         this.exigeClassificacao = exigeClassificacao;
+        this.ativo = ativo;
     }
 
     public UUID getId() {
@@ -50,5 +58,22 @@ public class Rubrica {
 
     public boolean isExigeClassificacao() {
         return exigeClassificacao;
+    }
+
+    public boolean isAtivo() {
+        return ativo;
+    }
+
+    public void ativar() {
+        this.ativo = true;
+    }
+
+    public void inativar() {
+        this.ativo = false;
+    }
+
+    public void atualizar(String nome, boolean exigeClassificacao) {
+        this.nome = Objects.requireNonNull(nome, "nome must not be null");
+        this.exigeClassificacao = exigeClassificacao;
     }
 }

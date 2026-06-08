@@ -44,7 +44,7 @@ public class BuscarLicencaPorIdQueryHandler implements QueryHandler<BuscarLicenc
         return new LicencaResponse(
             licenca.getId(),
             new UsuarioMusicaResumoResponse(usuarioMusica.getId(), usuarioMusica.getRazaoSocial(), usuarioMusica.getCnpj().getFormatado()),
-            new RubricaResumoResponse(rubrica.getId(), rubrica.getSigla(), rubrica.getNome()),
+            new RubricaResumoResponse(rubrica.getId(), rubrica.getSigla(), rubrica.getNome(), rubrica.isAtivo()),
             licenca.getDataInicio(),
             licenca.getDataFim(),
             licenca.getStatus().name(),

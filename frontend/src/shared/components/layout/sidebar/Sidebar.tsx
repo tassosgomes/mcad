@@ -70,6 +70,7 @@ const navigation: SidebarGroup[] = [
       { label: 'Pagamentos', path: '/arrecadacao/pagamentos' },
       { label: 'Verbas', path: '/arrecadacao/verbas' },
       { label: 'UDA', path: '/arrecadacao/uda' },
+      { label: 'Rubricas', path: '/arrecadacao/rubricas', requiredPermission: 'arrecadacao:default:rubrica:visualizar' },
     ],
   },
   {

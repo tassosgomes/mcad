@@ -66,6 +66,7 @@ public interface SpringDataVerbaRepository
                 v.rubricaId,
                 r.sigla,
                 r.nome,
+                r.ativo,
                 COALESCE(SUM(v.valorBrutoTotal), 0),
                 COALESCE(SUM(v.verbaLiquida), 0),
                 COUNT(DISTINCT v.periodo)
@@ -75,7 +76,7 @@ public interface SpringDataVerbaRepository
             WHERE (:rubricaSigla IS NULL OR r.sigla = :rubricaSigla)
               AND (:periodoInicio IS NULL OR v.periodo >= :periodoInicio)
               AND (:periodoFim    IS NULL OR v.periodo <= :periodoFim)
-            GROUP BY v.rubricaId, r.sigla, r.nome
+            GROUP BY v.rubricaId, r.sigla, r.nome, r.ativo
             ORDER BY r.sigla ASC
             """)
     List<VerbaAgregadoResult> findAgregadoPorRubrica(

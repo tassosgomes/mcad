@@ -12,6 +12,7 @@ public interface VerbaAgregadoProjection {
     UUID getRubricaId();
     String getRubricaSigla();
     String getRubricaNome();
+    boolean isRubricaAtivo();
     BigDecimal getTotalBruto();
     BigDecimal getTotalLiquida();
     long getQuantidadePeriodos();

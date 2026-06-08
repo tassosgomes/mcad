@@ -34,8 +34,8 @@ class RubricaQueryHandlerTest {
     @Test
     void deveListarRubricasQuandoExistemRegistros() {
         when(rubricaRepository.findAll()).thenReturn(List.of(
-                Rubrica.criar("RADIO", "Rádio AM/FM", false),
-                Rubrica.criar("TV_ABERTA", "TV Aberta", true)));
+                Rubrica.criar("RADIO", "Rádio AM/FM", false, true),
+                Rubrica.criar("TV_ABERTA", "TV Aberta", true, true)));
 
         var response = listarRubricasQueryHandler.handle(new ListarRubricasQuery());
 
@@ -55,7 +55,7 @@ class RubricaQueryHandlerTest {
     @Test
     void deveBuscarRubricaPorSiglaQuandoExistente() {
         when(rubricaRepository.findBySigla("TV_ABERTA"))
-                .thenReturn(Optional.of(Rubrica.criar("TV_ABERTA", "TV Aberta", true)));
+                .thenReturn(Optional.of(Rubrica.criar("TV_ABERTA", "TV Aberta", true, true)));
 
         var response = buscarRubricaPorSiglaQueryHandler.handle(new BuscarRubricaPorSiglaQuery("TV_ABERTA"));
 

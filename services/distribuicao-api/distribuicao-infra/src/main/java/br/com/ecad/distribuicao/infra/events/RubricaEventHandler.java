@@ -23,20 +23,21 @@ public class RubricaEventHandler {
         rubricaRepository.findBySigla(payload.sigla())
                 .ifPresentOrElse(
                         existing -> {
-                            existing.atualizar(payload.nome(), payload.exigeClassificacao());
+                            existing.atualizar(payload.nome(), payload.exigeClassificacao(), payload.ativo());
                             rubricaRepository.upsertBySigla(existing);
-                            LOGGER.info("Rubrica atualizada. sigla={}", payload.sigla());
+                            LOGGER.info("Rubrica atualizada. sigla={} ativo={}", payload.sigla(), payload.ativo());
                         },
                         () -> {
                             Rubrica rubrica = Rubrica.criar(
                                     payload.sigla(),
                                     payload.nome(),
-                                    payload.exigeClassificacao());
+                                    payload.exigeClassificacao(),
+                                    payload.ativo());
                             rubricaRepository.upsertBySigla(rubrica);
                             LOGGER.info(
-                                    "Rubrica sincronizada. sigla={} nome={}",
+                                    "Rubrica sincronizada. sigla={} ativo={}",
                                     payload.sigla(),
-                                    payload.nome());
+                                    payload.ativo());
                         });
     }
 }

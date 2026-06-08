@@ -107,6 +107,7 @@ class ListarVerbasAgregadasQueryHandlerTest {
             @Override public UUID getRubricaId()          { return rubricaId; }
             @Override public String getRubricaSigla()     { return sigla; }
             @Override public String getRubricaNome()      { return nome; }
+            @Override public boolean isRubricaAtivo()    { return true; }
             @Override public BigDecimal getTotalBruto()   { return totalBruto; }
             @Override public BigDecimal getTotalLiquida() { return totalLiquida; }
             @Override public long getQuantidadePeriodos() { return quantidadePeriodos; }

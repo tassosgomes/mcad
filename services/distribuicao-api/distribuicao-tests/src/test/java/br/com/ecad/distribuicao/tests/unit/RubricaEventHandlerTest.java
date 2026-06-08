@@ -28,7 +28,7 @@ class RubricaEventHandlerTest {
 
     @Test
     void deveCriarRubricaQuandoSiglaNaoExiste() {
-        RubricaEventPayload payload = new RubricaEventPayload("RADIO", "Rádio AM/FM", false);
+        RubricaEventPayload payload = new RubricaEventPayload("RADIO", "Rádio AM/FM", false, true);
         when(rubricaRepository.findBySigla("RADIO")).thenReturn(Optional.empty());
 
         rubricaEventHandler.handle(payload);
@@ -36,26 +36,28 @@ class RubricaEventHandlerTest {
         verify(rubricaRepository).upsertBySigla(argThat(rubrica ->
                 rubrica.getSigla().equals("RADIO")
                         && rubrica.getNome().equals("Rádio AM/FM")
-                        && !rubrica.isExigeClassificacao()));
+                        && !rubrica.isExigeClassificacao()
+                        && rubrica.isAtivo()));
     }
 
     @Test
     void deveAtualizarRubricaQuandoSiglaJaExiste() {
-        Rubrica existente = Rubrica.criar("RADIO", "Nome Antigo", false);
-        RubricaEventPayload payload = new RubricaEventPayload("RADIO", "Rádio Atualizada", true);
+        Rubrica existente = Rubrica.criar("RADIO", "Nome Antigo", false, true);
+        RubricaEventPayload payload = new RubricaEventPayload("RADIO", "Rádio Atualizada", true, false);
         when(rubricaRepository.findBySigla("RADIO")).thenReturn(Optional.of(existente));
 
         rubricaEventHandler.handle(payload);
 
         assertThat(existente.getNome()).isEqualTo("Rádio Atualizada");
         assertThat(existente.isExigeClassificacao()).isTrue();
+        assertThat(existente.isAtivo()).isFalse();
         verify(rubricaRepository).upsertBySigla(existente);
     }
 
     @Test
     void deveManterIdempotenciaQuandoMesmoPayloadChegaMaisDeUmaVez() {
-        Rubrica existente = Rubrica.criar("SHOW", "Show", false);
-        RubricaEventPayload payload = new RubricaEventPayload("SHOW", "Show", false);
+        Rubrica existente = Rubrica.criar("SHOW", "Show", false, true);
+        RubricaEventPayload payload = new RubricaEventPayload("SHOW", "Show", false, true);
         when(rubricaRepository.findBySigla("SHOW"))
                 .thenReturn(Optional.empty())
                 .thenReturn(Optional.of(existente));

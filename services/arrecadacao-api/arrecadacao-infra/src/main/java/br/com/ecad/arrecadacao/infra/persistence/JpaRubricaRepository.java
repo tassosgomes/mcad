@@ -31,4 +31,14 @@ public class JpaRubricaRepository implements br.com.ecad.arrecadacao.domain.inte
     public Optional<Rubrica> findById(java.util.UUID id) {
         return springDataRubricaRepository.findById(id);
     }
+
+    @Override
+    public Rubrica save(Rubrica rubrica) {
+        return springDataRubricaRepository.save(rubrica);
+    }
+
+    @Override
+    public boolean existsBySigla(String sigla) {
+        return springDataRubricaRepository.existsBySigla(sigla);
+    }
 }

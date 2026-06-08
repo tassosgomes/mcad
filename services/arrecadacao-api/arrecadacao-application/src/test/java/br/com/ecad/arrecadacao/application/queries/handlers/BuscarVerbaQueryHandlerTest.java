@@ -50,7 +50,7 @@ class BuscarVerbaQueryHandlerTest {
 
         var expectedResponse = new br.com.ecad.arrecadacao.application.dto.VerbaResponse(
                 verbaId,
-                new br.com.ecad.arrecadacao.application.dto.RubricaResumoResponse(rubricaId, "RADIO", "Radio AM/FM"),
+                new br.com.ecad.arrecadacao.application.dto.RubricaResumoResponse(rubricaId, "RADIO", "Radio AM/FM", true),
                 "2026-04",
                 "1073.10",
                 "107.31",

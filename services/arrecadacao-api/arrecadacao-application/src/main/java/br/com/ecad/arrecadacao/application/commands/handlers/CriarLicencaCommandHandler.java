@@ -69,10 +69,15 @@ public class CriarLicencaCommandHandler implements CommandHandler<CriarLicencaCo
                 "Nao e possivel criar licenca para usuario INATIVO");
         }
 
-        // 2. Validar Rubrica existe
+        // 2. Validar Rubrica existe e esta ATIVA
         var rubrica = rubricaRepository.findById(cmd.rubricaId())
             .orElseThrow(() -> new EntidadeNaoEncontradaException(
                 "Rubrica nao encontrada: " + cmd.rubricaId()));
+
+        if (!rubrica.isAtivo()) {
+            throw new IllegalStateException(
+                "Rubrica está inativa e não pode receber novas licenças");
+        }
 
         // 3. Criar entidade via domain factory (valida datas)
         var licenca = Licenca.criar(
@@ -107,7 +112,7 @@ public class CriarLicencaCommandHandler implements CommandHandler<CriarLicencaCo
         return new LicencaResponse(
             licenca.getId(),
             new UsuarioMusicaResumoResponse(usuarioMusica.getId(), usuarioMusica.getRazaoSocial(), usuarioMusica.getCnpj().getFormatado()),
-            new RubricaResumoResponse(rubrica.getId(), rubrica.getSigla(), rubrica.getNome()),
+            new RubricaResumoResponse(rubrica.getId(), rubrica.getSigla(), rubrica.getNome(), rubrica.isAtivo()),
             licenca.getDataInicio(),
             licenca.getDataFim(),
             licenca.getStatus().name(),

@@ -16,6 +16,7 @@ public record VerbaAgregadoResult(
         UUID rubricaId,
         String rubricaSigla,
         String rubricaNome,
+        boolean rubricaAtivo,
         BigDecimal totalBruto,
         BigDecimal totalLiquida,
         long quantidadePeriodos
@@ -24,6 +25,7 @@ public record VerbaAgregadoResult(
     @Override public UUID getRubricaId()           { return rubricaId; }
     @Override public String getRubricaSigla()       { return rubricaSigla; }
     @Override public String getRubricaNome()        { return rubricaNome; }
+    @Override public boolean isRubricaAtivo()       { return rubricaAtivo; }
     @Override public BigDecimal getTotalBruto()     { return totalBruto; }
     @Override public BigDecimal getTotalLiquida()   { return totalLiquida; }
     @Override public long getQuantidadePeriodos()   { return quantidadePeriodos; }

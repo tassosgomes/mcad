@@ -31,24 +31,29 @@ public class Rubrica {
     @Column(name = "exige_classificacao", nullable = false)
     private boolean exigeClassificacao;
 
+    @Column(nullable = false)
+    private boolean ativo;
+
     @Column(name = "sincronizado_em", nullable = false)
     private Instant sincronizadoEm;
 
     protected Rubrica() {
     }
 
-    public static Rubrica criar(String sigla, String nome, boolean exigeClassificacao) {
+    public static Rubrica criar(String sigla, String nome, boolean exigeClassificacao, boolean ativo) {
         Rubrica rubrica = new Rubrica();
         rubrica.sigla = normalizarSigla(sigla);
         rubrica.nome = Objects.requireNonNull(nome, "nome must not be null").trim();
         rubrica.exigeClassificacao = exigeClassificacao;
+        rubrica.ativo = ativo;
         rubrica.sincronizadoEm = Instant.now();
         return rubrica;
     }
 
-    public void atualizar(String nome, boolean exigeClassificacao) {
+    public void atualizar(String nome, boolean exigeClassificacao, boolean ativo) {
         this.nome = Objects.requireNonNull(nome, "nome must not be null").trim();
         this.exigeClassificacao = exigeClassificacao;
+        this.ativo = ativo;
         this.sincronizadoEm = Instant.now();
     }
 
@@ -74,6 +79,10 @@ public class Rubrica {
 
     public boolean isExigeClassificacao() {
         return exigeClassificacao;
+    }
+
+    public boolean isAtivo() {
+        return ativo;
     }
 
     public Instant getSincronizadoEm() {

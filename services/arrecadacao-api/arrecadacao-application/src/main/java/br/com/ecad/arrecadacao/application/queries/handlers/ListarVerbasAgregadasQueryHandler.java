@@ -35,7 +35,8 @@ public class ListarVerbasAgregadasQueryHandler
         var rubrica = new RubricaResumoResponse(
                 projection.getRubricaId(),
                 projection.getRubricaSigla(),
-                projection.getRubricaNome()
+                projection.getRubricaNome(),
+                projection.isRubricaAtivo()
         );
         return new VerbaAgregadoResponse(
                 rubrica,

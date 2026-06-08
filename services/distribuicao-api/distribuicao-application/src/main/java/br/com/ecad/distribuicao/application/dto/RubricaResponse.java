@@ -7,13 +7,15 @@ public record RubricaResponse(
         UUID id,
         String sigla,
         String nome,
-        boolean exigeClassificacao) {
+        boolean exigeClassificacao,
+        boolean ativo) {
 
     public static RubricaResponse from(Rubrica rubrica) {
         return new RubricaResponse(
                 rubrica.getId(),
                 rubrica.getSigla(),
                 rubrica.getNome(),
-                rubrica.isExigeClassificacao());
+                rubrica.isExigeClassificacao(),
+                rubrica.isAtivo());
     }
 }
