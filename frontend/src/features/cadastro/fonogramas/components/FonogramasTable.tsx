@@ -119,10 +119,9 @@ export function FonogramasTable({ data, canWrite, sort, onSortChange, onEdit, on
                       className={`${styles.actionBtn} ${styles.danger}`}
                       onClick={() => onDelete(fonograma)}
                       aria-label={`Excluir ${fonograma.isrcFormatado}`}
-                      title="Excluir"
+                      title={fonograma.status === 'Liberado' || fonograma.status === 'Depurado' ? 'Não é possível excluir um fonograma liberado ou depurado' : 'Excluir'}
                       type="button"
                       disabled={fonograma.status === 'Liberado' || fonograma.status === 'Depurado'}
-                      style={{ opacity: fonograma.status === 'Liberado' || fonograma.status === 'Depurado' ? 0.3 : 1, cursor: fonograma.status === 'Liberado' || fonograma.status === 'Depurado' ? 'not-allowed' : 'pointer'}}
                     >
                       <Trash2 size={15} />
                     </button>

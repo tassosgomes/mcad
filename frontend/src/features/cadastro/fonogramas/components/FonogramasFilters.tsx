@@ -55,56 +55,61 @@ export function FonogramasFilters({ filters, onChange, onReset }: FonogramasFilt
 
   return (
     <div className={styles.filtersContainer}>
-      <div className={styles.filterGroup}>
-        <div className={styles.inputWrapper}>
-          <Search size={16} className={styles.icon} />
-          <input
-            type="text"
-            className={`${styles.input} ${styles.mono}`}
-            placeholder="Buscar por ISRC..."
-            value={isrc}
-            onChange={(e) => setIsrc(e.target.value)}
-          />
-        </div>
+      <div className={styles.inputWrapper}>
+        <Search size={16} className={styles.icon} />
+        <input
+          type="text"
+          className={`${styles.input} ${styles.mono}`}
+          placeholder="Buscar por ISRC..."
+          aria-label="Filtrar por ISRC"
+          value={isrc}
+          onChange={(e) => setIsrc(e.target.value)}
+        />
+      </div>
 
-        <div className={styles.inputWrapper}>
-          <Search size={16} className={styles.icon} />
-          <input
-            type="number"
-            className={`${styles.input} ${styles.mono}`}
-            placeholder="Código (Ex: 67494)"
-            value={codigo}
-            onChange={(e) => setCodigo(e.target.value)}
-          />
-        </div>
+      <div className={styles.inputWrapper}>
+        <Search size={16} className={styles.icon} />
+        <input
+          type="number"
+          className={`${styles.input} ${styles.mono}`}
+          placeholder="Código (Ex: 67494)"
+          aria-label="Filtrar por código"
+          value={codigo}
+          onChange={(e) => setCodigo(e.target.value)}
+        />
+      </div>
 
-        <div className={styles.inputWrapper}>
-          <Search size={16} className={styles.icon} />
-          <input
-            type="text"
-            className={styles.input}
-            placeholder="Buscar obra musical..."
-            value={obraTitulo}
-            onChange={(e) => setObraTitulo(e.target.value)}
-          />
-        </div>
+      <div className={styles.inputWrapper}>
+        <Search size={16} className={styles.icon} />
+        <input
+          type="text"
+          className={styles.input}
+          placeholder="Buscar obra musical..."
+          aria-label="Filtrar por obra musical"
+          value={obraTitulo}
+          onChange={(e) => setObraTitulo(e.target.value)}
+        />
+      </div>
 
-        <select
-          className={styles.select}
-          value={filters.status || ''}
-          onChange={(e) => onChange({ status: e.target.value || undefined, page: 1 })}
-        >
-          <option value="">Todos os Status</option>
-          <option value="Pendente_Validacao">Pendente Validação</option>
-          <option value="Pendente_Documentacao">Pendente Documentação</option>
-          <option value="Liberado">Liberado</option>
-          <option value="Depurado">Depurado</option>
-        </select>
+      <select
+        className={styles.select}
+        value={filters.status || ''}
+        onChange={(e) => onChange({ status: e.target.value || undefined, page: 1 })}
+        aria-label="Filtrar por status"
+      >
+        <option value="">Todos os Status</option>
+        <option value="Pendente_Validacao">Pendente Validação</option>
+        <option value="Pendente_Documentacao">Pendente Documentação</option>
+        <option value="Liberado">Liberado</option>
+        <option value="Depurado">Depurado</option>
+      </select>
 
+      <div className={styles.inputWrapper}>
         <input
           type="text"
           className={styles.input}
           placeholder="País (ex: BR)..."
+          aria-label="Filtrar por país de origem"
           value={pais}
           onChange={(e) => setPais(e.target.value)}
         />
