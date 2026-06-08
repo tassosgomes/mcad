@@ -124,7 +124,7 @@ class DemonstrativoControllerIntegrationTest {
                 .andExpect(jsonPath("$.items[0].totalRetido").exists())
                 .andExpect(jsonPath("$.items[0].totalLiberado").exists())
                 .andExpect(jsonPath("$.items[0].totalAReceber").exists())
-                .andExpect(jsonPath("$.items[0].qtdObras").exists())
+                .andExpect(jsonPath("$.items[0].quantidadeObras").exists())
                 .andExpect(jsonPath("$.metadata.page").value(0))
                 .andExpect(jsonPath("$.metadata.size").value(20))
                 .andExpect(jsonPath("$.metadata.total").value(2))
@@ -136,7 +136,7 @@ class DemonstrativoControllerIntegrationTest {
         ProcessoDistribuicao processo = persistCalculatedProcess();
 
         mockMvc.perform(get("/api/v1/processos/{id}/demonstrativos", processo.getId())
-                        .param("nome", "Autoral")
+                        .param("titularNome", "Autoral")
                         .with(consultorJwt()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.items.length()").value(1))

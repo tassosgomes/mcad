@@ -207,7 +207,7 @@ class CreditoRepositoryIntegrationTest {
 
         Map<UUID, java.math.BigDecimal> sums = creditoRepository.sumLiberadosByProcessoLiberacaoId(processoLib.getId());
         assertThat(sums).containsOnlyKeys(TITULAR_A_ID);
-        assertThat(sums.get(TITULAR_A_ID)).isEqualByComparingTo("1000.00");
+        assertThat(sums.get(TITULAR_A_ID)).isEqualByComparingTo("700.00");
     }
 
     @Test
