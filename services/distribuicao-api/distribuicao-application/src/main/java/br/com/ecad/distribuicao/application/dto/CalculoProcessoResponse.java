@@ -23,25 +23,35 @@ public record CalculoProcessoResponse(
         String periodo,
         CalculoResumoResponse resumo,
         RetidosLiberadosResponse retidosLiberados,
+        AjustesEstornoResponse ajustesEstorno,
         CreditosPaginadosResponse creditos) {
 
     public static CalculoProcessoResponse from(
             CalculoResumoProjection resumo,
             Page<Credito> creditos) {
-        return from(resumo, RetidosLiberadosResponse.empty(), creditos);
+        return from(resumo, RetidosLiberadosResponse.empty(), AjustesEstornoResponse.empty(), creditos);
     }
 
     public static CalculoProcessoResponse from(
             CalculoResumoProjection resumo,
             RetidosLiberadosResponse retidosLiberados,
             Page<Credito> creditos) {
+        return from(resumo, retidosLiberados, AjustesEstornoResponse.empty(), creditos);
+    }
+
+    public static CalculoProcessoResponse from(
+            CalculoResumoProjection resumo,
+            RetidosLiberadosResponse retidosLiberados,
+            AjustesEstornoResponse ajustesEstorno,
+            Page<Credito> creditos) {
         return new CalculoProcessoResponse(
                 resumo.processoId(),
                 resumo.status(),
                 resumo.rubricaSigla(),
                 resumo.periodo(),
-                CalculoResumoResponse.from(resumo),
+                CalculoResumoResponse.from(resumo, ajustesEstorno),
                 retidosLiberados,
+                ajustesEstorno,
                 CreditosPaginadosResponse.from(creditos));
     }
 
@@ -56,9 +66,24 @@ public record CalculoProcessoResponse(
             BigDecimal valorTotalRetido,
             Integer totalCreditosRetidosLiberados,
             BigDecimal valorTotalRetidosLiberados,
-            Instant calculadoEm) {
+            Instant calculadoEm,
+            Integer totalAjustesEstorno,
+            BigDecimal valorTotalAjustesEstorno,
+            BigDecimal valorLiquidoDemonstravel) {
 
-        private static CalculoResumoResponse from(CalculoResumoProjection resumo) {
+        private static CalculoResumoResponse from(
+                CalculoResumoProjection resumo,
+                AjustesEstornoResponse ajustesEstorno) {
+            BigDecimal valorTotalCalculado = resumo.valorTotalCalculado() != null
+                    ? resumo.valorTotalCalculado() : BigDecimal.ZERO;
+            BigDecimal valorTotalRetidosLiberados = resumo.valorTotalRetidosLiberados() != null
+                    ? resumo.valorTotalRetidosLiberados() : BigDecimal.ZERO;
+            BigDecimal valorTotalAjustes = ajustesEstorno != null
+                    ? ajustesEstorno.valorTotal() : BigDecimal.ZERO;
+            int totalAjustes = ajustesEstorno != null ? ajustesEstorno.total() : 0;
+            BigDecimal valorLiquidoDemonstravel = valorTotalCalculado
+                    .add(valorTotalRetidosLiberados)
+                    .add(valorTotalAjustes);
             return new CalculoResumoResponse(
                     resumo.verbaLiquida(),
                     resumo.totalExecucoes(),
@@ -70,7 +95,10 @@ public record CalculoProcessoResponse(
                     resumo.valorTotalRetido(),
                     resumo.totalCreditosRetidosLiberados(),
                     resumo.valorTotalRetidosLiberados(),
-                    resumo.calculadoEm());
+                    resumo.calculadoEm(),
+                    totalAjustes,
+                    valorTotalAjustes,
+                    valorLiquidoDemonstravel);
         }
     }
 

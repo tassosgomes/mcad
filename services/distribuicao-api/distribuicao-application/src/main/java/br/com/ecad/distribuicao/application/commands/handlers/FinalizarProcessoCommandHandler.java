@@ -2,14 +2,19 @@ package br.com.ecad.distribuicao.application.commands.handlers;
 
 import br.com.ecad.distribuicao.application.audit.AuditContext;
 import br.com.ecad.distribuicao.application.audit.AuditContextProvider;
+import br.com.ecad.distribuicao.application.audit.GenericAuditEventFactory;
 import br.com.ecad.distribuicao.application.audit.ProcessoAuditChange;
 import br.com.ecad.distribuicao.application.audit.ProcessoAuditEventFactory;
 import br.com.ecad.distribuicao.application.audit.ProcessoAuditOperation;
 import br.com.ecad.distribuicao.application.audit.ProcessoSnapshot;
+import br.org.ecad.audit.contract.DataAction;
 import br.com.ecad.distribuicao.application.commands.FinalizarProcessoCommand;
 import br.com.ecad.distribuicao.application.dto.ProcessoResponse;
+import br.com.ecad.distribuicao.application.services.AjusteEstornoAplicacaoService;
 import br.com.ecad.distribuicao.application.services.CreditoRetidoLiberacaoService;
 import br.com.ecad.distribuicao.application.services.CreditoRetidoLiberacaoService.ResultadoLiberacaoRetidos;
+import br.com.ecad.distribuicao.application.services.ResultadoAjustesEstorno;
+import br.com.ecad.distribuicao.domain.entities.AjusteEstorno;
 import br.com.ecad.distribuicao.domain.entities.Credito;
 import br.com.ecad.distribuicao.domain.entities.CreditoLiberacao;
 import br.com.ecad.distribuicao.domain.entities.ProcessoDistribuicao;
@@ -37,32 +42,42 @@ public class FinalizarProcessoCommandHandler {
     private static final String EVENT_ROL_PROCESSADO = "distribuicao.rol.processado";
     private static final String EVENT_CREDITO_LIBERADO = "distribuicao.credito.liberado";
 
+    private static final String ENTITY_TYPE = "ProcessoDistribuicao";
+    private static final String SCREEN_ID = "DISTRIBUICAO_PROCESSOS";
+    private static final String SCREEN_NAME = "Processos de Distribuição";
+
     private final ProcessoRepository processoRepository;
     private final CreditoRepository creditoRepository;
     private final SnapshotRolRepository snapshotRolRepository;
     private final CreditoRetidoLiberacaoService creditoRetidoLiberacaoService;
+    private final AjusteEstornoAplicacaoService ajusteEstornoAplicacaoService;
     private final OutboxEventWriter outboxEventWriter;
     private final AuditClient auditClient;
     private final AuditContextProvider auditContextProvider;
     private final ProcessoAuditEventFactory auditEventFactory;
+    private final GenericAuditEventFactory genericAuditEventFactory;
 
     public FinalizarProcessoCommandHandler(
             ProcessoRepository processoRepository,
             CreditoRepository creditoRepository,
             SnapshotRolRepository snapshotRolRepository,
             CreditoRetidoLiberacaoService creditoRetidoLiberacaoService,
+            AjusteEstornoAplicacaoService ajusteEstornoAplicacaoService,
             OutboxEventWriter outboxEventWriter,
             AuditClient auditClient,
             AuditContextProvider auditContextProvider,
-            ProcessoAuditEventFactory auditEventFactory) {
+            ProcessoAuditEventFactory auditEventFactory,
+            GenericAuditEventFactory genericAuditEventFactory) {
         this.processoRepository = processoRepository;
         this.creditoRepository = creditoRepository;
         this.snapshotRolRepository = snapshotRolRepository;
         this.creditoRetidoLiberacaoService = creditoRetidoLiberacaoService;
+        this.ajusteEstornoAplicacaoService = ajusteEstornoAplicacaoService;
         this.outboxEventWriter = outboxEventWriter;
         this.auditClient = auditClient;
         this.auditContextProvider = auditContextProvider;
         this.auditEventFactory = auditEventFactory;
+        this.genericAuditEventFactory = genericAuditEventFactory;
     }
 
     @Transactional
@@ -78,6 +93,8 @@ public class FinalizarProcessoCommandHandler {
         processo.finalizar(finalizadoEm);
         ResultadoLiberacaoRetidos resultadoLiberacao =
                 creditoRetidoLiberacaoService.efetivarLiberacoes(processo, finalizadoEm);
+        ResultadoAjustesEstorno resultadoAjustes =
+                ajusteEstornoAplicacaoService.efetivarAjustes(processo, finalizadoEm);
         processo = processoRepository.save(processo);
 
         UUID captacaoId = processo.getSnapshotRolId() == null ? null
@@ -90,7 +107,8 @@ public class FinalizarProcessoCommandHandler {
         }
 
         // 2 eventos de domínio para finalização
-        outboxEventWriter.addEvent(EVENT_FINALIZADO, processo.getId().toString(), buildPayloadFinalizado(processo));
+        outboxEventWriter.addEvent(EVENT_FINALIZADO, processo.getId().toString(),
+                buildPayloadFinalizado(processo, resultadoAjustes));
         outboxEventWriter.addEvent(EVENT_ROL_PROCESSADO, processo.getId().toString(),
                 buildPayloadRolProcessado(processo, captacaoId));
 
@@ -99,18 +117,36 @@ public class FinalizarProcessoCommandHandler {
         auditClient.publish(auditEventFactory.dataChange(
                 new ProcessoAuditChange(processo, ProcessoAuditOperation.FINALIZE, antes), auditCtx));
 
+        // Auditoria suplementar com totais de ajustes de estorno efetivados
+        if (resultadoAjustes.total() > 0) {
+            Map<String, Object> after = new LinkedHashMap<>();
+            after.put("ajustesEstornoIds",
+                    resultadoAjustes.ajustes().stream().map(AjusteEstorno::getId).toList());
+            after.put("totalAjustesEstorno", resultadoAjustes.total());
+            after.put("valorTotalAjustesEstorno", resultadoAjustes.valorTotal());
+            auditClient.publish(genericAuditEventFactory.dataChange(
+                    ENTITY_TYPE, processo.getId().toString(), DataAction.UPDATE,
+                    null, after,
+                    "Ajustes de estorno efetivados na finalização do processo",
+                    SCREEN_ID, SCREEN_NAME, auditCtx));
+        }
+
         LOGGER.info(
-                "distribuicao.processo.finalizado processoId={} rubricaSigla={} periodo={} totalRetidosLiberados={} valorTotalRetidosLiberados={}",
+                "distribuicao.processo.finalizado processoId={} rubricaSigla={} periodo={} totalRetidosLiberados={} valorTotalRetidosLiberados={} totalAjustesEstorno={} valorTotalAjustesEstorno={}",
                 processo.getId(),
                 processo.getRubricaSigla(),
                 processo.getPeriodo(),
                 resultadoLiberacao.total(),
-                resultadoLiberacao.valorTotal());
+                resultadoLiberacao.valorTotal(),
+                resultadoAjustes.total(),
+                resultadoAjustes.valorTotal());
 
         return ProcessoResponse.from(processo);
     }
 
-    private Map<String, Object> buildPayloadFinalizado(ProcessoDistribuicao processo) {
+    private Map<String, Object> buildPayloadFinalizado(
+            ProcessoDistribuicao processo,
+            ResultadoAjustesEstorno resultadoAjustes) {
         Map<String, Object> payload = new LinkedHashMap<>();
         payload.put("processoId", processo.getId().toString());
         payload.put("rubricaSigla", processo.getRubricaSigla());
@@ -118,6 +154,8 @@ public class FinalizarProcessoCommandHandler {
         payload.put("status", processo.getStatus().name());
         payload.put("totalCreditosRetidosLiberados", zeroIfNull(processo.getTotalCreditosRetidosLiberados()));
         payload.put("valorTotalRetidosLiberados", zeroIfNull(processo.getValorTotalRetidosLiberados()));
+        payload.put("totalAjustesEstorno", resultadoAjustes.total());
+        payload.put("valorTotalAjustesEstorno", resultadoAjustes.valorTotal());
         return payload;
     }
 

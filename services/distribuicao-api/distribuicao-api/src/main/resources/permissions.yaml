@@ -58,6 +58,18 @@ permissions:
     resource: processo
     action: cancelar
 
+  # ── Ajustes por Estorno (F06) ────────────────────────────────────────────
+  - key: distribuicao:default:ajuste:listar
+    name: Listar ajustes por estorno
+    description: Lista ajustes por estorno registrados na Distribuição.
+    resource: ajuste
+    action: listar
+  - key: distribuicao:default:ajuste:visualizar
+    name: Visualizar ajuste por estorno
+    description: Detalhe read-only de um ajuste por estorno.
+    resource: ajuste
+    action: visualizar
+
   # ── Demonstrativo de Créditos (F07) ──────────────────────────────────────
   - key: distribuicao:default:demonstrativo:listar
     name: Listar titulares do demonstrativo

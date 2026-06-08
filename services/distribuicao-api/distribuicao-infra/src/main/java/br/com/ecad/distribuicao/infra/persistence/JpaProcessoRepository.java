@@ -53,4 +53,15 @@ public class JpaProcessoRepository implements ProcessoRepository {
         return springDataProcessoRepository.findAll(
                 ProcessoSpecification.comFiltros(null, null, null));
     }
+
+    @Override
+    public Optional<ProcessoDistribuicao> findAtivoByRubricaSiglaAndPeriodo(
+            String rubricaSigla, String periodo) {
+        return springDataProcessoRepository.findAtivoByRubricaSiglaAndPeriodo(rubricaSigla, periodo);
+    }
+
+    @Override
+    public Optional<ProcessoDistribuicao> findByIdForUpdate(UUID id) {
+        return springDataProcessoRepository.findByIdForUpdate(id);
+    }
 }

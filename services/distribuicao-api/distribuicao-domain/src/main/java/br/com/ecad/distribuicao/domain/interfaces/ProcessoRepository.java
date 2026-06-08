@@ -23,5 +23,17 @@ public interface ProcessoRepository {
      */
     List<ProcessoDistribuicao> findAtivos();
 
+    /**
+     * Retorna processo não cancelado da rubrica+período, se existir.
+     * Respeita constraint de processo ativo único.
+     */
+    Optional<ProcessoDistribuicao> findAtivoByRubricaSiglaAndPeriodo(String rubricaSigla, String periodo);
+
+    /**
+     * Busca processo pelo ID com bloqueio pessimista (FOR UPDATE),
+     * garantindo exclusão mútua em operações de ajuste de estorno.
+     */
+    Optional<ProcessoDistribuicao> findByIdForUpdate(UUID id);
+
     record ProcessoPage(List<ProcessoDistribuicao> content, long totalElements, int totalPages) {}
 }

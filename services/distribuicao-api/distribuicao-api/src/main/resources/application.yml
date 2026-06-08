@@ -65,9 +65,11 @@ app:
       rubricas: distribuicao.rubricas
       rol: ${RABBITMQ_QUEUE_ROL:distribuicao.rol}
       verba: ${RABBITMQ_QUEUE_VERBA:distribuicao.verba}
+      estornos: ${RABBITMQ_QUEUE_ESTORNOS:distribuicao.pagamento-estornado}
     routing-keys:
       rubrica-criada: arrecadacao.rubrica.criada
       rubrica-atualizada: arrecadacao.rubrica.atualizada
+      pagamento-estornado: arrecadacao.pagamento.estornado
     exchanges:
       distribuicao: ${RABBITMQ_EXCHANGE_DISTRIBUICAO:distribuicao.events}
   outbox:

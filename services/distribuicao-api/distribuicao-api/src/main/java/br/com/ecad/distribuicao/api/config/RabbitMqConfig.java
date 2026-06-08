@@ -111,4 +111,20 @@ public class RabbitMqConfig {
         return BindingBuilder.bind(verbaQueue).to(arrecadacaoEventsExchange)
                 .with("arrecadacao.verba.disponivel");
     }
+
+    // ─── F06: Ajustes por Estorno ────────────────────────────────────────────
+
+    @Bean
+    public Queue pagamentoEstornadoQueue(
+            @Value("${app.rabbitmq.queues.estornos:distribuicao.pagamento-estornado}") String queueName) {
+        return QueueBuilder.durable(queueName).build();
+    }
+
+    @Bean
+    public Binding bindPagamentoEstornado(
+            @Qualifier("pagamentoEstornadoQueue") Queue pagamentoEstornadoQueue,
+            @Qualifier("arrecadacaoEventsExchange") TopicExchange arrecadacaoEventsExchange,
+            @Value("${app.rabbitmq.routing-keys.pagamento-estornado:arrecadacao.pagamento.estornado}") String routingKey) {
+        return BindingBuilder.bind(pagamentoEstornadoQueue).to(arrecadacaoEventsExchange).with(routingKey);
+    }
 }

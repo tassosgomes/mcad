@@ -4,7 +4,9 @@ import br.com.ecad.distribuicao.application.audit.AuditContextProvider;
 import br.com.ecad.distribuicao.application.audit.GenericAuditEventFactory;
 import br.com.ecad.distribuicao.application.commands.CalcularProcessoCommand;
 import br.com.ecad.distribuicao.application.dto.CalcularProcessoResponse;
+import br.com.ecad.distribuicao.application.services.AjusteEstornoAplicacaoService;
 import br.com.ecad.distribuicao.application.services.CreditoRetidoLiberacaoService;
+import br.com.ecad.distribuicao.application.services.ResultadoAjustesEstorno;
 import br.com.ecad.distribuicao.application.services.CreditoRetidoLiberacaoService.ResultadoLiberacaoRetidos;
 import br.com.ecad.distribuicao.application.services.ParsedRol;
 import br.com.ecad.distribuicao.application.services.RolPayloadParser;
@@ -67,6 +69,7 @@ public class CalcularProcessoCommandHandler {
     private final CadastroOwnershipClient cadastroOwnershipClient;
     private final CreditoRepository creditoRepository;
     private final CreditoRetidoLiberacaoService creditoRetidoLiberacaoService;
+    private final AjusteEstornoAplicacaoService ajusteEstornoAplicacaoService;
     private final OutboxEventRepository outboxEventRepository;
     private final RolPayloadParser rolPayloadParser;
     private final ObjectMapper objectMapper;
@@ -83,6 +86,7 @@ public class CalcularProcessoCommandHandler {
             CadastroOwnershipClient cadastroOwnershipClient,
             CreditoRepository creditoRepository,
             CreditoRetidoLiberacaoService creditoRetidoLiberacaoService,
+            AjusteEstornoAplicacaoService ajusteEstornoAplicacaoService,
             OutboxEventRepository outboxEventRepository,
             RolPayloadParser rolPayloadParser,
             ObjectMapper objectMapper,
@@ -98,6 +102,9 @@ public class CalcularProcessoCommandHandler {
         this.creditoRetidoLiberacaoService = Objects.requireNonNull(
                 creditoRetidoLiberacaoService,
                 "creditoRetidoLiberacaoService must not be null");
+        this.ajusteEstornoAplicacaoService = Objects.requireNonNull(
+                ajusteEstornoAplicacaoService,
+                "ajusteEstornoAplicacaoService must not be null");
         this.outboxEventRepository = Objects.requireNonNull(outboxEventRepository, "outboxEventRepository must not be null");
         this.rolPayloadParser = Objects.requireNonNull(rolPayloadParser, "rolPayloadParser must not be null");
         this.objectMapper = Objects.requireNonNull(objectMapper, "objectMapper must not be null");
@@ -116,6 +123,7 @@ public class CalcularProcessoCommandHandler {
         try {
             processo = buscarProcesso(command.processoId());
             validarStatus(processo);
+            ajusteEstornoAplicacaoService.validarCalculoPermitido(processo);
 
             SnapshotRol snapshotRol = buscarSnapshotRol(processo);
             SnapshotVerba snapshotVerba = buscarSnapshotVerba(processo);
@@ -138,6 +146,8 @@ public class CalcularProcessoCommandHandler {
             creditoRepository.saveAll(resultado.creditos());
             ResultadoLiberacaoRetidos resultadoLiberacao =
                     creditoRetidoLiberacaoService.preverLiberacoes(processo, command.bearerToken());
+            ResultadoAjustesEstorno resultadoAjustes =
+                    ajusteEstornoAplicacaoService.preverAjustes(processo, Instant.now());
             processo.marcarCalculado(
                     resultado.resumo().totalExecucoes(),
                     resultado.resumo().totalObras(),
@@ -147,13 +157,15 @@ public class CalcularProcessoCommandHandler {
                     resultado.resumo().totalCreditosRetidos(),
                     resultado.resumo().valorTotalRetido(),
                     resultadoLiberacao.total(),
-                    resultadoLiberacao.valorTotal());
+                    resultadoLiberacao.valorTotal(),
+                    resultadoAjustes.total(),
+                    resultadoAjustes.valorTotal());
             ProcessoDistribuicao processoSalvo = processoRepository.save(processo);
 
             outboxEventRepository.save(OutboxEvent.criar(
                     EVENT_TYPE,
                     processo.getId().toString(),
-                    criarPayloadEvento(processoSalvo, resultado, resultadoLiberacao)));
+                    criarPayloadEvento(processoSalvo, resultado, resultadoLiberacao, resultadoAjustes)));
             resultado.creditos().stream()
                     .filter(credito -> credito.getMotivoRetencao() != null)
                     .map(credito -> OutboxEvent.criar(
@@ -178,6 +190,8 @@ public class CalcularProcessoCommandHandler {
             after.put("valorTotalRetido", resultado.resumo().valorTotalRetido().toPlainString());
             after.put("totalRetidosALiberar", resultadoLiberacao.total());
             after.put("valorTotalRetidosALiberar", resultadoLiberacao.valorTotal().toPlainString());
+            after.put("totalAjustesEstorno", resultadoAjustes.total());
+            after.put("valorTotalAjustesEstorno", resultadoAjustes.valorTotal().toPlainString());
             auditClient.publish(auditFactory.userAction(
                     ENTITY_TYPE, entityId,
                     "CALCULAR_PROCESSO", "Calcular processo de distribuição",
@@ -235,7 +249,8 @@ public class CalcularProcessoCommandHandler {
     private String criarPayloadEvento(
             ProcessoDistribuicao processo,
             ResultadoCalculo resultado,
-            ResultadoLiberacaoRetidos resultadoLiberacao) {
+            ResultadoLiberacaoRetidos resultadoLiberacao,
+            ResultadoAjustesEstorno resultadoAjustes) {
         try {
             return objectMapper.writeValueAsString(new ProcessoCalculadoEventPayload(
                     processo.getId(),
@@ -250,6 +265,8 @@ public class CalcularProcessoCommandHandler {
                     resultado.resumo().valorTotalRetido(),
                     resultadoLiberacao.total(),
                     resultadoLiberacao.valorTotal(),
+                    resultadoAjustes.total(),
+                    resultadoAjustes.valorTotal(),
                     processo.getCalculadoEm()));
         } catch (JsonProcessingException exception) {
             throw new PreRequisitosException("Falha ao montar evento de cálculo do processo");
@@ -399,6 +416,8 @@ public class CalcularProcessoCommandHandler {
             java.math.BigDecimal valorTotalRetido,
             int totalCreditosRetidosLiberados,
             java.math.BigDecimal valorTotalRetidosLiberados,
+            int totalAjustesEstorno,
+            java.math.BigDecimal valorTotalAjustesEstorno,
             java.time.Instant calculadoEm) {
     }
 

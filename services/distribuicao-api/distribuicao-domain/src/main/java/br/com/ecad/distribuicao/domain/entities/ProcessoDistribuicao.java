@@ -62,6 +62,12 @@ public class ProcessoDistribuicao {
     @Column(name = "valor_total_retidos_liberados", precision = 15, scale = 2)
     private BigDecimal valorTotalRetidosLiberados;
 
+    @Column(name = "total_ajustes_estorno")
+    private Integer totalAjustesEstorno;
+
+    @Column(name = "valor_total_ajustes_estorno", precision = 15, scale = 2)
+    private BigDecimal valorTotalAjustesEstorno;
+
     @Column(name = "analista_responsavel", nullable = false, length = 200)
     private String analistaResponsavel;
 
@@ -160,6 +166,32 @@ public class ProcessoDistribuicao {
             int totalObras,
             BigDecimal totalPontos,
             int totalCreditos,
+            BigDecimal valorTotalCalculado,
+            int totalCreditosRetidos,
+            BigDecimal valorTotalRetido,
+            int totalCreditosRetidosLiberados,
+            BigDecimal valorTotalRetidosLiberados,
+            int totalAjustesEstorno,
+            BigDecimal valorTotalAjustesEstorno) {
+        marcarCalculado(
+                totalExecucoes,
+                totalObras,
+                totalPontos,
+                totalCreditos,
+                valorTotalCalculado,
+                totalCreditosRetidos,
+                valorTotalRetido,
+                totalCreditosRetidosLiberados,
+                valorTotalRetidosLiberados);
+        this.totalAjustesEstorno = totalAjustesEstorno;
+        this.valorTotalAjustesEstorno = valorTotalAjustesEstorno;
+    }
+
+    public void marcarCalculado(
+            int totalExecucoes,
+            int totalObras,
+            BigDecimal totalPontos,
+            int totalCreditos,
             BigDecimal valorTotalCalculado) {
         marcarCalculado(
                 totalExecucoes,
@@ -224,6 +256,8 @@ public class ProcessoDistribuicao {
     public BigDecimal getValorTotalRetido() { return valorTotalRetido; }
     public Integer getTotalCreditosRetidosLiberados() { return totalCreditosRetidosLiberados; }
     public BigDecimal getValorTotalRetidosLiberados() { return valorTotalRetidosLiberados; }
+    public Integer getTotalAjustesEstorno() { return totalAjustesEstorno; }
+    public BigDecimal getValorTotalAjustesEstorno() { return valorTotalAjustesEstorno; }
     public String getAnalistaResponsavel() { return analistaResponsavel; }
     public Instant getCriadoEm() { return criadoEm; }
     public Instant getCalculadoEm() { return calculadoEm; }
