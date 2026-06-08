@@ -5,7 +5,9 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+import org.springframework.stereotype.Component;
 
+@Component
 public class SiglaSuggesterImpl implements SiglaSuggester {
 
     private static final Set<String> PREPOSICOES = Set.of(
