@@ -13,8 +13,10 @@ import br.com.ecad.distribuicao.application.audit.GenericAuditEventFactory;
 import br.com.ecad.distribuicao.application.commands.CalcularProcessoCommand;
 import br.com.ecad.distribuicao.application.commands.handlers.CalcularProcessoCommandHandler;
 import br.com.ecad.distribuicao.application.dto.CalcularProcessoResponse;
+import br.com.ecad.distribuicao.application.services.AjusteEstornoAplicacaoService;
 import br.com.ecad.distribuicao.application.services.CreditoRetidoLiberacaoService;
 import br.com.ecad.distribuicao.application.services.CreditoRetidoLiberacaoService.ResultadoLiberacaoRetidos;
+import br.com.ecad.distribuicao.application.services.ResultadoAjustesEstorno;
 import br.com.ecad.distribuicao.application.services.RolPayloadParser;
 import br.com.ecad.distribuicao.domain.calculo.FonogramaOwnership;
 import br.com.ecad.distribuicao.domain.calculo.ObraOwnership;
@@ -91,6 +93,9 @@ class CalcularProcessoCommandHandlerTest {
     private CreditoRetidoLiberacaoService creditoRetidoLiberacaoService;
 
     @Mock
+    private AjusteEstornoAplicacaoService ajusteEstornoAplicacaoService;
+
+    @Mock
     private OutboxEventRepository outboxEventRepository;
 
     @Mock
@@ -116,6 +121,7 @@ class CalcularProcessoCommandHandlerTest {
                 cadastroOwnershipClient,
                 creditoRepository,
                 creditoRetidoLiberacaoService,
+                ajusteEstornoAplicacaoService,
                 outboxEventRepository,
                 new RolPayloadParser(objectMapper),
                 objectMapper,
@@ -129,6 +135,12 @@ class CalcularProcessoCommandHandlerTest {
         org.mockito.Mockito.lenient()
                 .when(creditoRetidoLiberacaoService.cancelarLiberacoesPrevistas(any(), any()))
                 .thenReturn(0);
+        org.mockito.Mockito.lenient()
+                .when(ajusteEstornoAplicacaoService.preverAjustes(any(), any()))
+                .thenReturn(ResultadoAjustesEstorno.empty());
+        org.mockito.Mockito.lenient()
+                .doNothing()
+                .when(ajusteEstornoAplicacaoService).validarCalculoPermitido(any());
     }
 
     @Test
@@ -290,6 +302,39 @@ class CalcularProcessoCommandHandlerTest {
         assertThatThrownBy(() -> handler.handle(command()))
                 .isInstanceOf(PreRequisitosException.class)
                 .hasMessageContaining("Titularidade autoral");
+    }
+
+    @Test
+    void handle_BloqueadoPorAjusteProcessoCriadoDesatualizado_LancaPreRequisitosException() {
+        ProcessoDistribuicao processo = processo(StatusProcesso.CRIADO);
+        when(processoRepository.findById(PROCESSO_ID)).thenReturn(Optional.of(processo));
+        org.mockito.Mockito.doThrow(
+                new br.com.ecad.distribuicao.domain.exceptions.PreRequisitosException(
+                        "PROCESSO_CRIADO_DESATUALIZADO"))
+                .when(ajusteEstornoAplicacaoService).validarCalculoPermitido(any());
+
+        assertThatThrownBy(() -> handler.handle(command()))
+                .isInstanceOf(br.com.ecad.distribuicao.domain.exceptions.PreRequisitosException.class)
+                .hasMessageContaining("PROCESSO_CRIADO_DESATUALIZADO");
+    }
+
+    @Test
+    void handle_ComAjustePendente_OutboxCalculadoIncluitotaisAjustesEstorno() {
+        givenSuccessfulCalculation(rolPayloadWithDuplicates());
+        ResultadoAjustesEstorno resultadoAjustes = new ResultadoAjustesEstorno(
+                java.util.List.of(), java.util.List.of(), 1, new java.math.BigDecimal("-85.00"));
+        when(ajusteEstornoAplicacaoService.preverAjustes(any(), any())).thenReturn(resultadoAjustes);
+        org.mockito.ArgumentCaptor<br.com.ecad.distribuicao.domain.entities.OutboxEvent> eventCaptor =
+                org.mockito.ArgumentCaptor.forClass(br.com.ecad.distribuicao.domain.entities.OutboxEvent.class);
+
+        handler.handle(command());
+
+        verify(outboxEventRepository, org.mockito.Mockito.atLeastOnce()).save(eventCaptor.capture());
+        br.com.ecad.distribuicao.domain.entities.OutboxEvent calculadoEvent = eventCaptor.getAllValues().stream()
+                .filter(e -> e.getType().equals("distribuicao.processo.calculado"))
+                .findFirst().orElseThrow();
+        assertThat(calculadoEvent.getPayload()).contains("totalAjustesEstorno");
+        assertThat(calculadoEvent.getPayload()).contains("valorTotalAjustesEstorno");
     }
 
     private void givenSuccessfulCalculation(String rolPayload) {

@@ -16,7 +16,8 @@ import org.yaml.snakeyaml.Yaml;
  * o catálogo no ecad-authz.
  *
  * <p>Cobre CT-DIS-R05 do plano de testes da integração ecad-authz × MCAD:
- * 9 chaves 4-segmentos no domínio {@code distribuicao:default} (2 rubrica + 7 processo).
+ * 13 chaves 4-segmentos no domínio {@code distribuicao:default}
+ * (2 rubrica + 7 processo + 2 ajuste + 2 demonstrativo).
  */
 class PermissionsCatalogStructureTest {
 
@@ -35,8 +36,8 @@ class PermissionsCatalogStructureTest {
         List<Map<String, Object>> permissions = (List<Map<String, Object>>) loaded.get("permissions");
 
         assertThat(permissions)
-                .as("catálogo de Distribuição deve manter as 9 permissões 4-seg declaradas")
-                .hasSize(9)
+                .as("catálogo de Distribuição deve manter as 13 permissões 4-seg declaradas")
+                .hasSize(13)
                 .allSatisfy(
                         p -> {
                             String key = (String) p.get("key");

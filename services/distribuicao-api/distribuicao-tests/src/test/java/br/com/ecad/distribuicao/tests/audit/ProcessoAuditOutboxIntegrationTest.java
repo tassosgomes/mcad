@@ -60,7 +60,9 @@ import org.testcontainers.junit.jupiter.Testcontainers;
             // Use OUTBOX_HTTP mode: AuditClient writes to DB; no external relay required
             "audit.mode=OUTBOX_HTTP",
             "audit.enabled=true",
-            "audit.endpoint=http://localhost:9999/irrelevant"  // not called in OUTBOX mode
+            "audit.endpoint=http://localhost:9999/irrelevant",  // not called in OUTBOX mode
+            "otel.sdk.disabled=true",
+            "management.tracing.enabled=false"
         })
 @Testcontainers
 @SuppressWarnings("null")

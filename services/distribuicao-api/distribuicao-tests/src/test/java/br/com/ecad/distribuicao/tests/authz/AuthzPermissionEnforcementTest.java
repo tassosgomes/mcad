@@ -106,6 +106,8 @@ class AuthzPermissionEnforcementTest {
     private static final String PROCESSO_CANCELAR = "distribuicao:default:processo:cancelar";
     private static final String PROCESSO_RECALCULAR_POS_CALCULADO =
             "distribuicao:default:processo:recalcular-pos-calculado";
+    private static final String AJUSTE_LISTAR = "distribuicao:default:ajuste:listar";
+    private static final String AJUSTE_VISUALIZAR = "distribuicao:default:ajuste:visualizar";
 
     private static final String PROCESSO_REQUEST = """
             {"rubricaSigla":"RADIO","periodo":"2026-03"}
@@ -125,7 +127,9 @@ class AuthzPermissionEnforcementTest {
                     PROCESSO_VISUALIZAR,
                     "distribuicao:default:credito:listar",
                     "distribuicao:default:credito:visualizar",
-                    "distribuicao:default:demonstrativo:visualizar"),
+                    "distribuicao:default:demonstrativo:visualizar",
+                    AJUSTE_LISTAR,
+                    AJUSTE_VISUALIZAR),
             OPERADOR,
             Set.of(
                     RUBRICA_LISTAR,
@@ -136,7 +140,9 @@ class AuthzPermissionEnforcementTest {
                     "distribuicao:default:credito:visualizar",
                     "distribuicao:default:demonstrativo:visualizar",
                     PROCESSO_CRIAR,
-                    PROCESSO_CALCULAR),
+                    PROCESSO_CALCULAR,
+                    AJUSTE_LISTAR,
+                    AJUSTE_VISUALIZAR),
             GERENTE,
             Set.of(
                     RUBRICA_LISTAR,
@@ -156,7 +162,9 @@ class AuthzPermissionEnforcementTest {
                     "distribuicao:default:demonstrativo:exportar",
                     "cadastro:default:titular:ver-cpf-completo",
                     "acessos:distribuicao:papel:visualizar",
-                    "acessos:distribuicao:atribuicao:ver-historico"),
+                    "acessos:distribuicao:atribuicao:ver-historico",
+                    AJUSTE_LISTAR,
+                    AJUSTE_VISUALIZAR),
             ANALISTA,
             Set.of(
                     RUBRICA_LISTAR,
@@ -176,7 +184,9 @@ class AuthzPermissionEnforcementTest {
                     "distribuicao:default:credito-retido:liberar-manual",
                     "distribuicao:default:demonstrativo:visualizar",
                     "distribuicao:default:demonstrativo:exportar",
-                    "cadastro:default:titular:ver-cpf-completo"));
+                    "cadastro:default:titular:ver-cpf-completo",
+                    AJUSTE_LISTAR,
+                    AJUSTE_VISUALIZAR));
 
     @Container
     static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:16-alpine")
@@ -355,7 +365,15 @@ class AuthzPermissionEnforcementTest {
                 new SecuredEndpoint(
                         "GET /api/v1/rubricas/{sigla}",
                         RUBRICA_VISUALIZAR,
-                        () -> get("/api/v1/rubricas/{sigla}", "RADIO")));
+                        () -> get("/api/v1/rubricas/{sigla}", "RADIO")),
+                new SecuredEndpoint(
+                        "GET /api/v1/ajustes-estorno",
+                        AJUSTE_LISTAR,
+                        () -> get("/api/v1/ajustes-estorno")),
+                new SecuredEndpoint(
+                        "GET /api/v1/ajustes-estorno/{id}",
+                        AJUSTE_VISUALIZAR,
+                        () -> get("/api/v1/ajustes-estorno/{id}", UUID.randomUUID())));
     }
 
     private static RequestPostProcessor jwtForRole(String roleKey) {

@@ -44,7 +44,9 @@ import org.testcontainers.junit.jupiter.Testcontainers;
         properties = {
             "app.security.auth-enabled=true",
             "spring.autoconfigure.exclude=br.org.ecad.audit.starter.AuditAutoConfiguration",
-            "spring.rabbitmq.listener.simple.auto-startup=false"
+            "spring.rabbitmq.listener.simple.auto-startup=false",
+            "otel.sdk.disabled=true",
+            "management.tracing.enabled=false"
         })
 @AutoConfigureMockMvc
 @Testcontainers

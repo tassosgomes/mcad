@@ -11,6 +11,7 @@ import static org.mockito.Mockito.when;
 
 import br.com.ecad.distribuicao.application.audit.AuditContext;
 import br.com.ecad.distribuicao.application.audit.AuditContextProvider;
+import br.com.ecad.distribuicao.application.audit.GenericAuditEventFactory;
 import br.com.ecad.distribuicao.application.audit.ProcessoAuditChange;
 import br.com.ecad.distribuicao.application.audit.ProcessoAuditEventFactory;
 import br.com.ecad.distribuicao.application.audit.ProcessoAuditOperation;
@@ -21,8 +22,10 @@ import br.com.ecad.distribuicao.application.commands.handlers.AprovarProcessoCom
 import br.com.ecad.distribuicao.application.commands.handlers.CancelarProcessoCommandHandler;
 import br.com.ecad.distribuicao.application.commands.handlers.FinalizarProcessoCommandHandler;
 import br.com.ecad.distribuicao.application.dto.ProcessoResponse;
+import br.com.ecad.distribuicao.application.services.AjusteEstornoAplicacaoService;
 import br.com.ecad.distribuicao.application.services.CreditoRetidoLiberacaoService;
 import br.com.ecad.distribuicao.application.services.CreditoRetidoLiberacaoService.ResultadoLiberacaoRetidos;
+import br.com.ecad.distribuicao.application.services.ResultadoAjustesEstorno;
 import br.com.ecad.distribuicao.domain.entities.Credito;
 import br.com.ecad.distribuicao.domain.entities.CreditoLiberacao;
 import br.com.ecad.distribuicao.domain.entities.ProcessoDistribuicao;
@@ -38,6 +41,8 @@ import br.com.ecad.distribuicao.domain.interfaces.ProcessoRepository;
 import br.com.ecad.distribuicao.domain.interfaces.SnapshotRolRepository;
 import br.org.ecad.audit.contract.AuditEvent;
 import br.org.ecad.audit.sdk.AuditClient;
+import br.com.ecad.distribuicao.domain.entities.AjusteEstorno;
+import br.com.ecad.distribuicao.domain.entities.EventoEstorno;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
@@ -63,10 +68,12 @@ class TransicoesCommandHandlerTest {
     @Mock private CreditoRepository creditoRepository;
     @Mock private SnapshotRolRepository snapshotRolRepository;
     @Mock private CreditoRetidoLiberacaoService creditoRetidoLiberacaoService;
+    @Mock private AjusteEstornoAplicacaoService ajusteEstornoAplicacaoService;
     @Mock private OutboxEventWriter outboxEventWriter;
     @Mock private AuditClient auditClient;
     @Mock private AuditContextProvider auditContextProvider;
     @Mock private ProcessoAuditEventFactory auditEventFactory;
+    @Mock private GenericAuditEventFactory genericAuditEventFactory;
 
     private AprovarProcessoCommandHandler aprovarHandler;
     private FinalizarProcessoCommandHandler finalizarHandler;
@@ -78,10 +85,12 @@ class TransicoesCommandHandlerTest {
                 processoRepository, outboxEventWriter, auditClient, auditContextProvider, auditEventFactory);
         finalizarHandler = new FinalizarProcessoCommandHandler(
                 processoRepository, creditoRepository, snapshotRolRepository, creditoRetidoLiberacaoService,
-                outboxEventWriter, auditClient, auditContextProvider, auditEventFactory);
+                ajusteEstornoAplicacaoService,
+                outboxEventWriter, auditClient, auditContextProvider, auditEventFactory, genericAuditEventFactory);
         cancelarHandler = new CancelarProcessoCommandHandler(
                 processoRepository, creditoRetidoLiberacaoService,
-                outboxEventWriter, auditClient, auditContextProvider, auditEventFactory);
+                ajusteEstornoAplicacaoService,
+                outboxEventWriter, auditClient, auditContextProvider, auditEventFactory, genericAuditEventFactory);
 
         // Lenient stubs: not all tests reach the audit code (e.g. exception paths)
         org.mockito.Mockito.lenient().when(auditContextProvider.current(AUTOR)).thenReturn(auditContext());
@@ -93,6 +102,12 @@ class TransicoesCommandHandlerTest {
         org.mockito.Mockito.lenient()
                 .when(creditoRetidoLiberacaoService.cancelarLiberacoesPrevistas(any(), any()))
                 .thenReturn(0);
+        org.mockito.Mockito.lenient()
+                .when(ajusteEstornoAplicacaoService.efetivarAjustes(any(), any()))
+                .thenReturn(ResultadoAjustesEstorno.empty());
+        org.mockito.Mockito.lenient()
+                .when(ajusteEstornoAplicacaoService.cancelarPrevisoes(any(), any()))
+                .thenReturn(ResultadoAjustesEstorno.empty());
     }
 
     // === APROVAR TESTS ===
@@ -274,6 +289,47 @@ class TransicoesCommandHandlerTest {
         assertThat(changeCaptor.getValue().operation()).isEqualTo(ProcessoAuditOperation.CANCEL);
     }
 
+    // === FINALIZAR + AJUSTE ESTORNO TESTS ===
+
+    @Test
+    void finalizar_ComAjustePrevisto_EfetivaAplicado_PublicaEventoAjusteEstornoAplicado() {
+        ProcessoDistribuicao processo = criarProcessoAprovado();
+        when(processoRepository.findById(PROCESSO_ID)).thenReturn(Optional.of(processo));
+        when(processoRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        java.math.BigDecimal valorAjuste = new java.math.BigDecimal("-85.00");
+        br.com.ecad.distribuicao.domain.entities.AjusteEstorno ajuste =
+                ajusteEstornoPrevistoSimples(PROCESSO_ID, valorAjuste);
+        org.mockito.Mockito.when(ajusteEstornoAplicacaoService.efetivarAjustes(any(), any()))
+                .thenReturn(new ResultadoAjustesEstorno(
+                        List.of(ajuste),
+                        List.of(),
+                        1,
+                        valorAjuste));
+
+        ProcessoResponse response = finalizarHandler.handle(new FinalizarProcessoCommand(PROCESSO_ID, AUTOR));
+
+        assertThat(response.status()).isEqualTo(StatusProcesso.FINALIZADO);
+        verify(ajusteEstornoAplicacaoService).efetivarAjustes(any(), any());
+    }
+
+    @Test
+    void cancelar_ComAjustePrevisto_DevolveParaPendente_ApagaLinhas() {
+        ProcessoDistribuicao processo = criarProcessoCriado();
+        when(processoRepository.findById(PROCESSO_ID)).thenReturn(Optional.of(processo));
+        when(processoRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        org.mockito.Mockito.when(ajusteEstornoAplicacaoService.cancelarPrevisoes(any(), any()))
+                .thenReturn(new ResultadoAjustesEstorno(
+                        List.of(), List.of(), 1, new java.math.BigDecimal("-85.00")));
+
+        ProcessoResponse response = cancelarHandler.handle(
+                new CancelarProcessoCommand(PROCESSO_ID, "Justificativa suficientemente longa", AUTOR));
+
+        assertThat(response.status()).isEqualTo(StatusProcesso.CANCELADO);
+        verify(ajusteEstornoAplicacaoService).cancelarPrevisoes(eq(PROCESSO_ID), any());
+    }
+
     // === Helpers ===
 
     private ProcessoDistribuicao criarProcessoCriado() {
@@ -342,6 +398,21 @@ class TransicoesCommandHandlerTest {
                 br.org.ecad.audit.contract.EventType.USER_ACTION, java.time.OffsetDateTime.now(),
                 null, null, null, null, null, null, null, null,
                 new AuditEvent.UserAction("TEST_ACTION", "Test Action", java.util.Map.of()));
+    }
+
+    private AjusteEstorno ajusteEstornoPrevistoSimples(UUID processoAplicacaoId, BigDecimal valorAplicado) {
+        EventoEstorno evento = new EventoEstorno(
+                UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(),
+                "RADIO", "2026-05",
+                new BigDecimal("10.000000"), valorAplicado.abs(),
+                "justificativa", "analista@ecad.org",
+                Instant.parse("2026-05-01T10:00:00Z"));
+        var origem = ProcessoDistribuicao.criar("RADIO", "2026-05", BigDecimal.valueOf(93000), AUTOR,
+                UUID.randomUUID(), UUID.randomUUID());
+        setField(origem, "id", PROCESSO_ORIGEM_ID);
+        AjusteEstorno ajuste = AjusteEstorno.pendente(evento, origem, "{}", valorAplicado.abs());
+        ajuste.prever(processoAplicacaoId, valorAplicado, Instant.parse("2026-05-07T10:00:00Z"));
+        return ajuste;
     }
 
     private void setField(Object target, String fieldName, Object value) {

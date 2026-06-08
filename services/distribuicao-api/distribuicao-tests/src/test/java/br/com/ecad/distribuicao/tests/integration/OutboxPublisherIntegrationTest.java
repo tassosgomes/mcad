@@ -38,7 +38,9 @@ import org.testcontainers.junit.jupiter.Testcontainers;
             "app.security.auth-enabled=false",
             "spring.autoconfigure.exclude=br.org.ecad.audit.starter.AuditAutoConfiguration",
             "app.outbox.publisher.poll-interval-ms=500",
-            "spring.rabbitmq.listener.simple.missing-queues-fatal=false"
+            "spring.rabbitmq.listener.simple.missing-queues-fatal=false",
+            "otel.sdk.disabled=true",
+            "management.tracing.enabled=false"
         })
 @Testcontainers
 @SuppressWarnings("null")

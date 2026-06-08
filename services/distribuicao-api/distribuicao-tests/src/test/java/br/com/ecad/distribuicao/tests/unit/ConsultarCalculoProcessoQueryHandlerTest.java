@@ -7,22 +7,30 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import br.com.ecad.distribuicao.application.dto.AjustesEstornoResponse;
 import br.com.ecad.distribuicao.application.dto.CalculoProcessoResponse;
 import br.com.ecad.distribuicao.application.queries.ConsultarCalculoProcessoQuery;
 import br.com.ecad.distribuicao.application.queries.handlers.ConsultarCalculoProcessoQueryHandler;
+import br.com.ecad.distribuicao.domain.entities.AjusteEstorno;
 import br.com.ecad.distribuicao.domain.entities.Credito;
+import br.com.ecad.distribuicao.domain.entities.EventoEstorno;
+import br.com.ecad.distribuicao.domain.entities.ProcessoDistribuicao;
 import br.com.ecad.distribuicao.domain.enums.CategoriaCredito;
 import br.com.ecad.distribuicao.domain.enums.MotivoRetencao;
+import br.com.ecad.distribuicao.domain.enums.StatusAjusteEstorno;
 import br.com.ecad.distribuicao.domain.enums.StatusCredito;
 import br.com.ecad.distribuicao.domain.enums.StatusProcesso;
 import br.com.ecad.distribuicao.domain.exceptions.PreRequisitosException;
 import br.com.ecad.distribuicao.domain.filters.CreditoFiltro;
+import br.com.ecad.distribuicao.domain.interfaces.AjusteEstornoLinhaRepository;
+import br.com.ecad.distribuicao.domain.interfaces.AjusteEstornoRepository;
 import br.com.ecad.distribuicao.domain.interfaces.CreditoLiberacaoRepository;
 import br.com.ecad.distribuicao.domain.interfaces.CreditoRepository;
 import br.com.ecad.distribuicao.domain.interfaces.ProcessoRepository;
 import br.com.ecad.distribuicao.domain.projections.CalculoResumoProjection;
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -51,6 +59,12 @@ class ConsultarCalculoProcessoQueryHandlerTest {
     @Mock
     private ProcessoRepository processoRepository;
 
+    @Mock
+    private AjusteEstornoRepository ajusteEstornoRepository;
+
+    @Mock
+    private AjusteEstornoLinhaRepository ajusteEstornoLinhaRepository;
+
     private ConsultarCalculoProcessoQueryHandler handler;
 
     @BeforeEach
@@ -58,9 +72,14 @@ class ConsultarCalculoProcessoQueryHandlerTest {
         handler = new ConsultarCalculoProcessoQueryHandler(
                 creditoRepository,
                 creditoLiberacaoRepository,
-                processoRepository);
+                processoRepository,
+                ajusteEstornoRepository,
+                ajusteEstornoLinhaRepository);
         org.mockito.Mockito.lenient()
                 .when(creditoLiberacaoRepository.findByProcessoLiberacaoId(PROCESSO_ID))
+                .thenReturn(List.of());
+        org.mockito.Mockito.lenient()
+                .when(ajusteEstornoRepository.findByProcessoAplicacaoIdAndStatusIn(any(), any()))
                 .thenReturn(List.of());
     }
 
@@ -123,6 +142,46 @@ class ConsultarCalculoProcessoQueryHandlerTest {
                 .hasMessageContaining("Categoria de crédito inválida");
         verify(creditoRepository, never()).buscarResumo(any());
         verify(creditoRepository, never()).findByProcessoId(any(), any());
+    }
+
+    @Test
+    void handle_ProcessoComAjustes_RetornaSecaoAjustesEstornoETotais() {
+        CalculoResumoProjection resumo = resumo();
+        Credito credito = credito();
+        AjusteEstorno ajuste = ajusteEstornoPendente();
+
+        when(creditoRepository.buscarResumo(PROCESSO_ID)).thenReturn(Optional.of(resumo));
+        when(creditoRepository.findByProcessoId(any(CreditoFiltro.class), any()))
+                .thenReturn(new PageImpl<>(List.of(credito), PageRequest.of(0, 1), 1));
+        when(ajusteEstornoRepository.findByProcessoAplicacaoIdAndStatusIn(any(), any()))
+                .thenReturn(List.of(ajuste));
+        when(ajusteEstornoLinhaRepository.findByAjusteId(any())).thenReturn(List.of());
+
+        CalculoProcessoResponse response = handler.handle(new ConsultarCalculoProcessoQuery(
+                PROCESSO_ID, 0, 1, null, null, null, null, null));
+
+        assertThat(response.ajustesEstorno()).isNotNull();
+        assertThat(response.ajustesEstorno().total()).isEqualTo(1);
+        assertThat(response.ajustesEstorno().valorTotal()).isEqualByComparingTo("-85.00");
+        // Resumo deve incluir totalAjustesEstorno
+        assertThat(response.resumo().totalAjustesEstorno()).isEqualTo(1);
+    }
+
+    private AjusteEstorno ajusteEstornoPendente() {
+        EventoEstorno evento = new EventoEstorno(
+                UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(),
+                "RADIO", "2026-05",
+                new java.math.BigDecimal("10.000000"),
+                new java.math.BigDecimal("100.00"),
+                "justificativa", "analista@ecad.org",
+                java.time.Instant.parse("2026-06-01T10:00:00Z"));
+        ProcessoDistribuicao origem = ProcessoDistribuicao.criar(
+                "RADIO", "2026-05", new java.math.BigDecimal("1000.00"), "analista", null, null);
+        AjusteEstorno ajuste = AjusteEstorno.pendente(
+                evento, origem, "{}", new java.math.BigDecimal("85.00"));
+        ajuste.prever(PROCESSO_ID, new java.math.BigDecimal("-85.00"),
+                java.time.Instant.parse("2026-06-07T10:00:00Z"));
+        return ajuste;
     }
 
     private CalculoResumoProjection resumo() {

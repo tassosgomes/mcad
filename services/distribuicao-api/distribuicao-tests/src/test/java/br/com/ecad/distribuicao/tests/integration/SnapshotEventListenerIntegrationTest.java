@@ -35,7 +35,9 @@ import org.testcontainers.junit.jupiter.Testcontainers;
         properties = {
             "app.security.auth-enabled=false",
             "spring.autoconfigure.exclude=br.org.ecad.audit.starter.AuditAutoConfiguration",
-            "spring.rabbitmq.listener.simple.missing-queues-fatal=false"
+            "spring.rabbitmq.listener.simple.missing-queues-fatal=false",
+            "otel.sdk.disabled=true",
+            "management.tracing.enabled=false"
         })
 @Testcontainers
 @SuppressWarnings("null")

@@ -41,7 +41,9 @@ import org.testcontainers.junit.jupiter.Testcontainers;
         properties = {
             "app.security.auth-enabled=false",
             "spring.autoconfigure.exclude=br.org.ecad.audit.starter.AuditAutoConfiguration",
-            "spring.rabbitmq.listener.simple.auto-startup=false"
+            "spring.rabbitmq.listener.simple.auto-startup=false",
+            "otel.sdk.disabled=true",
+            "management.tracing.enabled=false"
         })
 @Testcontainers
 @Transactional
@@ -317,6 +319,42 @@ class CreditoRepositoryIntegrationTest {
                 MotivoRetencao.TITULAR_SEM_ASSOCIACAO,
                 Instant.now(),
                 CRIADO_EM);
+    }
+
+    @Test
+    void findByProcessoIdForAjuste_RetornaApenasCalculadoRetidoLiberado_OrdenaCreatedAtId() {
+        ProcessoDistribuicao processoOrigem = persistProcesso("RADIO", "2026-05");
+        ProcessoDistribuicao processoLib = persistProcesso("RADIO", "2026-06");
+
+        // 3 status elegíveis
+        Credito calculado = autoral(processoOrigem.getId(), TITULAR_A_ID, OBRA_A_ID);
+        Credito retidoC = Credito.retido(
+                processoOrigem.getId(), TITULAR_A_ID, "Titular A", OBRA_B_ID, "Obra B", null,
+                CategoriaCredito.AUTORAL, null,
+                new BigDecimal("100.000000"), new BigDecimal("500.00"), new BigDecimal("500.00"),
+                new BigDecimal("10.000000"), MotivoRetencao.TITULAR_SEM_ASSOCIACAO,
+                Instant.now(), CRIADO_EM.plusSeconds(1));
+        // liberado = retido + liberar(com processo persistido)
+        Credito liberado = Credito.retido(
+                processoOrigem.getId(), TITULAR_B_ID, "Titular B", OBRA_A_ID, "Obra A", null,
+                CategoriaCredito.AUTORAL, null,
+                new BigDecimal("100.000000"), new BigDecimal("300.00"), new BigDecimal("300.00"),
+                new BigDecimal("10.000000"), MotivoRetencao.TITULAR_SEM_ASSOCIACAO,
+                Instant.now(), CRIADO_EM.plusSeconds(2));
+        liberado.liberar(processoLib.getId(), Instant.now());
+
+        creditoRepository.saveAll(List.of(calculado, retidoC, liberado));
+        entityManager.flush();
+        entityManager.clear();
+
+        List<Credito> result = creditoRepository.findByProcessoIdForAjuste(processoOrigem.getId());
+
+        assertThat(result).hasSize(3);
+        assertThat(result).extracting(Credito::getStatus)
+                .containsOnly(StatusCredito.CALCULADO, StatusCredito.RETIDO, StatusCredito.LIBERADO);
+        // Todos devem ter valorCredito > 0
+        assertThat(result).extracting(Credito::getValorCredito)
+                .allMatch(v -> v.compareTo(java.math.BigDecimal.ZERO) > 0);
     }
 
     private Integer countInformationSchemaRows(String sql) {
