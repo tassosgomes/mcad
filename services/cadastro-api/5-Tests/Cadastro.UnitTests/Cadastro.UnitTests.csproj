@@ -11,8 +11,8 @@
     <PackageReference Include="AwesomeAssertions" Version="9.0.0" />
     <PackageReference Include="CloudNative.CloudEvents" Version="2.7.1" />
     <PackageReference Include="coverlet.collector" Version="6.0.4" />
-    <PackageReference Include="Ecad.Authz.AspNetCore" Version="1.0.0" />
-    <PackageReference Include="Ecad.Authz.Sdk" Version="1.0.0" />
+    <PackageReference Include="Ecad.Authz.AspNetCore" Version="1.0.1" />
+    <PackageReference Include="Ecad.Authz.Sdk" Version="1.0.1" />
     <PackageReference Include="FluentAssertions" Version="8.9.0" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="9.0.4" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="9.0.4" />

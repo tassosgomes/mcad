@@ -1,5 +1,6 @@
 using Cadastro.Application.Common.Exceptions;
 using Cadastro.Domain.Exceptions;
+using Ecad.Authz.Sdk;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
 
@@ -38,6 +39,7 @@ public class GlobalExceptionHandler : IExceptionHandler
 
         var (statusCode, title) = exception switch
         {
+            AuthzServiceUnavailableException => (StatusCodes.Status503ServiceUnavailable, "Authorization Service Unavailable"),
             NotFoundException => (StatusCodes.Status404NotFound, "Resource Not Found"),
             ConflictException => (StatusCodes.Status409Conflict, "Conflict"),
             StatusConflictException => (StatusCodes.Status409Conflict, "Conflict"),

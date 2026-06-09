@@ -7,8 +7,8 @@
 
   <ItemGroup>
     <PackageReference Include="Ecad.Audit.AspNetCore" Version="1.0.0" />
-    <PackageReference Include="Ecad.Authz.AspNetCore" Version="1.0.0" />
-    <PackageReference Include="Ecad.Authz.Sdk" Version="1.0.0" />
+    <PackageReference Include="Ecad.Authz.AspNetCore" Version="1.0.1" />
+    <PackageReference Include="Ecad.Authz.Sdk" Version="1.0.1" />
     <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="12.1.1" />
     <PackageReference Include="Saunter" Version="0.13.0" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.9.0" />

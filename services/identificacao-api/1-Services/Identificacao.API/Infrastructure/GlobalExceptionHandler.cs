@@ -1,3 +1,4 @@
+using Ecad.Authz.Sdk;
 using FluentValidation;
 using Identificacao.Application.Common.Exceptions;
 using Identificacao.Domain.Exceptions;
@@ -24,6 +25,13 @@ public class GlobalExceptionHandler : IExceptionHandler
 
         switch (exception)
         {
+            case AuthzServiceUnavailableException:
+                _logger.LogError(exception, "Authorization service unavailable.");
+                problemDetails.Status = StatusCodes.Status503ServiceUnavailable;
+                problemDetails.Title = "Authorization Service Unavailable";
+                problemDetails.Detail = "The authorization service is temporarily unavailable. Please try again.";
+                break;
+
             case DomainException domainEx:
                 _logger.LogWarning(exception, "Domain validation error.");
                 problemDetails.Status = StatusCodes.Status422UnprocessableEntity;

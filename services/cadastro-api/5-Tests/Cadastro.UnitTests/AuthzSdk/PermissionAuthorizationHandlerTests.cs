@@ -3,6 +3,8 @@ using Ecad.Authz.AspNetCore;
 using Ecad.Authz.Sdk;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Moq;
 
@@ -73,6 +75,9 @@ public class PermissionAuthorizationHandlerTests
         {
             Enabled = enabled,
         });
-        return new PermissionAuthorizationHandler(authzClient, accessor, options.Object);
+        var cache = new MemoryCache(new MemoryCacheOptions());
+        return new PermissionAuthorizationHandler(
+            authzClient, accessor, options.Object, cache,
+            NullLogger<PermissionAuthorizationHandler>.Instance);
     }
 }
