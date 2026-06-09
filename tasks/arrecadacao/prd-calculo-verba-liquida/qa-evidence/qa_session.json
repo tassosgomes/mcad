@@ -1,0 +1,91 @@
+{
+  "session": {
+    "created_at": "2026-06-08T00:00:00Z",
+    "prd_path": "tasks/arrecadacao/prd-calculo-verba-liquida/prd.md",
+    "techspec_path": "tasks/arrecadacao/prd-calculo-verba-liquida/techspec.md",
+    "orchestrator_version": "1.0"
+  },
+  "scope": {
+    "user_stories_in_scope": [
+      { "task_id": "qa_task_01", "slug": "visao-detalhada", "description": "HU-03 - Acompanhar verbas por rubrica×período (visão detalhada)" },
+      { "task_id": "qa_task_02", "slug": "visao-agregada", "description": "HU-04 - Acompanhar verbas por rubrica agregada com drill-down" },
+      { "task_id": "qa_task_03", "slug": "pagamento-e-verba", "description": "HU-01 - Cálculo automático ao registrar pagamento" },
+      { "task_id": "qa_task_04", "slug": "estorno-e-verba", "description": "HU-02 - Recálculo automático ao estornar pagamento" },
+      { "task_id": "qa_task_05", "slug": "badge-status", "description": "HU-05 - Visualizar status da verba (ABERTA)" }
+    ],
+    "excluded": [
+      { "id": "HU-05-lock-distribuicao", "reason": "D04 não publica eventos processo.iniciado/finalizado; lock inerte no ambiente" }
+    ]
+  },
+  "environment": {
+    "base_url": "https://mcad.tasso.dev.br",
+    "auth": {
+      "enabled": true,
+      "type": "bearer",
+      "token_endpoint": null,
+      "credentials_env": {
+        "username_var": "QA_USERNAME",
+        "password_var": "QA_PASSWORD"
+      }
+    }
+  },
+  "database": {
+    "enabled": false,
+    "type": "none",
+    "connection_string_env": null,
+    "docker_image": null
+  },
+  "report": {
+    "formats": ["markdown"],
+    "output_dir": "tasks/arrecadacao/prd-calculo-verba-liquida/qa-evidence"
+  },
+  "execution": {
+    "tasks": [
+      {
+        "id": "qa_task_01",
+        "slug": "visao-detalhada",
+        "description": "HU-03 - Visão detalhada por rubrica×período",
+        "type": ["ui"],
+        "depends_on": [],
+        "can_run_parallel_with": ["qa_task_02", "qa_task_05"]
+      },
+      {
+        "id": "qa_task_02",
+        "slug": "visao-agregada",
+        "description": "HU-04 - Visão agregada por rubrica com drill-down",
+        "type": ["ui"],
+        "depends_on": [],
+        "can_run_parallel_with": ["qa_task_01", "qa_task_05"]
+      },
+      {
+        "id": "qa_task_05",
+        "slug": "badge-status",
+        "description": "HU-05 - Badge de status ABERTA",
+        "type": ["ui"],
+        "depends_on": [],
+        "can_run_parallel_with": ["qa_task_01", "qa_task_02"]
+      },
+      {
+        "id": "qa_task_03",
+        "slug": "pagamento-e-verba",
+        "description": "HU-01 - Registrar pagamento e validar verba",
+        "type": ["ui"],
+        "depends_on": [],
+        "can_run_parallel_with": []
+      },
+      {
+        "id": "qa_task_04",
+        "slug": "estorno-e-verba",
+        "description": "HU-02 - Estornar pagamento e validar recálculo",
+        "type": ["ui"],
+        "depends_on": ["qa_task_03"],
+        "can_run_parallel_with": []
+      }
+    ],
+    "phases": [
+      { "phase": 1, "mode": "parallel", "tasks": ["qa_task_01", "qa_task_02", "qa_task_05"] },
+      { "phase": 2, "mode": "sequential", "tasks": ["qa_task_03"] },
+      { "phase": 3, "mode": "sequential", "tasks": ["qa_task_04"] }
+    ]
+  }
+}
