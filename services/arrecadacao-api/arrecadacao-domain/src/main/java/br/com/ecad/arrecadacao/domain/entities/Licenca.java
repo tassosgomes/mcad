@@ -72,7 +72,7 @@ public class Licenca {
     public HistoricoStatusLicenca suspender(String justificativa, String autor) {
         if (status != StatusLicenca.ATIVA) {
             throw new IllegalStateException(
-                "Licenca nao pode ser suspensa pois nao esta ATIVA. Status atual: " + status);
+                "Somente licenças ATIVAS podem ser suspensas");
         }
         var anterior = this.status;
         this.status = StatusLicenca.SUSPENSA;
@@ -83,7 +83,7 @@ public class Licenca {
     public HistoricoStatusLicenca suspender(String justificativa, String atorSubject, String autorRotulo) {
         if (status != StatusLicenca.ATIVA) {
             throw new IllegalStateException(
-                "Licenca nao pode ser suspensa pois nao esta ATIVA. Status atual: " + status);
+                "Somente licenças ATIVAS podem ser suspensas");
         }
         var anterior = this.status;
         this.status = StatusLicenca.SUSPENSA;

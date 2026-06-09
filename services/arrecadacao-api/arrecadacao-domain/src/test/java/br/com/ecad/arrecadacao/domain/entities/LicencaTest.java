@@ -102,7 +102,7 @@ class LicencaTest {
             licenca.suspender("Outra razao", "sistema");
         });
         
-        assertTrue(ex.getMessage().contains("nao esta ATIVA"));
+        assertTrue(ex.getMessage().contains("Somente licenças ATIVAS podem ser suspensas"));
     }
 
     @Test
@@ -115,8 +115,8 @@ class LicencaTest {
         var ex = assertThrows(IllegalStateException.class, () -> {
             licenca.suspender("Voltar a suspender", "sistema");
         });
-        
-        assertTrue(ex.getMessage().contains("nao esta ATIVA"));
+
+        assertTrue(ex.getMessage().contains("Somente licenças ATIVAS podem ser suspensas"));
     }
 
     @Test

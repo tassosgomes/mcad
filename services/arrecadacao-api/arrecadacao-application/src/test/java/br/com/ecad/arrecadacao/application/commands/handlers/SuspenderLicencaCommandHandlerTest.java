@@ -115,10 +115,10 @@ class SuspenderLicencaCommandHandlerTest {
     void propagaErroSeLicencaJaSuspensa() {
         when(licencaRepository.findById(licencaId)).thenReturn(Optional.of(licenca));
         when(licenca.suspender(anyString(), anyString(), anyString()))
-            .thenThrow(new IllegalStateException("nao esta ATIVA"));
+            .thenThrow(new IllegalStateException("Somente licenças ATIVAS podem ser suspensas"));
 
         var ex = assertThrows(IllegalStateException.class, () -> handler.handle(command));
-        assertTrue(ex.getMessage().contains("nao esta ATIVA"));
+        assertTrue(ex.getMessage().contains("Somente licenças ATIVAS podem ser suspensas"));
         verify(licencaRepository, never()).save(any());
     }
 }
