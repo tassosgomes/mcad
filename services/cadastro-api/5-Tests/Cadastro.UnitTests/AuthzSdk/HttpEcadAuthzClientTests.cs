@@ -39,18 +39,16 @@ public class HttpEcadAuthzClientTests
     }
 
     [Fact]
-    public async Task CheckAsync_WithRemoteError_ShouldReturnUnavailableDeny()
+    public async Task CheckAsync_WithRemoteError_ShouldThrowAuthzServiceUnavailableException()
     {
         var client = CreateClient(
             new StubHttpMessageHandler(_ => new HttpResponseMessage(HttpStatusCode.InternalServerError)));
 
-        var decision = await client.CheckAsync(
-            new AuthzCheckRequest("cadastro:default:obra:listar"),
-            "token-123",
-            CancellationToken.None);
-
-        Assert.False(decision.Allowed);
-        Assert.Equal("AUTHZ_SERVICE_UNAVAILABLE", decision.Reason);
+        await Assert.ThrowsAsync<AuthzServiceUnavailableException>(() =>
+            client.CheckAsync(
+                new AuthzCheckRequest("cadastro:default:obra:listar"),
+                "token-123",
+                CancellationToken.None));
     }
 
     private static HttpEcadAuthzClient CreateClient(HttpMessageHandler handler)
