@@ -200,6 +200,6 @@ class LicencaTest {
             licenca.encerrar("Outro cancelamento", "sistema");
         });
         
-        assertEquals("Licenca ja esta encerrada", ex.getMessage());
+        assertEquals("Licença já está ENCERRADA. Esta transição não é permitida.", ex.getMessage());
     }
 }
