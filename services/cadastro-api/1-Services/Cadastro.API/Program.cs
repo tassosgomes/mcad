@@ -32,10 +32,6 @@ using Prometheus;
 DotEnvLoader.LoadIfPresent();
 
 var builder = WebApplication.CreateBuilder(args);
-var authEnabled = !string.Equals(
-    builder.Configuration["AUTH_ENABLED"],
-    "false",
-    StringComparison.OrdinalIgnoreCase);
 
 // ─── Connection String (lida de variáveis de ambiente) ─────────────────
 var dbHost     = Environment.GetEnvironmentVariable("CADASTRO_DB_HOST")     ?? "localhost";
@@ -145,47 +141,35 @@ builder.Services.AddCors(options =>
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddProblemDetails();
 
-if (authEnabled)
-{
-    var oidcAuthority = Environment.GetEnvironmentVariable("OIDC_AUTHORITY");
-    var oidcAudience = Environment.GetEnvironmentVariable("OIDC_AUDIENCE") ?? "https://api.mcad.local";
+var oidcAuthority = Environment.GetEnvironmentVariable("OIDC_AUTHORITY")
+    ?? throw new InvalidOperationException("OIDC_AUTHORITY is required.");
+var oidcAudience = Environment.GetEnvironmentVariable("OIDC_AUDIENCE") ?? "https://api.mcad.local";
 
-    if (string.IsNullOrWhiteSpace(oidcAuthority))
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
     {
-        throw new InvalidOperationException("OIDC_AUTHORITY is required when AUTH_ENABLED=true.");
-    }
-
-    builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-        .AddJwtBearer(options =>
+        options.Authority = oidcAuthority;
+        options.Audience = oidcAudience;
+        options.RequireHttpsMetadata = !builder.Environment.IsDevelopment();
+        options.MapInboundClaims = false;
+        options.TokenValidationParameters = new TokenValidationParameters
         {
-            options.Authority = oidcAuthority;
-            options.Audience = oidcAudience;
-            options.RequireHttpsMetadata = !builder.Environment.IsDevelopment();
-            options.MapInboundClaims = false;
-            options.TokenValidationParameters = new TokenValidationParameters
-            {
-                ValidIssuer = oidcAuthority,
-                ValidateIssuer = true,
-                ValidateAudience = true,
-                ValidAudiences = [oidcAudience]
-            };
-        });
+            ValidIssuer = oidcAuthority,
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidAudiences = [oidcAudience]
+        };
+    });
 
-    builder.Services.AddTransient<IClaimsTransformation, LogtoClaimsTransformation>();
-}
+builder.Services.AddTransient<IClaimsTransformation, LogtoClaimsTransformation>();
 
 builder.Services.AddAuthorization(options =>
 {
-    if (authEnabled)
-    {
-        options.FallbackPolicy = new AuthorizationPolicyBuilder()
-            .RequireAuthenticatedUser()
-            .Build();
-        return;
-    }
+    options.FallbackPolicy = new AuthorizationPolicyBuilder()
+        .RequireAuthenticatedUser()
+        .Build();
 });
 builder.Services.AddEcadAuthz(builder.Configuration);
-builder.Services.Configure<EcadAuthzOptions>(options => options.Enabled = authEnabled && options.Enabled);
 
 // ─── Logging estruturado ───────────────────────────────────────────────
 builder.Logging.AddConsole();
@@ -208,15 +192,7 @@ app.UseCors();
 // Swagger e AsyncAPI antes do auth — middleware short-circuits antes da auth rodar
 app.UseSwaggerDocs();
 
-if (authEnabled)
-{
-    app.UseAuthentication();
-}
-else
-{
-    app.Logger.LogWarning("Authentication is DISABLED");
-}
-
+app.UseAuthentication();
 app.UseAuthorization();
 
 // ─── Aplicar migrations + confirmar seed no startup ───────────────────
@@ -229,15 +205,15 @@ using (var scope = app.Services.CreateScope())
 }
 
 // ─── Endpoints ────────────────────────────────────────────────────────
-app.MapAssociacaoEndpoints(authEnabled);
-app.MapTitularEndpoints(authEnabled);
-app.MapObraEndpoints(authEnabled);
-app.MapTitularidadeEndpoints(authEnabled);
-app.MapFonogramaEndpoints(authEnabled);
-app.MapParticipacaoEndpoints(authEnabled);
-app.MapBuscaEndpoints(authEnabled);
-app.MapDistribuicaoEndpoints(authEnabled);
-app.MapDashboardEndpoints(authEnabled);
+app.MapAssociacaoEndpoints();
+app.MapTitularEndpoints();
+app.MapObraEndpoints();
+app.MapTitularidadeEndpoints();
+app.MapFonogramaEndpoints();
+app.MapParticipacaoEndpoints();
+app.MapBuscaEndpoints();
+app.MapDistribuicaoEndpoints();
+app.MapDashboardEndpoints();
 
 // ─── AsyncAPI (documentação de eventos — pública) ─────────────────────
 app.MapAsyncApiDocs();

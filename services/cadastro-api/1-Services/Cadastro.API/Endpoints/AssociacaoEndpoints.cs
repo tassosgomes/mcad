@@ -12,7 +12,7 @@ namespace Cadastro.API.Endpoints;
 /// </summary>
 public static class AssociacaoEndpoints
 {
-    public static void MapAssociacaoEndpoints(this WebApplication app, bool authEnabled)
+    public static void MapAssociacaoEndpoints(this WebApplication app)
     {
         var group = app.MapGroup("/api/v1/associacoes")
             .WithTags("Associações");
@@ -25,7 +25,7 @@ public static class AssociacaoEndpoints
             var result = await dispatcher.QueryAsync(new GetAssociacoesQuery(), cancellationToken);
             return Results.Ok(result);
         })
-        .RequireCadastroPermission(CadastroPermissions.AssociacaoListar, authEnabled)
+        .RequireCadastroPermission(CadastroPermissions.AssociacaoListar)
         .WithName("GetAssociacoes")
         .WithSummary("Lista todas as associações de gestão coletiva do ECAD");
 
@@ -49,7 +49,7 @@ public static class AssociacaoEndpoints
                     instance: $"/api/v1/associacoes/{id}");
             }
         })
-        .RequireCadastroPermission(CadastroPermissions.AssociacaoVisualizar, authEnabled)
+        .RequireCadastroPermission(CadastroPermissions.AssociacaoVisualizar)
         .WithName("GetAssociacaoById")
         .WithSummary("Busca associação por ID");
 

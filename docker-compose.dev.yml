@@ -173,7 +173,6 @@ services:
       RABBITMQ_PASSWORD: mcad
       RABBITMQ_VHOST: mcad
       OIDC_AUTHORITY: http://mcad-keycloak:8080/realms/mcad
-      AUTH_ENABLED: "false"
     ports:
       - "5004:5004"
     depends_on:

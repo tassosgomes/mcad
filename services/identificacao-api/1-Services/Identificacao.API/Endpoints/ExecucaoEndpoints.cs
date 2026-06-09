@@ -9,7 +9,7 @@ namespace Identificacao.API.Endpoints;
 
 public static class ExecucaoEndpoints
 {
-    public static void MapExecucaoEndpoints(this IEndpointRouteBuilder app, bool authEnabled)
+    public static void MapExecucaoEndpoints(this IEndpointRouteBuilder app)
     {
         var group = app.MapGroup("/api/v1/captacoes/{captacaoId:guid}/execucoes")
             .WithTags("Execuções");
@@ -25,7 +25,7 @@ public static class ExecucaoEndpoints
             var result = await dispatcher.QueryAsync(q, ct);
             return Results.Ok(result);
         })
-        .RequireIdentificacaoPermission(IdentificacaoPermissions.ExecucaoListar, authEnabled);
+        .RequireIdentificacaoPermission(IdentificacaoPermissions.ExecucaoListar);
 
         // POST — Criar
         group.MapPost("/", async (
@@ -45,7 +45,7 @@ public static class ExecucaoEndpoints
             var result = await dispatcher.SendAsync<Application.Execucoes.Responses.ExecucaoResponse>(command, ct);
             return Results.Created($"/api/v1/captacoes/{captacaoId}/execucoes/{result.Id}", result);
         })
-        .RequireIdentificacaoPermission(IdentificacaoPermissions.ExecucaoCriar, authEnabled);
+        .RequireIdentificacaoPermission(IdentificacaoPermissions.ExecucaoCriar);
 
         // PUT — Atualizar
         group.MapPut("/{id:guid}", async (
@@ -66,7 +66,7 @@ public static class ExecucaoEndpoints
             var result = await dispatcher.SendAsync<Application.Execucoes.Responses.ExecucaoResponse>(command, ct);
             return Results.Ok(result);
         })
-        .RequireIdentificacaoPermission(IdentificacaoPermissions.ExecucaoEditar, authEnabled);
+        .RequireIdentificacaoPermission(IdentificacaoPermissions.ExecucaoEditar);
 
         // DELETE — Excluir
         group.MapDelete("/{id:guid}", async (
@@ -80,7 +80,7 @@ public static class ExecucaoEndpoints
             await dispatcher.SendAsync<bool>(new ExcluirExecucaoCommand(captacaoId, id, analistaId), ct);
             return Results.NoContent();
         })
-        .RequireIdentificacaoPermission(IdentificacaoPermissions.ExecucaoExcluir, authEnabled);
+        .RequireIdentificacaoPermission(IdentificacaoPermissions.ExecucaoExcluir);
     }
 }
 

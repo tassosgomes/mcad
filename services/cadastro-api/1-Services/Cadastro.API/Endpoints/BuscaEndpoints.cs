@@ -9,7 +9,7 @@ namespace Cadastro.API.Endpoints;
 
 public static class BuscaEndpoints
 {
-    public static void MapBuscaEndpoints(this IEndpointRouteBuilder app, bool authEnabled)
+    public static void MapBuscaEndpoints(this IEndpointRouteBuilder app)
     {
         var group = app.MapGroup("/api/v1/busca").WithTags("Busca");
 
@@ -18,6 +18,6 @@ public static class BuscaEndpoints
             var result = await dispatcher.QueryAsync(query, ct);
             return Results.Ok(result);
         })
-        .RequireCadastroPermission(CadastroPermissions.ObraListar, authEnabled);
+        .RequireCadastroPermission(CadastroPermissions.ObraListar);
     }
 }

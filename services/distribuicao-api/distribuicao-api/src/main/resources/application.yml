@@ -79,8 +79,6 @@ app:
     exchange: ${IDENTITY_EVENTS_EXCHANGE:identity.events}
     queue: ${IDENTITY_EVENTS_QUEUE:distribuicao.identity.users}
     routing-key: ${IDENTITY_EVENTS_ROUTING_KEY:identity.user.*}
-  security:
-    auth-enabled: ${AUTH_ENABLED:false}
   integrations:
     cadastro:
       base-url: ${CADASTRO_BASE_URL:http://localhost:5001}

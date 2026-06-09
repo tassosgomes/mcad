@@ -14,33 +14,33 @@ namespace Cadastro.API.Endpoints;
 /// </summary>
 public static class TitularEndpoints
 {
-    public static void MapTitularEndpoints(this WebApplication app, bool authEnabled)
+    public static void MapTitularEndpoints(this WebApplication app)
     {
         var group = app.MapGroup("/api/v1/titulares")
             .WithTags("Titulares");
 
         group.MapGet("/", ListarTitulares)
-            .RequireCadastroPermission(CadastroPermissions.TitularListar, authEnabled)
+            .RequireCadastroPermission(CadastroPermissions.TitularListar)
             .WithName("ListarTitulares")
             .WithSummary("Listar titulares com paginação, filtros e ordenação");
 
         group.MapPost("/", CriarTitular)
-            .RequireCadastroPermission(CadastroPermissions.TitularCriar, authEnabled)
+            .RequireCadastroPermission(CadastroPermissions.TitularCriar)
             .WithName("CriarTitular")
             .WithSummary("Criar novo titular PF ou PJ");
 
         group.MapGet("/{id:guid}", BuscarPorId)
-            .RequireCadastroPermission(CadastroPermissions.TitularVisualizar, authEnabled)
+            .RequireCadastroPermission(CadastroPermissions.TitularVisualizar)
             .WithName("BuscarTitularPorId")
             .WithSummary("Buscar titular por ID");
 
         group.MapPut("/{id:guid}", AtualizarTitular)
-            .RequireCadastroPermission(CadastroPermissions.TitularEditar, authEnabled)
+            .RequireCadastroPermission(CadastroPermissions.TitularEditar)
             .WithName("AtualizarTitular")
             .WithSummary("Atualizar dados editáveis do titular");
 
         group.MapDelete("/{id:guid}", ExcluirTitular)
-            .RequireCadastroPermission(CadastroPermissions.TitularExcluir, authEnabled)
+            .RequireCadastroPermission(CadastroPermissions.TitularExcluir)
             .WithName("ExcluirTitular")
             .WithSummary("Excluir titular (se sem vínculos)");
     }

@@ -6,7 +6,7 @@ namespace Identificacao.API.Endpoints;
 
 public static class RubricaEndpoints
 {
-    public static void MapRubricaEndpoints(this IEndpointRouteBuilder app, bool authEnabled)
+    public static void MapRubricaEndpoints(this IEndpointRouteBuilder app)
     {
         var group = app.MapGroup("/api/v1/rubricas")
             .WithTags("Rubricas");
@@ -19,6 +19,6 @@ public static class RubricaEndpoints
             var result = await dispatcher.QueryAsync(query, ct);
             return Results.Ok(result);
         })
-        .RequireIdentificacaoPermission(IdentificacaoPermissions.RubricaListar, authEnabled);
+        .RequireIdentificacaoPermission(IdentificacaoPermissions.RubricaListar);
     }
 }

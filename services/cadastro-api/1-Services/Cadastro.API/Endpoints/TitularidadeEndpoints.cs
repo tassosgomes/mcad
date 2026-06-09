@@ -8,7 +8,7 @@ namespace Cadastro.API.Endpoints;
 
 public static class TitularidadeEndpoints
 {
-    public static void MapTitularidadeEndpoints(this IEndpointRouteBuilder app, bool authEnabled)
+    public static void MapTitularidadeEndpoints(this IEndpointRouteBuilder app)
     {
         var obrasGroup = app.MapGroup("/api/v1/obras").WithTags("Titularidades Autorais");
 
@@ -17,7 +17,7 @@ public static class TitularidadeEndpoints
             var result = await dispatcher.QueryAsync(new ListarTitularidadesQuery(obraId), ct);
             return Results.Ok(result);
         })
-        .RequireCadastroPermission(CadastroPermissions.TitularidadeListar, authEnabled);
+        .RequireCadastroPermission(CadastroPermissions.TitularidadeListar);
 
         obrasGroup.MapPost("/{obraId:guid}/titularidades", async (Guid obraId, [FromBody] AdicionarTitularidadeRequest request, IDispatcher dispatcher, CancellationToken ct) =>
         {
@@ -25,7 +25,7 @@ public static class TitularidadeEndpoints
             var result = await dispatcher.SendAsync(command, ct);
             return Results.Created($"/api/v1/obras/{obraId}/titularidades", result);
         })
-        .RequireCadastroPermission(CadastroPermissions.TitularidadeAdicionar, authEnabled);
+        .RequireCadastroPermission(CadastroPermissions.TitularidadeAdicionar);
 
         obrasGroup.MapPut("/{obraId:guid}/titularidades/{id:guid}", async (Guid obraId, Guid id, [FromBody] EditarTitularidadeRequest request, IDispatcher dispatcher, CancellationToken ct) =>
         {
@@ -33,7 +33,7 @@ public static class TitularidadeEndpoints
             var result = await dispatcher.SendAsync(command, ct);
             return Results.Ok(result);
         })
-        .RequireCadastroPermission(CadastroPermissions.TitularidadeEditar, authEnabled);
+        .RequireCadastroPermission(CadastroPermissions.TitularidadeEditar);
 
         obrasGroup.MapDelete("/{obraId:guid}/titularidades/{id:guid}", async (Guid obraId, Guid id, IDispatcher dispatcher, CancellationToken ct) =>
         {
@@ -41,7 +41,7 @@ public static class TitularidadeEndpoints
             var result = await dispatcher.SendAsync(command, ct);
             return Results.Ok(result);
         })
-        .RequireCadastroPermission(CadastroPermissions.TitularidadeRemover, authEnabled);
+        .RequireCadastroPermission(CadastroPermissions.TitularidadeRemover);
 
         var titularesGroup = app.MapGroup("/api/v1/titulares").WithTags("Autocomplete Titulares");
 
@@ -50,7 +50,7 @@ public static class TitularidadeEndpoints
             var result = await dispatcher.QueryAsync(query, ct);
             return Results.Ok(result);
         })
-        .RequireCadastroPermission(CadastroPermissions.TitularidadeBuscar, authEnabled);
+        .RequireCadastroPermission(CadastroPermissions.TitularidadeBuscar);
     }
 }
 

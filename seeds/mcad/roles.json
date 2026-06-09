@@ -140,6 +140,16 @@
     ]
   },
   {
+    "key": "arrecadacao.default.demostracao",
+    "displayName": "Analista Demostração",
+    "description": "Acesso restrito à consulta da UDA (Unidade de Direito Autoral). Visualiza apenas o menu UDA dentro de Arrecadação.",
+    "domain": "arrecadacao",
+    "area": "default",
+    "permissionKeys": [
+      "arrecadacao:default:cobranca:listar"
+    ]
+  },
+  {
     "key": "arrecadacao.default.analista",
     "displayName": "Analista Arrecadação",
     "description": "Acesso de leitura e escrita ao módulo de Arrecadação. Herda permissões do consultor e adiciona criação, edição, encerramento, registro e estorno de pagamentos, e exportação.",

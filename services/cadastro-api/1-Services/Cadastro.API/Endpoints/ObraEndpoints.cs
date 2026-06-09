@@ -8,7 +8,7 @@ namespace Cadastro.API.Endpoints;
 
 public static class ObraEndpoints
 {
-    public static void MapObraEndpoints(this IEndpointRouteBuilder app, bool authEnabled)
+    public static void MapObraEndpoints(this IEndpointRouteBuilder app)
     {
         var group = app.MapGroup("/api/v1/obras").WithTags("Obras");
 
@@ -17,21 +17,21 @@ public static class ObraEndpoints
             var result = await dispatcher.QueryAsync(query, ct);
             return Results.Ok(result);
         })
-        .RequireCadastroPermission(CadastroPermissions.ObraListar, authEnabled);
+        .RequireCadastroPermission(CadastroPermissions.ObraListar);
 
         group.MapPost("/", async ([FromBody] CriarObraCommand command, IDispatcher dispatcher, CancellationToken ct) =>
         {
             var result = await dispatcher.SendAsync(command, ct);
             return Results.Created($"/api/v1/obras/{result.Id}", result);
         })
-        .RequireCadastroPermission(CadastroPermissions.ObraCriar, authEnabled);
+        .RequireCadastroPermission(CadastroPermissions.ObraCriar);
 
         group.MapGet("/{id:guid}", async (Guid id, IDispatcher dispatcher, CancellationToken ct) =>
         {
             var result = await dispatcher.QueryAsync(new GetObraByIdQuery(id), ct);
             return Results.Ok(result);
         })
-        .RequireCadastroPermission(CadastroPermissions.ObraVisualizar, authEnabled);
+        .RequireCadastroPermission(CadastroPermissions.ObraVisualizar);
 
         group.MapPut("/{id:guid}", async (Guid id, [FromBody] AtualizarObraRequest request, IDispatcher dispatcher, CancellationToken ct) =>
         {
@@ -39,21 +39,21 @@ public static class ObraEndpoints
             var result = await dispatcher.SendAsync(command, ct);
             return Results.Ok(result);
         })
-        .RequireCadastroPermission(CadastroPermissions.ObraEditar, authEnabled);
+        .RequireCadastroPermission(CadastroPermissions.ObraEditar);
 
         group.MapDelete("/{id:guid}", async (Guid id, IDispatcher dispatcher, CancellationToken ct) =>
         {
             await dispatcher.SendAsync(new ExcluirObraCommand(id), ct);
             return Results.NoContent();
         })
-        .RequireCadastroPermission(CadastroPermissions.ObraExcluir, authEnabled);
+        .RequireCadastroPermission(CadastroPermissions.ObraExcluir);
 
         group.MapPost("/{id:guid}/iswc", async (Guid id, IDispatcher dispatcher, CancellationToken ct) =>
         {
             var result = await dispatcher.SendAsync(new ObterIswcCommand(id), ct);
             return Results.Ok(result);
         })
-        .RequireCadastroPermission(CadastroPermissions.ObraGerarIswc, authEnabled);
+        .RequireCadastroPermission(CadastroPermissions.ObraGerarIswc);
 
         group.MapPost("/{id:guid}/depurar", async (Guid id, [FromBody] DepurarObraRequest request, IDispatcher dispatcher, CancellationToken ct) =>
         {
@@ -61,7 +61,7 @@ public static class ObraEndpoints
             var result = await dispatcher.SendAsync(command, ct);
             return Results.Created($"/api/v1/obras/{result.NovaObra.Id}", result);
         })
-        .RequireCadastroPermission(CadastroPermissions.ObraDepurar, authEnabled);
+        .RequireCadastroPermission(CadastroPermissions.ObraDepurar);
 
         group.MapPut("/{id:guid}/dominio-publico", async (Guid id, [FromBody] AlterarDominioPublicoRequest request, IDispatcher dispatcher, CancellationToken ct) =>
         {
@@ -69,7 +69,7 @@ public static class ObraEndpoints
             var result = await dispatcher.SendAsync(command, ct);
             return Results.Ok(result);
         })
-        .RequireCadastroPermission(CadastroPermissions.ObraDominioPublico, authEnabled);
+        .RequireCadastroPermission(CadastroPermissions.ObraDominioPublico);
 
         group.MapPost("/{id:guid}/liberar", async (Guid id, IDispatcher dispatcher, CancellationToken ct) =>
         {
@@ -77,7 +77,7 @@ public static class ObraEndpoints
             var result = await dispatcher.SendAsync(command, ct);
             return Results.Ok(result);
         })
-        .RequireCadastroPermission(CadastroPermissions.StatusLiberarObra, authEnabled);
+        .RequireCadastroPermission(CadastroPermissions.StatusLiberarObra);
 
         group.MapPost("/{id:guid}/bloquear", async (Guid id, [FromBody] BloquearObraRequest? request, IDispatcher dispatcher, CancellationToken ct) =>
         {
@@ -93,7 +93,7 @@ public static class ObraEndpoints
             var result = await dispatcher.SendAsync(command, ct);
             return Results.Ok(result);
         })
-        .RequireCadastroPermission(CadastroPermissions.StatusBloquearObra, authEnabled);
+        .RequireCadastroPermission(CadastroPermissions.StatusBloquearObra);
 
         group.MapPost("/{id:guid}/desbloquear", async (Guid id, IDispatcher dispatcher, CancellationToken ct) =>
         {
@@ -101,7 +101,7 @@ public static class ObraEndpoints
             var result = await dispatcher.SendAsync(command, ct);
             return Results.Ok(result);
         })
-        .RequireCadastroPermission(CadastroPermissions.StatusDesbloquearObra, authEnabled);
+        .RequireCadastroPermission(CadastroPermissions.StatusDesbloquearObra);
 
         group.MapGet("/{id:guid}/historico-bloqueios", async (Guid id, IDispatcher dispatcher, CancellationToken ct) =>
         {
@@ -109,7 +109,7 @@ public static class ObraEndpoints
             var result = await dispatcher.QueryAsync(query, ct);
             return Results.Ok(result);
         })
-        .RequireCadastroPermission(CadastroPermissions.StatusVisualizarHistoricoObra, authEnabled);
+        .RequireCadastroPermission(CadastroPermissions.StatusVisualizarHistoricoObra);
     }
 }
 

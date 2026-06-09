@@ -136,7 +136,14 @@ export const router = createBrowserRouter([
       {
         path: 'arrecadacao/*',
         element: (
-          <RequirePermission permission="arrecadacao:default:cliente:listar">
+          <RequirePermission anyOf={[
+            'arrecadacao:default:cliente:listar',
+            'arrecadacao:default:contrato:listar',
+            'arrecadacao:default:pagamento:listar',
+            'arrecadacao:default:relatorio:visualizar',
+            'arrecadacao:default:cobranca:listar',
+            'arrecadacao:default:rubrica:visualizar',
+          ]}>
             <Suspense fallback={<Loading />}>
               <ArrecadacaoRoutes />
             </Suspense>

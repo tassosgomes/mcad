@@ -10,7 +10,7 @@ namespace Identificacao.API.Endpoints;
 /// </summary>
 public static class DashboardEndpoints
 {
-    public static void MapDashboardEndpoints(this IEndpointRouteBuilder app, bool authEnabled)
+    public static void MapDashboardEndpoints(this IEndpointRouteBuilder app)
     {
         var group = app.MapGroup("/api/v1/dashboard")
             .WithTags("Dashboard");
@@ -22,7 +22,7 @@ public static class DashboardEndpoints
             var result = await dispatcher.QueryAsync(new GetDashboardResumoQuery(), ct);
             return Results.Ok(result);
         })
-        .RequireIdentificacaoPermission(IdentificacaoPermissions.CaptacaoListar, authEnabled)
+        .RequireIdentificacaoPermission(IdentificacaoPermissions.CaptacaoListar)
         .WithName("GetDashboardResumo")
         .WithSummary("Retorna resumo agregado do domínio de Identificação para a dashboard");
     }

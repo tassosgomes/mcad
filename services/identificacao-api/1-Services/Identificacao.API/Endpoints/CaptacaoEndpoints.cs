@@ -12,7 +12,7 @@ public record AtualizarCaptacaoRequest(Guid RubricaId, DateOnly Periodo, string 
 
 public static class CaptacaoEndpoints
 {
-    public static void MapCaptacaoEndpoints(this IEndpointRouteBuilder app, bool authEnabled)
+    public static void MapCaptacaoEndpoints(this IEndpointRouteBuilder app)
     {
         var group = app.MapGroup("/api/v1/captacoes")
             .WithTags("Captações");
@@ -35,7 +35,7 @@ public static class CaptacaoEndpoints
             var result = await dispatcher.QueryAsync(query, ct);
             return Results.Ok(result);
         })
-        .RequireIdentificacaoPermission(IdentificacaoPermissions.CaptacaoListar, authEnabled);
+        .RequireIdentificacaoPermission(IdentificacaoPermissions.CaptacaoListar);
 
         group.MapGet("/{id:guid}", async (
             Guid id,
@@ -46,7 +46,7 @@ public static class CaptacaoEndpoints
             var result = await dispatcher.QueryAsync(query, ct);
             return Results.Ok(result);
         })
-        .RequireIdentificacaoPermission(IdentificacaoPermissions.CaptacaoVisualizar, authEnabled);
+        .RequireIdentificacaoPermission(IdentificacaoPermissions.CaptacaoVisualizar);
 
         group.MapPost("/", async (
             [FromBody] CriarCaptacaoRequest request,
@@ -64,7 +64,7 @@ public static class CaptacaoEndpoints
             var result = await dispatcher.SendAsync(command, ct);
             return Results.Created($"/api/v1/captacoes/{result.Id}", result);
         })
-        .RequireIdentificacaoPermission(IdentificacaoPermissions.CaptacaoCriar, authEnabled);
+        .RequireIdentificacaoPermission(IdentificacaoPermissions.CaptacaoCriar);
 
         group.MapPut("/{id:guid}", async (
             Guid id,
@@ -81,7 +81,7 @@ public static class CaptacaoEndpoints
             var result = await dispatcher.SendAsync(command, ct);
             return Results.Ok(result);
         })
-        .RequireIdentificacaoPermission(IdentificacaoPermissions.CaptacaoEditar, authEnabled);
+        .RequireIdentificacaoPermission(IdentificacaoPermissions.CaptacaoEditar);
 
         group.MapDelete("/{id:guid}", async (
             Guid id,
@@ -96,6 +96,6 @@ public static class CaptacaoEndpoints
             await dispatcher.SendAsync(command, ct);
             return Results.NoContent();
         })
-        .RequireIdentificacaoPermission(IdentificacaoPermissions.CaptacaoExcluir, authEnabled);
+        .RequireIdentificacaoPermission(IdentificacaoPermissions.CaptacaoExcluir);
     }
 }

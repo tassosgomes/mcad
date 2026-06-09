@@ -6,12 +6,9 @@ public static class CadastroAuthorizationExtensions
 {
     public static TBuilder RequireCadastroPermission<TBuilder>(
         this TBuilder builder,
-        string permission,
-        bool authEnabled)
+        string permission)
         where TBuilder : IEndpointConventionBuilder
     {
-        return authEnabled
-            ? builder.RequirePermission(permission)
-            : builder.AllowAnonymous();
+        return builder.RequirePermission(permission);
     }
 }

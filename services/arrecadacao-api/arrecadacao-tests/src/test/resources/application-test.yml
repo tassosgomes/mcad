@@ -27,8 +27,6 @@ spring:
     virtual-host: mcad
 
 app:
-  security:
-    auth-enabled: false
   outbox:
     publisher:
       poll-interval-ms: 99999999

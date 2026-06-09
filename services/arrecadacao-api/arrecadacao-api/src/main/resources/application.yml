@@ -50,7 +50,6 @@ app:
   cors:
     allowed-origins: ${ARRECADACAO_CORS_ALLOWED_ORIGINS:http://localhost:5173}
   security:
-    auth-enabled: ${AUTH_ENABLED:true}
   outbox:
     publisher:
       poll-interval-ms: ${OUTBOX_POLL_INTERVAL_MS:5000}
@@ -65,7 +64,7 @@ app:
 
 ecad:
   authz:
-    enabled: ${AUTHZ_ENABLED:false}
+    enabled: true
     base-url: ${AUTHZ_BASE_URL:http://localhost:8085}
     decision-timeout-ms: ${AUTHZ_DECISION_TIMEOUT_MS:500}
     cache:

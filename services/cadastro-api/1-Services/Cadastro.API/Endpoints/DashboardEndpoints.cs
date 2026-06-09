@@ -10,7 +10,7 @@ namespace Cadastro.API.Endpoints;
 /// </summary>
 public static class DashboardEndpoints
 {
-    public static void MapDashboardEndpoints(this WebApplication app, bool authEnabled)
+    public static void MapDashboardEndpoints(this WebApplication app)
     {
         var group = app.MapGroup("/api/v1/dashboard")
             .WithTags("Dashboard");
@@ -22,7 +22,7 @@ public static class DashboardEndpoints
             var result = await dispatcher.QueryAsync(new GetDashboardResumoQuery(), cancellationToken);
             return Results.Ok(result);
         })
-        .RequireCadastroPermission(CadastroPermissions.AssociacaoListar, authEnabled)
+        .RequireCadastroPermission(CadastroPermissions.AssociacaoListar)
         .WithName("GetDashboardResumo")
         .WithSummary("Retorna resumo agregado do domínio de Cadastro para a dashboard");
     }

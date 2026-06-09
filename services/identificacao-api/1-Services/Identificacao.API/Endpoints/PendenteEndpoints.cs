@@ -12,7 +12,7 @@ namespace Identificacao.API.Endpoints;
 
 public static class PendenteEndpoints
 {
-    public static void MapPendenteEndpoints(this IEndpointRouteBuilder app, bool authEnabled)
+    public static void MapPendenteEndpoints(this IEndpointRouteBuilder app)
     {
         var group = app.MapGroup("/api/v1/pendentes").WithTags("Pendentes");
 
@@ -21,14 +21,14 @@ public static class PendenteEndpoints
         {
             var result = await dispatcher.QueryAsync(query, ct);
             return Results.Ok(result);
-        }).RequireIdentificacaoPermission(IdentificacaoPermissions.PendenteListar, authEnabled);
+        }).RequireIdentificacaoPermission(IdentificacaoPermissions.PendenteListar);
 
         group.MapGet("/impacto", async ([AsParameters] ListarImpactoPendentesQuery query,
             IDispatcher dispatcher, CancellationToken ct) =>
         {
             var result = await dispatcher.QueryAsync(query, ct);
             return Results.Ok(result);
-        }).RequireIdentificacaoPermission(IdentificacaoPermissions.PendenteVisualizarImpacto, authEnabled);
+        }).RequireIdentificacaoPermission(IdentificacaoPermissions.PendenteVisualizarImpacto);
 
         group.MapPost("/{id:guid}/resolver", async (
             Guid id, [FromBody] ResolverPendenteRequest request,
@@ -37,7 +37,7 @@ public static class PendenteEndpoints
             var command = new ResolverPendenteCommand(id, request.ObraId, request.FonogramaId);
             var result = await dispatcher.SendAsync(command, ct);
             return Results.Ok(result);
-        }).RequireIdentificacaoPermission(IdentificacaoPermissions.PendenteResolver, authEnabled);
+        }).RequireIdentificacaoPermission(IdentificacaoPermissions.PendenteResolver);
 
         group.MapPost("/resolver-lote", async (
             [FromBody] ResolverLoteRequest request,
@@ -49,7 +49,7 @@ public static class PendenteEndpoints
                 request.FonogramaId);
             var result = await dispatcher.SendAsync(command, ct);
             return Results.Ok(result);
-        }).RequireIdentificacaoPermission(IdentificacaoPermissions.PendenteResolver, authEnabled);
+        }).RequireIdentificacaoPermission(IdentificacaoPermissions.PendenteResolver);
     }
 }
 

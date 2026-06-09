@@ -164,51 +164,38 @@ builder.Services.Scan(scan => scan
 builder.Services.AddValidatorsFromAssemblyContaining<CriarCaptacaoCommandValidator>();
 
 // Autenticação e Autorização
-var authEnabled = Environment.GetEnvironmentVariable("AUTH_ENABLED") == "true";
+var authority = Environment.GetEnvironmentVariable("OIDC_AUTHORITY") ?? "http://localhost:8080/realms/mcad";
+var audience = Environment.GetEnvironmentVariable("OIDC_AUDIENCE") ?? "https://api.mcad.local";
 
-if (authEnabled)
-{
-    var authority = Environment.GetEnvironmentVariable("OIDC_AUTHORITY") ?? "http://localhost:8080/realms/mcad";
-    var audience = Environment.GetEnvironmentVariable("OIDC_AUDIENCE") ?? "https://api.mcad.local";
-
-    builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-        .AddJwtBearer(options =>
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.Authority = authority;
+        options.Audience = audience;
+        options.RequireHttpsMetadata = false;
+        options.MapInboundClaims = false;
+        options.TokenValidationParameters = new TokenValidationParameters
         {
-            options.Authority = authority;
-            options.Audience = audience;
-            options.RequireHttpsMetadata = false;
-            options.MapInboundClaims = false;
-            options.TokenValidationParameters = new TokenValidationParameters
-            {
-                ValidIssuer = authority,
-                ValidateIssuer = true,
-                ValidateAudience = true,
-                ValidAudiences = [audience],
-                ValidateLifetime = true,
-                NameClaimType = "preferred_username"
-            };
-        });
+            ValidIssuer = authority,
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidAudiences = [audience],
+            ValidateLifetime = true,
+            NameClaimType = "preferred_username"
+        };
+    });
 
-    builder.Services.AddTransient<IClaimsTransformation, LogtoClaimsTransformation>();
-}
+builder.Services.AddTransient<IClaimsTransformation, LogtoClaimsTransformation>();
 
 builder.Services.AddAuthorization(options =>
 {
-    if (authEnabled)
-    {
-        options.FallbackPolicy = new AuthorizationPolicyBuilder()
-            .RequireAuthenticatedUser()
-            .Build();
-    }
+    options.FallbackPolicy = new AuthorizationPolicyBuilder()
+        .RequireAuthenticatedUser()
+        .Build();
 });
 
 // ── Autorização fina via Ecad.Authz (PDP externo) ────────────────────
-// Cada endpoint declara sua permissão (ex.: identificacao:default:captacao:listar)
-// e o PermissionAuthorizationHandler consulta o serviço de authz por requisição.
-// Quando AUTH_ENABLED=false, o flag desliga a checagem para uso em dev local.
 builder.Services.AddEcadAuthz(builder.Configuration);
-builder.Services.Configure<EcadAuthzOptions>(options =>
-    options.Enabled = authEnabled && options.Enabled);
 
 // Global Exception Handler
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
@@ -255,15 +242,8 @@ app.UseExceptionHandler();
 app.UseSwaggerDocs();
 
 // Autenticação / Autorização
-if (authEnabled)
-{
-    app.UseAuthentication();
-    app.UseAuthorization();
-}
-else
-{
-    app.UseAuthorization();
-}
+app.UseAuthentication();
+app.UseAuthorization();
 
 // ─── AsyncAPI (documentação de eventos — pública) ─────────────────────
 app.MapAsyncApiDocs();
@@ -271,15 +251,15 @@ app.MapAsyncApiDocs();
 // Map Endpoints
 app.MapHealthChecks("/health").AllowAnonymous();
 app.MapMetrics("/metrics").AllowAnonymous();
-app.MapFechamentoEndpoints(authEnabled);
-app.MapCancelamentoEndpoints(authEnabled);
-app.MapRubricaEndpoints(authEnabled);
-app.MapCaptacaoEndpoints(authEnabled);
-app.MapExecucaoEndpoints(authEnabled);
-app.MapTipoUtilizacaoEndpoints(authEnabled);
-app.MapUploadEndpoints(authEnabled);
-app.MapPendenteEndpoints(authEnabled);
-app.MapDashboardEndpoints(authEnabled);
+app.MapFechamentoEndpoints();
+app.MapCancelamentoEndpoints();
+app.MapRubricaEndpoints();
+app.MapCaptacaoEndpoints();
+app.MapExecucaoEndpoints();
+app.MapTipoUtilizacaoEndpoints();
+app.MapUploadEndpoints();
+app.MapPendenteEndpoints();
+app.MapDashboardEndpoints();
 
 // Executa Migrations no Startup
 using (var scope = app.Services.CreateScope())

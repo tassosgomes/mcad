@@ -15,7 +15,6 @@ logging:
 
 ecad:
   authz:
-    enabled: ${AUTHZ_ENABLED:true}
     base-url: ${AUTHZ_BASE_URL:http://localhost:8085}
     catalog:
       registration-required: ${AUTHZ_CATALOG_REGISTRATION_REQUIRED:true}

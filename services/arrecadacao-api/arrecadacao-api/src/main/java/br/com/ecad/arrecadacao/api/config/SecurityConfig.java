@@ -30,26 +30,19 @@ import org.springframework.security.web.SecurityFilterChain;
 public class SecurityConfig {
 
     @Bean
-    SecurityFilterChain securityFilterChain(
-        HttpSecurity http,
-        @Value("${app.security.auth-enabled:true}") boolean authEnabled
-    ) throws Exception {
+    SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
             .csrf(csrf -> csrf.disable())
             .cors(Customizer.withDefaults())
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
 
-        if (authEnabled) {
-            http.authorizeHttpRequests(authorize -> authorize
-                .requestMatchers("/actuator/health", "/actuator/info").permitAll()
-                .anyRequest().authenticated()
-            );
-            http.oauth2ResourceServer(oauth2 -> oauth2.jwt(jwt ->
-                jwt.jwtAuthenticationConverter(jwtAuthenticationConverter())
-            ));
-        } else {
-            http.authorizeHttpRequests(authorize -> authorize.anyRequest().permitAll());
-        }
+        http.authorizeHttpRequests(authorize -> authorize
+            .requestMatchers("/actuator/health", "/actuator/info").permitAll()
+            .anyRequest().authenticated()
+        );
+        http.oauth2ResourceServer(oauth2 -> oauth2.jwt(jwt ->
+            jwt.jwtAuthenticationConverter(jwtAuthenticationConverter())
+        ));
 
         return http.build();
     }

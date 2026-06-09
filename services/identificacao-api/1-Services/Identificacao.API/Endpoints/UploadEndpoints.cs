@@ -13,7 +13,7 @@ namespace Identificacao.API.Endpoints;
 
 public static class UploadEndpoints
 {
-    public static void MapUploadEndpoints(this IEndpointRouteBuilder app, bool authEnabled)
+    public static void MapUploadEndpoints(this IEndpointRouteBuilder app)
     {
         var group = app.MapGroup("/api/v1/captacoes/{captacaoId:guid}/uploads")
             .WithTags("Uploads CSV");
@@ -32,7 +32,7 @@ public static class UploadEndpoints
             var result = await dispatcher.SendAsync(command, ct);
             return Results.Accepted($"/api/v1/captacoes/{captacaoId}/uploads/{result.Id}", result);
         })
-        .RequireIdentificacaoPermission(IdentificacaoPermissions.UploadImportar, authEnabled)
+        .RequireIdentificacaoPermission(IdentificacaoPermissions.UploadImportar)
         .DisableAntiforgery();
 
         group.MapGet("/", async (
@@ -47,7 +47,7 @@ public static class UploadEndpoints
                 new ListarUploadsQuery(captacaoId, page, size), ct);
             return Results.Ok(result);
         })
-        .RequireIdentificacaoPermission(IdentificacaoPermissions.UploadListar, authEnabled);
+        .RequireIdentificacaoPermission(IdentificacaoPermissions.UploadListar);
 
         group.MapGet("/{id:guid}", async (
             Guid captacaoId, Guid id,
@@ -58,7 +58,7 @@ public static class UploadEndpoints
                 new GetUploadByIdQuery(captacaoId, id), ct);
             return Results.Ok(result);
         })
-        .RequireIdentificacaoPermission(IdentificacaoPermissions.UploadVisualizar, authEnabled);
+        .RequireIdentificacaoPermission(IdentificacaoPermissions.UploadVisualizar);
 
         group.MapGet("/{id:guid}/erros", async (
             Guid captacaoId, Guid id,
@@ -73,6 +73,6 @@ public static class UploadEndpoints
                 new ListarErrosUploadQuery(id, page, size), ct);
             return Results.Ok(result);
         })
-        .RequireIdentificacaoPermission(IdentificacaoPermissions.UploadVisualizarErros, authEnabled);
+        .RequireIdentificacaoPermission(IdentificacaoPermissions.UploadVisualizarErros);
     }
 }

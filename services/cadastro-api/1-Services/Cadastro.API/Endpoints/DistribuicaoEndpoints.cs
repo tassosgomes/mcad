@@ -7,7 +7,7 @@ namespace Cadastro.API.Endpoints;
 
 public static class DistribuicaoEndpoints
 {
-    public static void MapDistribuicaoEndpoints(this IEndpointRouteBuilder app, bool authEnabled)
+    public static void MapDistribuicaoEndpoints(this IEndpointRouteBuilder app)
     {
         var group = app
             .MapGroup("/api/v1/distribuicao")
@@ -22,7 +22,7 @@ public static class DistribuicaoEndpoints
             var result = await dispatcher.QueryAsync(query, ct);
             return Results.Ok(result);
         })
-        .RequireCadastroPermission(CadastroPermissions.TitularidadeListar, authEnabled);
+        .RequireCadastroPermission(CadastroPermissions.TitularidadeListar);
     }
 }
 
