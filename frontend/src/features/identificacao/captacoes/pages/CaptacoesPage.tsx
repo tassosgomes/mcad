@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { FilePlus } from 'lucide-react';
 import { PageHeader } from '@components/ui/page-header';
 import { Button } from '@components/ui/button';
 import { Loading } from '@components/ui/loading';
@@ -57,8 +58,12 @@ export function CaptacoesPage() {
         description="Gestão, registro e controle de verbas arrecadadas por rubrica e período."
         action={
           canWrite ? (
-            <Button onClick={() => navigate('/identificacao/captacoes/nova')}>
-              Nova Captação
+            <Button
+              variant="primary"
+              onClick={() => navigate('/identificacao/captacoes/nova')}
+              type="button"
+            >
+              <FilePlus size={16} /> Nova Captação
             </Button>
           ) : undefined
         }

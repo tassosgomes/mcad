@@ -1,6 +1,6 @@
 .tableContainer {
-  background-color: var(--color-surface);
-  border: 1px solid var(--color-border);
+  background: var(--color-bg-floor);
+  border: 1px solid rgba(67, 70, 85, 0.1);
   border-radius: var(--radius-lg);
   overflow-x: auto;
 }
@@ -12,46 +12,51 @@
 }
 
 .thead {
-  background-color: var(--color-background);
-  border-bottom: 2px solid var(--color-border);
+  background: var(--color-bg-surface);
 }
 
 .th {
-  padding: 1rem;
-  font-size: 0.75rem;
-  font-weight: 500;
-  color: var(--color-text-muted);
+  padding: var(--space-4) var(--space-6);
+  font-family: var(--font-body);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--color-text-secondary);
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.15em;
+  white-space: nowrap;
 }
 
 .thSortable {
-  padding: 1rem;
-  font-size: 0.75rem;
-  font-weight: 500;
-  color: var(--color-text-muted);
+  padding: var(--space-4) var(--space-6);
+  font-family: var(--font-body);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--color-text-secondary);
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.15em;
+  white-space: nowrap;
   cursor: pointer;
   user-select: none;
-  transition: color 0.2s;
+  transition: color var(--transition-fast);
 }
 .thSortable:hover {
-  color: var(--color-text);
+  color: var(--color-text-primary);
 }
 
 .row {
-  border-bottom: 1px solid var(--color-border);
-  transition: background-color 0.2s;
+  background: transparent;
+  transition: background var(--transition-fast);
 }
 .row:hover {
-  background-color: rgba(var(--color-primary-rgb), 0.02);
+  background: var(--color-bg-surface);
 }
 
 .td {
-  padding: 1rem;
-  font-size: 0.875rem;
+  padding: var(--space-5) var(--space-6);
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
   vertical-align: middle;
+  border-bottom: 1px solid rgba(67, 70, 85, 0.05);
 }
 
 .titleWrapper {
@@ -61,35 +66,44 @@
 }
 
 .title {
-  font-weight: 500;
-  color: var(--color-text);
+  font-weight: 600;
+  color: var(--color-text-primary);
 }
 
 .subtitle {
-  font-size: 0.75rem;
+  font-size: var(--text-xs);
   color: var(--color-text-muted);
   font-family: var(--font-mono);
 }
 
 .captacaoLink {
-  color: var(--color-primary);
+  color: var(--color-accent-light);
   text-decoration: none;
-  font-weight: 500;
+  font-weight: 600;
 }
 .captacaoLink:hover {
-  text-decoration: underline;
+  color: var(--color-accent);
 }
 
 .actionsCell {
   text-align: right;
-  width: 120px;
+  width: 1%;
+  white-space: nowrap;
+}
+
+.td.actionsCell {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-2);
 }
 
 .emptyState {
-  padding: 3rem;
   text-align: center;
+  padding: var(--space-12) var(--space-4);
   color: var(--color-text-muted);
-  background-color: var(--color-surface);
-  border: 1px dashed var(--color-border);
+  font-size: var(--text-sm);
+  background: var(--color-bg-floor);
   border-radius: var(--radius-lg);
+  border: 1px solid rgba(67, 70, 85, 0.1);
 }
