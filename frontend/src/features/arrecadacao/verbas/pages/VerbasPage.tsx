@@ -9,7 +9,7 @@ import styles from './VerbasPage.module.css';
 type ViewMode = 'detalhada' | 'agregada';
 
 const FILTROS_INICIAIS: VerbasFilter = {
-  page: 0,
+  page: 1,
   size: 10,
   sort: '-periodo',
 };

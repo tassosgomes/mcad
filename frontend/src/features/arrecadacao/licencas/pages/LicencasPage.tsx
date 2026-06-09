@@ -14,7 +14,7 @@ import type { LicencaFiltros } from '../types/licenca';
 import styles from './LicencasPage.module.css';
 
 const FILTROS_INICIAIS: LicencaFiltros = {
-  page: 0,
+  page: 1,
   size: 10,
   sort: 'criadoEm,desc',
 };

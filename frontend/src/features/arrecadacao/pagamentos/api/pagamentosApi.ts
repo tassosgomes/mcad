@@ -21,7 +21,7 @@ function mapPagamentoListResponse(response: BackendPageResponse<Pagamento>): Pag
   return {
     data: response.items,
     pagination: {
-      page: response.metadata.page,
+      page: response.metadata.page + 1,
       size: response.metadata.size,
       total: response.metadata.totalElements,
       totalPages: response.metadata.totalPages,
@@ -31,7 +31,7 @@ function mapPagamentoListResponse(response: BackendPageResponse<Pagamento>): Pag
 
 export async function getPagamentos(filtros: PagamentoFiltros): Promise<PagamentoListResponse> {
   const params = new URLSearchParams();
-  params.set('page', String(filtros.page));
+  params.set('page', String(Math.max(filtros.page - 1, 0)));
   params.set('size', String(filtros.size));
   if (filtros.sort) params.set('sort', filtros.sort);
   if (filtros.usuarioMusicaId) params.set('usuarioMusicaId', filtros.usuarioMusicaId);

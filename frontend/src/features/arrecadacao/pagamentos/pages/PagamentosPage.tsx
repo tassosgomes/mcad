@@ -14,7 +14,7 @@ import type { PagamentoFiltros } from '../types/pagamento';
 import styles from './PagamentosPage.module.css';
 
 const FILTROS_INICIAIS: PagamentoFiltros = {
-  page: 0,
+  page: 1,
   size: 10,
   sort: 'dataRegistro,desc',
 };
