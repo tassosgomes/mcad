@@ -72,7 +72,7 @@ public class Licenca {
     public HistoricoStatusLicenca suspender(String justificativa, String autor) {
         if (status != StatusLicenca.ATIVA) {
             throw new IllegalStateException(
-                "Somente licenças ATIVAS podem ser suspensas");
+                "Somente licenças ATIVAS podem ser suspensas. Status atual: " + status);
         }
         var anterior = this.status;
         this.status = StatusLicenca.SUSPENSA;
@@ -83,7 +83,7 @@ public class Licenca {
     public HistoricoStatusLicenca suspender(String justificativa, String atorSubject, String autorRotulo) {
         if (status != StatusLicenca.ATIVA) {
             throw new IllegalStateException(
-                "Somente licenças ATIVAS podem ser suspensas");
+                "Somente licenças ATIVAS podem ser suspensas. Status atual: " + status);
         }
         var anterior = this.status;
         this.status = StatusLicenca.SUSPENSA;
@@ -121,7 +121,7 @@ public class Licenca {
                 "Licenca deve ser suspensa antes de ser encerrada");
         }
         if (status == StatusLicenca.ENCERRADA) {
-            throw new IllegalStateException("Licenca ja esta encerrada");
+            throw new IllegalStateException("Licença já está ENCERRADA. Esta transição não é permitida.");
         }
         var anterior = this.status;
         this.status = StatusLicenca.ENCERRADA;
@@ -135,7 +135,7 @@ public class Licenca {
                 "Licenca deve ser suspensa antes de ser encerrada");
         }
         if (status == StatusLicenca.ENCERRADA) {
-            throw new IllegalStateException("Licenca ja esta encerrada");
+            throw new IllegalStateException("Licença já está ENCERRADA. Esta transição não é permitida.");
         }
         var anterior = this.status;
         this.status = StatusLicenca.ENCERRADA;

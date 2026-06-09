@@ -57,7 +57,7 @@ public class ListarLicencasQueryHandler
 
     private Sort parseSort(String sort) {
         if (sort == null || sort.isBlank()) {
-            return Sort.by(Sort.Direction.DESC, "criadoEm");
+            return Sort.by(Sort.Direction.DESC, "dataInicio");
         }
         if (sort.contains(",")) {
             String[] parts = sort.split(",", 2);
