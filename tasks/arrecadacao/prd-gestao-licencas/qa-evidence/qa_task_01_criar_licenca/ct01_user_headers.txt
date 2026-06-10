@@ -1,0 +1,24 @@
+HTTP/2 200 
+date: Tue, 09 Jun 2026 12:11:09 GMT
+content-type: application/json
+content-length: 654
+alt-svc: h3=":443"; ma=86400
+cache-control: no-cache, no-store, max-age=0, must-revalidate
+cf-cache-status: DYNAMIC
+expires: 0
+nel: {"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}
+pragma: no-cache
+report-to: {"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=2VRLn2jN3ZXCBZmoEzZVjGQD9dk6yhkumG%2B2ptLoOZJsOY5okGAI2sY%2BJg%2F%2Fijv4S9g3WBmFqzSaev0gNfx7GEGkHIHur%2BlDgM6kqjcVDMHdpxRfFInE6NLBKroEVJNwslWE4e%2FzAkx24smaA8lW1w%3D%3D"}]}
+server: cloudflare
+vary: Origin, Access-Control-Request-Method, Access-Control-Request-Headers
+x-audit-command-id: 97438a04-9077-4305-b4d2-0d8fb3867d2c
+x-audit-route: /api/arrecadacao/v1/usuarios-musica?status=ATIVO&page=1&size=1
+x-audit-screen-access-id: 525a1604-3d6a-4fa7-96e4-278fefbb6fe7
+x-audit-screen-id: arrecadacao.usuarios-musica.lista
+x-audit-screen-name: Arrecadacao - Usuarios de musica
+x-audit-session-id: 2383bc67-38ab-4df7-bd42-e49dd8f5ed3c
+x-content-type-options: nosniff
+x-frame-options: DENY
+x-xss-protection: 0
+cf-ray: a0900983dd68dc15-JDO
+

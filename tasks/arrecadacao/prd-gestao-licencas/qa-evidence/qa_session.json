@@ -1,0 +1,116 @@
+{
+  "session": {
+    "created_at": "2026-06-09T12:10:00Z",
+    "prd_path": "tasks/arrecadacao/prd-gestao-licencas/prd.md",
+    "techspec_path": "tasks/arrecadacao/prd-gestao-licencas/techspec.md",
+    "orchestrator_version": "1.0"
+  },
+  "scope": {
+    "user_stories_in_scope": [
+      { "task_id": "qa_task_01", "slug": "criar_licenca", "description": "HU-01: Criar licença (happy path + validações RF-01 a RF-06)" },
+      { "task_id": "qa_task_02", "slug": "suspender_licenca", "description": "HU-02: Suspender licença ATIVA (RF-07)" },
+      { "task_id": "qa_task_03", "slug": "reativar_licenca", "description": "HU-03: Reativar licença SUSPENSA (RF-08)" },
+      { "task_id": "qa_task_04", "slug": "encerrar_licenca", "description": "HU-04: Encerrar licença SUSPENSA (RF-09, RF-11, RF-12)" },
+      { "task_id": "qa_task_05", "slug": "listar_licencas", "description": "HU-05: Listar licenças com filtros e paginação (RF-14 a RF-17)" },
+      { "task_id": "qa_task_06", "slug": "detalhes_e_historico", "description": "HU-06: Detalhes e histórico de transições (RF-13, RF-17)" },
+      { "task_id": "qa_task_07", "slug": "selecao_pagamento", "description": "HU-07: Contrato de seleção de licença para pagamento (F04)" }
+    ],
+    "excluded": [
+      { "id": "auth_negativa", "reason": "Usuário optou por não cobrir testes de autorização negativa (403)" },
+      { "id": "validacao_banco", "reason": "Usuário optou por não validar persistência diretamente no banco de dados" },
+      { "id": "registro_pagamento_f04", "reason": "Registro de pagamento é feature F04, fora do escopo deste PRD" },
+      { "id": "performance_carga", "reason": "Requer ambiente de carga dedicado" }
+    ]
+  },
+  "environment": {
+    "base_url": "https://mcad.tasso.dev.br",
+    "auth": {
+      "enabled": true,
+      "type": "oidc_pkce",
+      "authority": "https://9lcinu.logto.app/oidc",
+      "token_endpoint": "https://9lcinu.logto.app/oidc/token",
+      "client_id": "mcad-frontend",
+      "credentials_env": {
+        "username_var": "QA_ANALISTA_ARRECADACAO_USERNAME",
+        "password_var": "QA_ANALISTA_ARRECADACAO_PASSWORD"
+      }
+    }
+  },
+  "database": {
+    "enabled": false,
+    "type": "none",
+    "connection_string_env": null,
+    "docker_image": null
+  },
+  "report": {
+    "formats": ["markdown"],
+    "output_dir": "tasks/arrecadacao/prd-gestao-licencas/qa-evidence"
+  },
+  "execution": {
+    "tasks": [
+      {
+        "id": "qa_task_01",
+        "slug": "criar_licenca",
+        "description": "Criar licença com validações de negócio",
+        "type": ["ui", "api"],
+        "depends_on": [],
+        "can_run_parallel_with": []
+      },
+      {
+        "id": "qa_task_05",
+        "slug": "listar_licencas",
+        "description": "Listar licenças com filtros, paginação e ordenação",
+        "type": ["ui", "api"],
+        "depends_on": ["qa_task_01"],
+        "can_run_parallel_with": ["qa_task_06", "qa_task_07"]
+      },
+      {
+        "id": "qa_task_06",
+        "slug": "detalhes_e_historico",
+        "description": "Detalhes da licença e histórico de transições",
+        "type": ["ui", "api"],
+        "depends_on": ["qa_task_01"],
+        "can_run_parallel_with": ["qa_task_05", "qa_task_07"]
+      },
+      {
+        "id": "qa_task_07",
+        "slug": "selecao_pagamento",
+        "description": "Contrato de seleção de licença para pagamento (F04)",
+        "type": ["api"],
+        "depends_on": ["qa_task_01"],
+        "can_run_parallel_with": ["qa_task_05", "qa_task_06"]
+      },
+      {
+        "id": "qa_task_02",
+        "slug": "suspender_licenca",
+        "description": "Suspender licença ATIVA e verificar histórico",
+        "type": ["ui", "api"],
+        "depends_on": ["qa_task_01"],
+        "can_run_parallel_with": []
+      },
+      {
+        "id": "qa_task_03",
+        "slug": "reativar_licenca",
+        "description": "Reativar licença SUSPENSA e verificar histórico",
+        "type": ["ui", "api"],
+        "depends_on": ["qa_task_02"],
+        "can_run_parallel_with": []
+      },
+      {
+        "id": "qa_task_04",
+        "slug": "encerrar_licenca",
+        "description": "Encerrar licença SUSPENSA; validar imutabilidade",
+        "type": ["ui", "api"],
+        "depends_on": ["qa_task_02"],
+        "can_run_parallel_with": []
+      }
+    ],
+    "phases": [
+      { "phase": 1, "mode": "sequential", "tasks": ["qa_task_01"] },
+      { "phase": 2, "mode": "parallel", "tasks": ["qa_task_05", "qa_task_06", "qa_task_07"] },
+      { "phase": 3, "mode": "sequential", "tasks": ["qa_task_02"] },
+      { "phase": 4, "mode": "sequential", "tasks": ["qa_task_03"] },
+      { "phase": 5, "mode": "sequential", "tasks": ["qa_task_04"] }
+    ]
+  }
+}

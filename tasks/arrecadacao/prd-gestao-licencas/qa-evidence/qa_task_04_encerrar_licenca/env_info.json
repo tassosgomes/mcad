@@ -1,0 +1,17 @@
+{
+  "runtimeEnv": {
+    "CADASTRO_API_BASE_URL": "https://mcad-bff.tasso.dev.br/api/cadastro/v1",
+    "IDENTIFICACAO_API_BASE_URL": "https://mcad-bff.tasso.dev.br/api/identificacao/v1",
+    "ARRECADACAO_API_BASE_URL": "https://mcad-bff.tasso.dev.br/api/arrecadacao/v1",
+    "DISTRIBUICAO_API_BASE_URL": "https://mcad-bff.tasso.dev.br/api/distribuicao/v1",
+    "AUDITORIA_API_BASE_URL": "https://mcad-bff.tasso.dev.br/api/auditoria/v1",
+    "AUTHZ_API_BASE_URL": "https://mcad-bff.tasso.dev.br/v1",
+    "OIDC_AUTHORITY": "https://9lcinu.logto.app/oidc",
+    "OIDC_CLIENT_ID": "b0o8w18syrv95gd2o3kee",
+    "OIDC_AUDIENCE": "https://api.mcad.local",
+    "OIDC_REDIRECT_URI": "https://mcad.tasso.dev.br/callback",
+    "OIDC_POST_LOGOUT_REDIRECT_URI": "https://mcad.tasso.dev.br/"
+  },
+  "localStorageKeys": [],
+  "sessionStorageKeys": []
+}

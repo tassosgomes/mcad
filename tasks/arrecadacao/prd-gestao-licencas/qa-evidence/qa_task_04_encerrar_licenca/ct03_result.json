@@ -1,0 +1,11 @@
+{
+  "status": 422,
+  "body": {
+    "type": "about:blank",
+    "title": "Unprocessable Entity",
+    "status": 422,
+    "detail": "Licenca deve ser suspensa antes de ser encerrada",
+    "instance": "/api/v1/licencas/c95adb34-fcef-43cb-be5a-aaab951fbed9/encerrar"
+  },
+  "pass": true
+}

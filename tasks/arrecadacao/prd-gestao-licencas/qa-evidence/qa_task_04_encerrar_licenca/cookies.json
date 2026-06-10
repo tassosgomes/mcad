@@ -1,0 +1,51 @@
+[
+  {
+    "name": "_interaction_resume",
+    "domain": "9lcinu.logto.app",
+    "path": "/oidc/auth/N7vpu_QEalXgZXDIEDlfe",
+    "secure": true,
+    "httpOnly": true
+  },
+  {
+    "name": "_interaction_resume.sig",
+    "domain": "9lcinu.logto.app",
+    "path": "/oidc/auth/N7vpu_QEalXgZXDIEDlfe",
+    "secure": true,
+    "httpOnly": true
+  },
+  {
+    "name": "_logto",
+    "domain": "9lcinu.logto.app",
+    "path": "/",
+    "secure": true,
+    "httpOnly": false
+  },
+  {
+    "name": "_interaction",
+    "domain": "9lcinu.logto.app",
+    "path": "/",
+    "secure": true,
+    "httpOnly": true
+  },
+  {
+    "name": "_interaction.sig",
+    "domain": "9lcinu.logto.app",
+    "path": "/",
+    "secure": true,
+    "httpOnly": true
+  },
+  {
+    "name": "_session",
+    "domain": "9lcinu.logto.app",
+    "path": "/",
+    "secure": true,
+    "httpOnly": true
+  },
+  {
+    "name": "_session.sig",
+    "domain": "9lcinu.logto.app",
+    "path": "/",
+    "secure": true,
+    "httpOnly": true
+  }
+]

@@ -1,0 +1,11 @@
+{
+  "encerrada": null,
+  "suspensa": {
+    "id": "01f8af48-672f-47d3-b376-16bdba0d1d94",
+    "status": "SUSPENSA"
+  },
+  "ativa": {
+    "id": "c4569df3-47b2-47d8-9570-4ef4b0b58109",
+    "status": "ATIVA"
+  }
+}

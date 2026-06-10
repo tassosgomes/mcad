@@ -1,0 +1,23 @@
+{
+  "status": 200,
+  "body": {
+    "id": "4421b958-a94c-48a3-b01b-2f808d0650e5",
+    "usuarioMusica": {
+      "id": "736058ce-d06b-42e8-a3f2-617cd16e5174",
+      "razaoSocial": "Johns - Reilly",
+      "cnpjFormatado": "17.018.809/7335-66"
+    },
+    "rubrica": {
+      "id": "e5f6a7b8-c9d0-1234-efab-345678901234",
+      "sigla": "VOD",
+      "nome": "Streaming Vídeo (VOD)",
+      "ativo": true
+    },
+    "dataInicio": "2027-05-16",
+    "dataFim": null,
+    "status": "ENCERRADA",
+    "criadoEm": "2026-06-07T03:22:02.155886Z",
+    "atualizadoEm": "2026-06-10T00:50:37.445106206Z"
+  },
+  "pass": true
+}

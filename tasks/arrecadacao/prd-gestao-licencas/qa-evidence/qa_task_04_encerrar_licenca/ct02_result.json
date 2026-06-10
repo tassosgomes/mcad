@@ -1,0 +1,11 @@
+{
+  "status": 422,
+  "body": {
+    "type": "about:blank",
+    "title": "Unprocessable Entity",
+    "status": 422,
+    "detail": "Licença já está ENCERRADA. Esta transição não é permitida.",
+    "instance": "/api/v1/licencas/01f8af48-672f-47d3-b376-16bdba0d1d94/encerrar"
+  },
+  "pass": true
+}
