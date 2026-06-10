@@ -1,7 +1,8 @@
 import { useMemo, useState } from 'react';
 import type { FormEvent } from 'react';
-import { Plus, RefreshCw, RotateCcw, Search, Users } from 'lucide-react';
+import { ChevronRight, Plus, RefreshCw, RotateCcw, Search, Users } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { Badge } from '@components/ui/badge';
 import { Button } from '@components/ui/button';
 import { Loading } from '@components/ui/loading';
 import { PageHeader } from '@components/ui/page-header';
@@ -31,9 +32,9 @@ const statusOptions: Array<{ value: '' | RoleStatus; label: string }> = [
 
 function StatusBadge({ status }: { status: RoleStatus }) {
   return (
-    <span className={`${styles.status} ${status === 'ACTIVE' ? styles.active : styles.inactive}`}>
+    <Badge variant={status === 'ACTIVE' ? 'success' : 'muted'}>
       {status === 'ACTIVE' ? 'Ativo' : 'Inativo'}
-    </span>
+    </Badge>
   );
 }
 
@@ -46,7 +47,7 @@ interface RoleRowProps {
 function RoleRow({ role, userCount, onEdit }: RoleRowProps) {
   const usersLabel = userCount === 1 ? 'usuário' : 'usuários';
   return (
-    <tr className={styles.row} onClick={() => onEdit(role.id)}>
+    <tr className={styles.row}>
       <td className={styles.td}>
         <span className={styles.primaryText}>{role.displayName}</span>
         <span className={`${styles.secondaryText} ${styles.mono}`}>{role.key}</span>
@@ -69,6 +70,17 @@ function RoleRow({ role, userCount, onEdit }: RoleRowProps) {
       <td className={styles.td}>
         <StatusBadge status={role.status} />
       </td>
+      <td className={`${styles.td} ${styles.actionCell}`}>
+        <button
+          type="button"
+          className={styles.openButton}
+          onClick={() => onEdit(role.id)}
+          aria-label={`Abrir papel ${role.displayName}`}
+        >
+          Abrir
+          <ChevronRight size={16} aria-hidden="true" />
+        </button>
+      </td>
     </tr>
   );
 }
@@ -87,10 +99,6 @@ export function RolesPage() {
   );
 
   const roles = rolesQuery.data?.content ?? [];
-  const activeRolesCount = useMemo(
-    () => roles.filter((role) => role.status === 'ACTIVE').length,
-    [roles],
-  );
 
   const handleFilterSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -214,6 +222,9 @@ export function RolesPage() {
                     <th className={styles.th}>Área</th>
                     <th className={styles.th}>Usuários</th>
                     <th className={styles.th}>Status</th>
+                    <th className={`${styles.th} ${styles.actionCell}`}>
+                      <span className={styles.srOnly}>Ações</span>
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
@@ -238,7 +249,7 @@ export function RolesPage() {
               onPageChange={(nextPage) => setPage(Math.max(nextPage - 1, 0))}
             />
             <p className={styles.meta}>
-              {rolesQuery.data.totalElements} papéis filtrados — {activeRolesCount} ativos nesta página.
+              {rolesQuery.data.totalElements} {rolesQuery.data.totalElements === 1 ? 'papel' : 'papéis'} no filtro atual.
             </p>
           </>
         )}

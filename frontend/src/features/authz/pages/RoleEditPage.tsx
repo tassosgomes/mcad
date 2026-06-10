@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import type { FormEvent } from 'react';
 import { Archive, ArrowLeft, MinusCircle, Plus, Save, Search, ShieldCheck, Users } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { Badge } from '@components/ui/badge';
 import { Button } from '@components/ui/button';
 import { ConfirmModal } from '@components/ui/confirm-modal';
 import { ErrorState } from '@components/ui/error-state';
@@ -221,32 +222,25 @@ export function RoleEditPage() {
         </Button>
         <PageHeader
           title={role.displayName}
-          description={role.key}
-          action={(
-            <>
-              <span className={`${styles.status} ${role.status === 'ACTIVE' ? styles.active : styles.inactive}`}>
-                {role.status === 'ACTIVE' ? 'Ativo' : 'Inativo'}
-              </span>
-              <Button
-                variant="ghost"
-                type="button"
-                onClick={() => navigate('/autorizacao/papeis/novo')}
-              >
-                <Plus size={16} />
-                Novo papel
-              </Button>
-            </>
-          )}
+          description={<span className={styles.mono}>{role.key}</span>}
         />
       </div>
 
       <div className={styles.layout}>
         <div className={styles.sideCard}>
           <div className={styles.roleInfo}>
-            <span className={styles.label}>Domínio / área</span>
-            <span className={`${styles.primaryText} ${styles.mono}`}>
-              {role.domain}{role.area ? ` / ${role.area}` : ''}
-            </span>
+            <div className={styles.roleInfoItem}>
+              <span className={styles.label}>Status</span>
+              <Badge variant={role.status === 'ACTIVE' ? 'success' : 'muted'}>
+                {role.status === 'ACTIVE' ? 'Ativo' : 'Inativo'}
+              </Badge>
+            </div>
+            <div className={styles.roleInfoItem}>
+              <span className={styles.label}>Domínio / área</span>
+              <span className={`${styles.primaryText} ${styles.mono}`}>
+                {role.domain}{role.area ? ` / ${role.area}` : ''}
+              </span>
+            </div>
           </div>
 
           <form className={styles.form} onSubmit={handleUpdate}>
@@ -273,7 +267,7 @@ export function RoleEditPage() {
             <div className={styles.actions}>
               <Button type="submit" disabled={isMutating}>
                 <Save size={16} />
-                Salvar
+                Salvar identificação
               </Button>
               <Button
                 variant="danger"
@@ -285,6 +279,9 @@ export function RoleEditPage() {
                 Desativar
               </Button>
             </div>
+            <p className={styles.hint}>
+              Salvar grava apenas nome e descrição. Permissões e usuários são aplicados imediatamente.
+            </p>
           </form>
         </div>
 

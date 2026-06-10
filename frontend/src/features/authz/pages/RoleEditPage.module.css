@@ -40,7 +40,13 @@
 
 .roleInfo {
   display: grid;
-  gap: var(--space-1);
+  gap: var(--space-4);
+}
+
+.roleInfoItem {
+  display: grid;
+  justify-items: start;
+  gap: var(--space-2);
 }
 
 .roleKey {
@@ -50,25 +56,10 @@
   overflow-wrap: anywhere;
 }
 
-.status {
-  display: inline-flex;
-  align-items: center;
-  min-height: 24px;
-  padding: var(--space-1) var(--space-2);
-  border-radius: 999px;
-  font-size: var(--text-xs);
-  font-weight: 800;
-  letter-spacing: 0.04em;
-}
-
-.active {
-  background: rgba(34, 197, 94, 0.14);
-  color: var(--color-success);
-}
-
-.inactive {
-  background: rgba(141, 144, 160, 0.14);
+.hint {
+  margin: 0;
   color: var(--color-text-muted);
+  font-size: var(--text-xs);
 }
 
 .form {

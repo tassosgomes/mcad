@@ -1,9 +1,10 @@
 import { useMemo, useState } from 'react';
-import { AlertTriangle, Search, Trash2, UserPlus } from 'lucide-react';
+import { Search, Trash2, UserPlus } from 'lucide-react';
 import { Autocomplete } from '@components/ui/autocomplete';
 import { Button } from '@components/ui/button';
+import { ConfirmModal } from '@components/ui/confirm-modal';
 import { Loading } from '@components/ui/loading';
-import { Modal } from '@components/ui/modal';
+import { useToast } from '@components/ui/toast';
 import { Can } from '@shared/authz';
 import {
   filterAssignmentsByRole,
@@ -14,7 +15,7 @@ import {
   type AcessoUsuario,
   type RoleAssignmentRow,
 } from '@features/autorizacao/api/acessosApi';
-import styles from '../pages/RolesPage.module.css';
+import styles from './RoleUsersTab.module.css';
 
 const ASSIGNMENTS_PAGE_SIZE = 200;
 
@@ -40,11 +41,11 @@ function getUserLabel(user: AcessoUsuario): string {
 }
 
 export function RoleUsersTab({ roleKey, roleDisplayName, isInactive }: RoleUsersTabProps) {
+  const { showToast } = useToast();
   const [userSearch, setUserSearch] = useState('');
   const [selectedUser, setSelectedUser] = useState<AcessoUsuario | null>(null);
   const [filter, setFilter] = useState('');
   const [pendingRemoval, setPendingRemoval] = useState<RoleAssignmentRow | null>(null);
-  const [feedback, setFeedback] = useState<{ tone: 'success' | 'error'; message: string } | null>(null);
 
   const assignmentsQuery = useAssignments({ page: 0, size: ASSIGNMENTS_PAGE_SIZE });
   const usuariosQuery = useUsuarios(
@@ -70,32 +71,31 @@ export function RoleUsersTab({ roleKey, roleDisplayName, isInactive }: RoleUsers
 
   const handleAssign = async () => {
     if (!selectedUser) return;
-    setFeedback(null);
+    const assignedLabel = getUserLabel(selectedUser);
     try {
       await atribuirPapel.mutateAsync({ userId: selectedUser.id, roleKey });
       setSelectedUser(null);
       setUserSearch('');
-      setFeedback({
-        tone: 'success',
-        message: `${getUserLabel(selectedUser)} recebeu o papel. A propagação das permissões pode levar até 5 minutos.`,
-      });
+      showToast(
+        `${assignedLabel} recebeu o papel. A propagação das permissões pode levar até 5 minutos.`,
+        'success',
+      );
     } catch {
-      setFeedback({ tone: 'error', message: 'Não foi possível atribuir o papel.' });
+      showToast('Não foi possível atribuir o papel.', 'error');
     }
   };
 
   const confirmRemoval = async () => {
     if (!pendingRemoval) return;
-    setFeedback(null);
     try {
       await removerPapel.mutateAsync({ assignmentId: pendingRemoval.role.assignmentId ?? '' });
       setPendingRemoval(null);
-      setFeedback({
-        tone: 'success',
-        message: 'Papel removido. A revogação pode levar até 5 minutos para refletir em todos os caches.',
-      });
+      showToast(
+        'Papel removido. A revogação pode levar até 5 minutos para refletir em todos os caches.',
+        'success',
+      );
     } catch {
-      setFeedback({ tone: 'error', message: 'Não foi possível remover o papel deste usuário.' });
+      showToast('Não foi possível remover o papel deste usuário.', 'error');
     }
   };
 
@@ -112,12 +112,6 @@ export function RoleUsersTab({ roleKey, roleDisplayName, isInactive }: RoleUsers
         </div>
         <span className={styles.counter}>{rows.length} total</span>
       </div>
-
-      {feedback && (
-        <div className={feedback.tone === 'success' ? styles.success : styles.error} role="status" aria-live="polite">
-          {feedback.message}
-        </div>
-      )}
 
       <Can permission="acessos:default:papel:atribuir">
         <div className={styles.addUser}>
@@ -216,38 +210,17 @@ export function RoleUsersTab({ roleKey, roleDisplayName, isInactive }: RoleUsers
         </div>
       )}
 
-      <Modal
+      <ConfirmModal
         isOpen={pendingRemoval !== null}
         onClose={() => setPendingRemoval(null)}
-        title="Confirmar remoção de papel"
-        actions={(
-          <>
-            <Button type="button" variant="secondary" onClick={() => setPendingRemoval(null)}>
-              Cancelar
-            </Button>
-            <Button
-              type="button"
-              variant="danger"
-              onClick={() => void confirmRemoval()}
-              disabled={removerPapel.isPending}
-            >
-              <Trash2 size={16} />
-              Remover papel
-            </Button>
-          </>
-        )}
-      >
-        {pendingRemoval && (
-          <div style={{ display: 'grid', gridTemplateColumns: 'auto 1fr', gap: 'var(--space-3)', alignItems: 'start' }}>
-            <AlertTriangle size={20} aria-hidden="true" />
-            <p style={{ margin: 0 }}>
-              Remover <strong>{roleDisplayName}</strong> de{' '}
-              <strong>{getUserPrimary(pendingRemoval)}</strong> revoga as permissões efetivas associadas a esse papel.
-              A revogação pode levar até 5 minutos para refletir em todos os caches.
-            </p>
-          </div>
-        )}
-      </Modal>
+        onConfirm={() => void confirmRemoval()}
+        title="Remover papel do usuário"
+        description={pendingRemoval
+          ? `Remover "${roleDisplayName}" de ${getUserPrimary(pendingRemoval)} revoga as permissões efetivas associadas a esse papel. A revogação pode levar até 5 minutos para refletir em todos os caches.`
+          : ''}
+        confirmLabel="Remover papel"
+        isLoading={removerPapel.isPending}
+      />
     </section>
   );
 }

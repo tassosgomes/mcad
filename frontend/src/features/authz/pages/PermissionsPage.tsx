@@ -1,6 +1,7 @@
-import { useMemo, useState } from 'react';
-import { Archive, RefreshCw, RotateCcw, Search, ShieldCheck } from 'lucide-react';
+import { useState } from 'react';
+import { Archive, ChevronRight, RefreshCw, RotateCcw, Search, ShieldCheck } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { Badge } from '@components/ui/badge';
 import { Button } from '@components/ui/button';
 import { ConfirmModal } from '@components/ui/confirm-modal';
 import { Loading } from '@components/ui/loading';
@@ -8,7 +9,6 @@ import { Modal } from '@components/ui/modal';
 import { PageHeader } from '@components/ui/page-header';
 import { Pagination } from '@components/ui/pagination';
 import { useToast } from '@components/ui/toast';
-import { runtimeConfig } from '@shared/config/runtimeConfig';
 import {
   useDeprecatePermission,
   usePermissionDetails,
@@ -43,30 +43,14 @@ function getStatusLabel(status: PermissionStatus): string {
   return labels[status];
 }
 
-function getStatusClass(status: PermissionStatus): string {
-  const classes: Record<PermissionStatus, string> = {
-    ACTIVE: styles.active,
-    DEPRECATED: styles.deprecated,
-    DISABLED: styles.disabled,
-  };
-  return classes[status];
-}
+const STATUS_VARIANT = {
+  ACTIVE: 'success',
+  DEPRECATED: 'warning',
+  DISABLED: 'muted',
+} as const;
 
 function StatusBadge({ status }: { status: PermissionStatus }) {
-  return (
-    <span className={`${styles.status} ${getStatusClass(status)}`}>
-      {getStatusLabel(status)}
-    </span>
-  );
-}
-
-function Metric({ label, value }: { label: string; value: string | number }) {
-  return (
-    <div className={styles.metric}>
-      <span className={styles.metricLabel}>{label}</span>
-      <span className={styles.metricValue}>{value}</span>
-    </div>
-  );
+  return <Badge variant={STATUS_VARIANT[status]}>{getStatusLabel(status)}</Badge>;
 }
 
 function DetailItem({ label, value, mono = false }: { label: string; value?: string | null; mono?: boolean }) {
@@ -168,14 +152,6 @@ export function PermissionsPage() {
   const deprecateMutation = useDeprecatePermission();
 
   const permissions = permissionsQuery.data?.content ?? [];
-  const activeCount = useMemo(
-    () => permissions.filter((p) => p.status === 'ACTIVE').length,
-    [permissions],
-  );
-  const deprecatedCount = useMemo(
-    () => permissions.filter((p) => p.status === 'DEPRECATED').length,
-    [permissions],
-  );
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -214,11 +190,7 @@ export function PermissionsPage() {
   };
 
   const renderRow = (permission: PermissionSummary) => (
-    <tr
-      key={permission.id}
-      className={styles.row}
-      onClick={() => openDetail(permission.id)}
-    >
+    <tr key={permission.id} className={styles.row}>
       <td className={styles.td}>
         <span className={styles.primaryText}>{permission.displayName}</span>
         <span className={`${styles.secondaryText} ${styles.mono}`}>{permission.key}</span>
@@ -231,6 +203,17 @@ export function PermissionsPage() {
       </td>
       <td className={styles.td}>
         <StatusBadge status={permission.status} />
+      </td>
+      <td className={`${styles.td} ${styles.actionCell}`}>
+        <button
+          type="button"
+          className={styles.openButton}
+          onClick={() => openDetail(permission.id)}
+          aria-label={`Ver detalhes de ${permission.displayName}`}
+        >
+          Detalhes
+          <ChevronRight size={16} aria-hidden="true" />
+        </button>
       </td>
     </tr>
   );
@@ -326,13 +309,6 @@ export function PermissionsPage() {
         </Button>
       </form>
 
-      <div className={styles.summaryGrid}>
-        <Metric label="Serviço authz" value={runtimeConfig.authzApiBaseUrl.replace(/^https?:\/\//, '')} />
-        <Metric label="Total filtrado" value={permissionsQuery.data?.totalElements ?? 0} />
-        <Metric label="Ativas (pág.)" value={activeCount} />
-        <Metric label="Depreciadas (pág.)" value={deprecatedCount} />
-      </div>
-
       {permissionsQuery.isError && (
         <div className={styles.error}>
           Não foi possível consultar o catálogo de permissões no ecad-authz.
@@ -356,6 +332,9 @@ export function PermissionsPage() {
                     <th className={styles.th}>Domínio</th>
                     <th className={styles.th}>Área</th>
                     <th className={styles.th}>Status</th>
+                    <th className={`${styles.th} ${styles.actionCell}`}>
+                      <span className={styles.srOnly}>Ações</span>
+                    </th>
                   </tr>
                 </thead>
                 <tbody>{permissions.map(renderRow)}</tbody>
@@ -372,6 +351,9 @@ export function PermissionsPage() {
                 setPage(Math.max(nextPage - 1, 0));
               }}
             />
+            <p className={styles.meta}>
+              {permissionsQuery.data.totalElements} {permissionsQuery.data.totalElements === 1 ? 'permissão' : 'permissões'} no filtro atual.
+            </p>
           </>
         )}
       </section>
