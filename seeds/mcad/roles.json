@@ -136,6 +136,7 @@
       "arrecadacao:default:cobranca:listar",
       "arrecadacao:default:pagamento:listar",
       "arrecadacao:default:pagamento:visualizar",
+      "arrecadacao:default:rubrica:visualizar",
       "arrecadacao:default:relatorio:visualizar"
     ]
   },
@@ -171,6 +172,10 @@
       "arrecadacao:default:pagamento:visualizar",
       "arrecadacao:default:pagamento:conciliar",
       "arrecadacao:default:pagamento:estornar",
+      "arrecadacao:default:rubrica:visualizar",
+      "arrecadacao:default:rubrica:criar",
+      "arrecadacao:default:rubrica:editar",
+      "arrecadacao:default:rubrica:inativar",
       "arrecadacao:default:relatorio:visualizar",
       "arrecadacao:default:relatorio:exportar"
     ]
@@ -186,8 +191,11 @@
       "distribuicao:default:rubrica:visualizar",
       "distribuicao:default:processo:listar",
       "distribuicao:default:processo:visualizar",
+      "distribuicao:default:ajuste:listar",
+      "distribuicao:default:ajuste:visualizar",
       "distribuicao:default:credito:listar",
       "distribuicao:default:credito:visualizar",
+      "distribuicao:default:demonstrativo:listar",
       "distribuicao:default:demonstrativo:visualizar"
     ]
   },
@@ -202,8 +210,11 @@
       "distribuicao:default:rubrica:visualizar",
       "distribuicao:default:processo:listar",
       "distribuicao:default:processo:visualizar",
+      "distribuicao:default:ajuste:listar",
+      "distribuicao:default:ajuste:visualizar",
       "distribuicao:default:credito:listar",
       "distribuicao:default:credito:visualizar",
+      "distribuicao:default:demonstrativo:listar",
       "distribuicao:default:demonstrativo:visualizar",
       "distribuicao:default:processo:criar",
       "distribuicao:default:processo:calcular"
@@ -220,6 +231,8 @@
       "distribuicao:default:rubrica:visualizar",
       "distribuicao:default:processo:listar",
       "distribuicao:default:processo:visualizar",
+      "distribuicao:default:ajuste:listar",
+      "distribuicao:default:ajuste:visualizar",
       "distribuicao:default:credito:listar",
       "distribuicao:default:credito:visualizar",
       "distribuicao:default:processo:aprovar",
@@ -229,6 +242,7 @@
       "distribuicao:default:processo:ver-justificativa-cancelamento",
       "distribuicao:default:processo:ver-historico-alteracoes",
       "distribuicao:default:credito:ver-historico-alteracoes",
+      "distribuicao:default:demonstrativo:listar",
       "distribuicao:default:demonstrativo:visualizar",
       "distribuicao:default:demonstrativo:exportar",
       "cadastro:default:titular:ver-cpf-completo",
@@ -247,6 +261,8 @@
       "distribuicao:default:rubrica:visualizar",
       "distribuicao:default:processo:listar",
       "distribuicao:default:processo:visualizar",
+      "distribuicao:default:ajuste:listar",
+      "distribuicao:default:ajuste:visualizar",
       "distribuicao:default:credito:listar",
       "distribuicao:default:credito:visualizar",
       "distribuicao:default:processo:criar",
@@ -258,6 +274,7 @@
       "distribuicao:default:processo:ver-justificativa-cancelamento",
       "distribuicao:default:processo:recalcular-pos-calculado",
       "distribuicao:default:credito-retido:liberar-manual",
+      "distribuicao:default:demonstrativo:listar",
       "distribuicao:default:demonstrativo:visualizar",
       "distribuicao:default:demonstrativo:exportar",
       "cadastro:default:titular:ver-cpf-completo"

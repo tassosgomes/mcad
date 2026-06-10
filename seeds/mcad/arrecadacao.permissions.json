@@ -2,7 +2,7 @@
   "service": "arrecadacao-api",
   "domain": "arrecadacao",
   "area": "default",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "permissions": [
     { "key": "arrecadacao:default:cliente:listar", "displayName": "Listar usuários de música", "description": "Lista paginada e filtrada de usuários de música (clientes).", "resource": "cliente", "action": "listar" },
     { "key": "arrecadacao:default:cliente:visualizar", "displayName": "Visualizar usuário de música", "description": "Acesso aos dados completos e ao histórico de status de um usuário de música.", "resource": "cliente", "action": "visualizar" },
@@ -22,6 +22,11 @@
     { "key": "arrecadacao:default:pagamento:visualizar", "displayName": "Visualizar pagamento", "description": "Acesso aos dados de um pagamento específico.", "resource": "pagamento", "action": "visualizar" },
     { "key": "arrecadacao:default:pagamento:conciliar", "displayName": "Registrar pagamento", "description": "Registra um novo pagamento associado a uma licença vigente.", "resource": "pagamento", "action": "conciliar" },
     { "key": "arrecadacao:default:pagamento:estornar", "displayName": "Estornar pagamento", "description": "Estorna um pagamento previamente confirmado, com justificativa.", "resource": "pagamento", "action": "estornar" },
+
+    { "key": "arrecadacao:default:rubrica:visualizar", "displayName": "Visualizar rubricas", "description": "Lista e detalha rubricas disponíveis para cobrança e classificação.", "resource": "rubrica", "action": "visualizar" },
+    { "key": "arrecadacao:default:rubrica:criar", "displayName": "Criar rubrica", "description": "Cadastra uma nova rubrica.", "resource": "rubrica", "action": "criar" },
+    { "key": "arrecadacao:default:rubrica:editar", "displayName": "Editar rubrica", "description": "Atualiza nome, flags operacionais e reativa rubricas inativas.", "resource": "rubrica", "action": "editar" },
+    { "key": "arrecadacao:default:rubrica:inativar", "displayName": "Inativar rubrica", "description": "Inativa uma rubrica ativa.", "resource": "rubrica", "action": "inativar" },
 
     { "key": "arrecadacao:default:relatorio:visualizar", "displayName": "Visualizar verbas", "description": "Consulta lista, agregados e detalhes de verbas por rubrica e período.", "resource": "relatorio", "action": "visualizar" },
     { "key": "arrecadacao:default:relatorio:exportar", "displayName": "Exportar verbas", "description": "Exporta dados de verbas/relatórios para análise externa.", "resource": "relatorio", "action": "exportar" }
