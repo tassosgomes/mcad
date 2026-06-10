@@ -53,7 +53,13 @@ export function ProcessosFilters({ filtros, onChange, onClear }: ProcessosFilter
         aria-label="Filtrar por status"
       />
 
-      <Button variant="secondary" onClick={onClear} type="button" id="btn-reset-filtros-processos">
+      <Button
+        className={styles.clearButton}
+        variant="secondary"
+        onClick={onClear}
+        type="button"
+        id="btn-reset-filtros-processos"
+      >
         Limpar filtros
       </Button>
     </div>

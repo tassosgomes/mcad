@@ -54,7 +54,6 @@ export function ProcessosTable({ data }: ProcessosTableProps) {
               key={processo.id}
               className={styles.row}
               onClick={() => navigate(`/distribuicao/processos/${processo.id}`)}
-              style={{ cursor: 'pointer' }}
             >
               <td className={styles.td}>
                 <span className={styles.chip}>{processo.rubrica.sigla}</span>
