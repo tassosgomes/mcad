@@ -3,6 +3,8 @@ import { RequirePermission } from '@shared/auth/RequirePermission';
 import { usePermissions } from '@shared/authz';
 import { MeuDominioPage } from '@features/autorizacao/meu-dominio/MeuDominioPage';
 import { PermissionsPage } from './pages/PermissionsPage';
+import { RoleCreatePage } from './pages/RoleCreatePage';
+import { RoleEditPage } from './pages/RoleEditPage';
 import { RolesPage } from './pages/RolesPage';
 
 const AUTHZ_ADMIN_PERMISSIONS = [
@@ -57,6 +59,22 @@ export default function AuthzRoutes() {
         element={(
           <RequirePermission anyOf={[...AUTHZ_ADMIN_PERMISSIONS, 'acessos:default:papel:listar']}>
             <RolesPage />
+          </RequirePermission>
+        )}
+      />
+      <Route
+        path="papeis/novo"
+        element={(
+          <RequirePermission anyOf={AUTHZ_ADMIN_PERMISSIONS}>
+            <RoleCreatePage />
+          </RequirePermission>
+        )}
+      />
+      <Route
+        path="papeis/:id"
+        element={(
+          <RequirePermission anyOf={[...AUTHZ_ADMIN_PERMISSIONS, 'acessos:default:papel:listar']}>
+            <RoleEditPage />
           </RequirePermission>
         )}
       />

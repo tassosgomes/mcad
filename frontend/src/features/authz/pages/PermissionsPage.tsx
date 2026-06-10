@@ -1,10 +1,13 @@
-import { useEffect, useMemo, useState } from 'react';
-import { Archive, RefreshCw, Search, ShieldCheck } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { Archive, RefreshCw, RotateCcw, Search, ShieldCheck } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@components/ui/button';
+import { ConfirmModal } from '@components/ui/confirm-modal';
 import { Loading } from '@components/ui/loading';
+import { Modal } from '@components/ui/modal';
 import { PageHeader } from '@components/ui/page-header';
 import { Pagination } from '@components/ui/pagination';
+import { useToast } from '@components/ui/toast';
 import { runtimeConfig } from '@shared/config/runtimeConfig';
 import {
   useDeprecatePermission,
@@ -37,7 +40,6 @@ function getStatusLabel(status: PermissionStatus): string {
     DEPRECATED: 'Depreciada',
     DISABLED: 'Desabilitada',
   };
-
   return labels[status];
 }
 
@@ -47,7 +49,6 @@ function getStatusClass(status: PermissionStatus): string {
     DEPRECATED: styles.deprecated,
     DISABLED: styles.disabled,
   };
-
   return classes[status];
 }
 
@@ -77,79 +78,90 @@ function DetailItem({ label, value, mono = false }: { label: string; value?: str
   );
 }
 
-interface PermissionDetailProps {
+interface PermissionDetailModalProps {
+  isOpen: boolean;
+  onClose: () => void;
   permission: Permission | undefined;
   isLoading: boolean;
   onDeprecate: (permission: Permission) => void;
   isDeprecating: boolean;
 }
 
-function PermissionDetail({
+function PermissionDetailModal({
+  isOpen,
+  onClose,
   permission,
   isLoading,
   onDeprecate,
   isDeprecating,
-}: PermissionDetailProps) {
-  if (isLoading) {
-    return (
-      <aside className={styles.detailPanel}>
-        <Loading />
-      </aside>
-    );
-  }
-
-  if (!permission) {
-    return (
-      <aside className={styles.detailPanel}>
-        <h2 className={styles.detailTitle}>Selecione uma permissão</h2>
-        <p className={styles.detailDescription}>
-          Escolha uma linha do catálogo para consultar metadados, origem e status.
-        </p>
-      </aside>
-    );
-  }
+}: PermissionDetailModalProps) {
+  const title = permission?.displayName ?? 'Detalhes da permissão';
 
   return (
-    <aside className={styles.detailPanel}>
-      <div className={styles.detailHeader}>
-        <div>
-          <h2 className={styles.detailTitle}>{permission.displayName}</h2>
-          <p className={`${styles.detailDescription} ${styles.mono}`}>{permission.key}</p>
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title={title}
+      actions={
+        permission ? (
+          <>
+            <Button variant="ghost" type="button" onClick={onClose}>
+              Fechar
+            </Button>
+            <Button
+              variant="danger"
+              type="button"
+              disabled={permission.status === 'DEPRECATED' || isDeprecating}
+              onClick={() => onDeprecate(permission)}
+            >
+              <Archive size={16} />
+              Depreciar permissão
+            </Button>
+          </>
+        ) : undefined
+      }
+    >
+      {isLoading && <Loading />}
+
+      {!isLoading && !permission && (
+        <p>Não foi possível carregar os detalhes desta permissão.</p>
+      )}
+
+      {!isLoading && permission && (
+        <div className={styles.detailBody}>
+          <div className={styles.detailHeader}>
+            <p className={`${styles.detailValue} ${styles.mono}`}>{permission.key}</p>
+            <StatusBadge status={permission.status} />
+          </div>
+
+          {permission.description && (
+            <p className={styles.detailDescription}>{permission.description}</p>
+          )}
+
+          <div className={styles.detailList}>
+            <DetailItem label="Domínio" value={permission.domain} mono />
+            <DetailItem label="Área" value={permission.area} mono />
+            <DetailItem label="Recurso" value={permission.resource} mono />
+            <DetailItem label="Ação" value={permission.action} mono />
+            <DetailItem label="Serviço declarante" value={permission.serviceName} mono />
+            <DetailItem label="Criada em" value={new Date(permission.createdAt).toLocaleString('pt-BR')} />
+            <DetailItem label="Atualizada em" value={new Date(permission.updatedAt).toLocaleString('pt-BR')} />
+          </div>
         </div>
-        <StatusBadge status={permission.status} />
-      </div>
-
-      <p className={styles.detailDescription}>{permission.description || 'Sem descrição registrada.'}</p>
-
-      <div className={styles.detailList}>
-        <DetailItem label="Domínio" value={permission.domain} mono />
-        <DetailItem label="Área" value={permission.area} mono />
-        <DetailItem label="Recurso" value={permission.resource} mono />
-        <DetailItem label="Ação" value={permission.action} mono />
-        <DetailItem label="Serviço declarante" value={permission.serviceName} mono />
-        <DetailItem label="Criada em" value={new Date(permission.createdAt).toLocaleString('pt-BR')} />
-        <DetailItem label="Atualizada em" value={new Date(permission.updatedAt).toLocaleString('pt-BR')} />
-      </div>
-
-      <Button
-        variant="danger"
-        type="button"
-        disabled={permission.status === 'DEPRECATED' || isDeprecating}
-        onClick={() => onDeprecate(permission)}
-      >
-        <Archive size={16} />
-        Depreciar permissão
-      </Button>
-    </aside>
+      )}
+    </Modal>
   );
 }
 
 export function PermissionsPage() {
   const navigate = useNavigate();
+  const { showToast } = useToast();
   const [filters, setFilters] = useState<PermissionFilters>(emptyFilters);
   const [submittedFilters, setSubmittedFilters] = useState<PermissionFilters>(emptyFilters);
   const [page, setPage] = useState(0);
   const [selectedPermissionId, setSelectedPermissionId] = useState<string | null>(null);
+  const [detailModalOpen, setDetailModalOpen] = useState(false);
+  const [permissionToDeprecate, setPermissionToDeprecate] = useState<Permission | null>(null);
 
   const permissionsQuery = usePermissionsCatalog(submittedFilters, page, PAGE_SIZE);
   const detailsQuery = usePermissionDetails(selectedPermissionId);
@@ -157,24 +169,17 @@ export function PermissionsPage() {
 
   const permissions = permissionsQuery.data?.content ?? [];
   const activeCount = useMemo(
-    () => permissions.filter((permission) => permission.status === 'ACTIVE').length,
+    () => permissions.filter((p) => p.status === 'ACTIVE').length,
     [permissions],
   );
   const deprecatedCount = useMemo(
-    () => permissions.filter((permission) => permission.status === 'DEPRECATED').length,
+    () => permissions.filter((p) => p.status === 'DEPRECATED').length,
     [permissions],
   );
-
-  useEffect(() => {
-    if (!selectedPermissionId && permissions.length > 0) {
-      setSelectedPermissionId(permissions[0].id);
-    }
-  }, [permissions, selectedPermissionId]);
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setPage(0);
-    setSelectedPermissionId(null);
     setSubmittedFilters(filters);
   };
 
@@ -182,58 +187,53 @@ export function PermissionsPage() {
     setFilters(emptyFilters);
     setSubmittedFilters(emptyFilters);
     setPage(0);
-    setSelectedPermissionId(null);
+  };
+
+  const openDetail = (permissionId: string) => {
+    setSelectedPermissionId(permissionId);
+    setDetailModalOpen(true);
   };
 
   const handleDeprecate = (permission: Permission) => {
-    const confirmed = window.confirm(`Depreciar a permissão "${permission.key}"?`);
-    if (!confirmed) {
-      return;
-    }
-
-    deprecateMutation.mutate(permission.id);
+    setDetailModalOpen(false);
+    setPermissionToDeprecate(permission);
   };
 
-  const renderRow = (permission: PermissionSummary) => {
-    const selected = selectedPermissionId === permission.id;
-
-    return (
-      <tr
-        key={permission.id}
-        className={`${styles.row} ${selected ? styles.selected : ''}`}
-        onClick={() => setSelectedPermissionId(permission.id)}
-      >
-        <td className={styles.td}>
-          <span className={styles.primaryText}>{permission.displayName}</span>
-          <span className={`${styles.secondaryText} ${styles.mono}`}>{permission.key}</span>
-        </td>
-        <td className={styles.td}>
-          <span className={styles.chip}>{permission.domain || '-'}</span>
-        </td>
-        <td className={styles.td}>
-          <span className={styles.chip}>{permission.area || '-'}</span>
-        </td>
-        <td className={styles.td}>
-          <StatusBadge status={permission.status} />
-        </td>
-        <td className={styles.td}>
-          <div className={styles.actions}>
-            <Button
-              variant="ghost"
-              size="sm"
-              type="button"
-              onClick={(event) => {
-                event.stopPropagation();
-                setSelectedPermissionId(permission.id);
-              }}
-            >
-              Ver
-            </Button>
-          </div>
-        </td>
-      </tr>
-    );
+  const handleConfirmDeprecate = () => {
+    if (!permissionToDeprecate) return;
+    deprecateMutation.mutate(permissionToDeprecate.id, {
+      onSuccess: () => {
+        showToast('Permissão depreciada.', 'success');
+        setPermissionToDeprecate(null);
+      },
+      onError: () => {
+        showToast('Não foi possível depreciar a permissão.', 'error');
+        setPermissionToDeprecate(null);
+      },
+    });
   };
+
+  const renderRow = (permission: PermissionSummary) => (
+    <tr
+      key={permission.id}
+      className={styles.row}
+      onClick={() => openDetail(permission.id)}
+    >
+      <td className={styles.td}>
+        <span className={styles.primaryText}>{permission.displayName}</span>
+        <span className={`${styles.secondaryText} ${styles.mono}`}>{permission.key}</span>
+      </td>
+      <td className={styles.td}>
+        <span className={styles.chip}>{permission.domain || '-'}</span>
+      </td>
+      <td className={styles.td}>
+        <span className={styles.chip}>{permission.area || '-'}</span>
+      </td>
+      <td className={styles.td}>
+        <StatusBadge status={permission.status} />
+      </td>
+    </tr>
+  );
 
   return (
     <div className={styles.page}>
@@ -266,7 +266,7 @@ export function PermissionsPage() {
             id="permission-query"
             className={styles.input}
             value={filters.q}
-            onChange={(event) => setFilters((prev) => ({ ...prev, q: event.target.value }))}
+            onChange={(e) => setFilters((prev) => ({ ...prev, q: e.target.value }))}
             placeholder="Chave, nome ou descrição"
           />
         </div>
@@ -276,7 +276,7 @@ export function PermissionsPage() {
             id="permission-domain"
             className={`${styles.input} ${styles.mono}`}
             value={filters.domain}
-            onChange={(event) => setFilters((prev) => ({ ...prev, domain: event.target.value }))}
+            onChange={(e) => setFilters((prev) => ({ ...prev, domain: e.target.value }))}
             placeholder="cadastro"
           />
         </div>
@@ -286,7 +286,7 @@ export function PermissionsPage() {
             id="permission-area"
             className={`${styles.input} ${styles.mono}`}
             value={filters.area}
-            onChange={(event) => setFilters((prev) => ({ ...prev, area: event.target.value }))}
+            onChange={(e) => setFilters((prev) => ({ ...prev, area: e.target.value }))}
             placeholder="gestao"
           />
         </div>
@@ -296,7 +296,7 @@ export function PermissionsPage() {
             id="permission-service"
             className={`${styles.input} ${styles.mono}`}
             value={filters.service}
-            onChange={(event) => setFilters((prev) => ({ ...prev, service: event.target.value }))}
+            onChange={(e) => setFilters((prev) => ({ ...prev, service: e.target.value }))}
             placeholder="cadastro-api"
           />
         </div>
@@ -306,9 +306,9 @@ export function PermissionsPage() {
             id="permission-status"
             className={styles.select}
             value={filters.status}
-            onChange={(event) => setFilters((prev) => ({
+            onChange={(e) => setFilters((prev) => ({
               ...prev,
-              status: event.target.value as PermissionFilters['status'],
+              status: e.target.value as PermissionFilters['status'],
             }))}
           >
             {statusOptions.map((option) => (
@@ -320,13 +320,17 @@ export function PermissionsPage() {
           <Search size={16} />
           Filtrar
         </Button>
+        <Button variant="ghost" type="button" onClick={handleReset}>
+          <RotateCcw size={16} />
+          Limpar
+        </Button>
       </form>
 
       <div className={styles.summaryGrid}>
-        <Metric label="Endpoint" value={runtimeConfig.authzApiBaseUrl.replace(/^https?:\/\//, '')} />
+        <Metric label="Serviço authz" value={runtimeConfig.authzApiBaseUrl.replace(/^https?:\/\//, '')} />
         <Metric label="Total filtrado" value={permissionsQuery.data?.totalElements ?? 0} />
-        <Metric label="Ativas na página" value={activeCount} />
-        <Metric label="Depreciadas na página" value={deprecatedCount} />
+        <Metric label="Ativas (pág.)" value={activeCount} />
+        <Metric label="Depreciadas (pág.)" value={deprecatedCount} />
       </div>
 
       {permissionsQuery.isError && (
@@ -335,58 +339,61 @@ export function PermissionsPage() {
         </div>
       )}
 
-      <div className={styles.workspace}>
-        <section className={styles.tablePanel} aria-label="Catálogo de permissões">
-          {permissionsQuery.isLoading && <Loading />}
+      <section aria-label="Catálogo de permissões">
+        {permissionsQuery.isLoading && <Loading />}
 
-          {permissionsQuery.data && permissions.length === 0 && (
-            <div className={styles.empty}>Nenhuma permissão encontrada para os filtros aplicados.</div>
-          )}
+        {permissionsQuery.data && permissions.length === 0 && (
+          <div className={styles.empty}>Nenhuma permissão encontrada para os filtros aplicados.</div>
+        )}
 
-          {permissionsQuery.data && permissions.length > 0 && (
-            <>
-              <div className={styles.tableWrapper}>
-                <table className={styles.table}>
-                  <thead>
-                    <tr>
-                      <th className={styles.th}>Permissão</th>
-                      <th className={styles.th}>Domínio</th>
-                      <th className={styles.th}>Área</th>
-                      <th className={styles.th}>Status</th>
-                      <th className={styles.th} aria-label="Ações">Ações</th>
-                    </tr>
-                  </thead>
-                  <tbody>{permissions.map(renderRow)}</tbody>
-                </table>
-              </div>
-              <Pagination
-                pagination={{
-                  page: (permissionsQuery.data.page ?? page) + 1,
-                  size: permissionsQuery.data.size,
-                  total: permissionsQuery.data.totalElements,
-                  totalPages: Math.max(permissionsQuery.data.totalPages, 1),
-                }}
-                onPageChange={(nextPage) => {
-                  setPage(Math.max(nextPage - 1, 0));
-                  setSelectedPermissionId(null);
-                }}
-              />
-            </>
-          )}
-        </section>
+        {permissionsQuery.data && permissions.length > 0 && (
+          <>
+            <div className={styles.tableWrapper}>
+              <table className={styles.table}>
+                <thead>
+                  <tr>
+                    <th className={styles.th}>Permissão</th>
+                    <th className={styles.th}>Domínio</th>
+                    <th className={styles.th}>Área</th>
+                    <th className={styles.th}>Status</th>
+                  </tr>
+                </thead>
+                <tbody>{permissions.map(renderRow)}</tbody>
+              </table>
+            </div>
+            <Pagination
+              pagination={{
+                page: (permissionsQuery.data.page ?? page) + 1,
+                size: permissionsQuery.data.size,
+                total: permissionsQuery.data.totalElements,
+                totalPages: Math.max(permissionsQuery.data.totalPages, 1),
+              }}
+              onPageChange={(nextPage) => {
+                setPage(Math.max(nextPage - 1, 0));
+              }}
+            />
+          </>
+        )}
+      </section>
 
-        <PermissionDetail
-          permission={detailsQuery.data}
-          isLoading={detailsQuery.isLoading}
-          onDeprecate={handleDeprecate}
-          isDeprecating={deprecateMutation.isPending}
-        />
-      </div>
+      <PermissionDetailModal
+        isOpen={detailModalOpen}
+        onClose={() => setDetailModalOpen(false)}
+        permission={detailsQuery.data}
+        isLoading={detailsQuery.isLoading}
+        onDeprecate={handleDeprecate}
+        isDeprecating={deprecateMutation.isPending}
+      />
 
-      <Button variant="ghost" type="button" onClick={handleReset}>
-        <ShieldCheck size={16} />
-        Limpar filtros
-      </Button>
+      <ConfirmModal
+        isOpen={!!permissionToDeprecate}
+        onClose={() => setPermissionToDeprecate(null)}
+        onConfirm={handleConfirmDeprecate}
+        title="Depreciar permissão"
+        description={`Depreciar a permissão "${permissionToDeprecate?.key}"? Esta ação não pode ser desfeita.`}
+        confirmLabel="Depreciar permissão"
+        isLoading={deprecateMutation.isPending}
+      />
     </div>
   );
 }

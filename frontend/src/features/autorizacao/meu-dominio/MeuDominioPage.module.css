@@ -6,7 +6,7 @@
 
 .filters {
   display: grid;
-  grid-template-columns: minmax(220px, 1fr) auto;
+  grid-template-columns: minmax(220px, 1fr) auto auto;
   gap: var(--space-3);
   align-items: end;
   padding: var(--space-4);
@@ -91,12 +91,18 @@
 }
 
 .tablePanel {
-  display: grid;
+  display: flex;
+  flex-direction: column;
   gap: var(--space-4);
   min-width: 0;
   padding: var(--space-4);
   background: var(--color-bg-surface);
   border-radius: var(--radius-lg);
+}
+
+.meta {
+  color: var(--color-text-muted);
+  font-size: var(--text-xs);
 }
 
 .panelTitle {
