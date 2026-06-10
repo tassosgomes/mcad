@@ -166,51 +166,6 @@
   font-size: var(--text-xs);
 }
 
-/* ─── Modal de detalhe ─────────────────────────── */
-
-.detailBody {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-4);
-}
-
-.detailHeader {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-3);
-}
-
-.detailDescription {
-  color: var(--color-text-secondary);
-  font-size: var(--text-sm);
-  line-height: 1.6;
-}
-
-.detailList {
-  display: grid;
-  gap: var(--space-3);
-}
-
-.detailItem {
-  display: grid;
-  gap: var(--space-1);
-}
-
-.detailLabel {
-  color: var(--color-text-muted);
-  font-size: var(--text-xs);
-  font-weight: 700;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-}
-
-.detailValue {
-  color: var(--color-text-primary);
-  font-size: var(--text-sm);
-  overflow-wrap: anywhere;
-}
-
 /* ─── Estados ──────────────────────────────────── */
 
 .empty,

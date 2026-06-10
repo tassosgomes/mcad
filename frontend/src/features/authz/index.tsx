@@ -2,6 +2,7 @@ import { Navigate, Route, Routes } from 'react-router-dom';
 import { RequirePermission } from '@shared/auth/RequirePermission';
 import { usePermissions } from '@shared/authz';
 import { MeuDominioPage } from '@features/autorizacao/meu-dominio/MeuDominioPage';
+import { PermissionDetailPage } from './pages/PermissionDetailPage';
 import { PermissionsPage } from './pages/PermissionsPage';
 import { RoleCreatePage } from './pages/RoleCreatePage';
 import { RoleEditPage } from './pages/RoleEditPage';
@@ -51,6 +52,14 @@ export default function AuthzRoutes() {
         element={(
           <RequirePermission anyOf={AUTHZ_ADMIN_PERMISSIONS}>
             <PermissionsPage />
+          </RequirePermission>
+        )}
+      />
+      <Route
+        path="permissoes/:id"
+        element={(
+          <RequirePermission anyOf={AUTHZ_ADMIN_PERMISSIONS}>
+            <PermissionDetailPage />
           </RequirePermission>
         )}
       />

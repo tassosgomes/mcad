@@ -1,20 +1,13 @@
 import { useState } from 'react';
-import { Archive, ChevronRight, RefreshCw, RotateCcw, Search, ShieldCheck } from 'lucide-react';
+import { ChevronRight, RefreshCw, RotateCcw, Search, ShieldCheck } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { Badge } from '@components/ui/badge';
 import { Button } from '@components/ui/button';
-import { ConfirmModal } from '@components/ui/confirm-modal';
 import { Loading } from '@components/ui/loading';
-import { Modal } from '@components/ui/modal';
 import { PageHeader } from '@components/ui/page-header';
 import { Pagination } from '@components/ui/pagination';
-import { useToast } from '@components/ui/toast';
-import {
-  useDeprecatePermission,
-  usePermissionDetails,
-  usePermissionsCatalog,
-} from '../hooks/usePermissionsCatalog';
-import type { Permission, PermissionFilters, PermissionStatus, PermissionSummary } from '../types/permission';
+import { PermissionStatusBadge } from '../components/PermissionStatusBadge';
+import { usePermissionsCatalog } from '../hooks/usePermissionsCatalog';
+import type { PermissionFilters, PermissionStatus, PermissionSummary } from '../types/permission';
 import styles from './PermissionsPage.module.css';
 
 const PAGE_SIZE = 20;
@@ -34,122 +27,13 @@ const emptyFilters: PermissionFilters = {
   q: '',
 };
 
-function getStatusLabel(status: PermissionStatus): string {
-  const labels: Record<PermissionStatus, string> = {
-    ACTIVE: 'Ativa',
-    DEPRECATED: 'Depreciada',
-    DISABLED: 'Desabilitada',
-  };
-  return labels[status];
-}
-
-const STATUS_VARIANT = {
-  ACTIVE: 'success',
-  DEPRECATED: 'warning',
-  DISABLED: 'muted',
-} as const;
-
-function StatusBadge({ status }: { status: PermissionStatus }) {
-  return <Badge variant={STATUS_VARIANT[status]}>{getStatusLabel(status)}</Badge>;
-}
-
-function DetailItem({ label, value, mono = false }: { label: string; value?: string | null; mono?: boolean }) {
-  return (
-    <div className={styles.detailItem}>
-      <span className={styles.detailLabel}>{label}</span>
-      <span className={`${styles.detailValue} ${mono ? styles.mono : ''}`}>{value || '-'}</span>
-    </div>
-  );
-}
-
-interface PermissionDetailModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  permission: Permission | undefined;
-  isLoading: boolean;
-  onDeprecate: (permission: Permission) => void;
-  isDeprecating: boolean;
-}
-
-function PermissionDetailModal({
-  isOpen,
-  onClose,
-  permission,
-  isLoading,
-  onDeprecate,
-  isDeprecating,
-}: PermissionDetailModalProps) {
-  const title = permission?.displayName ?? 'Detalhes da permissão';
-
-  return (
-    <Modal
-      isOpen={isOpen}
-      onClose={onClose}
-      title={title}
-      actions={
-        permission ? (
-          <>
-            <Button variant="ghost" type="button" onClick={onClose}>
-              Fechar
-            </Button>
-            <Button
-              variant="danger"
-              type="button"
-              disabled={permission.status === 'DEPRECATED' || isDeprecating}
-              onClick={() => onDeprecate(permission)}
-            >
-              <Archive size={16} />
-              Depreciar permissão
-            </Button>
-          </>
-        ) : undefined
-      }
-    >
-      {isLoading && <Loading />}
-
-      {!isLoading && !permission && (
-        <p>Não foi possível carregar os detalhes desta permissão.</p>
-      )}
-
-      {!isLoading && permission && (
-        <div className={styles.detailBody}>
-          <div className={styles.detailHeader}>
-            <p className={`${styles.detailValue} ${styles.mono}`}>{permission.key}</p>
-            <StatusBadge status={permission.status} />
-          </div>
-
-          {permission.description && (
-            <p className={styles.detailDescription}>{permission.description}</p>
-          )}
-
-          <div className={styles.detailList}>
-            <DetailItem label="Domínio" value={permission.domain} mono />
-            <DetailItem label="Área" value={permission.area} mono />
-            <DetailItem label="Recurso" value={permission.resource} mono />
-            <DetailItem label="Ação" value={permission.action} mono />
-            <DetailItem label="Serviço declarante" value={permission.serviceName} mono />
-            <DetailItem label="Criada em" value={new Date(permission.createdAt).toLocaleString('pt-BR')} />
-            <DetailItem label="Atualizada em" value={new Date(permission.updatedAt).toLocaleString('pt-BR')} />
-          </div>
-        </div>
-      )}
-    </Modal>
-  );
-}
-
 export function PermissionsPage() {
   const navigate = useNavigate();
-  const { showToast } = useToast();
   const [filters, setFilters] = useState<PermissionFilters>(emptyFilters);
   const [submittedFilters, setSubmittedFilters] = useState<PermissionFilters>(emptyFilters);
   const [page, setPage] = useState(0);
-  const [selectedPermissionId, setSelectedPermissionId] = useState<string | null>(null);
-  const [detailModalOpen, setDetailModalOpen] = useState(false);
-  const [permissionToDeprecate, setPermissionToDeprecate] = useState<Permission | null>(null);
 
   const permissionsQuery = usePermissionsCatalog(submittedFilters, page, PAGE_SIZE);
-  const detailsQuery = usePermissionDetails(selectedPermissionId);
-  const deprecateMutation = useDeprecatePermission();
 
   const permissions = permissionsQuery.data?.content ?? [];
 
@@ -165,30 +49,6 @@ export function PermissionsPage() {
     setPage(0);
   };
 
-  const openDetail = (permissionId: string) => {
-    setSelectedPermissionId(permissionId);
-    setDetailModalOpen(true);
-  };
-
-  const handleDeprecate = (permission: Permission) => {
-    setDetailModalOpen(false);
-    setPermissionToDeprecate(permission);
-  };
-
-  const handleConfirmDeprecate = () => {
-    if (!permissionToDeprecate) return;
-    deprecateMutation.mutate(permissionToDeprecate.id, {
-      onSuccess: () => {
-        showToast('Permissão depreciada.', 'success');
-        setPermissionToDeprecate(null);
-      },
-      onError: () => {
-        showToast('Não foi possível depreciar a permissão.', 'error');
-        setPermissionToDeprecate(null);
-      },
-    });
-  };
-
   const renderRow = (permission: PermissionSummary) => (
     <tr key={permission.id} className={styles.row}>
       <td className={styles.td}>
@@ -202,13 +62,13 @@ export function PermissionsPage() {
         <span className={styles.chip}>{permission.area || '-'}</span>
       </td>
       <td className={styles.td}>
-        <StatusBadge status={permission.status} />
+        <PermissionStatusBadge status={permission.status} />
       </td>
       <td className={`${styles.td} ${styles.actionCell}`}>
         <button
           type="button"
           className={styles.openButton}
-          onClick={() => openDetail(permission.id)}
+          onClick={() => navigate(`/autorizacao/permissoes/${permission.id}`)}
           aria-label={`Ver detalhes de ${permission.displayName}`}
         >
           Detalhes
@@ -357,25 +217,6 @@ export function PermissionsPage() {
           </>
         )}
       </section>
-
-      <PermissionDetailModal
-        isOpen={detailModalOpen}
-        onClose={() => setDetailModalOpen(false)}
-        permission={detailsQuery.data}
-        isLoading={detailsQuery.isLoading}
-        onDeprecate={handleDeprecate}
-        isDeprecating={deprecateMutation.isPending}
-      />
-
-      <ConfirmModal
-        isOpen={!!permissionToDeprecate}
-        onClose={() => setPermissionToDeprecate(null)}
-        onConfirm={handleConfirmDeprecate}
-        title="Depreciar permissão"
-        description={`Depreciar a permissão "${permissionToDeprecate?.key}"? Esta ação não pode ser desfeita.`}
-        confirmLabel="Depreciar permissão"
-        isLoading={deprecateMutation.isPending}
-      />
     </div>
   );
 }
