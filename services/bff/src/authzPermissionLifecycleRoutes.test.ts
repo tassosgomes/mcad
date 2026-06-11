@@ -436,6 +436,279 @@ test('GET /api/autorizacao/permissoes/:id/papeis-vinculados returns 503 when fan
 });
 
 // ---------------------------------------------------------------------------
+// POST /api/autorizacao/permissoes/:id/depreciar
+// ---------------------------------------------------------------------------
+
+const DEPRECATED_RESULT = {
+  ...PERMISSION_ACTIVE,
+  id: 'perm-2',
+  status: 'DEPRECATED',
+};
+
+function deprecateHandler(
+  permissions: string[],
+  deprecateStatus: number,
+  deprecateBody: unknown = DEPRECATED_RESULT,
+  authzVersionHeader?: string,
+) {
+  return (url: string, init: { method?: string }) => {
+    if (url === 'http://authz.local/v1/me/authorization-context') {
+      return { status: 200, body: authzContext(permissions), headers: { 'x-authz-version': '3' } as Record<string, string> };
+    }
+
+    if (
+      url === `http://authz.local/v1/permissions/${PERMISSION_ACTIVE.id}/deprecate`
+      && init.method === 'PATCH'
+    ) {
+      const headers: Record<string, string> = {};
+      if (authzVersionHeader) headers['x-authz-version'] = authzVersionHeader;
+      return { status: deprecateStatus, body: deprecateBody, headers };
+    }
+
+    // Catch audit event calls
+    if (url === 'http://audit.local/api/v1/audit/events') {
+      return { status: 201, body: {} };
+    }
+
+    return { status: 404, body: { code: 'NOT_FOUND' } };
+  };
+}
+
+test('POST /api/autorizacao/permissoes/:id/depreciar without Authorization returns 401', async () => {
+  const { fetchImpl, calls } = buildFakeFetch(
+    deprecateHandler(['authz:admin:permission:depreciar'], 200),
+  );
+  const server = await buildServer(BASE_CONFIG, { fetchImpl });
+
+  try {
+    const response = await server.inject({
+      method: 'POST',
+      url: '/api/autorizacao/permissoes/perm-2/depreciar',
+    });
+    assert.equal(response.statusCode, 401);
+    assert.deepEqual(response.json(), { code: 'UNAUTHORIZED' });
+    assert.equal(calls.length, 0);
+  } finally {
+    await server.close();
+  }
+});
+
+test('POST /api/autorizacao/permissoes/:id/depreciar without deprecate permission returns 403', async () => {
+  const { fetchImpl } = buildFakeFetch(deprecateHandler([], 200));
+  const server = await buildServer(BASE_CONFIG, { fetchImpl });
+
+  try {
+    const response = await server.inject({
+      method: 'POST',
+      url: '/api/autorizacao/permissoes/perm-2/depreciar',
+      headers: { authorization: 'Bearer token' },
+    });
+    assert.equal(response.statusCode, 403);
+    assert.equal(response.json().code, 'PERMISSION_DENIED');
+  } finally {
+    await server.close();
+  }
+});
+
+test('POST /api/autorizacao/permissoes/:id/depreciar succeeds and returns deprecated permission', async () => {
+  const { fetchImpl, calls } = buildFakeFetch(
+    deprecateHandler(
+      ['authz:admin:permission:depreciar'],
+      200,
+      DEPRECATED_RESULT,
+      '5',
+    ),
+  );
+  const server = await buildServer(BASE_CONFIG, { fetchImpl });
+
+  try {
+    const response = await server.inject({
+      method: 'POST',
+      url: '/api/autorizacao/permissoes/perm-2/depreciar',
+      headers: { authorization: 'Bearer token' },
+    });
+    assert.equal(response.statusCode, 200);
+    const body = response.json() as { id: string; status: string };
+    assert.equal(body.id, 'perm-2');
+    assert.equal(body.status, 'DEPRECATED');
+
+    // x-authz-version must be propagated from upstream response
+    assert.equal(response.headers['x-authz-version'], '5');
+
+    // Verify the PATCH was called with the correct URL
+    const patchCall = calls.find(
+      (c) => c.url.includes('/v1/permissions/perm-2/deprecate') && c.method === 'PATCH',
+    );
+    assert.ok(patchCall, 'PATCH call to ecad-authz not found');
+  } finally {
+    await server.close();
+  }
+});
+
+test('POST /api/autorizacao/permissoes/:id/depreciar with x-authz-version from authz-context when upstream omits it', async () => {
+  // upstream PATCH does not return x-authz-version; should fall back to context header
+  const { fetchImpl } = buildFakeFetch(
+    deprecateHandler(['authz:admin:permission:depreciar'], 200),
+  );
+  const server = await buildServer(BASE_CONFIG, { fetchImpl });
+
+  try {
+    const response = await server.inject({
+      method: 'POST',
+      url: '/api/autorizacao/permissoes/perm-2/depreciar',
+      headers: { authorization: 'Bearer token', 'x-authz-version': '2' },
+    });
+    assert.equal(response.statusCode, 200);
+    // Falls back to request header value
+    assert.equal(response.headers['x-authz-version'], '2');
+  } finally {
+    await server.close();
+  }
+});
+
+test('POST /api/autorizacao/permissoes/:id/depreciar with unknown id returns 404', async () => {
+  const { fetchImpl } = buildFakeFetch((url, init) => {
+    if (url === 'http://authz.local/v1/me/authorization-context') {
+      return {
+        status: 200,
+        body: authzContext(['authz:admin:permission:depreciar']),
+        headers: { 'x-authz-version': '1' },
+      };
+    }
+    if (url.includes('/v1/permissions/unknown-id/deprecate') && init.method === 'PATCH') {
+      return { status: 404, body: { code: 'PERMISSION_NOT_FOUND', message: 'Permission not found' } };
+    }
+    if (url === 'http://audit.local/api/v1/audit/events') {
+      return { status: 201, body: {} };
+    }
+    return { status: 404, body: { code: 'NOT_FOUND' } };
+  });
+  const server = await buildServer(BASE_CONFIG, { fetchImpl });
+
+  try {
+    const response = await server.inject({
+      method: 'POST',
+      url: '/api/autorizacao/permissoes/unknown-id/depreciar',
+      headers: { authorization: 'Bearer token' },
+    });
+    assert.equal(response.statusCode, 404);
+    const body = response.json() as { code: string; message: string };
+    assert.equal(body.code, 'PERMISSION_NOT_FOUND');
+    assert.equal(body.message, 'Permission not found');
+  } finally {
+    await server.close();
+  }
+});
+
+test('POST /api/autorizacao/permissoes/:id/depreciar returns 503 when ecad-authz is unavailable', async () => {
+  const { fetchImpl } = buildFakeFetch((url, init) => {
+    if (url === 'http://authz.local/v1/me/authorization-context') {
+      return {
+        status: 200,
+        body: authzContext(['authz:admin:permission:depreciar']),
+        headers: { 'x-authz-version': '1' },
+      };
+    }
+    if (url.includes('/v1/permissions/perm-2/deprecate') && init.method === 'PATCH') {
+      return { status: 500, body: {} };
+    }
+    if (url === 'http://audit.local/api/v1/audit/events') {
+      return { status: 201, body: {} };
+    }
+    return { status: 404, body: { code: 'NOT_FOUND' } };
+  });
+  const server = await buildServer(BASE_CONFIG, { fetchImpl });
+
+  try {
+    const response = await server.inject({
+      method: 'POST',
+      url: '/api/autorizacao/permissoes/perm-2/depreciar',
+      headers: { authorization: 'Bearer token' },
+    });
+    assert.equal(response.statusCode, 503);
+    assert.equal(response.json().code, 'AUTHZ_UNAVAILABLE');
+  } finally {
+    await server.close();
+  }
+});
+
+test('POST /api/autorizacao/permissoes/:id/depreciar publishes audit event on success', async () => {
+  const { fetchImpl, calls } = buildFakeFetch(
+    deprecateHandler(['authz:admin:permission:depreciar'], 200, DEPRECATED_RESULT, '7'),
+  );
+  const server = await buildServer(BASE_CONFIG, { fetchImpl });
+
+  try {
+    const response = await server.inject({
+      method: 'POST',
+      url: '/api/autorizacao/permissoes/perm-2/depreciar',
+      headers: { authorization: 'Bearer token' },
+    });
+    assert.equal(response.statusCode, 200);
+
+    // Wait a tick so fire-and-forget audit call can complete
+    await new Promise((resolve) => setImmediate(resolve));
+
+    const auditCall = calls.find((c) => c.url === 'http://audit.local/api/v1/audit/events');
+    assert.ok(auditCall, 'audit event call not found');
+    assert.equal(auditCall.method, 'POST');
+
+    const auditPayload = JSON.parse(auditCall.body ?? '{}') as {
+      eventType: string;
+      action: string;
+      outcome: string;
+    };
+    assert.equal(auditPayload.eventType, 'PERMISSION_LIFECYCLE');
+    assert.equal(auditPayload.action, 'deprecate');
+    assert.equal(auditPayload.outcome, 'SUCCESS');
+  } finally {
+    await server.close();
+  }
+});
+
+test('POST /api/autorizacao/permissoes/:id/depreciar publishes FAILURE audit event on 404', async () => {
+  const { fetchImpl, calls } = buildFakeFetch((url, init) => {
+    if (url === 'http://authz.local/v1/me/authorization-context') {
+      return {
+        status: 200,
+        body: authzContext(['authz:admin:permission:depreciar']),
+        headers: { 'x-authz-version': '1' },
+      };
+    }
+    if (url.includes('/v1/permissions/perm-2/deprecate') && init.method === 'PATCH') {
+      return { status: 404, body: { code: 'PERMISSION_NOT_FOUND' } };
+    }
+    if (url === 'http://audit.local/api/v1/audit/events') {
+      return { status: 201, body: {} };
+    }
+    return { status: 404, body: { code: 'NOT_FOUND' } };
+  });
+  const server = await buildServer(BASE_CONFIG, { fetchImpl });
+
+  try {
+    const response = await server.inject({
+      method: 'POST',
+      url: '/api/autorizacao/permissoes/perm-2/depreciar',
+      headers: { authorization: 'Bearer token' },
+    });
+    assert.equal(response.statusCode, 404);
+
+    await new Promise((resolve) => setImmediate(resolve));
+
+    const auditCall = calls.find((c) => c.url === 'http://audit.local/api/v1/audit/events');
+    assert.ok(auditCall, 'audit event call not found');
+    const auditPayload = JSON.parse(auditCall.body ?? '{}') as {
+      outcome: string;
+      errorCode: string;
+    };
+    assert.equal(auditPayload.outcome, 'FAILURE');
+    assert.equal(auditPayload.errorCode, 'PERMISSION_NOT_FOUND');
+  } finally {
+    await server.close();
+  }
+});
+
+// ---------------------------------------------------------------------------
 // Phase 2 stubs — POST routes return 501 AUTHZ_PERMISSION_OPERATION_UNAVAILABLE
 // ---------------------------------------------------------------------------
 

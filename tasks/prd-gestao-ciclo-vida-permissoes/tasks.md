@@ -21,7 +21,7 @@ Assim que o `ecad-authz` publicar endpoints administrativos de create/reactivate
 
 - [x] 1.0 Formalizar contrato externo do Authz e matriz de capabilities do MCAD
 - [x] 2.0 Implementar no BFF a consulta governada de papeis vinculados e elegibilidade de remocao
-- [ ] 3.0 Implementar no BFF a deprecacao auditada de permissao
+- [x] 3.0 Implementar no BFF a deprecacao auditada de permissao
 - [ ] 4.0 Alinhar tipos, clientes e camada compartilhada do frontend ao contrato oficial do Authz
 - [ ] 5.0 Atualizar a listagem de permissoes para estados, filtros e CTAs condicionais
 - [ ] 6.0 Atualizar o detalhe de permissao com vinculos, elegibilidade e fluxo governado de deprecacao

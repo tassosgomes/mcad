@@ -713,3 +713,37 @@ Sugestao de melhoria no:
 - TechSpec: Detalhar direcao e responsabilidade de propagacao do header `x-authz-version` nos endpoints proprios do BFF (outgoing para upstream vs incoming para o frontend), separando leitura de mutacao.
 - Template de Task: Nenhuma sugestao especifica.
 - Skill: Nenhuma sugestao especifica.
+
+---
+
+## 2026-06-11 | PRD: prd-gestao-ciclo-vida-permissoes | Task: 3
+
+Modelo utilizado: claude-sonnet-4-6
+
+### Problemas Identificados
+
+1. Categoria Tecnica: Violacao de padrao arquitetural
+   Severidade: Baixa
+   Fase Detectada: Revisao
+   Origem Provavel: Lacuna na TechSpec
+   Necessitou Reimplementacao Significativa? Nao
+   Descricao: `buildAuditEventsUrl()` duplicada em `authzPermissionLifecycleRoutes.ts`. Logica identica ja existe em `auditoria/auditEventPublisher.ts` e exportada como `auditEventPublisherInternals.buildAuditEventsUrl`. O reuso direto era tecnicamente viavel. A techspec diz "reaproveitar publishAuditEvent" mas essa funcao e tipada exclusivamente para `ScreenAccessAuditEvent` (valida `eventType === 'SCREEN_ACCESS'`), tornando inviavel o reuso direto do publisher sem refatoracao. O implementador construiu um publisher proprio correto funcionalmente, mas nao importou o helper de URL.
+
+2. Categoria Tecnica: Erro de integracao
+   Severidade: Baixa
+   Fase Detectada: Revisao
+   Origem Provavel: Lacuna na TechSpec
+   Necessitou Reimplementacao Significativa? Nao
+   Descricao: `eventType: 'PERMISSION_LIFECYCLE'` e um novo tipo de evento nao validado pelo `publishAuditEvent` existente e nao documentado no contrato do ecad-auditoria. A techspec menciona "alinhar esquema do payload" no ecad-auditoria como acao requerida, mas esse alinhamento nao ocorreu. O risco e que o servico de auditoria rejeite o evento em producao caso valide o `eventType`. Nao bloqueante nesta task (fire-and-forget; o BFF continua operacional mesmo se o evento for rejeitado).
+
+### Resumo da Tarefa
+
+Total de Problemas: 2 (observacoes nao bloqueantes; zero violacoes de criterio de aceitacao)
+Categoria Tecnica mais frequente: Violacao de padrao arquitetural / Erro de integracao (empate)
+Origem mais frequente: Lacuna na TechSpec
+Indicio de fragilidade estrutural? Nao
+Sugestao de melhoria no:
+- PRD: Nenhuma sugestao especifica.
+- TechSpec: (a) Separar a responsabilidade do `publishAuditEvent` existente (SCREEN_ACCESS) da necessidade de publicar eventos de ciclo de vida de permissoes, indicando explicitamente que o publisher atual precisa ser estendido ou um novo publisher de escopo geral precisa ser extraido. (b) Incluir o contrato de `eventType` esperado pelo ecad-auditoria ou referenciar onde esse contrato esta documentado.
+- Template de Task: Quando a task diz "Reutilizar: X", incluir nota sobre possiveis restricoes de tipo que podem impedir reuso direto.
+- Skill: Nenhuma sugestao especifica.
