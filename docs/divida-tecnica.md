@@ -46,3 +46,21 @@ Expor um endpoint de contagem por papel no BFF (`GET /api/acessos/assignments/co
 
 ### Por que foi adiado
 PoC com volume baixo de atribuições; o cap não se manifesta no uso atual. Exige mudança de backend.
+
+---
+
+## DT-003 — Papéis usa abas; Cadastro usa seções empilhadas
+
+**Status:** aberto · **Aberto em:** 2026-06-10 · **Prioridade:** baixa · **Escopo:** `RoleEditPage`
+
+### Problema
+`RoleEditPage` coloca os sub-recursos (Usuários / Permissões) atrás de **abas**, enquanto o Cadastro (`ObraDetailPage`) empilha **seções visíveis** (Titularidades, Fonogramas) abaixo do formulário. É a última divergência de padrão de composição entre os dois módulos: nas abas o usuário não vê tudo de uma vez e precisa alternar.
+
+### Direção
+Avaliar trocar as abas por seções empilhadas em `RoleEditPage`, para paridade com o Cadastro. Faz sentido casar com o DT-001: se o save for unificado, as seções empilhadas com um único Salvar formam um modelo mais coeso que abas + ações imediatas.
+
+### Por que foi adiado
+Refactor visual maior, sem impacto funcional; baixa prioridade. Adiado conscientemente em 2026-06-10. O destino do clique (modal vs. página) já foi unificado; esta é a divergência restante.
+
+### Referência
+Crítica: `.impeccable/critique/2026-06-10T23-41-57Z__authz-papeis-acessos.md` (issue remanescente "Papéis usa abas; Cadastro usa seções empilhadas").
