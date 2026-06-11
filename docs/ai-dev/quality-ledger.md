@@ -685,3 +685,31 @@ Sugestao de melhoria no:
 - PRD: Nenhuma sugestao especifica.
 - TechSpec: Nenhuma sugestao especifica.
 - Template de Task: Nenhuma sugestao especifica.
+
+---
+
+## 2026-06-11 | PRD: prd-gestao-ciclo-vida-permissoes | Task: 2.0
+
+Modelo utilizado:
+sonnet
+
+### Problemas Identificados
+
+1. Categoria Tecnica: Violacao de padrao arquitetural
+   Severidade: Baixa
+   Fase Detectada: Revisao
+   Origem Provavel: Lacuna na TechSpec
+   Necessitou Reimplementacao Significativa? Nao
+   Descricao: Header `x-authz-version` nao e propagado no response de `GET /papeis-vinculados`. O padrao estabelecido em `acessosRoutes.ts` e `meRoutes.ts` propaga esse header ao frontend. `ctx.authzVersionHeader` esta disponivel mas nao utilizado. TechSpec menciona "propagar x-authz-version" nos pontos de integracao sem especificar direcao de propagacao, gerando ambiguidade. Nao bloqueante para esta task (leitura sem mutacao de estado; nao e criterio de sucesso da task 2.0).
+
+### Resumo da Tarefa
+
+Total de Problemas: 1 (observacao nao bloqueante)
+Categoria Tecnica mais frequente: Violacao de padrao arquitetural
+Origem mais frequente: Lacuna na TechSpec
+Indicio de fragilidade estrutural? Nao
+Sugestao de melhoria no:
+- PRD: Nenhuma sugestao especifica.
+- TechSpec: Detalhar direcao e responsabilidade de propagacao do header `x-authz-version` nos endpoints proprios do BFF (outgoing para upstream vs incoming para o frontend), separando leitura de mutacao.
+- Template de Task: Nenhuma sugestao especifica.
+- Skill: Nenhuma sugestao especifica.

@@ -8,6 +8,7 @@ import { registerMeRoutes } from './meRoutes.js';
 import { registerProxy } from './proxy.js';
 import { registerDashboardRoutes } from './dashboardRoutes.js';
 import { AuditMetricsRegistry } from './auditoria/auditMetrics.js';
+import { registerPermissionLifecycleRoutes } from './authzPermissionLifecycleRoutes.js';
 
 export interface BuildServerOptions {
   meCache?: MeCache;
@@ -16,7 +17,7 @@ export interface BuildServerOptions {
 }
 
 function isCorsOriginAllowed(origin: string, allowedOrigins: string[]): boolean {
-  return allowedOrigins.includes('*') || allowedOrigins.includes(origin);
+  return allowedOrigins.includes(origin);
 }
 
 function registerCors(server: FastifyInstance, allowedOrigins: string[]) {
@@ -113,6 +114,10 @@ export async function buildServer(
     config,
     cache: meCache,
     fetchImpl: options.fetchImpl as unknown as Parameters<typeof registerDashboardRoutes>[1]['fetchImpl'],
+  });
+  await registerPermissionLifecycleRoutes(server, {
+    config,
+    fetchImpl: options.fetchImpl as unknown as Parameters<typeof registerPermissionLifecycleRoutes>[1]['fetchImpl'],
   });
 
   for (const upstream of config.upstreams) {
