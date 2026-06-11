@@ -6,18 +6,12 @@ import { Loading } from '@components/ui/loading';
 import { PageHeader } from '@components/ui/page-header';
 import { Pagination } from '@components/ui/pagination';
 import { PermissionStatusBadge } from '../components/PermissionStatusBadge';
+import { PERMISSION_STATUS_FILTER_OPTIONS } from '../contract/authzPermissionLifecycleContract';
 import { usePermissionsCatalog } from '../hooks/usePermissionsCatalog';
-import type { PermissionFilters, PermissionStatus, PermissionSummary } from '../types/permission';
+import type { PermissionFilters, PermissionSummary } from '../types/permission';
 import styles from './PermissionsPage.module.css';
 
 const PAGE_SIZE = 20;
-
-const statusOptions: Array<{ value: '' | PermissionStatus; label: string }> = [
-  { value: '', label: 'Todos' },
-  { value: 'ACTIVE', label: 'Ativas' },
-  { value: 'DEPRECATED', label: 'Depreciadas' },
-  { value: 'DISABLED', label: 'Desabilitadas' },
-];
 
 const emptyFilters: PermissionFilters = {
   domain: '',
@@ -154,7 +148,7 @@ export function PermissionsPage() {
               status: e.target.value as PermissionFilters['status'],
             }))}
           >
-            {statusOptions.map((option) => (
+            {PERMISSION_STATUS_FILTER_OPTIONS.map((option) => (
               <option key={option.value || 'all'} value={option.value}>{option.label}</option>
             ))}
           </select>

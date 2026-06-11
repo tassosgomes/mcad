@@ -1,5 +1,6 @@
 import { Badge } from '@components/ui/badge';
 import type { PermissionStatus } from '../types/permission';
+import { getPermissionStatusLabel } from '../contract/authzPermissionLifecycleContract';
 
 const STATUS_VARIANT = {
   ACTIVE: 'success',
@@ -7,12 +8,6 @@ const STATUS_VARIANT = {
   DISABLED: 'muted',
 } as const;
 
-const STATUS_LABEL: Record<PermissionStatus, string> = {
-  ACTIVE: 'Ativa',
-  DEPRECATED: 'Depreciada',
-  DISABLED: 'Desabilitada',
-};
-
 export function PermissionStatusBadge({ status }: { status: PermissionStatus }) {
-  return <Badge variant={STATUS_VARIANT[status]}>{STATUS_LABEL[status]}</Badge>;
+  return <Badge variant={STATUS_VARIANT[status]}>{getPermissionStatusLabel(status)}</Badge>;
 }
