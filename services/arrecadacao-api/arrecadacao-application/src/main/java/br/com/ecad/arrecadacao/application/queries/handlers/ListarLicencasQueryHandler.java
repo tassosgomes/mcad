@@ -76,7 +76,7 @@ public class ListarLicencasQueryHandler
     private LicencaResponse toResponse(Licenca licenca, br.com.ecad.arrecadacao.domain.entities.UsuarioMusica usuarioMusica, br.com.ecad.arrecadacao.domain.entities.Rubrica rubrica) {
         return new LicencaResponse(
             licenca.getId(),
-            new UsuarioMusicaResumoResponse(usuarioMusica.getId(), usuarioMusica.getRazaoSocial(), usuarioMusica.getCnpj().getFormatado()),
+            new UsuarioMusicaResumoResponse(usuarioMusica.getId(), usuarioMusica.getRazaoSocial(), usuarioMusica.getCnpj().getValor()),
             new RubricaResumoResponse(rubrica.getId(), rubrica.getSigla(), rubrica.getNome(), rubrica.isAtivo()),
             licenca.getDataInicio(),
             licenca.getDataFim(),

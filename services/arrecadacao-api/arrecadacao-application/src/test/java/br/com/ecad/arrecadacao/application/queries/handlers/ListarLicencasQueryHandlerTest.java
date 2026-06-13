@@ -67,7 +67,7 @@ class ListarLicencasQueryHandlerTest {
         lenient().when(usuario.getRazaoSocial()).thenReturn("Razao Social test");
         var cnpj = mock(Cnpj.class);
         lenient().when(usuario.getCnpj()).thenReturn(cnpj);
-        lenient().when(cnpj.getFormatado()).thenReturn("00.000.000/0001-00");
+        lenient().when(cnpj.getValor()).thenReturn("00000000000100");
 
         var rubrica = mock(Rubrica.class);
         lenient().when(rubrica.getId()).thenReturn(rubricaId);

@@ -13,6 +13,7 @@ import { StatusBadgeLicenca } from '../components/StatusBadgeLicenca';
 import { AlterarStatusModal, type AcaoStatus } from '../components/AlterarStatusModal';
 import { HistoricoStatusTimeline } from '../components/HistoricoStatusTimeline';
 import styles from './LicencaDetailPage.module.css';
+import { formatCnpj } from '../../usuarios-musica/utils/formatters';
 
 function formatDate(dateStr: string | null): string {
   if (!dateStr) return 'Indefinida';
@@ -75,7 +76,7 @@ export function LicencaDetailPage() {
           <div className={styles.field}>
             <span className={styles.fieldLabel}>Usuário de Música</span>
             <span className={styles.fieldValue}>{licenca.usuarioMusica.razaoSocial}</span>
-            <span className={styles.fieldSub}>{licenca.usuarioMusica.cnpjFormatado}</span>
+            <span className={styles.fieldSub}>{formatCnpj(licenca.usuarioMusica.cnpj)}</span>
           </div>
           <div className={styles.field}>
             <span className={styles.fieldLabel}>Rubrica</span>

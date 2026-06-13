@@ -5,6 +5,7 @@ import { auditEntityTypes } from '@features/auditoria/constants/auditEntityTypes
 import { StatusBadgeLicenca } from './StatusBadgeLicenca';
 import type { Licenca } from '../types/licenca';
 import styles from './LicencasTable.module.css';
+import { formatCnpj } from '../../usuarios-musica/utils/formatters';
 
 interface LicencasTableProps {
   data: Licenca[];
@@ -45,7 +46,7 @@ export function LicencasTable({ data }: LicencasTableProps) {
             <tr key={licenca.id} className={styles.row}>
               <td className={styles.td}>
                 <span className={styles.primaryText}>{licenca.usuarioMusica.razaoSocial}</span>
-                <span className={styles.secondaryText}>{licenca.usuarioMusica.cnpjFormatado}</span>
+                <span className={styles.secondaryText}>{formatCnpj(licenca.usuarioMusica.cnpj)}</span>
               </td>
               <td className={styles.td}>
                 <span className={styles.chip}>{licenca.rubrica.sigla}</span>

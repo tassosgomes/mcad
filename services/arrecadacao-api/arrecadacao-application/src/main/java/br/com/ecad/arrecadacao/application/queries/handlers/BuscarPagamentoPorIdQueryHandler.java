@@ -93,7 +93,7 @@ public class BuscarPagamentoPorIdQueryHandler
         if (licenca.getUsuarioMusica() != null) {
             var um = licenca.getUsuarioMusica();
             usuarioMusica = new UsuarioMusicaResumoResponse(
-                um.getId(), um.getRazaoSocial(), um.getCnpj().getFormatado());
+                um.getId(), um.getRazaoSocial(), um.getCnpj().getValor());
         }
         if (licenca.getRubrica() != null) {
             var r = licenca.getRubrica();

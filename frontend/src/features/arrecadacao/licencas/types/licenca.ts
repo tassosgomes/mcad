@@ -5,7 +5,7 @@ export type StatusLicenca = 'ATIVA' | 'SUSPENSA' | 'ENCERRADA';
 export interface UsuarioMusicaResumo {
   id: string;
   razaoSocial: string;
-  cnpjFormatado: string;
+  cnpj: string;
 }
 
 export interface RubricaResumo {

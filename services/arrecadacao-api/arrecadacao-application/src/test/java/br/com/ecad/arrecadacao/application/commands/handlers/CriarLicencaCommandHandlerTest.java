@@ -71,7 +71,7 @@ class CriarLicencaCommandHandlerTest {
         lenient().when(usuarioMusica.getRazaoSocial()).thenReturn("Razao Social");
         br.com.ecad.arrecadacao.domain.valueobjects.Cnpj cnpjMock = mock(br.com.ecad.arrecadacao.domain.valueobjects.Cnpj.class);
         lenient().when(usuarioMusica.getCnpj()).thenReturn(cnpjMock);
-        lenient().when(cnpjMock.getFormatado()).thenReturn("00.000.000/0001-00");
+        lenient().when(cnpjMock.getValor()).thenReturn("00000000000100");
         
         rubrica = mock(Rubrica.class);
         lenient().when(rubrica.getId()).thenReturn(rubricaId);

@@ -88,7 +88,7 @@ public class ReativarLicencaCommandHandler implements CommandHandler<ReativarLic
     private LicencaResponse toResponse(Licenca licenca, UsuarioMusica usuarioMusica, Rubrica rubrica) {
         return new LicencaResponse(
             licenca.getId(),
-            new UsuarioMusicaResumoResponse(usuarioMusica.getId(), usuarioMusica.getRazaoSocial(), usuarioMusica.getCnpj().getFormatado()),
+            new UsuarioMusicaResumoResponse(usuarioMusica.getId(), usuarioMusica.getRazaoSocial(), usuarioMusica.getCnpj().getValor()),
             new RubricaResumoResponse(rubrica.getId(), rubrica.getSigla(), rubrica.getNome(), rubrica.isAtivo()),
             licenca.getDataInicio(),
             licenca.getDataFim(),

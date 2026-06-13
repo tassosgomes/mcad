@@ -60,7 +60,7 @@ export function LicencaForm({ onSubmit, onCancel, isSubmitting }: LicencaFormPro
   const usuariosResults: UsuarioMusicaResumo[] = (usuariosData?.items ?? []).map((u) => ({
     id: u.id,
     razaoSocial: u.razaoSocial,
-    cnpjFormatado: u.cnpjFormatado ?? u.cnpj ?? u.cnpjValor ?? '',
+    cnpj: u.cnpjFormatado ?? u.cnpj ?? u.cnpjValor ?? '',
   }));
 
   const { data: rubricasData } = useQuery({
@@ -126,7 +126,7 @@ export function LicencaForm({ onSubmit, onCancel, isSubmitting }: LicencaFormPro
             renderItem={(u, highlighted) => (
               <div className={highlighted ? styles.autocompleteItemHighlighted : styles.autocompleteItem}>
                 <span className={styles.autocompleteRazaoSocial}>{u.razaoSocial}</span>
-                <span className={styles.autocompleteCnpj}>{u.cnpjFormatado}</span>
+                <span className={styles.autocompleteCnpj}>{u.cnpj}</span>
               </div>
             )}
             onSelect={(u) => {

@@ -85,7 +85,7 @@ class ReativarLicencaCommandHandlerTest {
         var usuario = mock(UsuarioMusica.class);
         br.com.ecad.arrecadacao.domain.valueobjects.Cnpj cnpjMock = mock(br.com.ecad.arrecadacao.domain.valueobjects.Cnpj.class);
         when(usuario.getCnpj()).thenReturn(cnpjMock);
-        when(cnpjMock.getFormatado()).thenReturn("00.000.000/0001-00");
+        when(cnpjMock.getValor()).thenReturn("00000000000100");
         var rubrica = mock(Rubrica.class);
         when(usuarioMusicaRepository.findById(any())).thenReturn(Optional.of(usuario));
         when(rubricaRepository.findById(any())).thenReturn(Optional.of(rubrica));
