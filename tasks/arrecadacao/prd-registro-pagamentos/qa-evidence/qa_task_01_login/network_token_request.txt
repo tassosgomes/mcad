@@ -1,0 +1,1 @@
+grant_type=authorization_code&redirect_uri=https%3A%2F%2Fmcad.tasso.dev.br%2Fcallback&code=S8aFceinuGe0_rIOiGj4wPjxraslsJJedmvWrTZJj1g&code_verifier=a4336a3df6484b2eb2b8bc09cd78aba4faa00a80c1c3466195f4d1642d9b56795629d942199c46a0a14d903e0de0d21a&resource=https%3A%2F%2Fapi.mcad.local&client_id=b0o8w18syrv95gd2o3kee
