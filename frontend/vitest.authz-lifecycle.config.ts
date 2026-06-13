@@ -24,6 +24,7 @@ export default defineConfig({
       'src/features/authz/api/authzPermissionLifecycleApi.test.ts',
       'src/features/authz/hooks/usePermissionLifecycle.test.tsx',
       'src/features/authz/pages/PermissionDetailPage.test.tsx',
+      'src/features/authz/pages/PermissionsPage.test.tsx',
     ],
     coverage: {
       all: true,

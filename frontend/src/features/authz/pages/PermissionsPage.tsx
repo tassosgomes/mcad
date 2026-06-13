@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ChevronRight, RefreshCw, RotateCcw, Search, ShieldCheck } from 'lucide-react';
+import { ChevronRight, Plus, RefreshCw, RotateCcw, Search, ShieldCheck } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@components/ui/button';
 import { Loading } from '@components/ui/loading';
@@ -7,24 +7,28 @@ import { PageHeader } from '@components/ui/page-header';
 import { Pagination } from '@components/ui/pagination';
 import { PermissionStatusBadge } from '../components/PermissionStatusBadge';
 import { PERMISSION_STATUS_FILTER_OPTIONS } from '../contract/authzPermissionLifecycleContract';
+import { usePermissionLifecycleCapabilities } from '../hooks/usePermissionLifecycle';
 import { usePermissionsCatalog } from '../hooks/usePermissionsCatalog';
 import type { PermissionFilters, PermissionSummary } from '../types/permission';
 import styles from './PermissionsPage.module.css';
 
 const PAGE_SIZE = 20;
 
-const emptyFilters: PermissionFilters = {
+const DEFAULT_FILTERS: PermissionFilters = {
   domain: '',
   area: '',
   service: '',
-  status: '',
+  status: 'ACTIVE',
   q: '',
 };
 
+const STATUS_FILTER_OPTIONS = PERMISSION_STATUS_FILTER_OPTIONS.filter((option) => option.value !== '');
+
 export function PermissionsPage() {
   const navigate = useNavigate();
-  const [filters, setFilters] = useState<PermissionFilters>(emptyFilters);
-  const [submittedFilters, setSubmittedFilters] = useState<PermissionFilters>(emptyFilters);
+  const capabilities = usePermissionLifecycleCapabilities();
+  const [filters, setFilters] = useState<PermissionFilters>(DEFAULT_FILTERS);
+  const [submittedFilters, setSubmittedFilters] = useState<PermissionFilters>(DEFAULT_FILTERS);
   const [page, setPage] = useState(0);
 
   const permissionsQuery = usePermissionsCatalog(submittedFilters, page, PAGE_SIZE);
@@ -38,8 +42,8 @@ export function PermissionsPage() {
   };
 
   const handleReset = () => {
-    setFilters(emptyFilters);
-    setSubmittedFilters(emptyFilters);
+    setFilters(DEFAULT_FILTERS);
+    setSubmittedFilters(DEFAULT_FILTERS);
     setPage(0);
   };
 
@@ -79,6 +83,22 @@ export function PermissionsPage() {
         description="Catálogo técnico de autorização fina consumido pelas APIs do MCAD."
         action={(
           <>
+            <div className={styles.createAction}>
+              <Button
+                type="button"
+                onClick={() => navigate('/autorizacao/permissoes/nova')}
+                disabled={!capabilities.canCreate}
+                aria-describedby={!capabilities.canCreate ? 'permission-create-unavailable' : undefined}
+              >
+                <Plus size={16} />
+                Cadastrar permissão
+              </Button>
+              {!capabilities.canCreate && (
+                <span id="permission-create-unavailable" className={styles.actionHint}>
+                  Cadastro indisponível até o ecad-authz expor o endpoint administrativo.
+                </span>
+              )}
+            </div>
             <Button variant="ghost" type="button" onClick={() => navigate('/autorizacao/papeis')}>
               <ShieldCheck size={16} />
               Gerenciar papéis
@@ -148,10 +168,13 @@ export function PermissionsPage() {
               status: e.target.value as PermissionFilters['status'],
             }))}
           >
-            {PERMISSION_STATUS_FILTER_OPTIONS.map((option) => (
+            {STATUS_FILTER_OPTIONS.map((option) => (
               <option key={option.value || 'all'} value={option.value}>{option.label}</option>
             ))}
           </select>
+          <span className={styles.fieldHint}>
+            A listagem abre em Ativas. Selecione Removidas para consultar permissões removidas.
+          </span>
         </div>
         <Button type="submit">
           <Search size={16} />
