@@ -1,0 +1,203 @@
+{
+  "version": "1.0.0",
+  "timestamp": "2026-06-11T00:00:00Z",
+  "mode": "scoped",
+  "rationale": "Escopo derivado de PRD + TechSpec. Ativos críticos definidos pelo PRD: dados de CPF (PII/LGPD), ações irreversíveis (finalizar, cancelar), trilha de auditoria, gestão de papéis (atribuir/remover). Componentes identificados: BFF (novos endpoints /api/acessos/* e /api/distribuicao/processos/{id}/historico), Cadastro API (mascaramento server-side de CPF), Distribuicao API (permissões de status), Frontend (gating de componentes), Seeds (catálogo de permissões).",
+  "critical_assets": [
+    {
+      "asset_id": "ASSET-001",
+      "name": "CPF de Titular (PII)",
+      "classification": "LGPD/PII",
+      "description": "Dados de CPF/CNPJ de titulares, mascarados por padrão. Permissão cadastro:default:titular:ver-cpf-completo controla acesso.",
+      "paths": [
+        "services/cadastro-api/2-Application/Cadastro.Application/Titulares/DocumentoMasking.cs",
+        "services/cadastro-api/2-Application/Cadastro.Application/Titulares/Queries/ListarTitularesQueryHandler.cs",
+        "services/cadastro-api/2-Application/Cadastro.Application/Titulares/Queries/BuscarTitularPorIdQueryHandler.cs",
+        "services/cadastro-api/1-Services/Cadastro.API/Authorization/HttpContextCurrentUserPermissions.cs",
+        "seeds/mcad/cadastro.permissions.json"
+      ],
+      "owasp_categories": ["A01", "A02", "A04"]
+    },
+    {
+      "asset_id": "ASSET-002",
+      "name": "Processo de Distribuicao (ações irreversíveis)",
+      "classification": "Dados internos",
+      "description": "Ações de status que movem a máquina de estados: aprovar, finalizar, cancelar. irreversíveis.",
+      "paths": [
+        "services/distribuicao-api/distribuicao-api/src/main/java/br/com/ecad/distribuicao/api/controllers/ProcessoController.java",
+        "services/distribuicao-api/distribuicao-api/src/main/java/br/com/ecad/distribuicao/api/controllers/ProcessoCalculoController.java",
+        "seeds/mcad/distribuicao.permissions.json"
+      ],
+      "owasp_categories": ["A01", "A04"]
+    },
+    {
+      "asset_id": "ASSET-003",
+      "name": "Trilha de Auditoria (Histórico de Alterações)",
+      "classification": "Dados internos",
+      "description": "Dados de timeline de alterações de Processo, consumidos via ecad-auditoria. Exclusivo do Gerente.",
+      "paths": [
+        "services/bff/src/historicoRoutes.ts",
+        "frontend/src/features/distribuicao/processos/components/HistoricoAlteracoesTab.tsx",
+        "seeds/mcad/distribuicao.permissions.json"
+      ],
+      "owasp_categories": ["A01", "A04"]
+    },
+    {
+      "asset_id": "ASSET-004",
+      "name": "Gestão de Papéis (atribuição/remoção)",
+      "classification": "Dados internos",
+      "description": "Capacidade de atribuir e remover papéis de usuários. Exclusivo do Gestor de Acessos.",
+      "paths": [
+        "services/bff/src/acessosRoutes.ts",
+        "frontend/src/features/autorizacao/atribuicoes/AtribuicoesPage.tsx",
+        "seeds/mcad/acessos.permissions.json",
+        "seeds/mcad/roles.json"
+      ],
+      "owasp_categories": ["A01", "A04", "A07"]
+    },
+    {
+      "asset_id": "ASSET-005",
+      "name": "Catálogo de Permissões (seeds)",
+      "classification": "Dados internos",
+      "description": "Arquivos JSON que definem permissões e perfis built-in. Mudanças afetam runtime de autorização.",
+      "paths": [
+        "seeds/mcad/*.json"
+      ],
+      "owasp_categories": ["A05", "A08"]
+    }
+  ],
+  "sensitive_flows": [
+    {
+      "flow_id": "FLOW-001",
+      "name": "Atribuição de perfil via Gestor de Acessos",
+      "description": "POST /api/acessos/papeis/atribuir → BFF → ecad-authz POST /v1/users/{id}/roles",
+      "assets": ["ASSET-004"],
+      "entry_points": ["BFF /api/acessos/papeis/atribuir", "BFF /api/acessos/papeis/atribuir/:id (DELETE)"],
+      "auth_required": true
+    },
+    {
+      "flow_id": "FLOW-002",
+      "name": "Visualização de histórico de alterações",
+      "description": "ProcessoDetailPage → BFF /api/distribuicao/processos/{id}/historico → ecad-auditoria timeline",
+      "assets": ["ASSET-003"],
+      "entry_points": ["BFF /api/distribuicao/processos/{id}/historico"],
+      "auth_required": true
+    },
+    {
+      "flow_id": "FLOW-003",
+      "name": "Consulta de CPF completo (via ACL Cadastro)",
+      "description": "Distribuicao → Cadastro GET /api/v1/titulares/{id} → mascaramento por permissão",
+      "assets": ["ASSET-001"],
+      "entry_points": ["Cadastro /api/v1/titulares", "Cadastro /api/v1/titulares/{id}"],
+      "auth_required": true
+    },
+    {
+      "flow_id": "FLOW-004",
+      "name": "Ações irreversíveis de Processo",
+      "description": "POST /api/v1/processos/{id}/finalizar, /cancelar",
+      "assets": ["ASSET-002"],
+      "entry_points": ["Distribuicao /api/v1/processos/{id}/finalizar", "Distribuicao /api/v1/processos/{id}/cancelar"],
+      "auth_required": true
+    },
+    {
+      "flow_id": "FLOW-005",
+      "name": "Visualização escopada de assignments pelo Gerente",
+      "description": "GET /api/acessos/assignments → BFF filtra por domínio do Gerente",
+      "assets": ["ASSET-004"],
+      "entry_points": ["BFF /api/acessos/assignments"],
+      "auth_required": true
+    }
+  ],
+  "endpoints": [
+    {
+      "method": "POST",
+      "path": "/api/acessos/papeis/atribuir",
+      "permission": "acessos:default:papel:atribuir",
+      "service": "BFF"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/acessos/papeis/atribuir/{assignmentId}",
+      "permission": "acessos:default:papel:remover",
+      "service": "BFF"
+    },
+    {
+      "method": "GET",
+      "path": "/api/acessos/assignments",
+      "permission": "acessos:default:papel:listar OR acessos:{dominio}:papel:visualizar",
+      "service": "BFF"
+    },
+    {
+      "method": "GET",
+      "path": "/api/acessos/papeis",
+      "permission": "acessos:default:papel:listar",
+      "service": "BFF"
+    },
+    {
+      "method": "GET",
+      "path": "/api/distribuicao/processos/{id}/historico",
+      "permission": "distribuicao:default:processo:ver-historico-alteracoes",
+      "service": "BFF"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/titulares",
+      "permission": "cadastro:default:titular:ver-cpf-completo",
+      "service": "Cadastro"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/titulares/{id}",
+      "permission": "cadastro:default:titular:ver-cpf-completo",
+      "service": "Cadastro"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/processos/{id}/finalizar",
+      "permission": "distribuicao:default:processo:finalizar",
+      "service": "Distribuicao"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/processos/{id}/cancelar",
+      "permission": "distribuicao:default:processo:cancelar",
+      "service": "Distribuicao"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/processos/{id}/aprovar",
+      "permission": "distribuicao:default:processo:aprovar",
+      "service": "Distribuicao"
+    }
+  ],
+  "integrations": [
+    {
+      "name": "ecad-authz",
+      "type": "HTTP REST",
+      "endpoints": ["GET /v1/me/authorization-context", "GET /v1/users", "POST /v1/users/{id}/roles", "DELETE /v1/users/{id}/roles/{roleKey}"],
+      "auth": "JWT Bearer"
+    },
+    {
+      "name": "ecad-auditoria",
+      "type": "HTTP REST",
+      "endpoints": ["GET /entities/{entityType}/{entityId}/timeline"],
+      "auth": "JWT Bearer"
+    },
+    {
+      "name": "Logto / Keycloak",
+      "type": "OIDC IdP",
+      "endpoints": ["Authorization endpoint", "Token endpoint"],
+      "auth": "OIDC"
+    },
+    {
+      "name": "RabbitMQ",
+      "type": "AMQP",
+      "description": "Outbox pattern, CloudEvents"
+    },
+    {
+      "name": "PostgreSQL",
+      "type": "Database",
+      "description": "Schema-per-service"
+    }
+  ]
+}

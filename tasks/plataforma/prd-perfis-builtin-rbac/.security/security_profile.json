@@ -1,0 +1,130 @@
+{
+  "version": "1.0.0",
+  "timestamp": "2026-06-11T00:00:00Z",
+  "repository": "mcad",
+  "target_dir": "/home/tsgomes/mcad",
+  "phase": "prd-perfis-builtin-rbac",
+  "stacks": [
+    {
+      "name": "Java / Spring Boot",
+      "path": "services/distribuicao-api, services/arrecadacao-api",
+      "markers": ["pom.xml", "@RestController", "@Entity"],
+      "version": "Spring Boot 3.3",
+      "components": [
+        "distribuicao-api (REST)",
+        "arrecadacao-api (REST)",
+        "ecad-authz SDK (Spring Boot starter)",
+        "ecad-auditoria integration"
+      ]
+    },
+    {
+      "name": ".NET / ASP.NET Core",
+      "path": "services/cadastro-api, services/identificacao-api",
+      "markers": ["*.csproj", "*.sln", "Program.cs"],
+      "version": ".NET 8",
+      "components": [
+        "cadastro-api (Minimal API)",
+        "identificacao-api (Minimal API)"
+      ]
+    },
+    {
+      "name": "Node.js / TypeScript",
+      "path": "services/bff, services/identity-sync-api, frontend",
+      "markers": ["package.json", "tsconfig.json", "Fastify", "React 19"],
+      "version": "Node.js 20+, React 19, Vite, TanStack Query",
+      "components": [
+        "bff (Fastify gateway)",
+        "identity-sync-api (Fastify)",
+        "ai-orchestrator (Fastify)",
+        "frontend (React SPA)"
+      ]
+    },
+    {
+      "name": "Docker",
+      "path": "services/*/Dockerfile, infra/schemas/Dockerfile",
+      "markers": ["Dockerfile"],
+      "version": "Docker multi-stage",
+      "components": [
+        "cadastro-api container",
+        "identificacao-api container",
+        "distribuicao-api container",
+        "arrecadacao-api container",
+        "bff container",
+        "frontend container",
+        "identity-sync-api container",
+        "ai-orchestrator container"
+      ]
+    }
+  ],
+  "attack_surface": {
+    "api_rest_public": [
+      "/api/v1/processos (Distribuicao)",
+      "/api/v1/processos/{id}/aprovar",
+      "/api/v1/processos/{id}/finalizar",
+      "/api/v1/processos/{id}/cancelar",
+      "/api/v1/processos/{id}/calcular",
+      "/api/v1/rubricas (Arrecadacao & Distribuicao)",
+      "/api/v1/pagamentos",
+      "/api/v1/licencas",
+      "/api/v1/usuarios-musica",
+      "/api/v1/verbas",
+      "/api/v1/uda",
+      "/api/v1/dashboard (Arrecadacao & Distribuicao)",
+      "/api/v1/titulares (Cadastro)",
+      "/api/v1/titulares/{id} (Cadastro)",
+      "/api/me (BFF)",
+      "/api/acessos/* (BFF NOVO)",
+      "/api/distribuicao/processos/{id}/historico (BFF NOVO)",
+      "/autorizacao/* (Frontend)",
+      "/distribuicao/* (Frontend)"
+    ],
+    "workers_consumers": [
+      "RabbitMQ Outbox poller (Java + .NET)",
+      "Identity sync worker",
+      "AI orchestrator"
+    ],
+    "cli": [
+      "scripts/seed-authz.sh",
+      "scripts/provision-keycloak.sh"
+    ],
+    "persistence": [
+      "PostgreSQL 16 (per service schema)",
+      "JPA / Hibernate (Java)",
+      "EF Core (PostgreSQL) (.NET)"
+    ],
+    "auth": [
+      "JWT Bearer (Logto / Keycloak)",
+      "ecad-authz Decision API",
+      "Permission claims (4-segmentos)",
+      "Spring Security (@RequiresPermission)",
+      "ASP.NET authorization policies",
+      "Frontend usePermissions / Can / RequirePermission"
+    ],
+    "crypto_manual": [
+      "CPF masking (server-side logic in DocumentoMasking)",
+      "JWT signing (external — Logto/Keycloak)"
+    ],
+    "http_outbound": [
+      "BFF → ecad-authz (HTTP REST)",
+      "BFF → ecad-auditoria (HTTP REST)",
+      "Distribuicao → Cadastro (inter-service ACL)",
+      "Java services → RabbitMQ (AMQP)",
+      ".NET services → RabbitMQ (AMQP)"
+    ],
+    "secrets_in_config": [
+      ".env.example",
+      "docker-compose.dev.yml",
+      "appsettings*.json"
+    ]
+  },
+  "docs_present": [
+    "PRD: tasks/plataforma/prd-perfis-builtin-rbac/prd.md",
+    "TechSpec: tasks/plataforma/prd-perfis-builtin-rbac/techspec.md"
+  ],
+  "docs_absent": [
+    "OpenAPI spec",
+    "IaC manifests (Terraform, K8s YAML)",
+    "Dedicated security docs"
+  ],
+  "docker_available": true
+}
