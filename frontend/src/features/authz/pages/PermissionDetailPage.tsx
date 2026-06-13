@@ -8,7 +8,8 @@ import { Loading } from '@components/ui/loading';
 import { PageHeader } from '@components/ui/page-header';
 import { useToast } from '@components/ui/toast';
 import { PermissionStatusBadge } from '../components/PermissionStatusBadge';
-import { useDeprecatePermission, usePermissionDetails } from '../hooks/usePermissionsCatalog';
+import { useDeprecatePermissionGoverned } from '../hooks/usePermissionLifecycle';
+import { usePermissionDetails } from '../hooks/usePermissionsCatalog';
 import styles from './PermissionDetailPage.module.css';
 
 function DetailItem({ label, value, mono = false }: { label: string; value?: string | null; mono?: boolean }) {
@@ -27,8 +28,9 @@ export function PermissionDetailPage() {
   const [confirmDeprecate, setConfirmDeprecate] = useState(false);
 
   const permissionQuery = usePermissionDetails(id ?? null);
-  const deprecateMutation = useDeprecatePermission();
+  const deprecateMutation = useDeprecatePermissionGoverned();
   const permission = permissionQuery.data;
+  const canDeprecatePermission = permission?.status === 'ACTIVE';
 
   const handleConfirmDeprecate = () => {
     if (!permission) return;
@@ -82,15 +84,17 @@ export function PermissionDetailPage() {
           action={(
             <>
               <PermissionStatusBadge status={permission.status} />
-              <Button
-                variant="danger"
-                type="button"
-                disabled={permission.status === 'DEPRECATED' || deprecateMutation.isPending}
-                onClick={() => setConfirmDeprecate(true)}
-              >
-                <Archive size={16} />
-                Depreciar permissão
-              </Button>
+              {canDeprecatePermission ? (
+                <Button
+                  variant="danger"
+                  type="button"
+                  disabled={deprecateMutation.isPending}
+                  onClick={() => setConfirmDeprecate(true)}
+                >
+                  <Archive size={16} />
+                  Depreciar permissão
+                </Button>
+              ) : null}
             </>
           )}
         />

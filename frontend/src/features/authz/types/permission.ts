@@ -35,3 +35,28 @@ export interface PermissionFilters {
   status: '' | PermissionStatus;
   q: string;
 }
+
+export interface LinkedRole {
+  id: string;
+  key: string;
+  displayName: string;
+  status: 'ACTIVE' | 'INACTIVE';
+}
+
+export interface PermissionRemovalEligibility {
+  permissionId: string;
+  permissionStatus: PermissionStatus;
+  linkedRoles: LinkedRole[];
+  canRemove: boolean;
+  blockingReason?: 'STATUS_NOT_DEPRECATED' | 'ROLE_LINKS_PRESENT';
+}
+
+export interface CreatePermissionInput {
+  key: string;
+  displayName: string;
+  description?: string | null;
+  domain: string;
+  area: string;
+  resource: string;
+  action: string;
+}

@@ -74,7 +74,10 @@ export const oidcConfig: UserManagerSettings = {
   },
   automaticSilentRenew: true,
   userStore: new WebStorageStateStore({
-    store: new InMemoryWebStorage(),
+    store:
+      typeof window !== 'undefined' && window.sessionStorage
+        ? window.sessionStorage
+        : new InMemoryWebStorage(),
   }),
 };
 

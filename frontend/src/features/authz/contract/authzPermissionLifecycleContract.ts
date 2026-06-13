@@ -109,3 +109,16 @@ export function buildPermissionOperationUnavailableError(
     phase: 'PHASE_2',
   };
 }
+
+/**
+ * Type guard for the standardised error thrown when a Phase 2 BFF route
+ * responds with 501 AUTHZ_PERMISSION_OPERATION_UNAVAILABLE.
+ * Allows pages and hooks to branch on this specific error shape without
+ * coupling to HTTP status codes directly.
+ */
+export function isPermissionOperationUnavailableError(
+  error: unknown,
+): error is PermissionOperationUnavailableError {
+  if (!error || typeof error !== 'object') return false;
+  return (error as Record<string, unknown>).code === 'AUTHZ_PERMISSION_OPERATION_UNAVAILABLE';
+}

@@ -6,6 +6,7 @@ import {
   buildPermissionOperationUnavailableError,
   getPermissionStatusLabel,
   isPermissionLifecycleOperationAvailable,
+  isPermissionOperationUnavailableError,
   PERMISSION_STATUS_FILTER_OPTIONS,
 } from './authzPermissionLifecycleContract';
 
@@ -47,5 +48,24 @@ describe('authzPermissionLifecycleContract', () => {
       missingEndpoint: 'POST /v1/permissions/{permissionId}/remove',
       phase: 'PHASE_2',
     });
+  });
+
+  it('isPermissionOperationUnavailableError correctly identifies the error shape', () => {
+    const unavailableError = buildPermissionOperationUnavailableError('create');
+    expect(isPermissionOperationUnavailableError(unavailableError)).toBe(true);
+
+    // BFF throws the body merged with status/path — the guard must work on that shape too
+    expect(
+      isPermissionOperationUnavailableError({
+        code: 'AUTHZ_PERMISSION_OPERATION_UNAVAILABLE',
+        status: 501,
+        path: '/autorizacao/permissoes',
+      }),
+    ).toBe(true);
+
+    expect(isPermissionOperationUnavailableError(null)).toBe(false);
+    expect(isPermissionOperationUnavailableError(undefined)).toBe(false);
+    expect(isPermissionOperationUnavailableError({ code: 'OTHER_ERROR' })).toBe(false);
+    expect(isPermissionOperationUnavailableError('string error')).toBe(false);
   });
 });
