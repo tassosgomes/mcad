@@ -94,13 +94,6 @@ const ROLE_WITH_PERM_ACTIVE = {
   status: 'ACTIVE',
 };
 
-const ROLE_WITHOUT_PERM_ACTIVE = {
-  id: 'role-2',
-  key: 'authz.admin.operador',
-  displayName: 'Operador Authz',
-  status: 'ACTIVE',
-};
-
 const ROLE_WITH_PERM_INACTIVE = {
   id: 'role-3',
   key: 'authz.admin.analista',
@@ -109,19 +102,11 @@ const ROLE_WITH_PERM_INACTIVE = {
 };
 
 const ALL_ROLES_BODY = {
-  content: [ROLE_WITH_PERM_ACTIVE, ROLE_WITHOUT_PERM_ACTIVE, ROLE_WITH_PERM_INACTIVE],
+  content: [ROLE_WITH_PERM_ACTIVE, ROLE_WITH_PERM_INACTIVE],
   page: 0,
   size: 200,
-  totalElements: 3,
+  totalElements: 2,
 };
-
-// role-1 and role-3 contain perm-1; role-2 does not
-function rolePermissionsHandler(roleId: string, permId: string) {
-  if (roleId === 'role-1' || roleId === 'role-3') {
-    return [{ id: permId, key: 'authz:admin:permissao:visualizar' }];
-  }
-  return [];
-}
 
 function standardHandler(permissions: string[], permissionFixture: typeof PERMISSION_DEPRECATED) {
   return (url: string, _init: { method?: string }) => {
@@ -133,13 +118,8 @@ function standardHandler(permissions: string[], permissionFixture: typeof PERMIS
       return { status: 200, body: permissionFixture };
     }
 
-    if (url.startsWith('http://authz.local/v1/roles?')) {
+    if (url.startsWith(`http://authz.local/v1/permissions/${permissionFixture.id}/roles?`)) {
       return { status: 200, body: ALL_ROLES_BODY };
-    }
-
-    const rolePermMatch = /\/v1\/roles\/([^/]+)\/permissions/.exec(url);
-    if (rolePermMatch) {
-      return { status: 200, body: rolePermissionsHandler(rolePermMatch[1], permissionFixture.id) };
     }
 
     return { status: 404, body: { code: 'NOT_FOUND' } };
@@ -237,7 +217,7 @@ test('GET /api/autorizacao/permissoes/:id/papeis-vinculados returns 503 when ups
       headers: { authorization: 'Bearer token' },
     });
     assert.equal(response.statusCode, 503);
-    assert.equal(response.json().code, 'AUTHZ_UNAVAILABLE');
+    assert.equal(response.json().code, 'AUTHZ_SERVICE_UNAVAILABLE');
   } finally {
     await server.close();
   }
@@ -256,23 +236,16 @@ test('GET /api/autorizacao/permissoes/:id/papeis-vinculados - DEPRECATED with no
     if (url === `http://authz.local/v1/permissions/${PERMISSION_DEPRECATED.id}`) {
       return { status: 200, body: PERMISSION_DEPRECATED };
     }
-    if (url.startsWith('http://authz.local/v1/roles?')) {
+    if (url.startsWith('http://authz.local/v1/permissions/perm-1/roles?')) {
       return {
         status: 200,
         body: {
-          content: [ROLE_WITH_PERM_INACTIVE, ROLE_WITHOUT_PERM_ACTIVE],
+          content: [ROLE_WITH_PERM_INACTIVE],
           page: 0,
           size: 200,
-          totalElements: 2,
+          totalElements: 1,
         },
       };
-    }
-    const rolePermMatch = /\/v1\/roles\/([^/]+)\/permissions/.exec(url);
-    if (rolePermMatch) {
-      const roleId = rolePermMatch[1];
-      // Only INACTIVE role (role-3) contains the permission
-      const perms = roleId === 'role-3' ? [{ id: 'perm-1', key: PERMISSION_DEPRECATED.key }] : [];
-      return { status: 200, body: perms };
     }
     return { status: 404, body: { code: 'NOT_FOUND' } };
   });
@@ -299,8 +272,8 @@ test('GET /api/autorizacao/permissoes/:id/papeis-vinculados - DEPRECATED with no
     // role-3 (INACTIVE) is still in linkedRoles for display purposes
     assert.equal(body.linkedRoles.length, 1);
     assert.equal(body.linkedRoles[0].id, 'role-3');
-    // Verify the roles call was made with correct query params
-    const rolesCall = calls.find((c) => c.url.includes('/v1/roles?'));
+    // Verify the official linked roles call was made with correct query params
+    const rolesCall = calls.find((c) => c.url.includes('/v1/permissions/perm-1/roles?'));
     assert.ok(rolesCall?.url.includes('size=200'));
     assert.ok(rolesCall?.url.includes('sort=displayName,asc'));
   } finally {
@@ -320,12 +293,8 @@ test('GET /api/autorizacao/permissoes/:id/papeis-vinculados - DEPRECATED with no
     if (url === `http://authz.local/v1/permissions/${PERMISSION_DEPRECATED.id}`) {
       return { status: 200, body: PERMISSION_DEPRECATED };
     }
-    if (url.startsWith('http://authz.local/v1/roles?')) {
-      return { status: 200, body: { content: [ROLE_WITHOUT_PERM_ACTIVE], page: 0, size: 200, totalElements: 1 } };
-    }
-    const rolePermMatch = /\/v1\/roles\/([^/]+)\/permissions/.exec(url);
-    if (rolePermMatch) {
-      return { status: 200, body: [] }; // no role has this permission
+    if (url.startsWith('http://authz.local/v1/permissions/perm-1/roles?')) {
+      return { status: 200, body: { content: [], page: 0, size: 200, totalElements: 0 } };
     }
     return { status: 404, body: { code: 'NOT_FOUND' } };
   });
@@ -396,7 +365,7 @@ test('GET /api/autorizacao/permissoes/:id/papeis-vinculados - DEPRECATED with AC
   }
 });
 
-test('GET /api/autorizacao/permissoes/:id/papeis-vinculados returns 503 when fan-out fails', async () => {
+test('GET /api/autorizacao/permissoes/:id/papeis-vinculados returns 503 when official linked roles lookup fails', async () => {
   const { fetchImpl } = buildFakeFetch((url, _init) => {
     if (url === 'http://authz.local/v1/me/authorization-context') {
       return {
@@ -408,14 +377,7 @@ test('GET /api/autorizacao/permissoes/:id/papeis-vinculados returns 503 when fan
     if (url === `http://authz.local/v1/permissions/${PERMISSION_DEPRECATED.id}`) {
       return { status: 200, body: PERMISSION_DEPRECATED };
     }
-    if (url.startsWith('http://authz.local/v1/roles?')) {
-      return {
-        status: 200,
-        body: { content: [ROLE_WITH_PERM_ACTIVE], page: 0, size: 200, totalElements: 1 },
-      };
-    }
-    // fan-out call fails
-    if (/\/v1\/roles\/[^/]+\/permissions/.test(url)) {
+    if (url.startsWith('http://authz.local/v1/permissions/perm-1/roles?')) {
       return { status: 500, body: {} };
     }
     return { status: 404, body: { code: 'NOT_FOUND' } };
@@ -429,7 +391,7 @@ test('GET /api/autorizacao/permissoes/:id/papeis-vinculados returns 503 when fan
       headers: { authorization: 'Bearer token' },
     });
     assert.equal(response.statusCode, 503);
-    assert.equal(response.json().code, 'AUTHZ_UNAVAILABLE');
+    assert.equal(response.json().code, 'AUTHZ_SERVICE_UNAVAILABLE');
   } finally {
     await server.close();
   }
@@ -626,7 +588,7 @@ test('POST /api/autorizacao/permissoes/:id/depreciar returns 503 when ecad-authz
       headers: { authorization: 'Bearer token' },
     });
     assert.equal(response.statusCode, 503);
-    assert.equal(response.json().code, 'AUTHZ_UNAVAILABLE');
+    assert.equal(response.json().code, 'AUTHZ_SERVICE_UNAVAILABLE');
   } finally {
     await server.close();
   }
@@ -709,8 +671,27 @@ test('POST /api/autorizacao/permissoes/:id/depreciar publishes FAILURE audit eve
 });
 
 // ---------------------------------------------------------------------------
-// Phase 2 stubs — POST routes return 501 AUTHZ_PERMISSION_OPERATION_UNAVAILABLE
+// POST /api/autorizacao/permissoes
 // ---------------------------------------------------------------------------
+
+const CREATE_PAYLOAD = {
+  key: 'cadastro:obras:obra:aprovar',
+  displayName: 'Aprovar obra',
+  description: 'Permite aprovar obras.',
+  domain: 'cadastro',
+  area: 'obras',
+  resource: 'obra',
+  action: 'aprovar',
+};
+
+const CREATED_PERMISSION = {
+  id: 'perm-new',
+  ...CREATE_PAYLOAD,
+  serviceName: 'ecad-authz-service',
+  status: 'ACTIVE',
+  createdAt: '2026-06-13T00:00:00Z',
+  updatedAt: '2026-06-13T00:00:00Z',
+};
 
 test('POST /api/autorizacao/permissoes without Authorization returns 401', async () => {
   const { fetchImpl } = buildFakeFetch(
@@ -726,10 +707,8 @@ test('POST /api/autorizacao/permissoes without Authorization returns 401', async
   }
 });
 
-test('POST /api/autorizacao/permissoes returns 501 AUTHZ_PERMISSION_OPERATION_UNAVAILABLE', async () => {
-  const { fetchImpl } = buildFakeFetch(
-    standardHandler(['authz:admin:permission:visualizar'], PERMISSION_DEPRECATED),
-  );
+test('POST /api/autorizacao/permissoes without create permission returns 403', async () => {
+  const { fetchImpl } = buildFakeFetch(standardHandler([], PERMISSION_DEPRECATED));
   const server = await buildServer(BASE_CONFIG, { fetchImpl });
 
   try {
@@ -737,22 +716,157 @@ test('POST /api/autorizacao/permissoes returns 501 AUTHZ_PERMISSION_OPERATION_UN
       method: 'POST',
       url: '/api/autorizacao/permissoes',
       headers: { authorization: 'Bearer token', 'content-type': 'application/json' },
-      payload: JSON.stringify({ key: 'authz:admin:permissao:criar' }),
+      payload: JSON.stringify(CREATE_PAYLOAD),
     });
-    assert.equal(response.statusCode, 501);
-    const body = response.json() as { code: string; operation: string; phase: string };
-    assert.equal(body.code, 'AUTHZ_PERMISSION_OPERATION_UNAVAILABLE');
-    assert.equal(body.operation, 'create');
-    assert.equal(body.phase, 'PHASE_2');
+    assert.equal(response.statusCode, 403);
+    assert.equal(response.json().code, 'PERMISSION_DENIED');
   } finally {
     await server.close();
   }
 });
 
-test('POST /api/autorizacao/permissoes/:id/reativar returns 501 AUTHZ_PERMISSION_OPERATION_UNAVAILABLE', async () => {
-  const { fetchImpl } = buildFakeFetch(
-    standardHandler(['authz:admin:permission:visualizar'], PERMISSION_DEPRECATED),
-  );
+test('POST /api/autorizacao/permissoes creates permission via ecad-authz and propagates headers', async () => {
+  const { fetchImpl, calls } = buildFakeFetch((url, init) => {
+    if (url === 'http://authz.local/v1/me/authorization-context') {
+      return {
+        status: 200,
+        body: authzContext(['authz:admin:permission:criar']),
+        headers: { 'x-authz-version': '10' } as Record<string, string>,
+      };
+    }
+    if (url === 'http://authz.local/v1/permissions' && init.method === 'POST') {
+      return {
+        status: 201,
+        body: CREATED_PERMISSION,
+        headers: {
+          'x-authz-version': '11',
+          'x-correlation-id': 'corr-created',
+          location: '/v1/permissions/perm-new',
+        } as Record<string, string>,
+      };
+    }
+    if (url === 'http://audit.local/api/v1/audit/events') {
+      return { status: 201, body: {} };
+    }
+    return { status: 404, body: { code: 'NOT_FOUND' } };
+  });
+  const server = await buildServer(BASE_CONFIG, { fetchImpl });
+
+  try {
+    const response = await server.inject({
+      method: 'POST',
+      url: '/api/autorizacao/permissoes',
+      headers: { authorization: 'Bearer token', 'content-type': 'application/json' },
+      payload: JSON.stringify(CREATE_PAYLOAD),
+    });
+    assert.equal(response.statusCode, 201);
+    assert.equal(response.headers['x-authz-version'], '11');
+    assert.equal(response.headers['x-correlation-id'], 'corr-created');
+    assert.equal(response.headers.location, '/v1/permissions/perm-new');
+    assert.equal((response.json() as { status: string }).status, 'ACTIVE');
+
+    const createCall = calls.find((c) => c.url === 'http://authz.local/v1/permissions');
+    assert.ok(createCall, 'create upstream call not found');
+    assert.equal(JSON.parse(createCall.body ?? '{}').key, CREATE_PAYLOAD.key);
+  } finally {
+    await server.close();
+  }
+});
+
+test('POST /api/autorizacao/permissoes rejects invalid namespace before upstream call', async () => {
+  const { fetchImpl, calls } = buildFakeFetch((url, _init) => {
+    if (url === 'http://authz.local/v1/me/authorization-context') {
+      return {
+        status: 200,
+        body: authzContext(['authz:admin:permission:criar']),
+        headers: { 'x-authz-version': '10' },
+      };
+    }
+    return { status: 404, body: { code: 'NOT_FOUND' } };
+  });
+  const server = await buildServer(BASE_CONFIG, { fetchImpl });
+
+  try {
+    const response = await server.inject({
+      method: 'POST',
+      url: '/api/autorizacao/permissoes',
+      headers: { authorization: 'Bearer token', 'content-type': 'application/json' },
+      payload: JSON.stringify({ ...CREATE_PAYLOAD, key: 'cadastro:obras:obra:editar' }),
+    });
+    assert.equal(response.statusCode, 422);
+    assert.equal(response.json().code, 'INVALID_PERMISSION_NAMESPACE');
+    assert.equal(calls.some((c) => c.url === 'http://authz.local/v1/permissions'), false);
+  } finally {
+    await server.close();
+  }
+});
+
+test('POST /api/autorizacao/permissoes forwards duplicate key errors from ecad-authz', async () => {
+  const { fetchImpl } = buildFakeFetch((url, init) => {
+    if (url === 'http://authz.local/v1/me/authorization-context') {
+      return {
+        status: 200,
+        body: authzContext(['authz:admin:permission:criar']),
+        headers: { 'x-authz-version': '10' },
+      };
+    }
+    if (url === 'http://authz.local/v1/permissions' && init.method === 'POST') {
+      return {
+        status: 409,
+        body: {
+          code: 'PERMISSION_KEY_ALREADY_EXISTS',
+          message: 'Permission key already exists',
+          correlationId: 'corr-409',
+        },
+      };
+    }
+    if (url === 'http://audit.local/api/v1/audit/events') {
+      return { status: 201, body: {} };
+    }
+    return { status: 404, body: { code: 'NOT_FOUND' } };
+  });
+  const server = await buildServer(BASE_CONFIG, { fetchImpl });
+
+  try {
+    const response = await server.inject({
+      method: 'POST',
+      url: '/api/autorizacao/permissoes',
+      headers: { authorization: 'Bearer token', 'content-type': 'application/json' },
+      payload: JSON.stringify(CREATE_PAYLOAD),
+    });
+    assert.equal(response.statusCode, 409);
+    assert.equal(response.json().code, 'PERMISSION_KEY_ALREADY_EXISTS');
+    assert.equal(response.json().correlationId, 'corr-409');
+  } finally {
+    await server.close();
+  }
+});
+
+// ---------------------------------------------------------------------------
+// POST /api/autorizacao/permissoes/:id/reativar
+// ---------------------------------------------------------------------------
+
+test('POST /api/autorizacao/permissoes/:id/reativar calls upstream reactivate endpoint', async () => {
+  const { fetchImpl, calls } = buildFakeFetch((url, init) => {
+    if (url === 'http://authz.local/v1/me/authorization-context') {
+      return {
+        status: 200,
+        body: authzContext(['authz:admin:permission:reativar']),
+        headers: { 'x-authz-version': '10' },
+      };
+    }
+    if (url === 'http://authz.local/v1/permissions/perm-1/reactivate' && init.method === 'POST') {
+      return {
+        status: 200,
+        body: { ...PERMISSION_DEPRECATED, status: 'ACTIVE' },
+        headers: { 'x-authz-version': '12' },
+      };
+    }
+    if (url === 'http://audit.local/api/v1/audit/events') {
+      return { status: 201, body: {} };
+    }
+    return { status: 404, body: { code: 'NOT_FOUND' } };
+  });
   const server = await buildServer(BASE_CONFIG, { fetchImpl });
 
   try {
@@ -761,20 +875,102 @@ test('POST /api/autorizacao/permissoes/:id/reativar returns 501 AUTHZ_PERMISSION
       url: '/api/autorizacao/permissoes/perm-1/reativar',
       headers: { authorization: 'Bearer token' },
     });
-    assert.equal(response.statusCode, 501);
-    const body = response.json() as { code: string; operation: string; missingEndpoint: string };
-    assert.equal(body.code, 'AUTHZ_PERMISSION_OPERATION_UNAVAILABLE');
-    assert.equal(body.operation, 'reactivate');
-    assert.ok(body.missingEndpoint.includes('reactivate'));
+    assert.equal(response.statusCode, 200);
+    assert.equal(response.headers['x-authz-version'], '12');
+    assert.equal((response.json() as { status: string }).status, 'ACTIVE');
+    assert.ok(calls.find((c) => c.url.endsWith('/v1/permissions/perm-1/reactivate')));
   } finally {
     await server.close();
   }
 });
 
-test('POST /api/autorizacao/permissoes/:id/remover returns 501 AUTHZ_PERMISSION_OPERATION_UNAVAILABLE', async () => {
-  const { fetchImpl } = buildFakeFetch(
-    standardHandler(['authz:admin:permission:visualizar'], PERMISSION_DEPRECATED),
-  );
+test('POST /api/autorizacao/permissoes/:id/reativar forwards invalid transition error', async () => {
+  const { fetchImpl } = buildFakeFetch((url, init) => {
+    if (url === 'http://authz.local/v1/me/authorization-context') {
+      return {
+        status: 200,
+        body: authzContext(['authz:admin:permission:reativar']),
+        headers: { 'x-authz-version': '10' },
+      };
+    }
+    if (url === 'http://authz.local/v1/permissions/perm-1/reactivate' && init.method === 'POST') {
+      return {
+        status: 422,
+        body: { code: 'INVALID_PERMISSION_STATUS_TRANSITION', message: 'Invalid transition' },
+      };
+    }
+    if (url === 'http://audit.local/api/v1/audit/events') {
+      return { status: 201, body: {} };
+    }
+    return { status: 404, body: { code: 'NOT_FOUND' } };
+  });
+  const server = await buildServer(BASE_CONFIG, { fetchImpl });
+
+  try {
+    const response = await server.inject({
+      method: 'POST',
+      url: '/api/autorizacao/permissoes/perm-1/reativar',
+      headers: { authorization: 'Bearer token' },
+    });
+    assert.equal(response.statusCode, 422);
+    assert.equal(response.json().code, 'INVALID_PERMISSION_STATUS_TRANSITION');
+  } finally {
+    await server.close();
+  }
+});
+
+// ---------------------------------------------------------------------------
+// POST /api/autorizacao/permissoes/:id/remover
+// ---------------------------------------------------------------------------
+
+test('POST /api/autorizacao/permissoes/:id/remover requires CONFIRMO confirmation', async () => {
+  const { fetchImpl, calls } = buildFakeFetch((url, _init) => {
+    if (url === 'http://authz.local/v1/me/authorization-context') {
+      return {
+        status: 200,
+        body: authzContext(['authz:admin:permission:remover']),
+        headers: { 'x-authz-version': '10' },
+      };
+    }
+    if (url === 'http://audit.local/api/v1/audit/events') {
+      return { status: 201, body: {} };
+    }
+    return { status: 404, body: { code: 'NOT_FOUND' } };
+  });
+  const server = await buildServer(BASE_CONFIG, { fetchImpl });
+
+  try {
+    const response = await server.inject({
+      method: 'POST',
+      url: '/api/autorizacao/permissoes/perm-1/remover',
+      headers: { authorization: 'Bearer token', 'content-type': 'application/json' },
+      payload: JSON.stringify({ confirmationText: 'confirmo' }),
+    });
+    assert.equal(response.statusCode, 400);
+    assert.equal(response.json().code, 'INVALID_CONFIRMATION');
+    assert.equal(calls.some((c) => c.url.endsWith('/v1/permissions/perm-1/remove')), false);
+  } finally {
+    await server.close();
+  }
+});
+
+test('POST /api/autorizacao/permissoes/:id/remover blocks active linked roles before upstream removal', async () => {
+  const { fetchImpl, calls } = buildFakeFetch((url, _init) => {
+    if (url === 'http://authz.local/v1/me/authorization-context') {
+      return {
+        status: 200,
+        body: authzContext(['authz:admin:permission:remover']),
+        headers: { 'x-authz-version': '10' },
+      };
+    }
+    if (url === 'http://authz.local/v1/permissions/perm-1') {
+      return { status: 200, body: PERMISSION_DEPRECATED };
+    }
+    if (url.startsWith('http://authz.local/v1/permissions/perm-1/roles?')) {
+      return { status: 200, body: { content: [ROLE_WITH_PERM_ACTIVE], page: 0, size: 200, totalElements: 1 } };
+    }
+    return { status: 404, body: { code: 'NOT_FOUND' } };
+  });
   const server = await buildServer(BASE_CONFIG, { fetchImpl });
 
   try {
@@ -784,11 +980,57 @@ test('POST /api/autorizacao/permissoes/:id/remover returns 501 AUTHZ_PERMISSION_
       headers: { authorization: 'Bearer token', 'content-type': 'application/json' },
       payload: JSON.stringify({ confirmationText: 'CONFIRMO' }),
     });
-    assert.equal(response.statusCode, 501);
-    const body = response.json() as { code: string; operation: string; missingEndpoint: string };
-    assert.equal(body.code, 'AUTHZ_PERMISSION_OPERATION_UNAVAILABLE');
-    assert.equal(body.operation, 'remove');
-    assert.ok(body.missingEndpoint.includes('remove'));
+    assert.equal(response.statusCode, 409);
+    assert.equal(response.json().code, 'PERMISSION_IN_USE');
+    assert.equal(calls.some((c) => c.url.endsWith('/v1/permissions/perm-1/remove')), false);
+  } finally {
+    await server.close();
+  }
+});
+
+test('POST /api/autorizacao/permissoes/:id/remover calls upstream remove endpoint when eligible', async () => {
+  const { fetchImpl, calls } = buildFakeFetch((url, init) => {
+    if (url === 'http://authz.local/v1/me/authorization-context') {
+      return {
+        status: 200,
+        body: authzContext(['authz:admin:permission:remover']),
+        headers: { 'x-authz-version': '10' },
+      };
+    }
+    if (url === 'http://authz.local/v1/permissions/perm-1') {
+      return { status: 200, body: PERMISSION_DEPRECATED };
+    }
+    if (url.startsWith('http://authz.local/v1/permissions/perm-1/roles?')) {
+      return { status: 200, body: { content: [], page: 0, size: 200, totalElements: 0 } };
+    }
+    if (url === 'http://authz.local/v1/permissions/perm-1/remove' && init.method === 'POST') {
+      return {
+        status: 200,
+        body: { ...PERMISSION_DEPRECATED, status: 'DISABLED' },
+        headers: { 'x-authz-version': '13' },
+      };
+    }
+    if (url === 'http://audit.local/api/v1/audit/events') {
+      return { status: 201, body: {} };
+    }
+    return { status: 404, body: { code: 'NOT_FOUND' } };
+  });
+  const server = await buildServer(BASE_CONFIG, { fetchImpl });
+
+  try {
+    const response = await server.inject({
+      method: 'POST',
+      url: '/api/autorizacao/permissoes/perm-1/remover',
+      headers: { authorization: 'Bearer token', 'content-type': 'application/json' },
+      payload: JSON.stringify({ confirmationText: 'CONFIRMO' }),
+    });
+    assert.equal(response.statusCode, 200);
+    assert.equal(response.headers['x-authz-version'], '13');
+    assert.equal((response.json() as { status: string }).status, 'DISABLED');
+
+    const removeCall = calls.find((c) => c.url === 'http://authz.local/v1/permissions/perm-1/remove');
+    assert.ok(removeCall, 'remove upstream call not found');
+    assert.deepEqual(JSON.parse(removeCall.body ?? '{}'), { confirmationText: 'CONFIRMO' });
   } finally {
     await server.close();
   }

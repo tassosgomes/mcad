@@ -11,19 +11,19 @@ import {
 } from './authzPermissionLifecycleContract';
 
 describe('authzPermissionLifecycleContract', () => {
-  it('exposes the fail-closed capability matrix agreed for phase 1', () => {
+  it('exposes the final capability matrix after upstream lifecycle endpoints were published', () => {
     expect(AUTHZ_PERMISSION_LIFECYCLE_CAPABILITIES).toEqual({
-      canCreate: false,
+      canCreate: true,
       canDeprecate: true,
       canListLinkedRoles: true,
-      canReactivate: false,
-      canRemove: false,
+      canReactivate: true,
+      canRemove: true,
     });
     expect(isPermissionLifecycleOperationAvailable('deprecate')).toBe(true);
     expect(isPermissionLifecycleOperationAvailable('listLinkedRoles')).toBe(true);
-    expect(isPermissionLifecycleOperationAvailable('create')).toBe(false);
-    expect(isPermissionLifecycleOperationAvailable('reactivate')).toBe(false);
-    expect(isPermissionLifecycleOperationAvailable('remove')).toBe(false);
+    expect(isPermissionLifecycleOperationAvailable('create')).toBe(true);
+    expect(isPermissionLifecycleOperationAvailable('reactivate')).toBe(true);
+    expect(isPermissionLifecycleOperationAvailable('remove')).toBe(true);
   });
 
   it('maps the official DISABLED status to the Removida business label', () => {
@@ -34,10 +34,16 @@ describe('authzPermissionLifecycleContract', () => {
     });
   });
 
-  it('documents unsupported upstream operations with a stable local error shape', () => {
+  it('keeps the legacy unavailable error helper stable for defensive handling', () => {
     expect(AUTHZ_PERMISSION_OPERATION_UNAVAILABLE_STATUS).toBe(501);
-    expect(AUTHZ_PERMISSION_LIFECYCLE_PHASES.PHASE_1).toEqual(['deprecate', 'listLinkedRoles']);
-    expect(AUTHZ_PERMISSION_LIFECYCLE_PHASES.PHASE_2).toEqual(['create', 'reactivate', 'remove']);
+    expect(AUTHZ_PERMISSION_LIFECYCLE_PHASES.PHASE_1).toEqual([
+      'create',
+      'deprecate',
+      'listLinkedRoles',
+      'reactivate',
+      'remove',
+    ]);
+    expect(AUTHZ_PERMISSION_LIFECYCLE_PHASES.PHASE_2).toEqual([]);
 
     expect(buildPermissionOperationUnavailableError('remove')).toEqual({
       code: 'AUTHZ_PERMISSION_OPERATION_UNAVAILABLE',

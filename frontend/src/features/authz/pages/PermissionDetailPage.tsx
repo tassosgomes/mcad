@@ -5,6 +5,7 @@ import { Button } from '@components/ui/button';
 import { ConfirmModal } from '@components/ui/confirm-modal';
 import { ErrorState } from '@components/ui/error-state';
 import { Loading } from '@components/ui/loading';
+import { Modal } from '@components/ui/modal';
 import { PageHeader } from '@components/ui/page-header';
 import { useToast } from '@components/ui/toast';
 import { PermissionStatusBadge } from '../components/PermissionStatusBadge';
@@ -12,6 +13,8 @@ import {
   useDeprecatePermissionGoverned,
   usePermissionLinkedRoles,
   usePermissionOperationAvailable,
+  useReactivatePermission,
+  useRemovePermission,
 } from '../hooks/usePermissionLifecycle';
 import { usePermissionDetails } from '../hooks/usePermissionsCatalog';
 import styles from './PermissionDetailPage.module.css';
@@ -26,6 +29,9 @@ export function PermissionDetailPage() {
   const navigate = useNavigate();
   const { showToast } = useToast();
   const [confirmDeprecate, setConfirmDeprecate] = useState(false);
+  const [confirmReactivate, setConfirmReactivate] = useState(false);
+  const [confirmRemove, setConfirmRemove] = useState(false);
+  const [removeConfirmationText, setRemoveConfirmationText] = useState('');
 
   const canCreatePermission = usePermissionOperationAvailable('create');
   const canDeprecateLifecycle = usePermissionOperationAvailable('deprecate');
@@ -33,6 +39,8 @@ export function PermissionDetailPage() {
   const canRemovePermission = usePermissionOperationAvailable('remove');
   const permissionQuery = usePermissionDetails(id ?? null);
   const deprecateMutation = useDeprecatePermissionGoverned();
+  const reactivateMutation = useReactivatePermission();
+  const removeMutation = useRemovePermission();
   const permission = permissionQuery.data;
   const linkedRolesQuery = usePermissionLinkedRoles(permission?.id ?? null);
   const canDeprecatePermission = permission?.status === 'ACTIVE' && canDeprecateLifecycle;
@@ -49,6 +57,43 @@ export function PermissionDetailPage() {
         setConfirmDeprecate(false);
       },
     });
+  };
+
+  const handleConfirmReactivate = () => {
+    if (!permission) return;
+    reactivateMutation.mutate(permission.id, {
+      onSuccess: () => {
+        showToast('Permissão reativada.', 'success');
+        setConfirmReactivate(false);
+      },
+      onError: () => {
+        showToast('Não foi possível reativar a permissão.', 'error');
+        setConfirmReactivate(false);
+      },
+    });
+  };
+
+  const handleConfirmRemove = () => {
+    if (!permission) return;
+    removeMutation.mutate(
+      { permissionId: permission.id, confirmationText: removeConfirmationText },
+      {
+        onSuccess: () => {
+          showToast('Permissão removida.', 'success');
+          setConfirmRemove(false);
+          setRemoveConfirmationText('');
+        },
+        onError: () => {
+          showToast('Não foi possível remover a permissão.', 'error');
+        },
+      },
+    );
+  };
+
+  const closeRemoveModal = () => {
+    if (removeMutation.isPending) return;
+    setConfirmRemove(false);
+    setRemoveConfirmationText('');
   };
 
   if (permissionQuery.isLoading) {
@@ -118,6 +163,12 @@ export function PermissionDetailPage() {
         canCreatePermission={canCreatePermission}
         canReactivatePermission={canReactivatePermission}
         canRemovePermission={canRemovePermission}
+        permission={permission}
+        eligibility={linkedRolesQuery.data}
+        isReactivatePending={reactivateMutation.isPending}
+        isRemovePending={removeMutation.isPending}
+        onReactivate={() => setConfirmReactivate(true)}
+        onRemove={() => setConfirmRemove(true)}
       />
 
       <ConfirmModal
@@ -129,6 +180,60 @@ export function PermissionDetailPage() {
         confirmLabel="Depreciar permissão"
         isLoading={deprecateMutation.isPending}
       />
+
+      <ConfirmModal
+        isOpen={confirmReactivate}
+        onClose={() => setConfirmReactivate(false)}
+        onConfirm={handleConfirmReactivate}
+        title="Reativar permissão"
+        description={`Reativar a permissão "${permission.key}" e restaurar o status Ativa?`}
+        confirmLabel="Reativar permissão"
+        isLoading={reactivateMutation.isPending}
+      />
+
+      <Modal
+        isOpen={confirmRemove}
+        onClose={closeRemoveModal}
+        title="Remover permissão"
+        actions={(
+          <>
+            <Button variant="ghost" type="button" onClick={closeRemoveModal} disabled={removeMutation.isPending}>
+              Cancelar
+            </Button>
+            <Button
+              variant="danger"
+              type="button"
+              onClick={handleConfirmRemove}
+              disabled={removeMutation.isPending || removeConfirmationText !== 'CONFIRMO'}
+            >
+              Remover permissão
+            </Button>
+          </>
+        )}
+      >
+        <div className={styles.removeDialogContent}>
+          <p>
+            Esta ação transiciona a permissão <span className={styles.mono}>{permission.key}</span> para Removida.
+            Digite <span className={styles.mono}>CONFIRMO</span> para continuar.
+          </p>
+          <div className={styles.removeField}>
+            <label className={styles.removeLabel} htmlFor="permission-remove-confirmation">
+              Confirmação obrigatória
+            </label>
+            <input
+              id="permission-remove-confirmation"
+              className={`${styles.removeInput} ${styles.mono}`}
+              value={removeConfirmationText}
+              onChange={(event) => setRemoveConfirmationText(event.target.value)}
+              aria-describedby="permission-remove-confirmation-help"
+              autoComplete="off"
+            />
+            <span id="permission-remove-confirmation-help" className={styles.removeHelp}>
+              O valor deve ser exatamente CONFIRMO.
+            </span>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }

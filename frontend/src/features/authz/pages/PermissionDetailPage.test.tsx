@@ -7,6 +7,8 @@ import {
   useDeprecatePermissionGoverned,
   usePermissionLinkedRoles,
   usePermissionOperationAvailable,
+  useReactivatePermission,
+  useRemovePermission,
 } from '../hooks/usePermissionLifecycle';
 import { usePermissionDetails } from '../hooks/usePermissionsCatalog';
 import { PermissionDetailPage } from './PermissionDetailPage';
@@ -19,6 +21,8 @@ vi.mock('../hooks/usePermissionLifecycle', () => ({
   useDeprecatePermissionGoverned: vi.fn(),
   usePermissionLinkedRoles: vi.fn(),
   usePermissionOperationAvailable: vi.fn(),
+  useReactivatePermission: vi.fn(),
+  useRemovePermission: vi.fn(),
 }));
 
 vi.mock('@components/ui/toast', () => ({
@@ -29,6 +33,8 @@ const usePermissionDetailsMock = vi.mocked(usePermissionDetails);
 const useDeprecatePermissionGovernedMock = vi.mocked(useDeprecatePermissionGoverned);
 const usePermissionLinkedRolesMock = vi.mocked(usePermissionLinkedRoles);
 const usePermissionOperationAvailableMock = vi.mocked(usePermissionOperationAvailable);
+const useReactivatePermissionMock = vi.mocked(useReactivatePermission);
+const useRemovePermissionMock = vi.mocked(useRemovePermission);
 
 function createPermission(status: Permission['status']): Permission {
   return {
@@ -75,6 +81,14 @@ describe('PermissionDetailPage', () => {
       isPending: false,
       mutate: vi.fn(),
     } as unknown as ReturnType<typeof useDeprecatePermissionGoverned>);
+    useReactivatePermissionMock.mockReturnValue({
+      isPending: false,
+      mutate: vi.fn(),
+    } as unknown as ReturnType<typeof useReactivatePermission>);
+    useRemovePermissionMock.mockReturnValue({
+      isPending: false,
+      mutate: vi.fn(),
+    } as unknown as ReturnType<typeof useRemovePermission>);
     usePermissionLinkedRolesMock.mockReturnValue({
       data: createEligibility(),
       isLoading: false,
@@ -82,7 +96,11 @@ describe('PermissionDetailPage', () => {
       refetch: vi.fn(),
     } as unknown as ReturnType<typeof usePermissionLinkedRoles>);
     usePermissionOperationAvailableMock.mockImplementation((operation) => (
-      operation === 'deprecate' || operation === 'listLinkedRoles'
+      operation === 'deprecate'
+      || operation === 'listLinkedRoles'
+      || operation === 'create'
+      || operation === 'reactivate'
+      || operation === 'remove'
     ));
   });
 
@@ -193,7 +211,12 @@ describe('PermissionDetailPage', () => {
     expect(screen.getByText(/precisa estar depreciada/i)).toBeInTheDocument();
   });
 
-  it('shows create, reactivate and remove unavailable by external dependency', () => {
+  it('opens reactivation confirmation for deprecated permissions', async () => {
+    const mutate = vi.fn();
+    useReactivatePermissionMock.mockReturnValue({
+      isPending: false,
+      mutate,
+    } as unknown as ReturnType<typeof useReactivatePermission>);
     usePermissionDetailsMock.mockReturnValue({
       data: createPermission('DEPRECATED'),
       isLoading: false,
@@ -203,12 +226,70 @@ describe('PermissionDetailPage', () => {
 
     renderPage();
 
-    expect(screen.getByText('Cadastrar permissão')).toBeInTheDocument();
-    expect(screen.getByText('Reativar permissão')).toBeInTheDocument();
-    expect(screen.getByText('Remover permissão')).toBeInTheDocument();
-    expect(screen.getByText(/falta POST \/v1\/permissions no ecad-authz/i)).toBeInTheDocument();
-    expect(screen.getByText(/reactivate no ecad-authz/i)).toBeInTheDocument();
-    expect(screen.getByText(/remove no ecad-authz/i)).toBeInTheDocument();
-    expect(screen.getAllByRole('button', { name: /indisponível/i })).toHaveLength(3);
+    await userEvent.click(screen.getByRole('button', { name: /^reativar$/i }));
+
+    expect(screen.getByText(/reativar a permissão/i)).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: /reativar permissão/i }));
+    expect(mutate).toHaveBeenCalledWith('perm-1', expect.any(Object));
+  });
+
+  it('requires CONFIRMO before removing an eligible deprecated permission', async () => {
+    const mutate = vi.fn();
+    useRemovePermissionMock.mockReturnValue({
+      isPending: false,
+      mutate,
+    } as unknown as ReturnType<typeof useRemovePermission>);
+    usePermissionDetailsMock.mockReturnValue({
+      data: createPermission('DEPRECATED'),
+      isLoading: false,
+      isError: false,
+      refetch: vi.fn(),
+    } as unknown as ReturnType<typeof usePermissionDetails>);
+
+    renderPage();
+
+    await userEvent.click(screen.getByRole('button', { name: /^remover$/i }));
+    const confirmButton = screen.getByRole('button', { name: /remover permissão/i });
+    expect(confirmButton).toBeDisabled();
+
+    await userEvent.type(screen.getByLabelText(/confirmação obrigatória/i), 'CONFIRMO');
+    expect(confirmButton).toBeEnabled();
+    await userEvent.click(confirmButton);
+
+    expect(mutate).toHaveBeenCalledWith(
+      { permissionId: 'perm-1', confirmationText: 'CONFIRMO' },
+      expect.any(Object),
+    );
+  });
+
+  it('keeps removal disabled while active linked roles block eligibility', () => {
+    usePermissionDetailsMock.mockReturnValue({
+      data: createPermission('DEPRECATED'),
+      isLoading: false,
+      isError: false,
+      refetch: vi.fn(),
+    } as unknown as ReturnType<typeof usePermissionDetails>);
+    usePermissionLinkedRolesMock.mockReturnValue({
+      data: createEligibility({
+        linkedRoles: [
+          {
+            id: 'role-1',
+            key: 'cadastro.obras.analista',
+            displayName: 'Analista de Obras',
+            status: 'ACTIVE',
+          },
+        ],
+        canRemove: false,
+        blockingReason: 'ROLE_LINKS_PRESENT',
+      }),
+      isLoading: false,
+      isError: false,
+      refetch: vi.fn(),
+    } as unknown as ReturnType<typeof usePermissionLinkedRoles>);
+
+    renderPage();
+
+    expect(screen.getByRole('button', { name: /^remover$/i })).toBeDisabled();
+    expect(screen.getByText(/bloqueada enquanto houver papéis ativos/i)).toBeInTheDocument();
   });
 });

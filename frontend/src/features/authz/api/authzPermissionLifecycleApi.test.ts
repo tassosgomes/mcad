@@ -152,38 +152,30 @@ describe('authzPermissionLifecycleApi', () => {
     });
   });
 
-  describe('Phase 2 stubs', () => {
-    it('createPermission forwards to BFF POST and surfaces 501 as thrown error', async () => {
-      const unavailableBody = {
-        code: 'AUTHZ_PERMISSION_OPERATION_UNAVAILABLE',
-        message: 'Operacao indisponivel',
-        operation: 'create',
-        upstream: 'ecad-authz',
-        missingEndpoint: 'POST /v1/permissions',
-        phase: 'PHASE_2',
-      };
+  describe('final lifecycle operations', () => {
+    it('createPermission forwards to BFF POST and returns the created permission', async () => {
       const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
-        new Response(JSON.stringify(unavailableBody), {
-          status: 501,
-          headers: { 'Content-Type': 'application/json' },
-        }),
+        mockJsonResponse({
+          ...BASE_PERMISSION,
+          id: 'perm-new',
+          key: 'cadastro:obras:obra:aprovar',
+          displayName: 'Aprovar obra',
+          action: 'aprovar',
+        }, 201),
       );
       setBffAuthTokenProvider(() => 'token-abc');
 
-      await expect(
-        createPermission({
-          key: 'cadastro:obras:obra:aprovar',
-          displayName: 'Aprovar obra',
-          domain: 'cadastro',
-          area: 'obras',
-          resource: 'obra',
-          action: 'aprovar',
-        }),
-      ).rejects.toMatchObject({
-        code: 'AUTHZ_PERMISSION_OPERATION_UNAVAILABLE',
-        status: 501,
+      const result = await createPermission({
+        key: 'cadastro:obras:obra:aprovar',
+        displayName: 'Aprovar obra',
+        domain: 'cadastro',
+        area: 'obras',
+        resource: 'obra',
+        action: 'aprovar',
       });
 
+      expect(result.id).toBe('perm-new');
+      expect(result.status).toBe('ACTIVE');
       expect(fetchMock).toHaveBeenCalledWith(
         '/api/autorizacao/permissoes',
         expect.objectContaining({ method: 'POST' }),
@@ -192,37 +184,30 @@ describe('authzPermissionLifecycleApi', () => {
       expect(body.key).toBe('cadastro:obras:obra:aprovar');
     });
 
-    it('reactivatePermission calls BFF POST route and surfaces 501', async () => {
+    it('reactivatePermission calls BFF POST route and returns active permission', async () => {
       const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
-        new Response(
-          JSON.stringify({ code: 'AUTHZ_PERMISSION_OPERATION_UNAVAILABLE', operation: 'reactivate' }),
-          { status: 501, headers: { 'Content-Type': 'application/json' } },
-        ),
+        mockJsonResponse({ ...BASE_PERMISSION, status: 'ACTIVE' }),
       );
       setBffAuthTokenProvider(() => 'token-abc');
 
-      await expect(reactivatePermission('perm-1')).rejects.toMatchObject({
-        code: 'AUTHZ_PERMISSION_OPERATION_UNAVAILABLE',
-        status: 501,
-      });
+      const result = await reactivatePermission('perm-1');
+
+      expect(result.status).toBe('ACTIVE');
       expect(fetchMock).toHaveBeenCalledWith(
         '/api/autorizacao/permissoes/perm-1/reativar',
         expect.objectContaining({ method: 'POST' }),
       );
     });
 
-    it('removePermission calls BFF POST route with confirmationText body and surfaces 501', async () => {
+    it('removePermission calls BFF POST route with confirmationText body and returns disabled permission', async () => {
       const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
-        new Response(
-          JSON.stringify({ code: 'AUTHZ_PERMISSION_OPERATION_UNAVAILABLE', operation: 'remove' }),
-          { status: 501, headers: { 'Content-Type': 'application/json' } },
-        ),
+        mockJsonResponse({ ...BASE_PERMISSION, status: 'DISABLED' }),
       );
       setBffAuthTokenProvider(() => 'token-abc');
 
-      await expect(removePermission('perm-1', 'CONFIRMO')).rejects.toMatchObject({
-        status: 501,
-      });
+      const result = await removePermission('perm-1', 'CONFIRMO');
+
+      expect(result.status).toBe('DISABLED');
       expect(fetchMock).toHaveBeenCalledWith(
         '/api/autorizacao/permissoes/perm-1/remover',
         expect.objectContaining({ method: 'POST' }),

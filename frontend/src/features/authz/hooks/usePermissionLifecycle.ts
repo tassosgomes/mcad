@@ -28,7 +28,7 @@ export function usePermissionLifecycleCapabilities() {
 
 /**
  * Returns whether a specific lifecycle operation is available based on the
- * current Phase 1 / Phase 2 capability matrix in the local contract.
+ * current local contract.
  */
 export function usePermissionOperationAvailable(
   operation: AuthzPermissionLifecycleOperation,
@@ -73,11 +73,7 @@ export function useDeprecatePermissionGoverned() {
 }
 
 /**
- * Phase 2 stub — creates a new permission via the BFF.
- *
- * The BFF returns 501 AUTHZ_PERMISSION_OPERATION_UNAVAILABLE until
- * ecad-authz exposes POST /v1/permissions. Pages should check
- * `isPermissionOperationUnavailableError(error)` to display the correct message.
+ * Creates a new permission via the governed BFF wrapper.
  */
 export function useCreatePermission() {
   const queryClient = useQueryClient();
@@ -91,10 +87,7 @@ export function useCreatePermission() {
 }
 
 /**
- * Phase 2 stub — reactivates a deprecated permission via the BFF.
- *
- * The BFF returns 501 AUTHZ_PERMISSION_OPERATION_UNAVAILABLE until
- * ecad-authz exposes POST /v1/permissions/{id}/reactivate.
+ * Reactivates a deprecated permission via the governed BFF wrapper.
  */
 export function useReactivatePermission() {
   const queryClient = useQueryClient();
@@ -112,10 +105,7 @@ export function useReactivatePermission() {
 }
 
 /**
- * Phase 2 stub — logically removes a deprecated, unlinked permission via the BFF.
- *
- * The BFF returns 501 AUTHZ_PERMISSION_OPERATION_UNAVAILABLE until
- * ecad-authz exposes POST /v1/permissions/{id}/remove.
+ * Logically removes a deprecated, unlinked permission via the governed BFF wrapper.
  */
 export function useRemovePermission() {
   const queryClient = useQueryClient();

@@ -134,46 +134,74 @@ export function LifecycleActionsPanel({
   canCreatePermission,
   canReactivatePermission,
   canRemovePermission,
+  permission,
+  eligibility,
+  isReactivatePending,
+  isRemovePending,
+  onReactivate,
+  onRemove,
 }: {
   canCreatePermission: boolean;
   canReactivatePermission: boolean;
   canRemovePermission: boolean;
+  permission: Permission;
+  eligibility?: PermissionRemovalEligibility;
+  isReactivatePending: boolean;
+  isRemovePending: boolean;
+  onReactivate: () => void;
+  onRemove: () => void;
 }) {
+  const canReactivateCurrentPermission = canReactivatePermission && permission.status === 'DEPRECATED';
+  const canRemoveCurrentPermission = canRemovePermission && permission.status === 'DEPRECATED' && eligibility?.canRemove === true;
+
   return (
     <section className={styles.card} aria-labelledby="lifecycle-actions-title">
       <SectionHeader
         id="lifecycle-actions-title"
         icon={<AlertTriangle size={18} aria-hidden="true" />}
         title="Operações governadas"
-        description="Nesta fase, apenas a depreciação está operacional no contrato atual do ecad-authz."
+        description="Use estas ações para fechar o ciclo de vida administrativo da permissão."
       />
 
       <div className={styles.deprecationNotice}>
         <strong>Depreciação é pré-requisito para remoção.</strong>
         <span>
-          A remoção futura exigirá status depreciado, ausência de papéis ativos vinculados e confirmação literal{' '}
+          A remoção exige status depreciado, ausência de papéis ativos vinculados e confirmação literal{' '}
           <span className={styles.mono}>CONFIRMO</span>.
         </span>
       </div>
 
       <div className={styles.actionGrid}>
-        <UnavailableAction
+        <LifecycleAction
           icon={<Plus size={18} aria-hidden="true" />}
           title="Cadastrar permissão"
-          description="Indisponível por dependência externa: falta POST /v1/permissions no ecad-authz."
+          description="Disponível na listagem de permissões para criação de nova chave administrativa."
           capabilityAvailable={canCreatePermission}
+          buttonLabel={canCreatePermission ? 'Disponível na listagem' : 'Indisponível'}
+          disabled
         />
-        <UnavailableAction
+        <LifecycleAction
           icon={<RotateCcw size={18} aria-hidden="true" />}
           title="Reativar permissão"
-          description="Indisponível por dependência externa: falta POST /v1/permissions/{permissionId}/reactivate no ecad-authz."
+          description={canReactivateCurrentPermission
+            ? 'Restaura a permissão depreciada para o status Ativa.'
+            : 'Disponível somente para permissões depreciadas.'}
           capabilityAvailable={canReactivatePermission}
+          buttonLabel="Reativar"
+          disabled={!canReactivateCurrentPermission || isReactivatePending}
+          onClick={onReactivate}
         />
-        <UnavailableAction
+        <LifecycleAction
           icon={<Trash2 size={18} aria-hidden="true" />}
           title="Remover permissão"
-          description="Indisponível por dependência externa: falta POST /v1/permissions/{permissionId}/remove no ecad-authz."
+          description={canRemoveCurrentPermission
+            ? 'Remove logicamente a permissão com status final Removida.'
+            : getRemoveActionDescription(permission, eligibility)}
           capabilityAvailable={canRemovePermission}
+          buttonLabel="Remover"
+          disabled={!canRemoveCurrentPermission || isRemovePending}
+          destructive
+          onClick={onRemove}
         />
       </div>
     </section>
@@ -202,16 +230,24 @@ function SectionHeader({
   );
 }
 
-function UnavailableAction({
+function LifecycleAction({
   icon,
   title,
   description,
   capabilityAvailable,
+  buttonLabel,
+  disabled,
+  destructive = false,
+  onClick,
 }: {
   icon: ReactNode;
   title: string;
   description: string;
   capabilityAvailable: boolean;
+  buttonLabel: string;
+  disabled: boolean;
+  destructive?: boolean;
+  onClick?: () => void;
 }) {
   const reasonId = `${title.toLowerCase().replace(/\s+/g, '-')}-reason`;
 
@@ -224,8 +260,14 @@ function UnavailableAction({
           <p id={reasonId}>{description}</p>
         </div>
       </div>
-      <Button variant="secondary" type="button" disabled={!capabilityAvailable} aria-describedby={reasonId}>
-        Indisponível
+      <Button
+        variant={destructive ? 'danger' : 'secondary'}
+        type="button"
+        disabled={!capabilityAvailable || disabled}
+        aria-describedby={reasonId}
+        onClick={onClick}
+      >
+        {capabilityAvailable ? buttonLabel : 'Indisponível'}
       </Button>
     </div>
   );
@@ -237,11 +279,11 @@ function getRoleStatusLabel(status: LinkedRole['status']): string {
 
 function getEligibilityMessage(eligibility: PermissionRemovalEligibility): string {
   if (eligibility.canRemove && eligibility.linkedRoles.length === 0) {
-    return 'Sem vínculos com papéis. A permissão está livre de dependências para remoção quando o endpoint do ecad-authz estiver disponível.';
+    return 'Sem vínculos com papéis. A permissão está livre de dependências para remoção.';
   }
 
   if (eligibility.canRemove) {
-    return 'Há vínculos históricos ou inativos, mas nenhum papel ativo bloqueia a remoção quando o endpoint do ecad-authz estiver disponível.';
+    return 'Há vínculos históricos ou inativos, mas nenhum papel ativo bloqueia a remoção.';
   }
 
   if (eligibility.blockingReason === 'ROLE_LINKS_PRESENT') {
@@ -253,4 +295,23 @@ function getEligibilityMessage(eligibility: PermissionRemovalEligibility): strin
   }
 
   return 'Não foi possível determinar a elegibilidade de remoção neste momento.';
+}
+
+function getRemoveActionDescription(
+  permission: Permission,
+  eligibility?: PermissionRemovalEligibility,
+): string {
+  if (permission.status !== 'DEPRECATED') {
+    return 'Disponível somente depois que a permissão estiver depreciada.';
+  }
+
+  if (eligibility?.blockingReason === 'ROLE_LINKS_PRESENT') {
+    return 'Bloqueada enquanto houver papéis ativos vinculados à permissão.';
+  }
+
+  if (!eligibility) {
+    return 'Aguardando consulta de papéis vinculados para confirmar elegibilidade.';
+  }
+
+  return 'Não foi possível confirmar elegibilidade de remoção.';
 }

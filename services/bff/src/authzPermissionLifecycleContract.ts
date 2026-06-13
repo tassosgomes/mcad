@@ -49,16 +49,16 @@ const missingUpstreamEndpoints: Record<UnsupportedAuthzPermissionLifecycleOperat
 };
 
 export const AUTHZ_PERMISSION_LIFECYCLE_CAPABILITIES: Readonly<AuthzPermissionLifecycleCapabilities> = Object.freeze({
-  canCreate: false,
+  canCreate: true,
   canDeprecate: true,
   canListLinkedRoles: true,
-  canReactivate: false,
-  canRemove: false,
+  canReactivate: true,
+  canRemove: true,
 });
 
 export const AUTHZ_PERMISSION_LIFECYCLE_PHASES = Object.freeze({
-  PHASE_1: Object.freeze(['deprecate', 'listLinkedRoles'] as const),
-  PHASE_2: Object.freeze(['create', 'reactivate', 'remove'] as const),
+  PHASE_1: Object.freeze(['create', 'deprecate', 'listLinkedRoles', 'reactivate', 'remove'] as const),
+  PHASE_2: Object.freeze([] as const),
 }) satisfies Readonly<Record<AuthzPermissionLifecyclePhase, readonly AuthzPermissionLifecycleOperation[]>>;
 
 export const AUTHZ_PERMISSION_OPERATION_UNAVAILABLE_STATUS = 501;

@@ -61,14 +61,14 @@ describe('usePermissionLifecycleCapabilities', () => {
     expect(result.current).toEqual(AUTHZ_PERMISSION_LIFECYCLE_CAPABILITIES);
     expect(result.current.canDeprecate).toBe(true);
     expect(result.current.canListLinkedRoles).toBe(true);
-    expect(result.current.canCreate).toBe(false);
-    expect(result.current.canReactivate).toBe(false);
-    expect(result.current.canRemove).toBe(false);
+    expect(result.current.canCreate).toBe(true);
+    expect(result.current.canReactivate).toBe(true);
+    expect(result.current.canRemove).toBe(true);
   });
 });
 
 describe('usePermissionOperationAvailable', () => {
-  it('returns true for Phase 1 operations and false for Phase 2 operations', () => {
+  it('returns true for all lifecycle operations after final contract activation', () => {
     const { result: deprecate } = renderHook(
       () => usePermissionOperationAvailable('deprecate'),
       { wrapper: buildWrapper() },
@@ -92,9 +92,9 @@ describe('usePermissionOperationAvailable', () => {
 
     expect(deprecate.current).toBe(true);
     expect(listLinkedRoles.current).toBe(true);
-    expect(create.current).toBe(false);
-    expect(reactivate.current).toBe(false);
-    expect(remove.current).toBe(false);
+    expect(create.current).toBe(true);
+    expect(reactivate.current).toBe(true);
+    expect(remove.current).toBe(true);
   });
 });
 
@@ -194,19 +194,20 @@ describe('useDeprecatePermissionGoverned', () => {
   });
 });
 
-describe('Phase 2 stubs: error surfacing', () => {
+describe('final lifecycle mutations', () => {
   afterEach(() => {
     setBffAuthTokenProvider(null);
     vi.restoreAllMocks();
   });
 
-  it('useCreatePermission surfaces 501 AUTHZ_PERMISSION_OPERATION_UNAVAILABLE from BFF', async () => {
-    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
-      new Response(
-        JSON.stringify({ code: 'AUTHZ_PERMISSION_OPERATION_UNAVAILABLE', operation: 'create' }),
-        { status: 501, headers: { 'Content-Type': 'application/json' } },
-      ),
-    );
+  it('useCreatePermission returns the created permission', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(mockJsonResponse({
+      ...BASE_PERMISSION,
+      id: 'perm-new',
+      key: 'cadastro:obras:obra:aprovar',
+      displayName: 'Aprovar obra',
+      action: 'aprovar',
+    }, 201));
     setBffAuthTokenProvider(() => 'token-test');
 
     const { result } = renderHook(() => useCreatePermission(), { wrapper: buildWrapper() });
@@ -219,46 +220,38 @@ describe('Phase 2 stubs: error surfacing', () => {
       resource: 'obra',
       action: 'aprovar',
     });
-    await waitFor(() => expect(result.current.isError).toBe(true));
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
-    const error = result.current.error as unknown as Record<string, unknown>;
-    expect(error.code).toBe('AUTHZ_PERMISSION_OPERATION_UNAVAILABLE');
-    expect(error.status).toBe(501);
+    expect(result.current.data?.id).toBe('perm-new');
   });
 
-  it('useReactivatePermission surfaces 501 AUTHZ_PERMISSION_OPERATION_UNAVAILABLE from BFF', async () => {
-    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
-      new Response(
-        JSON.stringify({ code: 'AUTHZ_PERMISSION_OPERATION_UNAVAILABLE', operation: 'reactivate' }),
-        { status: 501, headers: { 'Content-Type': 'application/json' } },
-      ),
-    );
+  it('useReactivatePermission returns the active permission', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(mockJsonResponse({
+      ...BASE_PERMISSION,
+      status: 'ACTIVE',
+    }));
     setBffAuthTokenProvider(() => 'token-test');
 
     const { result } = renderHook(() => useReactivatePermission(), { wrapper: buildWrapper() });
 
     result.current.mutate('perm-1');
-    await waitFor(() => expect(result.current.isError).toBe(true));
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
-    const error = result.current.error as unknown as Record<string, unknown>;
-    expect(error.code).toBe('AUTHZ_PERMISSION_OPERATION_UNAVAILABLE');
+    expect(result.current.data?.status).toBe('ACTIVE');
   });
 
-  it('useRemovePermission surfaces 501 AUTHZ_PERMISSION_OPERATION_UNAVAILABLE from BFF', async () => {
-    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
-      new Response(
-        JSON.stringify({ code: 'AUTHZ_PERMISSION_OPERATION_UNAVAILABLE', operation: 'remove' }),
-        { status: 501, headers: { 'Content-Type': 'application/json' } },
-      ),
-    );
+  it('useRemovePermission returns the disabled permission', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(mockJsonResponse({
+      ...BASE_PERMISSION,
+      status: 'DISABLED',
+    }));
     setBffAuthTokenProvider(() => 'token-test');
 
     const { result } = renderHook(() => useRemovePermission(), { wrapper: buildWrapper() });
 
     result.current.mutate({ permissionId: 'perm-1', confirmationText: 'CONFIRMO' });
-    await waitFor(() => expect(result.current.isError).toBe(true));
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
-    const error = result.current.error as unknown as Record<string, unknown>;
-    expect(error.code).toBe('AUTHZ_PERMISSION_OPERATION_UNAVAILABLE');
+    expect(result.current.data?.status).toBe('DISABLED');
   });
 });

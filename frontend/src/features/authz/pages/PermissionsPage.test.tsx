@@ -57,11 +57,11 @@ describe('PermissionsPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     usePermissionLifecycleCapabilitiesMock.mockReturnValue({
-      canCreate: false,
+      canCreate: true,
       canDeprecate: true,
       canListLinkedRoles: true,
-      canReactivate: false,
-      canRemove: false,
+      canReactivate: true,
+      canRemove: true,
     });
     mockPermissionsCatalog();
   });
@@ -111,27 +111,27 @@ describe('PermissionsPage', () => {
     expect(screen.getByRole('combobox', { name: /status/i })).toHaveValue('ACTIVE');
   });
 
-  it('keeps the create CTA disabled while create capability is unavailable', () => {
+  it('keeps the create CTA enabled when create capability is available', () => {
+    renderPage();
+
+    const createButton = screen.getByRole('button', { name: /cadastrar permissão/i });
+    expect(createButton).toBeEnabled();
+    expect(screen.queryByText(/cadastro indisponível/i)).not.toBeInTheDocument();
+  });
+
+  it('disables the create CTA defensively when the capability matrix blocks creation', () => {
+    usePermissionLifecycleCapabilitiesMock.mockReturnValue({
+      canCreate: false,
+      canDeprecate: true,
+      canListLinkedRoles: true,
+      canReactivate: true,
+      canRemove: true,
+    });
+
     renderPage();
 
     const createButton = screen.getByRole('button', { name: /cadastrar permissão/i });
     expect(createButton).toBeDisabled();
     expect(createButton).toHaveAccessibleDescription(/cadastro indisponível/i);
-    expect(screen.getByText(/ecad-authz expor o endpoint administrativo/i)).toBeInTheDocument();
-  });
-
-  it('enables the create CTA when the capability matrix allows creation', () => {
-    usePermissionLifecycleCapabilitiesMock.mockReturnValue({
-      canCreate: true,
-      canDeprecate: true,
-      canListLinkedRoles: true,
-      canReactivate: false,
-      canRemove: false,
-    });
-
-    renderPage();
-
-    expect(screen.getByRole('button', { name: /cadastrar permissão/i })).toBeEnabled();
-    expect(screen.queryByText(/cadastro indisponível/i)).not.toBeInTheDocument();
   });
 });

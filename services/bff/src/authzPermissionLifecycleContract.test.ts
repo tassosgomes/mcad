@@ -9,29 +9,35 @@ import {
   isPermissionLifecycleOperationAvailable,
 } from './authzPermissionLifecycleContract.js';
 
-test('authz permission lifecycle contract exposes the phase 1 capability matrix', () => {
+test('authz permission lifecycle contract exposes the final capability matrix', () => {
   assert.deepEqual(AUTHZ_PERMISSION_LIFECYCLE_CAPABILITIES, {
-    canCreate: false,
+    canCreate: true,
     canDeprecate: true,
     canListLinkedRoles: true,
-    canReactivate: false,
-    canRemove: false,
+    canReactivate: true,
+    canRemove: true,
   });
   assert.equal(isPermissionLifecycleOperationAvailable('deprecate'), true);
   assert.equal(isPermissionLifecycleOperationAvailable('listLinkedRoles'), true);
-  assert.equal(isPermissionLifecycleOperationAvailable('create'), false);
-  assert.equal(isPermissionLifecycleOperationAvailable('reactivate'), false);
-  assert.equal(isPermissionLifecycleOperationAvailable('remove'), false);
+  assert.equal(isPermissionLifecycleOperationAvailable('create'), true);
+  assert.equal(isPermissionLifecycleOperationAvailable('reactivate'), true);
+  assert.equal(isPermissionLifecycleOperationAvailable('remove'), true);
 });
 
 test('authz permission lifecycle contract maps DISABLED to the Removida label', () => {
   assert.equal(AUTHZ_PERMISSION_STATUS_LABELS.DISABLED, 'Removida');
 });
 
-test('authz permission lifecycle contract exposes the stable fail-closed error payload', () => {
+test('authz permission lifecycle contract keeps the legacy unavailable error payload stable', () => {
   assert.equal(AUTHZ_PERMISSION_OPERATION_UNAVAILABLE_STATUS, 501);
-  assert.deepEqual(AUTHZ_PERMISSION_LIFECYCLE_PHASES.PHASE_1, ['deprecate', 'listLinkedRoles']);
-  assert.deepEqual(AUTHZ_PERMISSION_LIFECYCLE_PHASES.PHASE_2, ['create', 'reactivate', 'remove']);
+  assert.deepEqual(AUTHZ_PERMISSION_LIFECYCLE_PHASES.PHASE_1, [
+    'create',
+    'deprecate',
+    'listLinkedRoles',
+    'reactivate',
+    'remove',
+  ]);
+  assert.deepEqual(AUTHZ_PERMISSION_LIFECYCLE_PHASES.PHASE_2, []);
   assert.deepEqual(buildPermissionOperationUnavailableBody('reactivate'), {
     code: 'AUTHZ_PERMISSION_OPERATION_UNAVAILABLE',
     message:

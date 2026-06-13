@@ -3,28 +3,29 @@ import type { FastifyInstance, FastifyRequest } from 'fastify';
 import type { BffConfig } from './config.js';
 import { type FetchLike, resolveAuthzContext, sendError } from './authzContext.js';
 import { toUuidCorrelationId } from './correlationId.js';
-import {
-  buildPermissionOperationUnavailableBody,
-  AUTHZ_PERMISSION_OPERATION_UNAVAILABLE_STATUS,
-} from './authzPermissionLifecycleContract.js';
 
 /**
- * Public BFF contract (Fase 1):
+ * Public BFF contract:
  * - GET  /api/autorizacao/permissoes/:id/papeis-vinculados
  *     → { permissionId, permissionStatus, linkedRoles[], canRemove, blockingReason? }
- *     Aggregates ecad-authz GET /v1/roles + GET /v1/roles/{roleId}/permissions fan-out.
+ *     Uses official ecad-authz GET /v1/permissions/{permissionId}/roles.
  * - POST /api/autorizacao/permissoes/:id/depreciar
  *     → audited wrapper for PATCH /v1/permissions/{id}/deprecate.
- *     Propagates x-authz-version; publishes PERMISSION_LIFECYCLE audit event.
- *
- * Phase 2 stubs (fail-closed; upstream endpoints not yet available):
- * - POST /api/autorizacao/permissoes                    → 501
- * - POST /api/autorizacao/permissoes/:id/reativar       → 501
- * - POST /api/autorizacao/permissoes/:id/remover        → 501
+ * - POST /api/autorizacao/permissoes
+ *     → audited wrapper for POST /v1/permissions.
+ * - POST /api/autorizacao/permissoes/:id/reativar
+ *     → audited wrapper for POST /v1/permissions/{id}/reactivate.
+ * - POST /api/autorizacao/permissoes/:id/remover
+ *     → validates CONFIRMO and active linked roles before POST /v1/permissions/{id}/remove.
  */
 
 const VIEW_PERMISSION = 'authz:admin:permission:visualizar';
 const DEPRECATE_PERMISSION = 'authz:admin:permission:depreciar';
+const CREATE_PERMISSION = 'authz:admin:permission:criar';
+const REACTIVATE_PERMISSION = 'authz:admin:permission:reativar';
+const REMOVE_PERMISSION = 'authz:admin:permission:remover';
+const CONFIRMATION_TEXT = 'CONFIRMO';
+const PERMISSION_KEY_PATTERN = /^[a-z0-9-]+:[a-z0-9-]+:[a-z0-9-]+:[a-z0-9-]+$/;
 
 export interface PermissionLifecycleRoutesOptions {
   config: BffConfig;
@@ -55,6 +56,16 @@ interface PermissionDto {
   [key: string]: unknown;
 }
 
+interface CreatePermissionInput {
+  key: string;
+  displayName: string;
+  description?: string | null;
+  domain: string;
+  area: string;
+  resource: string;
+  action: string;
+}
+
 interface AuthzFetchResult {
   status: number;
   body: unknown;
@@ -66,7 +77,7 @@ interface PermissionLifecycleAuditEvent {
   schemaVersion: 1;
   eventId: string;
   occurredAt: string;
-  action: 'deprecate';
+  action: 'create' | 'deprecate' | 'reactivate' | 'remove';
   outcome: 'SUCCESS' | 'FAILURE';
   actor: { subject: string };
   permission: { id: string; key: string };
@@ -101,11 +112,20 @@ function getItems(body: unknown): unknown[] {
   return [];
 }
 
-function mapUpstreamErrorBody(body: unknown, fallbackCode: string): { code: string; message?: string } {
+function mapUpstreamErrorBody(
+  body: unknown,
+  fallbackCode: string,
+): { code: string; message?: string; correlationId?: string; details?: unknown } {
   const record = asRecord(body);
   const code = getString(record?.code) ?? fallbackCode;
   const message = getString(record?.message);
-  return { code, ...(message ? { message } : {}) };
+  const correlationId = getString(record?.correlationId);
+  return {
+    code,
+    ...(message ? { message } : {}),
+    ...(correlationId ? { correlationId } : {}),
+    ...(record && 'details' in record ? { details: record.details } : {}),
+  };
 }
 
 function toPermissionDto(value: unknown): PermissionDto | undefined {
@@ -146,24 +166,6 @@ function toLinkedRoleDto(value: unknown): LinkedRoleDto | undefined {
  * Checks whether a permission (identified by id or key) appears in a role's
  * permission list. Defensive: accepts id, key, permissionKey or bare string.
  */
-function permissionIsInList(
-  permissionId: string,
-  permissionKey: string,
-  permissions: unknown[],
-): boolean {
-  return permissions.some((p) => {
-    if (typeof p === 'string') {
-      return p === permissionKey || p === permissionId;
-    }
-    const record = asRecord(p);
-    if (!record) return false;
-    if (getString(record.id) === permissionId) return true;
-    const pKey = getString(record.key) ?? getString(record.permissionKey);
-    if (pKey && pKey === permissionKey) return true;
-    return false;
-  });
-}
-
 function buildAuditEventsUrl(auditBaseUrl: string): string {
   const normalized = auditBaseUrl.replace(/\/$/, '');
   if (normalized.endsWith('/api/v1/audit')) return `${normalized}/events`;
@@ -180,6 +182,82 @@ function setAuthzVersionHeader(
   if (typeof value === 'string' && value.length > 0) {
     setHeader('x-authz-version', value);
   }
+}
+
+function setResponseHeaders(
+  result: AuthzFetchResult,
+  request: FastifyRequest,
+  reply: { header(name: string, value: string): unknown },
+  fallbackCorrelationId: string,
+): void {
+  setAuthzVersionHeader(
+    result.headers.get('x-authz-version'),
+    request.headers['x-authz-version'],
+    reply.header.bind(reply),
+  );
+
+  const upstreamCorrelationId = result.headers.get('x-correlation-id');
+  reply.header('x-correlation-id', upstreamCorrelationId ?? fallbackCorrelationId);
+
+  const location = result.headers.get('location');
+  if (location) {
+    reply.header('location', location);
+  }
+}
+
+function makeLocalError(
+  code: string,
+  message: string,
+  correlationId: string,
+  details?: unknown,
+): { code: string; message: string; correlationId: string; details?: unknown } {
+  return {
+    code,
+    message,
+    correlationId,
+    ...(details !== undefined ? { details } : {}),
+  };
+}
+
+function parseCreatePermissionInput(body: unknown): CreatePermissionInput | undefined {
+  const record = asRecord(body);
+  if (!record) return undefined;
+
+  const key = getString(record.key)?.trim();
+  const displayName = getString(record.displayName)?.trim();
+  const domain = getString(record.domain)?.trim();
+  const area = getString(record.area)?.trim();
+  const resource = getString(record.resource)?.trim();
+  const action = getString(record.action)?.trim();
+
+  if (!key || !displayName || !domain || !area || !resource || !action) {
+    return undefined;
+  }
+
+  return {
+    key,
+    displayName,
+    description: record.description == null ? null : getString(record.description)?.trim() ?? null,
+    domain,
+    area,
+    resource,
+    action,
+  };
+}
+
+function validatePermissionInput(input: CreatePermissionInput): string[] {
+  const errors: string[] = [];
+  const expectedKey = `${input.domain}:${input.area}:${input.resource}:${input.action}`;
+
+  if (!PERMISSION_KEY_PATTERN.test(input.key)) {
+    errors.push('key must match dominio:area:recurso:acao using lowercase letters, numbers and hyphens');
+  }
+
+  if (input.key !== expectedKey) {
+    errors.push('key must match domain, area, resource and action segments');
+  }
+
+  return errors;
 }
 
 async function firePermissionLifecycleAuditEvent(
@@ -262,7 +340,7 @@ async function fetchAuthz(
       request.log.warn({ url, status: response.status }, 'authz upstream error');
       return {
         status: 503,
-        body: { code: 'AUTHZ_UNAVAILABLE' },
+        body: { code: 'AUTHZ_SERVICE_UNAVAILABLE' },
         headers: response.headers,
       };
     }
@@ -276,7 +354,7 @@ async function fetchAuthz(
     );
     return {
       status: 503,
-      body: { code: 'AUTHZ_UNAVAILABLE' },
+      body: { code: 'AUTHZ_SERVICE_UNAVAILABLE' },
       headers: { get: () => null },
     };
   } finally {
@@ -300,7 +378,7 @@ export async function registerPermissionLifecycleRoutes(
 
   // -------------------------------------------------------------------------
   // GET /api/autorizacao/permissoes/:id/papeis-vinculados
-  // Returns PermissionRemovalEligibility built by fan-out aggregation.
+  // Returns PermissionRemovalEligibility from official upstream role links.
   // -------------------------------------------------------------------------
   server.get('/api/autorizacao/permissoes/:id/papeis-vinculados', async (request, reply) => {
     const ctx = await resolveAuthzContext(request, reply, options, fetchImpl);
@@ -342,13 +420,12 @@ export async function registerPermissionLifecycleRoutes(
       return sendError(reply, 503, 'AUTHZ_UNAVAILABLE', 'Invalid permission response from upstream');
     }
 
-    // 2.3 — Fetch role catalog (bounded to 200 to match ecad-authz admin volume)
     const rolesResult = await fetchAuthz(
       request,
       options.config,
       fetchImpl,
       ctx.token,
-      '/v1/roles?page=0&size=200&sort=displayName,asc',
+      `/v1/permissions/${encodeURIComponent(permission.id)}/roles?page=0&size=200&sort=displayName,asc`,
       { correlationId: request.id },
     );
 
@@ -362,42 +439,8 @@ export async function registerPermissionLifecycleRoutes(
       .map(toLinkedRoleDto)
       .filter((r): r is LinkedRoleDto => r !== undefined);
 
-    // 2.4 — Fan-out: GET /v1/roles/{roleId}/permissions for each role in parallel
-    const fanoutResults = await Promise.all(
-      allRoles.map(async (role) => {
-        const result = await fetchAuthz(
-          request,
-          options.config,
-          fetchImpl,
-          ctx.token,
-          `/v1/roles/${encodeURIComponent(role.id)}/permissions`,
-          { correlationId: request.id },
-        );
-        return { role, result };
-      }),
-    );
-
-    // Surface the first fan-out error (503 or 4xx from upstream)
-    const fanoutError = fanoutResults.find(({ result }) => result.status !== 200);
-    if (fanoutError) {
-      request.log.warn(
-        { roleId: fanoutError.role.id, status: fanoutError.result.status },
-        'authz fan-out error fetching role permissions',
-      );
-      return reply
-        .code(fanoutError.result.status)
-        .send(mapUpstreamErrorBody(fanoutError.result.body, 'AUTHZ_UNAVAILABLE'));
-    }
-
-    // 2.4 — Filter roles that contain the target permission (by id or key)
-    const linkedRoles = fanoutResults
-      .filter(({ result }) =>
-        permissionIsInList(permission.id, permission.key, getItems(result.body)),
-      )
-      .map(({ role }) => role);
-
-    // 2.5, 2.6 — Build PermissionRemovalEligibility
-    // Only ACTIVE linked roles block removal (subtarefa 2.6)
+    // The official upstream endpoint returns roles linked to this permission.
+    const linkedRoles = allRoles;
     const activeLinkedRoles = linkedRoles.filter((role) => role.status === 'ACTIVE');
     const isDeprecated = permission.status === 'DEPRECATED';
 
@@ -432,6 +475,7 @@ export async function registerPermissionLifecycleRoutes(
       'permission linked roles resolved',
     );
 
+    setResponseHeaders(rolesResult, request, reply, toUuidCorrelationId(request.id));
     return reply.code(200).send(eligibility);
   });
 
@@ -510,12 +554,7 @@ export async function registerPermissionLifecycleRoutes(
     });
 
     if (ok) {
-      const upstreamAuthzVersion = result.headers.get('x-authz-version');
-      setAuthzVersionHeader(
-        upstreamAuthzVersion,
-        request.headers['x-authz-version'],
-        reply.header.bind(reply),
-      );
+      setResponseHeaders(result, request, reply, correlationId);
       return reply.code(200).send(deprecatedPermission ?? result.body);
     }
 
@@ -523,41 +562,330 @@ export async function registerPermissionLifecycleRoutes(
   });
 
   // -------------------------------------------------------------------------
-  // POST /api/autorizacao/permissoes — Phase 2 stub (fail-closed)
-  // Upstream POST /v1/permissions not yet available.
+  // POST /api/autorizacao/permissoes
+  // Audited BFF wrapper: calls POST /v1/permissions upstream.
   // -------------------------------------------------------------------------
   server.post('/api/autorizacao/permissoes', async (request, reply) => {
     const ctx = await resolveAuthzContext(request, reply, options, fetchImpl);
     if (!ctx) return;
 
-    return reply
-      .code(AUTHZ_PERMISSION_OPERATION_UNAVAILABLE_STATUS)
-      .send(buildPermissionOperationUnavailableBody('create'));
+    if (!ctx.payload.permissions.includes(CREATE_PERMISSION)) {
+      return sendError(reply, 403, 'PERMISSION_DENIED');
+    }
+
+    const correlationId = toUuidCorrelationId(request.id);
+    const input = parseCreatePermissionInput(request.body);
+    if (!input) {
+      return reply
+        .code(422)
+        .send(makeLocalError('MISSING_PERMISSION', 'Required permission fields are missing', correlationId));
+    }
+
+    const validationErrors = validatePermissionInput(input);
+    if (validationErrors.length > 0) {
+      return reply
+        .code(422)
+        .send(makeLocalError('INVALID_PERMISSION_NAMESPACE', 'Invalid permission namespace', correlationId, validationErrors));
+    }
+
+    const result = await fetchAuthz(
+      request,
+      options.config,
+      fetchImpl,
+      ctx.token,
+      '/v1/permissions',
+      { method: 'POST', body: input, correlationId },
+    );
+
+    const ok = result.status === 201 || result.status === 200;
+    const createdPermission = ok ? toPermissionDto(result.body) : undefined;
+    const errorBody = !ok ? mapUpstreamErrorBody(result.body, 'AUTHZ_SERVICE_UNAVAILABLE') : undefined;
+    const errorCode = errorBody?.code;
+
+    request.log.info(
+      {
+        action: 'authz.permission.create',
+        actor: ctx.payload.user.subject,
+        permissionKey: input.key,
+        outcome: ok ? 'ok' : 'failed',
+        status: result.status,
+        correlationId,
+        ...(errorCode ? { errorCode } : {}),
+      },
+      ok ? 'permission created' : 'permission creation failed',
+    );
+
+    const auditEvent: PermissionLifecycleAuditEvent = {
+      eventType: 'PERMISSION_LIFECYCLE',
+      schemaVersion: 1,
+      eventId: randomUUID(),
+      occurredAt: new Date().toISOString(),
+      action: 'create',
+      outcome: ok ? 'SUCCESS' : 'FAILURE',
+      actor: { subject: ctx.payload.user.subject },
+      permission: { id: createdPermission?.id ?? '', key: input.key },
+      correlationId,
+      ...(errorCode ? { errorCode } : {}),
+    };
+
+    firePermissionLifecycleAuditEvent(auditEvent, {
+      config: options.config,
+      fetchImpl,
+      log: request.log,
+    }).catch((err: unknown) => {
+      request.log.warn({ err }, 'permission.lifecycle.audit.publish_failed (outer)');
+    });
+
+    if (ok) {
+      setResponseHeaders(result, request, reply, correlationId);
+      return reply.code(201).send(createdPermission ?? result.body);
+    }
+
+    return reply.code(result.status).send(errorBody);
   });
 
   // -------------------------------------------------------------------------
-  // POST /api/autorizacao/permissoes/:id/reativar — Phase 2 stub (fail-closed)
-  // Upstream POST /v1/permissions/{id}/reactivate not yet available.
+  // POST /api/autorizacao/permissoes/:id/reativar
+  // Audited BFF wrapper: calls POST /v1/permissions/{id}/reactivate upstream.
   // -------------------------------------------------------------------------
   server.post('/api/autorizacao/permissoes/:id/reativar', async (request, reply) => {
     const ctx = await resolveAuthzContext(request, reply, options, fetchImpl);
     if (!ctx) return;
 
-    return reply
-      .code(AUTHZ_PERMISSION_OPERATION_UNAVAILABLE_STATUS)
-      .send(buildPermissionOperationUnavailableBody('reactivate'));
+    if (!ctx.payload.permissions.includes(REACTIVATE_PERMISSION)) {
+      return sendError(reply, 403, 'PERMISSION_DENIED');
+    }
+
+    const params = request.params as { id?: string };
+    const permissionId = getString(params.id);
+    if (!permissionId) {
+      return sendError(reply, 400, 'INVALID_REQUEST', 'Permission ID is required');
+    }
+
+    const correlationId = toUuidCorrelationId(request.id);
+    const result = await fetchAuthz(
+      request,
+      options.config,
+      fetchImpl,
+      ctx.token,
+      `/v1/permissions/${encodeURIComponent(permissionId)}/reactivate`,
+      { method: 'POST', correlationId },
+    );
+
+    const ok = result.status >= 200 && result.status < 300;
+    const reactivatedPermission = ok ? toPermissionDto(result.body) : undefined;
+    const errorBody = !ok ? mapUpstreamErrorBody(result.body, 'AUTHZ_SERVICE_UNAVAILABLE') : undefined;
+    const errorCode = errorBody?.code;
+
+    request.log.info(
+      {
+        action: 'authz.permission.reactivate',
+        actor: ctx.payload.user.subject,
+        permissionId,
+        outcome: ok ? 'ok' : 'failed',
+        status: result.status,
+        correlationId,
+        ...(errorCode ? { errorCode } : {}),
+      },
+      ok ? 'permission reactivated' : 'permission reactivation failed',
+    );
+
+    const auditEvent: PermissionLifecycleAuditEvent = {
+      eventType: 'PERMISSION_LIFECYCLE',
+      schemaVersion: 1,
+      eventId: randomUUID(),
+      occurredAt: new Date().toISOString(),
+      action: 'reactivate',
+      outcome: ok ? 'SUCCESS' : 'FAILURE',
+      actor: { subject: ctx.payload.user.subject },
+      permission: { id: permissionId, key: reactivatedPermission?.key ?? '' },
+      correlationId,
+      ...(errorCode ? { errorCode } : {}),
+    };
+
+    firePermissionLifecycleAuditEvent(auditEvent, {
+      config: options.config,
+      fetchImpl,
+      log: request.log,
+    }).catch((err: unknown) => {
+      request.log.warn({ err }, 'permission.lifecycle.audit.publish_failed (outer)');
+    });
+
+    if (ok) {
+      setResponseHeaders(result, request, reply, correlationId);
+      return reply.code(200).send(reactivatedPermission ?? result.body);
+    }
+
+    return reply.code(result.status).send(errorBody);
   });
 
   // -------------------------------------------------------------------------
-  // POST /api/autorizacao/permissoes/:id/remover — Phase 2 stub (fail-closed)
-  // Upstream POST /v1/permissions/{id}/remove not yet available.
+  // POST /api/autorizacao/permissoes/:id/remover
+  // Validates CONFIRMO and active linked roles before upstream removal.
   // -------------------------------------------------------------------------
   server.post('/api/autorizacao/permissoes/:id/remover', async (request, reply) => {
     const ctx = await resolveAuthzContext(request, reply, options, fetchImpl);
     if (!ctx) return;
 
-    return reply
-      .code(AUTHZ_PERMISSION_OPERATION_UNAVAILABLE_STATUS)
-      .send(buildPermissionOperationUnavailableBody('remove'));
+    if (!ctx.payload.permissions.includes(REMOVE_PERMISSION)) {
+      return sendError(reply, 403, 'PERMISSION_DENIED');
+    }
+
+    const params = request.params as { id?: string };
+    const permissionId = getString(params.id);
+    if (!permissionId) {
+      return sendError(reply, 400, 'INVALID_REQUEST', 'Permission ID is required');
+    }
+
+    const correlationId = toUuidCorrelationId(request.id);
+    const body = asRecord(request.body);
+    const confirmationText = getString(body?.confirmationText);
+
+    if (confirmationText !== CONFIRMATION_TEXT) {
+      const errorBody = makeLocalError(
+        'INVALID_CONFIRMATION',
+        'Digite exatamente CONFIRMO para remover a permissao.',
+        correlationId,
+      );
+
+      const auditEvent: PermissionLifecycleAuditEvent = {
+        eventType: 'PERMISSION_LIFECYCLE',
+        schemaVersion: 1,
+        eventId: randomUUID(),
+        occurredAt: new Date().toISOString(),
+        action: 'remove',
+        outcome: 'FAILURE',
+        actor: { subject: ctx.payload.user.subject },
+        permission: { id: permissionId, key: '' },
+        correlationId,
+        errorCode: errorBody.code,
+      };
+
+      firePermissionLifecycleAuditEvent(auditEvent, {
+        config: options.config,
+        fetchImpl,
+        log: request.log,
+      }).catch((err: unknown) => {
+        request.log.warn({ err }, 'permission.lifecycle.audit.publish_failed (outer)');
+      });
+
+      return reply.code(400).send(errorBody);
+    }
+
+    const permissionResult = await fetchAuthz(
+      request,
+      options.config,
+      fetchImpl,
+      ctx.token,
+      `/v1/permissions/${encodeURIComponent(permissionId)}`,
+      { correlationId },
+    );
+
+    if (permissionResult.status !== 200) {
+      return reply
+        .code(permissionResult.status)
+        .send(mapUpstreamErrorBody(permissionResult.body, 'AUTHZ_SERVICE_UNAVAILABLE'));
+    }
+
+    const permission = toPermissionDto(permissionResult.body);
+    if (!permission) {
+      request.log.error({ permissionId }, 'upstream returned unparseable permission detail before removal');
+      return sendError(reply, 503, 'AUTHZ_SERVICE_UNAVAILABLE', 'Invalid permission response from upstream');
+    }
+
+    if (permission.status !== 'DEPRECATED') {
+      const errorBody = makeLocalError(
+        'INVALID_PERMISSION_STATUS_TRANSITION',
+        'Permissao precisa estar depreciada antes da remocao.',
+        correlationId,
+        { currentStatus: permission.status, requiredStatus: 'DEPRECATED' },
+      );
+      return reply.code(422).send(errorBody);
+    }
+
+    const rolesResult = await fetchAuthz(
+      request,
+      options.config,
+      fetchImpl,
+      ctx.token,
+      `/v1/permissions/${encodeURIComponent(permission.id)}/roles?page=0&size=200&sort=displayName,asc`,
+      { correlationId },
+    );
+
+    if (rolesResult.status !== 200) {
+      return reply
+        .code(rolesResult.status)
+        .send(mapUpstreamErrorBody(rolesResult.body, 'AUTHZ_SERVICE_UNAVAILABLE'));
+    }
+
+    const activeLinkedRoles = getItems(rolesResult.body)
+      .map(toLinkedRoleDto)
+      .filter((role): role is LinkedRoleDto => role !== undefined && role.status === 'ACTIVE');
+
+    if (activeLinkedRoles.length > 0) {
+      const errorBody = makeLocalError(
+        'PERMISSION_IN_USE',
+        'Permissao possui papeis ativos vinculados.',
+        correlationId,
+        { linkedRoles: activeLinkedRoles },
+      );
+      return reply.code(409).send(errorBody);
+    }
+
+    const result = await fetchAuthz(
+      request,
+      options.config,
+      fetchImpl,
+      ctx.token,
+      `/v1/permissions/${encodeURIComponent(permissionId)}/remove`,
+      { method: 'POST', body: { confirmationText }, correlationId },
+    );
+
+    const ok = result.status >= 200 && result.status < 300;
+    const removedPermission = ok ? toPermissionDto(result.body) : undefined;
+    const errorBody = !ok ? mapUpstreamErrorBody(result.body, 'AUTHZ_SERVICE_UNAVAILABLE') : undefined;
+    const errorCode = errorBody?.code;
+
+    request.log.info(
+      {
+        action: 'authz.permission.remove',
+        actor: ctx.payload.user.subject,
+        permissionId,
+        permissionKey: permission.key,
+        outcome: ok ? 'ok' : 'failed',
+        status: result.status,
+        correlationId,
+        ...(errorCode ? { errorCode } : {}),
+      },
+      ok ? 'permission removed' : 'permission removal failed',
+    );
+
+    const auditEvent: PermissionLifecycleAuditEvent = {
+      eventType: 'PERMISSION_LIFECYCLE',
+      schemaVersion: 1,
+      eventId: randomUUID(),
+      occurredAt: new Date().toISOString(),
+      action: 'remove',
+      outcome: ok ? 'SUCCESS' : 'FAILURE',
+      actor: { subject: ctx.payload.user.subject },
+      permission: { id: permissionId, key: removedPermission?.key ?? permission.key },
+      correlationId,
+      ...(errorCode ? { errorCode } : {}),
+    };
+
+    firePermissionLifecycleAuditEvent(auditEvent, {
+      config: options.config,
+      fetchImpl,
+      log: request.log,
+    }).catch((err: unknown) => {
+      request.log.warn({ err }, 'permission.lifecycle.audit.publish_failed (outer)');
+    });
+
+    if (ok) {
+      setResponseHeaders(result, request, reply, correlationId);
+      return reply.code(200).send(removedPermission ?? result.body);
+    }
+
+    return reply.code(result.status).send(errorBody);
   });
 }

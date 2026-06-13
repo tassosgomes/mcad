@@ -2,7 +2,7 @@
 
 ## Objetivo
 
-Consolidar, no repositorio do MCAD, a leitura oficial do contrato atual do `ecad-authz` para a feature `gestao-ciclo-vida-permissoes`, mantendo o frontend e o BFF em modo fail-closed.
+Consolidar, no repositorio do MCAD, a leitura oficial do contrato final do `ecad-authz` para a feature `gestao-ciclo-vida-permissoes`, ativando o ciclo completo de criacao, depreciacao, reativacao, consulta de vinculos e remocao logica.
 
 Artefatos em codigo:
 
@@ -11,37 +11,33 @@ Artefatos em codigo:
 
 ## Leitura contratual oficial
 
-Contrato confirmado hoje no upstream:
+Contrato final confirmado no upstream:
 
 - `PermissionStatus = ACTIVE | DEPRECATED | DISABLED`
+- `POST /v1/permissions`
 - `GET /v1/permissions`
 - `GET /v1/permissions/{permissionId}`
+- `GET /v1/permissions/{permissionId}/roles`
 - `PATCH /v1/permissions/{permissionId}/deprecate`
-- `GET /v1/roles`
-- `GET /v1/roles/{roleId}/permissions`
-
-Contrato ausente hoje no upstream:
-
-- `POST /v1/permissions`
 - `POST /v1/permissions/{permissionId}/reactivate`
 - `POST /v1/permissions/{permissionId}/remove`
-- `GET /v1/permissions/{permissionId}/roles`
 
 Decisao local do MCAD:
 
 - manter `DISABLED` como estado tecnico oficial;
 - apresentar `DISABLED` ao usuario com o rotulo de negocio `Removida`;
-- nao simular `create`, `reactivate` ou `remove` localmente enquanto o upstream nao expuser endpoints administrativos proprios.
+- usar o BFF como wrapper governado e auditavel para todas as mutacoes;
+- usar `GET /v1/permissions/{permissionId}/roles` como fonte oficial de impedimentos de remocao.
 
 ## Capability matrix local
 
 | Capability | Valor | Observacao |
 | --- | --- | --- |
-| `canDeprecate` | `true` | Endpoint upstream existente |
-| `canListLinkedRoles` | `true` | Implementavel por agregacao local no BFF |
-| `canCreate` | `false` | Depende de `POST /v1/permissions` |
-| `canReactivate` | `false` | Depende de `POST /v1/permissions/{permissionId}/reactivate` |
-| `canRemove` | `false` | Depende de `POST /v1/permissions/{permissionId}/remove` |
+| `canCreate` | `true` | `POST /v1/permissions` disponivel |
+| `canDeprecate` | `true` | `PATCH /v1/permissions/{permissionId}/deprecate` disponivel |
+| `canListLinkedRoles` | `true` | `GET /v1/permissions/{permissionId}/roles` disponivel |
+| `canReactivate` | `true` | `POST /v1/permissions/{permissionId}/reactivate` disponivel |
+| `canRemove` | `true` | `POST /v1/permissions/{permissionId}/remove` disponivel |
 
 ## Mapeamento de status
 
@@ -55,53 +51,26 @@ Observacao:
 
 - `DISABLED` e o equivalente local do estado final de remocao logica pedido pelo PRD.
 
-## Erro local para operacao indisponivel
+## Mutacoes governadas
 
-Quando o frontend chamar uma rota governada do BFF para uma operacao ainda indisponivel por ausencia de endpoint no `ecad-authz`, o shape local padrao deve ser:
+- `POST /api/autorizacao/permissoes` valida payload localmente e encaminha para `POST /v1/permissions`.
+- `POST /api/autorizacao/permissoes/:id/depreciar` preserva a deprecacao governada existente.
+- `POST /api/autorizacao/permissoes/:id/reativar` encaminha para `POST /v1/permissions/{permissionId}/reactivate`.
+- `POST /api/autorizacao/permissoes/:id/remover` exige `confirmationText == CONFIRMO`, valida status depreciado e consulta papeis ativos em `GET /v1/permissions/{permissionId}/roles` antes de encaminhar para `POST /v1/permissions/{permissionId}/remove`.
 
-- HTTP status: `501`
-- body:
+## Erros finais relevantes
 
-```json
-{
-  "code": "AUTHZ_PERMISSION_OPERATION_UNAVAILABLE",
-  "message": "Operacao indisponivel no momento: o ecad-authz ainda nao expoe POST /v1/permissions/{permissionId}/remove.",
-  "operation": "remove",
-  "upstream": "ecad-authz",
-  "missingEndpoint": "POST /v1/permissions/{permissionId}/remove",
-  "phase": "PHASE_2"
-}
-```
+- `INVALID_CONFIRMATION`
+- `PERMISSION_IN_USE`
+- `INVALID_PERMISSION_STATUS_TRANSITION`
+- `PERMISSION_KEY_ALREADY_EXISTS`
+- `PERMISSION_KEY_OWNED_BY_ANOTHER_SERVICE`
+- `INVALID_PERMISSION_NAMESPACE`
+- `MISSING_PERMISSION`
+- `AUTHZ_SERVICE_UNAVAILABLE`
 
-Regras:
+## Impacto pratico
 
-- `operation` varia entre `create`, `reactivate` e `remove`;
-- `missingEndpoint` deve apontar o endpoint administrativo ausente no upstream;
-- `phase` permanece `PHASE_2` enquanto a dependencia externa nao existir.
-
-## Fase 1 x Fase 2
-
-### Fase 1
-
-Escopo implementavel com o contrato atual do upstream:
-
-- listar permissoes;
-- consultar detalhe de permissao;
-- depreciar permissao;
-- levantar papeis vinculados por agregacao local no BFF;
-- tratar `DISABLED` como `Removida` na camada de apresentacao.
-
-### Fase 2
-
-Escopo bloqueado por evolucao do `ecad-authz`:
-
-- criar permissao;
-- reativar permissao depreciada;
-- remover logicamente uma permissao;
-- consultar papeis vinculados por endpoint oficial dedicado.
-
-## Impacto pratico para as proximas tasks
-
-- Frontend deve esconder ou desabilitar acoes de `create`, `reactivate` e `remove` com base na capability matrix local.
-- BFF deve responder com o erro local padrao se uma rota de Fase 2 existir antes do endpoint correspondente no upstream.
+- Frontend deve exibir cadastro, reativacao e remocao conforme status/elegibilidade.
+- Remocao exige entrada literal `CONFIRMO` na UX e no BFF.
 - Qualquer copy de UX deve tratar `DISABLED` como `Removida`, sem renomear o enum tecnico do contrato.
