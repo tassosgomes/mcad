@@ -8,18 +8,18 @@ import { Loading } from '@components/ui/loading';
 import { PageHeader } from '@components/ui/page-header';
 import { useToast } from '@components/ui/toast';
 import { PermissionStatusBadge } from '../components/PermissionStatusBadge';
-import { useDeprecatePermissionGoverned } from '../hooks/usePermissionLifecycle';
+import {
+  useDeprecatePermissionGoverned,
+  usePermissionLinkedRoles,
+  usePermissionOperationAvailable,
+} from '../hooks/usePermissionLifecycle';
 import { usePermissionDetails } from '../hooks/usePermissionsCatalog';
 import styles from './PermissionDetailPage.module.css';
-
-function DetailItem({ label, value, mono = false }: { label: string; value?: string | null; mono?: boolean }) {
-  return (
-    <div className={styles.detailItem}>
-      <span className={styles.detailLabel}>{label}</span>
-      <span className={`${styles.detailValue} ${mono ? styles.mono : ''}`}>{value || '-'}</span>
-    </div>
-  );
-}
+import {
+  LifecycleActionsPanel,
+  LinkedRolesPanel,
+  PermissionMetadataPanel,
+} from './PermissionDetailPanels';
 
 export function PermissionDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -27,10 +27,15 @@ export function PermissionDetailPage() {
   const { showToast } = useToast();
   const [confirmDeprecate, setConfirmDeprecate] = useState(false);
 
+  const canCreatePermission = usePermissionOperationAvailable('create');
+  const canDeprecateLifecycle = usePermissionOperationAvailable('deprecate');
+  const canReactivatePermission = usePermissionOperationAvailable('reactivate');
+  const canRemovePermission = usePermissionOperationAvailable('remove');
   const permissionQuery = usePermissionDetails(id ?? null);
   const deprecateMutation = useDeprecatePermissionGoverned();
   const permission = permissionQuery.data;
-  const canDeprecatePermission = permission?.status === 'ACTIVE';
+  const linkedRolesQuery = usePermissionLinkedRoles(permission?.id ?? null);
+  const canDeprecatePermission = permission?.status === 'ACTIVE' && canDeprecateLifecycle;
 
   const handleConfirmDeprecate = () => {
     if (!permission) return;
@@ -100,28 +105,27 @@ export function PermissionDetailPage() {
         />
       </div>
 
-      <div className={styles.card}>
-        {permission.description && (
-          <p className={styles.description}>{permission.description}</p>
-        )}
+      <PermissionMetadataPanel permission={permission} />
 
-        <div className={styles.detailList}>
-          <DetailItem label="Domínio" value={permission.domain} mono />
-          <DetailItem label="Área" value={permission.area} mono />
-          <DetailItem label="Recurso" value={permission.resource} mono />
-          <DetailItem label="Ação" value={permission.action} mono />
-          <DetailItem label="Serviço declarante" value={permission.serviceName} mono />
-          <DetailItem label="Criada em" value={new Date(permission.createdAt).toLocaleString('pt-BR')} />
-          <DetailItem label="Atualizada em" value={new Date(permission.updatedAt).toLocaleString('pt-BR')} />
-        </div>
-      </div>
+      <LinkedRolesPanel
+        eligibility={linkedRolesQuery.data}
+        isError={linkedRolesQuery.isError}
+        isLoading={linkedRolesQuery.isLoading}
+        onRetry={() => linkedRolesQuery.refetch()}
+      />
+
+      <LifecycleActionsPanel
+        canCreatePermission={canCreatePermission}
+        canReactivatePermission={canReactivatePermission}
+        canRemovePermission={canRemovePermission}
+      />
 
       <ConfirmModal
         isOpen={confirmDeprecate}
         onClose={() => setConfirmDeprecate(false)}
         onConfirm={handleConfirmDeprecate}
         title="Depreciar permissão"
-        description={`Depreciar a permissão "${permission.key}"? Esta ação não pode ser desfeita.`}
+        description={`Depreciar a permissão "${permission.key}"? Esta é a etapa obrigatória antes de uma remoção governada futura.`}
         confirmLabel="Depreciar permissão"
         isLoading={deprecateMutation.isPending}
       />
