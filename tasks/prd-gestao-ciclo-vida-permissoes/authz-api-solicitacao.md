@@ -1,5 +1,13 @@
 # Solicitação de Evolução da API `ecad-authz`
 
+> **Status: ATENDIDA (2026-06-13).**
+> Todos os endpoints solicitados foram publicados pelo time do `ecad-authz`. O MCAD absorveu o contrato final e concluiu a implementação completa do ciclo de vida de permissões (Tasks 1.0 a 7.0). Detalhes do contrato final em `authz-contract.md`.
+>
+> O documento abaixo é mantido como registro histórico da solicitação original.
+
+---
+
+
 ## Contexto
 
 O PRD `gestao-ciclo-vida-permissoes` do MCAD precisa fechar o ciclo administrativo de permissões no módulo de Autorização. Hoje a OpenAPI do `ecad-authz` já cobre:

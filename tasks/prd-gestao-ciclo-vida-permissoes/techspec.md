@@ -1,4 +1,19 @@
-# Template de Especificação Técnica
+# Especificação Técnica — Gestão do Ciclo de Vida de Permissões
+
+## Estado da Entrega (atualizado em 2026-06-13)
+
+**Entrega completa.** Tasks 1.0 a 7.0 concluídas e aprovadas. Todas as capabilities estão ativas (`canCreate`, `canDeprecate`, `canListLinkedRoles`, `canReactivate`, `canRemove` = `true`). O `ecad-authz` publicou os endpoints administrativos solicitados em `authz-api-solicitacao.md`; a Fase 2 foi absorvida pela Fase 1 sem mudança de arquitetura.
+
+Artefatos de validação:
+
+- BFF: `authzPermissionLifecycleRoutes.test.ts` + `authzPermissionLifecycleContract.test.ts` — 142/142 testes passam.
+- Frontend: `authzPermissionLifecycleApi.test.ts`, `usePermissionLifecycle.test.tsx`, `PermissionDetailPage.test.tsx`, `PermissionsPage.test.tsx`, `authzPermissionLifecycleContract.test.ts`, `permission.test.ts` — 151/151 testes passam.
+- Checklist de validação manual: `tasks/prd-gestao-ciclo-vida-permissoes/qa-checklist.md`.
+- Evidências da entrega: `tasks/prd-gestao-ciclo-vida-permissoes/delivery-evidence.md`.
+
+---
+
+# Especificação Técnica Original
 
 ## Resumo Executivo
 
@@ -203,7 +218,7 @@ A distribuição da auditoria fica assim:
 
 ### Dependências Técnicas
 
-- Disponibilidade futura dos endpoints administrativos de create/reactivate/remove no `ecad-authz`.
+- ~~Disponibilidade futura dos endpoints administrativos de create/reactivate/remove no `ecad-authz`.~~ **Entregue.** Todos os endpoints estão disponíveis no upstream; ver `authz-api-solicitacao.md`.
 - Acesso ao serviço de Auditoria já configurado no BFF via `AUDIT_BASE_URL`.
 - Enum oficial do contrato: `ACTIVE | DEPRECATED | DISABLED`.
 
@@ -233,9 +248,9 @@ A distribuição da auditoria fica assim:
 
 ### Riscos Conhecidos
 
-- O `ecad-authz` não expõe hoje os endpoints administrativos de create/reactivate/remove necessários ao PRD.
-- A enumeração de vínculos por fan-out em `/roles/{id}/permissions` pode escalar mal se o catálogo crescer além do volume administrativo atual.
-- O PRD usa `REMOVED`, mas o contrato oficial usa `DISABLED`; divergência semântica precisa ser absorvida no BFF/UI.
+- ~~O `ecad-authz` não expõe hoje os endpoints administrativos de create/reactivate/remove necessários ao PRD.~~ **Resolvido.** O upstream publicou os endpoints em 2026-06-13.
+- O endpoint oficial `GET /v1/permissions/{permissionId}/roles` substitui o fan-out anterior. Sem risco de escala para o volume administrativo atual; monitorar `bff_authz_permission_linked_roles_fanout_total` caso o volume cresça.
+- O PRD usa `REMOVED`, mas o contrato oficial usa `DISABLED`; divergência semântica absorvida no BFF/UI com rótulo `Removida`. Decisão registrada em `authz-contract.md`.
 - O proxy genérico não produz a trilha de auditoria exigida; usar mutação direta por ele seria regressão de governança.
 
 ### Requisitos Especiais

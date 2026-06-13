@@ -25,8 +25,8 @@ Assim que o `ecad-authz` publicar endpoints administrativos de create/reactivate
 - [x] 4.0 Alinhar tipos, clientes e camada compartilhada do frontend ao contrato oficial do Authz
 - [x] 5.0 Atualizar a listagem de permissoes para estados, filtros e CTAs condicionais
 - [x] 6.0 Atualizar o detalhe de permissao com vinculos, elegibilidade e fluxo governado de deprecacao
-- [ ] 7.0 Ativar os fluxos de criar, reativar e remover apos disponibilizacao dos endpoints no `ecad-authz`
-- [ ] 8.0 Consolidar testes, documentacao e rollout da feature em duas fases
+- [x] 7.0 Ativar os fluxos de criar, reativar e remover apos disponibilizacao dos endpoints no `ecad-authz`
+- [x] 8.0 Consolidar testes, documentacao e rollout da feature em duas fases
 
 ## Analise de Paralelizacao
 
