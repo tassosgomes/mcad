@@ -32,6 +32,7 @@ import { usePermissions } from '@shared/authz/usePermissions';
 
 import styles from './FonogramaDetailPage.module.css';
 import { ParticipacoesSection } from '@features/cadastro/participacoes';
+import { AnexosSection } from '@features/cadastro/anexos';
 
 const STATUS_VARIANT: Record<string, 'success' | 'warning' | 'secondary' | 'error'> = {
   Pendente_Validacao: 'warning',
@@ -209,6 +210,10 @@ export function FonogramaDetailPage() {
             canWrite={canWrite}
             onDepuracaoRequired={() => setShowDepuracaoModal(true)}
           />
+        </section>
+
+        <section className={styles.section}>
+          <AnexosSection tipo="Fonograma" entidadeId={fonograma.id} canWrite={canWrite} />
         </section>
 
         <HistoricoBloqueios items={historico ?? []} />

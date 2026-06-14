@@ -49,4 +49,10 @@ public static class CadastroPermissions
     public const string StatusLiberarFonograma = "cadastro:default:status:liberar-fonograma";
     public const string StatusBloquearFonograma = "cadastro:default:status:bloquear-fonograma";
     public const string StatusDesbloquearFonograma = "cadastro:default:status:desbloquear-fonograma";
+
+    public const string AnexoListar  = "cadastro:default:anexo:listar";
+    public const string AnexoVisualizar = "cadastro:default:anexo:visualizar";
+    public const string AnexoUpload  = "cadastro:default:anexo:upload";
+    public const string AnexoRemover = "cadastro:default:anexo:remover";
+    public const string AnexoDownload = "cadastro:default:anexo:download";
 }

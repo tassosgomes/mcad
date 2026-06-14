@@ -30,6 +30,7 @@ import { DominioPublicoToggle } from '../components/DominioPublicoToggle';
 import { DeleteObraModal } from '../components/DeleteObraModal';
 import { TitularidadesSection, useTitularidades } from '@features/cadastro/titularidades';
 import { ObraFonogramasSection } from '@features/cadastro/fonogramas';
+import { AnexosSection } from '@features/cadastro/anexos';
 import type { AtualizarObraRequest, DepurarObraRequest } from '../types/obra';
 import styles from './ObraDetailPage.module.css';
 
@@ -214,6 +215,9 @@ export function ObraDetailPage() {
             obraStatus={obra.status}
             canWrite={canWrite}
           />
+
+          {/* Arquivos (letra da obra, documentos) */}
+          <AnexosSection tipo="Obra" entidadeId={obra.id} canWrite={canWrite} />
         </div>
         <div className={styles.rightCol}>
           {/* F04 — temTitulares real (não mais placeholder) */}

@@ -14,6 +14,7 @@ using Cadastro.Infra.Audit;
 using Cadastro.Infra.Data;
 using Cadastro.Infra.Events;
 using Cadastro.Infra.Repositories;
+using Cadastro.Infra.Storage;
 using Ecad.Audit.AspNetCore;
 using Ecad.Audit.Sdk;
 using Ecad.Authz.AspNetCore;
@@ -87,6 +88,7 @@ builder.Services.AddScoped<ITitularidadeRepository, TitularidadeRepository>();
 builder.Services.AddScoped<IFonogramaRepository, FonogramaRepository>();
 builder.Services.AddScoped<IParticipacaoRepository, ParticipacaoRepository>();
 builder.Services.AddScoped<IHistoricoBloqueioRepository, HistoricoBloqueioRepository>();
+builder.Services.AddScoped<IAnexoRepository, AnexoRepository>();
 
 // ─── HttpClient + Polly ────────────────────────────────────────────────
 var iswcBaseUrl = Environment.GetEnvironmentVariable("ISWC_BASE_URL") ?? "https://iswc.tasso.dev.br/";
@@ -95,6 +97,27 @@ builder.Services.AddHttpClient<IIswcService, Cadastro.Infra.ExternalServices.Isw
     client.BaseAddress = new Uri(iswcBaseUrl);
     client.Timeout = TimeSpan.FromSeconds(10);
 }).AddTransientHttpErrorPolicy(p => p.RetryAsync(2));
+
+// ─── Storage Service (proxy para upload/download com antivírus) ────────
+var storageBaseUrl = Environment.GetEnvironmentVariable("STORAGE_SERVICE_URL") ?? "https://storage.tasso.dev.br/";
+builder.Services.Configure<StorageOptions>(opts =>
+{
+    opts.BaseUrl       = storageBaseUrl;
+    opts.LogToIssuer   = Environment.GetEnvironmentVariable("STORAGE_LOGTO_ISSUER") ?? "https://9lcinu.logto.app/oidc";
+    opts.ClientId      = Environment.GetEnvironmentVariable("STORAGE_LOGTO_CLIENT_ID") ?? string.Empty;
+    opts.ClientSecret  = Environment.GetEnvironmentVariable("STORAGE_LOGTO_CLIENT_SECRET") ?? string.Empty;
+    opts.Resource      = storageBaseUrl.TrimEnd('/');
+});
+builder.Services.AddHttpClient<LogToM2MTokenService>(client =>
+{
+    client.Timeout = TimeSpan.FromSeconds(10);
+});
+builder.Services.AddSingleton<LogToM2MTokenService>();
+builder.Services.AddHttpClient<Cadastro.Application.Storage.IStorageServiceClient, StorageServiceClient>(client =>
+{
+    client.BaseAddress = new Uri(storageBaseUrl);
+    client.Timeout = TimeSpan.FromMinutes(5); // uploads grandes
+}).AddTransientHttpErrorPolicy(p => p.RetryAsync(1));
 
 // ─── Outbox / RabbitMQ / Events ───────────────────────────────────────
 builder.Services.AddScoped<IOutboxEventWriter, OutboxEventWriter>();
@@ -214,6 +237,7 @@ app.MapParticipacaoEndpoints();
 app.MapBuscaEndpoints();
 app.MapDistribuicaoEndpoints();
 app.MapDashboardEndpoints();
+app.MapAnexoEndpoints();
 
 // ─── AsyncAPI (documentação de eventos — pública) ─────────────────────
 app.MapAsyncApiDocs();

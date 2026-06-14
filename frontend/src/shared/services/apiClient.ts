@@ -65,3 +65,13 @@ export async function apiDeleteWithBody<T>(path: string): Promise<T> {
   if (!response.ok) return handleError(response, path);
   return response.json() as Promise<T>;
 }
+
+// Não define Content-Type — o browser preenche o multipart boundary automaticamente
+export async function apiUpload<T>(path: string, formData: FormData): Promise<T> {
+  const response = await authenticatedClient.fetchWithAuth(`${BASE_URL}${path}`, {
+    method: 'POST',
+    body: formData,
+  });
+  if (!response.ok) return handleError(response, path);
+  return response.json() as Promise<T>;
+}

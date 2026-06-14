@@ -8,6 +8,7 @@ import { useToast } from '@components/ui/toast';
 import { useTitular } from '../hooks/useTitular';
 import { useUpdateTitular } from '../hooks/useUpdateTitular';
 import { TitularForm } from '../components/TitularForm';
+import { AnexosSection } from '@features/cadastro/anexos';
 import type { AtualizarTitularRequest } from '../types/titular';
 import styles from './TitularEditPage.module.css';
 
@@ -58,6 +59,9 @@ export function TitularEditPage() {
           onCancel={() => navigate('/cadastro/titulares')}
           isSubmitting={updateMutation.isPending}
         />
+      </div>
+      <div className={styles.card}>
+        <AnexosSection tipo="Titular" entidadeId={titular.id} />
       </div>
     </div>
   );

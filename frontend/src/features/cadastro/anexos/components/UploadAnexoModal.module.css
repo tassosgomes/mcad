@@ -1,0 +1,115 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+}
+
+.modal {
+  background: white;
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+  width: 100%;
+  max-width: 480px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+}
+
+.title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin: 0 0 1.25rem;
+}
+
+.dropzone {
+  border: 2px dashed #d1d5db;
+  border-radius: 0.5rem;
+  padding: 2rem 1rem;
+  cursor: pointer;
+  text-align: center;
+  transition: border-color 0.15s, background 0.15s;
+  margin-bottom: 1rem;
+}
+
+.dropzone:hover,
+.dragOver {
+  border-color: #6366f1;
+  background: #f5f3ff;
+}
+
+.hasFile {
+  border-color: #10b981;
+  background: #f0fdf4;
+}
+
+.hiddenInput {
+  display: none;
+}
+
+.fileInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.fileName {
+  font-weight: 500;
+  font-size: 0.9rem;
+  color: #1f2937;
+  word-break: break-all;
+}
+
+.fileSize {
+  font-size: 0.8rem;
+  color: #6b7280;
+}
+
+.dropHint {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  color: #6b7280;
+  font-size: 0.9rem;
+}
+
+.dropHintSub {
+  font-size: 0.78rem;
+  color: #9ca3af;
+}
+
+.field {
+  margin-bottom: 1.25rem;
+}
+
+.label {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #374151;
+  margin-bottom: 0.35rem;
+}
+
+.select {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.375rem;
+  font-size: 0.9rem;
+  color: #1f2937;
+  background: white;
+}
+
+.select:focus {
+  outline: none;
+  border-color: #6366f1;
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}

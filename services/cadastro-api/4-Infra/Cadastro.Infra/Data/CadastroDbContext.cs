@@ -20,6 +20,7 @@ public class CadastroDbContext : DbContext
     public DbSet<HistoricoBloqueio> HistoricoBloqueios => Set<HistoricoBloqueio>();
     public DbSet<OutboxEvent> OutboxEvents => Set<OutboxEvent>();
     public DbSet<AuditOutboxEvent> AuditOutboxEvents => Set<AuditOutboxEvent>();
+    public DbSet<Anexo> Anexos => Set<Anexo>();
 
     public CadastroDbContext(DbContextOptions<CadastroDbContext> options) : base(options)
     {
@@ -40,6 +41,7 @@ public class CadastroDbContext : DbContext
         modelBuilder.ApplyConfiguration(new HistoricoBloqueioConfiguration());
         modelBuilder.ApplyConfiguration(new OutboxEventConfiguration());
         modelBuilder.ApplyConfiguration(new AuditOutboxEventConfiguration());
+        modelBuilder.ApplyConfiguration(new AnexoConfiguration());
 
         base.OnModelCreating(modelBuilder);
     }

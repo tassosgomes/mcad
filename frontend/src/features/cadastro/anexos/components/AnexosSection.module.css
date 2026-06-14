@@ -1,0 +1,87 @@
+.section {
+  margin-top: 2rem;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+
+.title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0;
+}
+
+.empty {
+  color: #9ca3af;
+  font-size: 0.9rem;
+  padding: 1rem 0;
+  margin: 0;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.table th {
+  text-align: left;
+  padding: 0.5rem 0.75rem;
+  font-weight: 500;
+  color: #6b7280;
+  border-bottom: 1px solid #e5e7eb;
+  white-space: nowrap;
+}
+
+.table td {
+  padding: 0.6rem 0.75rem;
+  border-bottom: 1px solid #f3f4f6;
+  vertical-align: middle;
+}
+
+.nomeCell {
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #1f2937;
+}
+
+.actions {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: flex-end;
+}
+
+.iconBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.3rem;
+  border: none;
+  background: transparent;
+  border-radius: 0.25rem;
+  color: #6b7280;
+  cursor: pointer;
+  transition: background 0.1s, color 0.1s;
+}
+
+.iconBtn:hover:not(:disabled) {
+  background: #f3f4f6;
+  color: #1f2937;
+}
+
+.iconBtn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.iconBtn.danger:hover:not(:disabled) {
+  background: #fee2e2;
+  color: #dc2626;
+}
