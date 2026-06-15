@@ -280,6 +280,7 @@ app.MapBuscaEndpoints();
 app.MapDistribuicaoEndpoints();
 app.MapDashboardEndpoints();
 app.MapAnexoEndpoints();
+app.MapOcorrenciaEndpoints();
 app.MapPortalAuthEndpoints();
 app.MapPortalEndpoints();
 

@@ -2,6 +2,43 @@
 
 ---
 
+## 2026-06-15 | PRD: prd-acesso-titulares | Task: 11.0
+
+Modelo utilizado: (Preenchido pelo Orquestrador)
+
+### Problemas Identificados
+
+Zero Defects Identified
+Iterações até estabilização: 1
+
+### Resumo da Tarefa
+
+Total de Problemas: 0 (5 observações non-blocking registradas no review)
+Categoria Técnica mais frequente: N/A (sem defeitos)
+Origem mais frequente: N/A
+Indício de fragilidade estrutural? Não — implementação consistente com Clean Architecture, CQRS nativo, Outbox Pattern e state machine de domínio (task 2.0). Handlers espelham fielmente o padrão de `CriarOcorrenciaCommandHandler` (task 8.0) para o lado do analista. RF-33 a RF-39 todos atendidos e testados (26 testes novos).
+Sugestão de melhoria no:
+- PRD: Nenhuma — RF-33 a RF-39 claros e rastreáveis.
+- TechSpec: Sem objeção. A decisão de atender RF-38 (autor/data em cada transição) via logging estruturado (scope `{OcorrenciaId, AnalistaId}`) em vez de persistir `DecisaoPor` na entidade é justificada no task file e mantém a task 11.0 livre de mudanças de entidade/migration (escopo mínimo). Recomendação futura: issue separada para refletir se a auditoria two-tier existente deveria ser estendida para capturar `AnalistaId` em transições de Ocorrencia (hoje não há `AuditEventFactory` para a entidade).
+- Template de Task: A subtarefa 11.5 especificava `IQuery<PaginationResponse<OcorrenciaResponse>>` genérico, mas o codebase usa `PaginationResponse` não-genérico + response wrapper (`OcorrenciaListResponse`). O implementer alinhou ao padrão real do projeto (idêntico à decisão já registrada nos reviews das tasks 7.0 e 8.0). Recomendação recorrente: alinhar o texto das tasks com a convenção do codebase.
+- Skill: `dotnet-testing` poderia documentar o padrão de teste "verificar `Update` + `SaveChangesAsync` Times.Once no sucesso, Times.Never na falha de transição" como afirmação canônica para handlers que mutam entidades carregadas com AsNoTracking — foi aplicado com sucesso nesta task em todos os 3 handlers.
+
+Evidências da validação:
+- Build: PASS — 0 erros, 2 warnings (NU1902 OpenTelemetry, pré-existentes).
+- Unit tests: PASS — 360/360 (+15 vs baseline 345; 0 regressões). Filtro `~Ocorrencias` = 26/26.
+- Clean Architecture: PASS — `2-Application/**/*.csproj` sem referência a `Cadastro.Infra`; routing key `"cadastro.ocorrencia.resolvida"` como string literal (não `EventTypes.*`).
+- RF-33: `ListarOcorrenciasQueryHandler` não fixa `TitularId`; 3 filtros opcionais (Status, TitularId, Tipo).
+- RF-37: 5 testes de transição inválida cobrindo todos os caminhos de state machine; `DomainException` propagada (mapeada a 422 pelo `GlobalExceptionHandler` existente).
+- RF-38: `ParseAnalistaId` via `httpContext.User.FindFirst("sub")` (padrão `AnexoEndpoints`); log estruturado com scope `{OcorrenciaId, AnalistaId}` em todos os 3 handlers.
+- RF-39: `AddEvent("cadastro.ocorrencia.resolvida", ocorrenciaId, payload)` atômico com SaveChanges; teste verifica routing key exato + subject.
+- AsNoTracking workaround: `_repo.Update(ocorrencia)` chamado em todos os 3 handlers antes de SaveChanges (GetByIdAsync usa AsNoTracking).
+- Sem mudanças de entidade/migration: `git status` confirma apenas `Program.cs` modificado + novos arquivos.
+- Endpoints: 5/5 com permissões corretas (Keycloak default + RequireCadastroPermission).
+
+Observação de domínio (não desta task): `Ocorrencia.Cancelar` em `3-Domain/Entities/Ocorrencia.cs:102` define `ResolvidaEm = DateTime.UtcNow` no cancelamento (sem campo `CanceladaEm` dedicado). Débito semântico da task 2.0; o handler 11.0 apenas invoca o método de domínio. Issue de refatoração futura recomendada.
+
+---
+
 ## 2026-06-15 | PRD: prd-acesso-titulares | Task: 10.0
 
 Modelo utilizado: (Preenchido pelo Orquestrador)
