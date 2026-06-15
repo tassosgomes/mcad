@@ -1,4 +1,3 @@
-using System.ComponentModel.DataAnnotations.Schema;
 using Cadastro.Domain.Enums;
 using Cadastro.Domain.Exceptions;
 using Cadastro.Domain.ValueObjects;
@@ -128,18 +127,15 @@ public class Titular
     }
 
     /// <summary>E-mail de contato do titular (RF-09). Nullable — titular pode não ter e-mail.</summary>
-    [NotMapped]
     public Email? Email { get; private set; }
 
     /// <summary>Endereço postal do titular (RF-09). Nullable — titular pode não ter endereço.</summary>
-    [NotMapped]
     public Endereco? Endereco { get; private set; }
 
     /// <summary>
     /// Telefones de contato do titular (RF-09). Coleção substituída integralmente
     /// por <see cref="AtualizarContato"/>. Cap máximo de 5 telefones.
     /// </summary>
-    [NotMapped]
     public IReadOnlyList<TelefoneTitular> Telefones { get; private set; } = [];
 
     private const int MaxTelefones = 5;

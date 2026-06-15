@@ -2,6 +2,78 @@
 
 ---
 
+## 2026-06-15 | PRD: prd-acesso-titulares | Task: 3.0 | Validacao 2
+
+Modelo utilizado: (Preenchido pelo Orquestrador)
+
+### Problemas Identificados
+
+Zero Defects Identified
+Iterações até estabilização: 2
+
+### Resumo da Tarefa
+
+Total de Problemas: 0 (após correção pontual dos 3 enums na iter 1)
+Categoria Técnica mais frequente: N/A (resolvido)
+Origem mais frequente: N/A
+Indício de fragilidade estrutural? Não — a fragilidade reportada na iter 1 (exemplo de código contraditório no task file) permanece como dívida de processo, mas o defeito funcional foi sanado.
+Sugestão de melhoria no:
+- PRD: Nenhuma — PRD permanece consistente em snake_case.
+- TechSpec: As sugestões da iter 1 seguem válidas como dívida de processo (referenciar padrão `FonogramaConfiguration` para enums multi-palavra). Não bloqueante para esta task.
+- Template de Task: Idem — revisar exemplos de código contra o codebase real antes de incluí-los no task file.
+- Skill: Idem — `dotnet-code-quality` poderia incluir regra sobre `HasConversion` + `HasCheckConstraint` para enums PascalCase multi-palavra.
+
+Evidências da revalidação (iter 2):
+- Build: PASS — 0 erros, 2 warnings (NU1902 OpenTelemetry, pré-existentes).
+- Unit tests: PASS — 249/249 (0 regressões vs baseline).
+- Migration list: `20260615010120_AddPortalTitular` presente (14 migrations totais); modelo EF construído in-process sem erro.
+- Token-match verification (config `HasConversion` ↔ migration `CHECK`):
+  - `OcorrenciaConfiguration.Tipo`: TITULARIDADE_DIVERGENTE, FONOGRAMA_INCORRETO, DADO_CADASTRAL, OBRA_AUSENTE — MATCH (ambas as direções).
+  - `OcorrenciaConfiguration.Status`: ABERTA, EM_ANALISE, RESOLVIDA, CANCELADA — MATCH.
+  - `SolicitacaoAlteracaoConfiguration.Campo`: NOME, CAE_IPI, ASSOCIACAO, CATEGORIA — MATCH.
+- Round-trip safety: todas as conversões são simétricas e sem colisões.
+- Items aprovados na iter 1 permanecem íntegros (FK CASCADE/RESTRICT, OwnsOne(Endereco), OwnsMany(Telefones) com Ordem, 3 DbSets, 3 ApplyConfigurations, 3 DI registrations, ByDocumentoAsync com JOIN, schema cadastro, Fluent API puro, `[NotMapped]` removido do Titular.cs).
+- Migration NÃO foi regenerada — CHECK constraints já estavam corretas no SQL da iter 1; apenas as lambdas de conversão no config estavam erradas. Decisão válida.
+
+---
+
+## 2026-06-15 | PRD: prd-acesso-titulares | Task: 3.0
+
+Modelo utilizado: (Preenchido pelo Orquestrador)
+
+### Problemas Identificados
+
+1. Categoria Técnica: Violação de padrão arquitetural (bug funcional em persistência)
+   Severidade: Alta (production-breaking — falha em INSERT/UPDATE ao bater CHECK constraint do PostgreSQL)
+   Fase Detectada: Revisão (build e testes unitários passam; bug só se manifesta no DB)
+   Origem Provável: Task (exemplo de código na seção "Detalhes de Implementação" do `03_task.md` codifica o padrão errado) + Lacuna na TechSpec (não referencia o padrão existente em `FonogramaConfiguration`/`ParticipacaoConexaConfiguration`)
+   Necessitou Reimplementação Significativa? Não (correção pontual nos 3 configs)
+   Descrição: As 3 novas configs (`OcorrenciaConfiguration`, `SolicitacaoAlteracaoConfiguration` indiretamente) usam `v.ToString().ToUpperInvariant()` para serializar enums ao DB, mas os enums PascalCase multi-palavra produzem strings sem underscore (`EmAnalise`→`EMANALISE`, `TitularidadeDivergente`→`TITULARIDADEDIVERGENTE`, `CaeIpi`→`CAEIPI`), que NÃO casam com as CHECK constraints criadas (`'EM_ANALISE'`, `'TITULARIDADE_DIVERGENTE'`, `'CAE_IPI'`). O codebase tem precedente explícito em `FonogramaConfiguration.cs:60-65` e `ParticipacaoConexaConfiguration.cs:32-35` com mapeamento ternário para multi-palavra. Afeta:
+     - `OcorrenciaConfiguration.Tipo` (4/4 valores quebrados — qualquer INSERT de Ocorrencia é rejeitado pelo PostgreSQL)
+     - `OcorrenciaConfiguration.Status` (`EmAnalise` quebra RF-34 — transição ABERTA→EM_ANALISE)
+     - `SolicitacaoAlteracaoConfiguration.Campo` (`CaeIpi` quebra RF-14 para alteração de CAE/IPI)
+
+2. Categoria Técnica: Edge case ignorado
+   Severidade: Baixa (cosmético)
+   Fase Detectada: Revisão
+   Origem Provável: Lacuna na TechSpec
+   Necessitou Reimplementação Significativa? Não
+   Descrição: O `Down()` da migration remove as 4 tabelas (credenciais_titular, ocorrencias, solicitacoes_alteracao, telefones_titular) e o índice `uq_titulares_email`, mas NÃO remove o índice `uq_titulares_email` foi removido... na verdade está OK. Revisando: o `Down()` está simétrico para colunas/índices. Item retirado — sem problema real.
+
+### Resumo da Tarefa
+
+Total de Problemas: 1 (alto impacto)
+Categoria Técnica mais frequente: Violação de padrão arquitetural (enum→DB string mismatch)
+Origem mais frequente: Task (exemplo de código incorreto no `03_task.md`) reforçado por lacuna na TechSpec (não cita padrão existente)
+Indício de fragilidade estrutural? Sim — o exemplo de código no task file contradiz o padrão real do codebase; a revisão humana do task file não capturou isso; testes unitários não cobrem camada de persistência (sem integração)
+Sugestão de melhoria no:
+- PRD: Nenhuma — PRD usa `EM_ANALISE`, `TITULARIDADE_DIVERGENTE`, `CAE_IPI` consistentemente em snake-case; correto.
+- TechSpec: Adicionar nota explícita: "Enums PascalCase multi-palavra DEVEM seguir o padrão de `FonogramaConfiguration.StatusFonograma` (mapeamento ternário explícito para underscore) — NÃO usar `ToString().ToUpperInvariant()` direto quando a CHECK constraint contém underscores."
+- Template de Task: Revisar exemplos de código contra o codebase real antes de incluir no task. O snippet na linha 70-74 do `03_task.md` (`v.ToString().ToUpperInvariant()` + CHECK com underscore) é auto-contraditório e foi copiado fielmente pelo implementer.
+- Skill: `dotnet-code-quality` poderia incluir regra: "Ao combinar `HasConversion` + `HasCheckConstraint`, validar que a serialização do enum produz exatamente os tokens da CHECK. Para PascalCase multi-palavra, usar `[Description]`/mapeamento explícito (ver `FonogramaConfiguration`)."
+
+---
+
 ## 2026-06-14 | PRD: prd-acesso-titulares | Task: 1.0
 
 Modelo utilizado: (Preenchido pelo Orquestrador)

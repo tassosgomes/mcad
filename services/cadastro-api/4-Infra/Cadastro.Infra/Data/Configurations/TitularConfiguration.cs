@@ -114,6 +114,98 @@ public class TitularConfiguration : IEntityTypeConfiguration<Titular>
         builder.HasIndex(t => t.Status)
             .HasDatabaseName("ix_titulares_status");
 
+        // ─── Extensão Portal do Titular (RF-09) ────────────────────────────────
+        // Email: VO com HasConversion (string ↔ Email.Create)
+        builder.Property(t => t.Email)
+            .HasConversion(
+                email => email != null ? email.Valor : null,
+                valor => valor != null ? Email.Create(valor) : null)
+            .HasColumnName("Email")
+            .HasMaxLength(254)
+            .IsRequired(false);
+
+        builder.HasIndex(t => t.Email)
+            .IsUnique()
+            .HasFilter("\"Email\" IS NOT NULL")
+            .HasDatabaseName("uq_titulares_email");
+
+        // Endereco: VO estruturado (OwnsOne) — colunas inline em titulares (todas nullable como grupo)
+        builder.OwnsOne(t => t.Endereco, nav =>
+        {
+            nav.Property(e => e.Cep)
+                .HasConversion(
+                    c => c != null ? c.Valor : null,
+                    v => v != null ? Cep.Create(v) : null)
+                .HasColumnName("Cep")
+                .HasColumnType("char(8)")
+                .IsRequired(false);
+
+            nav.Property(e => e.Uf)
+                .HasConversion(
+                    u => u != null ? u.Valor : null,
+                    v => v != null ? Uf.Create(v) : null)
+                .HasColumnName("Uf")
+                .HasColumnType("char(2)")
+                .IsRequired(false);
+
+            nav.Property(e => e.Logradouro)
+                .HasColumnName("Logradouro")
+                .HasMaxLength(150)
+                .IsRequired(false);
+
+            nav.Property(e => e.Numero)
+                .HasColumnName("Numero")
+                .HasMaxLength(20)
+                .IsRequired(false);
+
+            nav.Property(e => e.Complemento)
+                .HasColumnName("Complemento")
+                .HasMaxLength(150)
+                .IsRequired(false);
+
+            nav.Property(e => e.Bairro)
+                .HasColumnName("Bairro")
+                .HasMaxLength(150)
+                .IsRequired(false);
+
+            nav.Property(e => e.Cidade)
+                .HasColumnName("Cidade")
+                .HasMaxLength(150)
+                .IsRequired(false);
+        });
+
+        // Telefones: coleção (OwnsMany) — tabela telefones_titular (titular_id, tipo, numero, ordem)
+        builder.OwnsMany(t => t.Telefones, nav =>
+        {
+            nav.ToTable("telefones_titular");
+
+            // Shadow property Ordem — posição do telefone na coleção do titular
+            nav.Property<int>("Ordem");
+
+            // PK composta (TitularId, Ordem) — Ordem preserva a posição na lista
+            nav.HasKey("TitularId", "Ordem");
+
+            nav.Property(t => t.Tipo)
+                .HasConversion(
+                    v => v.ToString().ToUpperInvariant(),
+                    v => Enum.Parse<TipoTelefone>(v, true))
+                .HasColumnName("Tipo")
+                .HasColumnType("VARCHAR(12)")
+                .IsRequired();
+
+            // Numero é VO Telefone (record com Create factory)
+            nav.Property(t => t.Numero)
+                .HasConversion(
+                    n => n.Valor,
+                    v => Telefone.Create(v))
+                .HasColumnName("Numero")
+                .HasMaxLength(11)
+                .IsRequired();
+
+            nav.HasIndex("TitularId")
+                .HasDatabaseName("ix_telefones_titular_titular");
+        });
+
         // NOTE: CHECK constraints e GIN trigram index são adicionados manualmente na migration
         // via MigrationBuilder.Sql() — EF Core não suporta CHECK constraints e GIN natively
     }

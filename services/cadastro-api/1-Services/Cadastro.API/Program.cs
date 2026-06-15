@@ -89,6 +89,9 @@ builder.Services.AddScoped<IFonogramaRepository, FonogramaRepository>();
 builder.Services.AddScoped<IParticipacaoRepository, ParticipacaoRepository>();
 builder.Services.AddScoped<IHistoricoBloqueioRepository, HistoricoBloqueioRepository>();
 builder.Services.AddScoped<IAnexoRepository, AnexoRepository>();
+builder.Services.AddScoped<ICredencialTitularRepository, CredencialTitularRepository>();
+builder.Services.AddScoped<IOcorrenciaRepository, OcorrenciaRepository>();
+builder.Services.AddScoped<ISolicitacaoAlteracaoRepository, SolicitacaoAlteracaoRepository>();
 
 // ─── HttpClient + Polly ────────────────────────────────────────────────
 var iswcBaseUrl = Environment.GetEnvironmentVariable("ISWC_BASE_URL") ?? "https://iswc.tasso.dev.br/";

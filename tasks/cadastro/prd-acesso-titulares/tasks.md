@@ -32,7 +32,7 @@ Testes de integração fim-a-fim (WebApplicationFactory + Testcontainers), métr
 
 - [x] 1.0 Value Objects de Contato e Localização (Email, Telefone, Cep, Uf)
 - [x] 2.0 Entidades de Domínio do Portal e State Machines (CredencialTitular, Ocorrencia, SolicitacaoAlteracao) + extensão de Titular + interfaces de repositório + EventTypes
-- [ ] 3.0 Configurações EF Core e Migration `AddPortalTitular`
+- [x] 3.0 Configurações EF Core e Migration `AddPortalTitular`
 - [ ] 4.0 Infraestrutura de Autenticação do Titular (ITitularTokenService, scheme "Titular", ICurrentTitular, Program.cs)
 - [ ] 5.0 Auto-cadastro, Login e Alteração de Senha do Titular (RF-01 a RF-07)
 - [ ] 6.0 Gestão de Dados de Contato (RF-09 a RF-13)

@@ -21,6 +21,9 @@ public class CadastroDbContext : DbContext
     public DbSet<OutboxEvent> OutboxEvents => Set<OutboxEvent>();
     public DbSet<AuditOutboxEvent> AuditOutboxEvents => Set<AuditOutboxEvent>();
     public DbSet<Anexo> Anexos => Set<Anexo>();
+    public DbSet<CredencialTitular> CredenciaisTitular => Set<CredencialTitular>();
+    public DbSet<Ocorrencia> Ocorrencias => Set<Ocorrencia>();
+    public DbSet<SolicitacaoAlteracao> SolicitacoesAlteracao => Set<SolicitacaoAlteracao>();
 
     public CadastroDbContext(DbContextOptions<CadastroDbContext> options) : base(options)
     {
@@ -42,6 +45,9 @@ public class CadastroDbContext : DbContext
         modelBuilder.ApplyConfiguration(new OutboxEventConfiguration());
         modelBuilder.ApplyConfiguration(new AuditOutboxEventConfiguration());
         modelBuilder.ApplyConfiguration(new AnexoConfiguration());
+        modelBuilder.ApplyConfiguration(new CredencialTitularConfiguration());
+        modelBuilder.ApplyConfiguration(new OcorrenciaConfiguration());
+        modelBuilder.ApplyConfiguration(new SolicitacaoAlteracaoConfiguration());
 
         base.OnModelCreating(modelBuilder);
     }
