@@ -1,5 +1,6 @@
 using Cadastro.Application.Common.CQRS;
 using Cadastro.Application.Common.Exceptions;
+using Cadastro.Application.Portal.Metrics;
 using Cadastro.Application.Portal.Responses;
 using Cadastro.Application.Titulares.Services;
 using Cadastro.Domain.Entities;
@@ -67,6 +68,7 @@ public class LoginTitularCommandHandler : ICommandHandler<LoginTitularCommand, L
         {
             // Mensagem genérica — RF-06.
             _logger.LogInformation("Login recusado: credencial não encontrada para o documento");
+            PortalMetrics.IncrementLoginAttempt("invalid");
             throw new AutenticacaoTitularException();
         }
 
@@ -77,6 +79,7 @@ public class LoginTitularCommandHandler : ICommandHandler<LoginTitularCommand, L
         if (credencial.EstaBloqueado)
         {
             _logger.LogInformation("Login recusado: credencial bloqueada");
+            PortalMetrics.IncrementLoginAttempt("locked");
             throw new AutenticacaoTitularException();
         }
 
@@ -88,6 +91,7 @@ public class LoginTitularCommandHandler : ICommandHandler<LoginTitularCommand, L
             await _credencialRepository.SaveChangesAsync(cancellationToken);
 
             _logger.LogInformation("Login recusado: senha incorreta (tentativa {Tentativas})", credencial.TentativasFalhas);
+            PortalMetrics.IncrementLoginAttempt("invalid");
             throw new AutenticacaoTitularException();
         }
 
@@ -109,6 +113,7 @@ public class LoginTitularCommandHandler : ICommandHandler<LoginTitularCommand, L
         var expiraEm = DateTime.UtcNow.Add(TokenTtl);
 
         _logger.LogInformation("Login bem-sucedido");
+        PortalMetrics.IncrementLoginAttempt("success");
 
         return new LoginResponse(
             token,

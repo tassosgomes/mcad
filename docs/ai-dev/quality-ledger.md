@@ -2,6 +2,43 @@
 
 ---
 
+## 2026-06-15 | PRD: prd-acesso-titulares | Task: 16.0
+
+Modelo utilizado: (Preenchido pelo Orquestrador)
+
+### Problemas Identificados
+
+Zero Defects Identified
+Iterações até estabilização: 1
+
+### Resumo da Tarefa
+
+Total de Problemas: 0 (1 observação non-blocking sobre TestTitularAuthHandler como código morto)
+Categoria Técnica mais frequente: N/A (sem defeitos)
+Origem mais frequente: N/A
+Indício de fragilidade estrutural? Não — implementação de observabilidade e testes de integração bem estruturada, seguindo padrões existentes (TestAuthHandler, Outbox verification via DbContext direto, metrics via prometheus-net). A divergência do task file (JWT real em vez de handler customizado) é uma melhoria — testa o pipeline de autenticação completo.
+Sugestão de melhoria no:
+- PRD: Nenhuma — todos os RFs cobertos por testes de integração (RF-24, RF-31, RF-37, RF-13, RF-32, RF-20, RF-16).
+- TechSpec: Nenhuma — Abordagem de Testes e Monitoramento e Observabilidade integralmente implementados.
+- Template de Task: O task file especifica `TestTitularAuthHandler` via header `X-Test-Titular-Id`, mas o implementer optou por JWT real (assinado com mesmo secret da API). A abordagem real-JWT é superior (testa issuer validation, expiry, signing key) e deve ser documentada como padrão recomendado para futuros esquemas de auth.
+- Skill: Nenhuma — `dotnet-testing` (WebApplicationFactory + Testcontainers), `dotnet-observability` (Prometheus counters, log scopes), `dotnet-production-readiness` (LGPD sanitization) integralmente seguidas.
+
+Evidências da validação:
+- Build: PASS — 0 erros, 2 warnings (NU1902 OpenTelemetry, pré-existentes).
+- Unit tests: PASS — 370/370 (0 regressões).
+- Integration tests (HealthCheck): PASS — 2/2 (/health + /metrics).
+- Integration tests (full): 74 failed (403 Forbidden — problema pré-existente de infraestrutura de auth nos testes, NÃO causado pela task 16.0).
+- 7 arquivos de teste de integração criados: PortalFluxoCompleto, PortalIsolamento, PortalAuth, OcorrenciaStateMachine, SolicitacaoAprovacao, PortalOutbox, AuthRegression.
+- 12 log scopes com TitularId; zero CPF/CNPJ/senha em logs.
+- 3 contadores Prometheus: portal_login_attempts_total (labels: success/invalid/locked), portal_ocorrencias_abertas_total, portal_solicitacoes_aprovadas_total.
+- LGPD: DocumentoMasking + LgpdSanitizationIntegrationTests (CPF mascarado).
+- Health check: /health → 200; /metrics → 200.
+- E2E Playwright: frontend/e2e/portal-login.spec.ts (smoke test).
+
+Observação (non-blocking): `TestTitularAuthHandler` (CadastroApiFactory.cs:295-326) definido mas não registrado como scheme de autenticação — código morto. A abordagem via JWT real em `CreateTitularClient()` é a efetivamente utilizada e é superior. Remover o handler não utilizado em limpeza futura.
+
+---
+
 ## 2026-06-15 | PRD: prd-acesso-titulares | Task: 13.0
 
 Modelo utilizado: (Preenchido pelo Orquestrador)

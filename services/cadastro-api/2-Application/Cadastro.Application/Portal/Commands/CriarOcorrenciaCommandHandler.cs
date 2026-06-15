@@ -1,5 +1,6 @@
 using Cadastro.Application.Common.CQRS;
 using Cadastro.Application.Common.Exceptions;
+using Cadastro.Application.Portal.Metrics;
 using Cadastro.Application.Portal.Responses;
 using Cadastro.Domain.Entities;
 using Cadastro.Domain.Enums;
@@ -93,6 +94,7 @@ public class CriarOcorrenciaCommandHandler : ICommandHandler<CriarOcorrenciaComm
         await _repo.SaveChangesAsync(cancellationToken);
 
         _logger.LogInformation("Ocorrência {OcorrenciaId} aberta via Portal", ocorrencia.Id);
+        PortalMetrics.IncrementOcorrenciaAberta();
 
         return MapToResponse(ocorrencia);
     }

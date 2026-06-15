@@ -1,5 +1,7 @@
 using System.Data.Common;
+using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using System.Text;
 using System.Text.Encodings.Web;
 using Cadastro.Infra.Data;
 using Cadastro.Infra.Events;
@@ -12,6 +14,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
+using Microsoft.IdentityModel.Tokens;
 using Moq;
 using Testcontainers.PostgreSql;
 
@@ -25,6 +28,31 @@ public class CadastroApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
     private readonly PostgreSqlContainer _dbContainer;
     private string? _connectionString;
 
+    private readonly string _portalJwtSecret = "test-portal-jwt-secret-with-at-least-32-bytes!";
+    private readonly SymmetricSecurityKey _portalSigningKey;
+    private static readonly TimeSpan TokenTtl = TimeSpan.FromMinutes(60);
+
+    private string GerarTokenTitular(Guid titularId, string nome)
+    {
+        var now = DateTime.UtcNow;
+        var claims = new List<Claim>
+        {
+            new(JwtRegisteredClaimNames.Sub, titularId.ToString()),
+            new("nome", nome),
+            new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
+        };
+
+        var token = new JwtSecurityToken(
+            issuer: "cadastro-api-portal",
+            audience: null,
+            claims: claims,
+            notBefore: now,
+            expires: now.Add(TokenTtl),
+            signingCredentials: new SigningCredentials(_portalSigningKey, SecurityAlgorithms.HmacSha256));
+
+        return new JwtSecurityTokenHandler().WriteToken(token);
+    }
+
     /// <summary>Mock do publisher para evitar conexão real com RabbitMQ nos testes.</summary>
     public Mock<IRabbitMqPublisher> RabbitMqPublisherMock { get; } = new();
 
@@ -35,11 +63,14 @@ public class CadastroApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
     {
         EnsureAuthEnvironment();
 
-        _dbContainer = new PostgreSqlBuilder("postgres:16-alpine")
+        var dbContainer = new PostgreSqlBuilder("postgres:16-alpine")
             .WithDatabase("test_mcad")
             .WithUsername("postgres")
             .WithPassword("postgres")
             .Build();
+        _dbContainer = dbContainer;
+
+        _portalSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_portalJwtSecret));
     }
 
     private static void EnsureAuthEnvironment()
@@ -52,6 +83,9 @@ public class CadastroApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         EnsureAuthEnvironment();
+
+        // Garantir que PORTAL_JWT_SECRET existe para os testes (≥32 bytes).
+        Environment.SetEnvironmentVariable("PORTAL_JWT_SECRET", _portalJwtSecret);
 
         builder.ConfigureServices(services =>
         {
@@ -97,6 +131,10 @@ public class CadastroApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
                 .ReturnsAsync(new AuthzDecision(true, "ALLOWED_TEST", 0));
             services.AddSingleton(authzMock.Object);
 
+            // ── Substituir autenticação: Default + Titular ──────────────────
+            // O scheme default é substituído pelo TestAuthHandler (simula Keycloak JWT via headers).
+            // O scheme "Titular" usa o JWT real (JwtBearer "Titular" do Program.cs) — token
+            // gerado via TitularTokenService nos métodos CreateTitularClient.
             services.AddAuthentication(options =>
                 {
                     options.DefaultAuthenticateScheme = TestAuthHandler.SchemeName;
@@ -153,7 +191,26 @@ public class CadastroApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
         client.DefaultRequestHeaders.Remove(TestAuthHandler.UsernameHeader);
         client.DefaultRequestHeaders.Remove(TestAuthHandler.PermissionsHeader);
         client.DefaultRequestHeaders.Remove(TestAuthHandler.AuthModeHeader);
+        client.DefaultRequestHeaders.Remove(TestTitularAuthHandler.TitularIdHeader);
         client.DefaultRequestHeaders.Add(TestAuthHandler.AuthModeHeader, "none");
+        return client;
+    }
+
+    public HttpClient CreateTitularClient(Guid titularId, string nome = "Titular de Teste", Action<IWebHostBuilder>? configureWebHost = null)
+    {
+        EnsureAuthEnvironment();
+        var factory = configureWebHost is null ? this : WithWebHostBuilder(configureWebHost);
+        var client = factory.CreateClient();
+        client.DefaultRequestHeaders.Remove(TestAuthHandler.AuthModeHeader);
+        client.DefaultRequestHeaders.Remove(TestAuthHandler.RolesHeader);
+        client.DefaultRequestHeaders.Remove(TestAuthHandler.UsernameHeader);
+        client.DefaultRequestHeaders.Remove(TestAuthHandler.PermissionsHeader);
+        client.DefaultRequestHeaders.Remove(TestTitularAuthHandler.TitularIdHeader);
+        client.DefaultRequestHeaders.Add(TestAuthHandler.AuthModeHeader, "none");
+
+        // Gerar JWT real do portal (assinado com o mesmo secret usado pela API)
+        var token = GerarTokenTitular(titularId, nome);
+        client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
         return client;
     }
 
@@ -232,5 +289,38 @@ internal sealed class TestAuthHandler : AuthenticationHandler<AuthenticationSche
         return values
             .Where(value => !string.IsNullOrWhiteSpace(value))
             .SelectMany(value => value!.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
+    }
+}
+
+internal sealed class TestTitularAuthHandler : AuthenticationHandler<AuthenticationSchemeOptions>
+{
+    public const string TitularIdHeader = "X-Test-Titular-Id";
+
+    public TestTitularAuthHandler(
+        IOptionsMonitor<AuthenticationSchemeOptions> options,
+        ILoggerFactory logger,
+        UrlEncoder encoder)
+        : base(options, logger, encoder)
+    {
+    }
+
+    protected override Task<AuthenticateResult> HandleAuthenticateAsync()
+    {
+        var titularIdString = Request.Headers[TitularIdHeader].FirstOrDefault();
+        if (string.IsNullOrWhiteSpace(titularIdString) || !Guid.TryParse(titularIdString, out var titularId) || titularId == Guid.Empty)
+        {
+            return Task.FromResult(AuthenticateResult.NoResult());
+        }
+
+        var claims = new List<Claim>
+        {
+            new(JwtRegisteredClaimNames.Sub, titularId.ToString()),
+            new("nome", "Titular de Teste")
+        };
+
+        var identity = new ClaimsIdentity(claims, "Titular", JwtRegisteredClaimNames.Sub, ClaimTypes.Role);
+        var principal = new ClaimsPrincipal(identity);
+        var ticket = new AuthenticationTicket(principal, "Titular");
+        return Task.FromResult(AuthenticateResult.Success(ticket));
     }
 }

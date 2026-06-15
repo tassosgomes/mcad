@@ -2,6 +2,7 @@ using Cadastro.Application.Audit;
 using Cadastro.Application.Common.CQRS;
 using Cadastro.Application.Common.Exceptions;
 using Cadastro.Application.Portal.Commands;
+using Cadastro.Application.Portal.Metrics;
 using Cadastro.Application.Portal.Responses;
 using Cadastro.Domain.Entities;
 using Cadastro.Domain.Enums;
@@ -93,6 +94,7 @@ public class AprovarSolicitacaoCommandHandler : ICommandHandler<AprovarSolicitac
         _logger.LogInformation(
             "Solicitação {SolicitacaoId} aprovada por {AnalistaId}. Campo: {Campo}",
             command.Id, command.AnalistaId, solicitacao.Campo);
+        PortalMetrics.IncrementSolicitacaoAprovada();
 
         return AbrirSolicitacaoCommandHandler.MapToResponse(solicitacao);
     }

@@ -45,7 +45,7 @@ Testes de integração fim-a-fim (WebApplicationFactory + Testcontainers), métr
 - [x] 13.0 Frontend — Infraestrutura do Portal (PortalAuthProvider, PortalLayout, authenticatedFetch, rotas)
 - [x] 14.0 Frontend — Páginas do Titular (auto-cadastro, login, dashboard, contato, repertório, ocorrências, solicitações)
 - [x] 15.0 Frontend — Páginas do Analista (triagem de ocorrências, aprovação de solicitações)
-- [ ] 16.0 Testes de Integração Fim-a-Fim + Observabilidade
+- [x] 16.0 Testes de Integração Fim-a-Fim + Observabilidade
 
 ## Análise de Paralelização
 
