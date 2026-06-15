@@ -2,6 +2,7 @@ import { lazy, Suspense } from 'react';
 import { createBrowserRouter, isRouteErrorResponse, useRouteError } from 'react-router-dom';
 import { MainLayout } from '@components/layout/main-layout';
 import { Loading } from '@components/ui/loading';
+import { portalRoutes } from '@features/portal/routes';
 import {
   AUDITORIA_ROUTE_PERMISSIONS,
   CallbackPage,
@@ -96,6 +97,7 @@ export const router = createBrowserRouter([
     element: <SilentCallbackPage />,
     errorElement: <RouteErrorFallback />,
   },
+  portalRoutes,
   {
     path: '/',
     element: (

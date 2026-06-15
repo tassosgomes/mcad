@@ -5,6 +5,7 @@ type RuntimeEnv = {
   DISTRIBUICAO_API_BASE_URL?: string;
   AUDITORIA_API_BASE_URL?: string;
   AUTHZ_API_BASE_URL?: string;
+  PORTAL_API_BASE_URL?: string;
   OIDC_AUTHORITY?: string;
   OIDC_CLIENT_ID?: string;
   OIDC_AUDIENCE?: string;
@@ -47,6 +48,10 @@ export const runtimeConfig = {
   authzApiBaseUrl: getRuntimeValue(
     'AUTHZ_API_BASE_URL',
     '/api/authz/v1',
+  ),
+  portalApiBaseUrl: getRuntimeValue(
+    'PORTAL_API_BASE_URL',
+    '/api/cadastro/v1/portal',
   ),
   oidcAuthority: getRuntimeValue('OIDC_AUTHORITY'),
   oidcClientId: getRuntimeValue('OIDC_CLIENT_ID'),

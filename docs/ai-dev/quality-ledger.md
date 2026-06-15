@@ -2,6 +2,40 @@
 
 ---
 
+## 2026-06-15 | PRD: prd-acesso-titulares | Task: 13.0
+
+Modelo utilizado: (Preenchido pelo Orquestrador)
+
+### Problemas Identificados
+
+Zero Defects Identified
+Iterações até estabilização: 1
+
+### Resumo da Tarefa
+
+Total de Problemas: 0 (1 observação non-blocking sobre cross-link OIDC↔Portal adiado para tasks 14/15)
+Categoria Técnica mais frequente: N/A (sem defeitos)
+Origem mais frequente: N/A
+Indício de fragilidade estrutural? Não — infraestrutura do portal bem isolada do fluxo OIDC via React Context separado (`PortalAuthContext` vs `AuthContext`). Refator do `authenticatedFetch` é mecânico e mantém retrocompatibilidade dos 7 clients existentes (todos chamam `createAuthenticatedFetchClient()` sem argumento). Token storage usa sessionStorage com verificação de expiração. Estrutura de rotas como sibling top-level (não aninhada em ProtectedRoute OIDC).
+Sugestão de melhoria no:
+- PRD: Nenhuma — requisitos de UI e restrições técnicas cobertos.
+- TechSpec: Nenhuma — arquitetura de componente e análise de impacto seguidas fielmente.
+- Template de Task: Nenhuma — 13 subtasks bem definidas e verificáveis.
+- Skill: Nenhuma — `react-architecture` (feature-based, aliases, kebab-case/PascalCase) e `react-code-quality` (no any, typed props, useX hooks, components <300 lines) integralmente seguidas.
+
+Evidências da validação:
+- Build: PASS — `tsc -b && vite build`, 0 erros, 2288 módulos transformados.
+- Backward compat: 7 clients OIDC (`apiClient`, `apiArrecadacaoClient`, `apiAuditoriaClient`, `apiAuthzClient`, `apiBffClient`, `apiDistribuicaoClient`, `apiIdentificacaoClient`) continuam usando `createAuthenticatedFetchClient()` sem argumento → comportamento inalterado.
+- Portal isolation: `PortalAuthProvider` / `PortalProtectedRoute` / `PortalLayout` usam `PortalAuthContext` (distinto de `AuthContext` OIDC). Rotas `/portal/*` não aninhadas em `ProtectedRoute` OIDC.
+- Token storage: sessionStorage (`portal_token` + `portal_auth`), expiração verificada no auto-restore.
+- 7 placeholder pages confirmadas: PortalLoginPage, AutoCadastroPage, PortalDashboardPage, ContatoPage, RepertorioPage, OcorrenciasPage, SolicitacoesPage.
+- Route structure matches task spec: login e auto-cadastro públicos; demais páginas dentro de PortalAuthProvider > PortalProtectedRoute > PortalLayout.
+- `portalClient` usa `tokenProvider` próprio → `getPortalToken()` (sessionStorage), sem colisão com singleton OIDC.
+- PortalLayout distinto: header com nome do titular + logout, sem Sidebar de domínios.
+- Portal não usa `oidc-client-ts` — fluxo puro fetch + JWT.
+
+---
+
 ## 2026-06-15 | PRD: prd-acesso-titulares | Task: 12.0
 
 Modelo utilizado: (Preenchido pelo Orquestrador)

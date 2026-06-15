@@ -1,4 +1,4 @@
-type AuthTokenProvider = () => string | null;
+type TokenProvider = () => string | null | Promise<string | null>;
 type UnauthorizedHandler = () => Promise<string | null>;
 
 let handleUnauthorized: UnauthorizedHandler | null = null;
@@ -40,9 +40,10 @@ function fetchWithToken(url: string, options: RequestInit, token: string | null)
 async function fetchWithAuthUsingProvider(
   url: string,
   options: RequestInit,
-  tokenProvider: AuthTokenProvider | null,
+  tokenProvider: TokenProvider | null,
 ): Promise<Response> {
-  const response = await fetchWithToken(url, options, tokenProvider?.() ?? null);
+  const token = tokenProvider ? await tokenProvider() : null;
+  const response = await fetchWithToken(url, options, token);
 
   if (response.status !== 401 || !handleUnauthorized) {
     return response;
@@ -57,15 +58,22 @@ async function fetchWithAuthUsingProvider(
   return fetchWithToken(url, options, renewedToken);
 }
 
-export function createAuthenticatedFetchClient() {
-  let getClientAuthToken: AuthTokenProvider | null = null;
+export function createAuthenticatedFetchClient(externalProvider?: TokenProvider) {
+  let getClientAuthToken: TokenProvider | null = null;
+
+  const resolveProvider = (): string | null | Promise<string | null> => {
+    if (externalProvider) {
+      return externalProvider();
+    }
+    return getClientAuthToken?.() ?? null;
+  };
 
   return {
-    setAuthTokenProvider(fn: AuthTokenProvider | null) {
+    setAuthTokenProvider(fn: TokenProvider | null) {
       getClientAuthToken = fn;
     },
     fetchWithAuth(url: string, options: RequestInit = {}) {
-      return fetchWithAuthUsingProvider(url, options, getClientAuthToken);
+      return fetchWithAuthUsingProvider(url, options, resolveProvider);
     },
   };
 }
