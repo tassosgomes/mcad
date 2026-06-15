@@ -16,16 +16,22 @@ const PortalDashboardPage = lazy(() =>
   import('./pages/dashboard/PortalDashboardPage').then((m) => ({ default: m.PortalDashboardPage })),
 );
 const ContatoPage = lazy(() =>
-  import('./pages/contato/ContatoPage').then((m) => ({ default: m.ContatoPage })),
+  import('./contato').then((m) => ({ default: m.ContatoPage })),
 );
 const RepertorioPage = lazy(() =>
-  import('./pages/repertorio/RepertorioPage').then((m) => ({ default: m.RepertorioPage })),
+  import('./repertorio').then((m) => ({ default: m.RepertorioPage })),
 );
 const OcorrenciasPage = lazy(() =>
-  import('./pages/ocorrencias/OcorrenciasPage').then((m) => ({ default: m.OcorrenciasPage })),
+  import('./ocorrencias').then((m) => ({ default: m.OcorrenciasPage })),
+);
+const AbrirOcorrenciaPage = lazy(() =>
+  import('./ocorrencias').then((m) => ({ default: m.AbrirOcorrenciaPage })),
 );
 const SolicitacoesPage = lazy(() =>
-  import('./pages/solicitacoes/SolicitacoesPage').then((m) => ({ default: m.SolicitacoesPage })),
+  import('./solicitacoes').then((m) => ({ default: m.SolicitacoesPage })),
+);
+const AbrirSolicitacaoPage = lazy(() =>
+  import('./solicitacoes').then((m) => ({ default: m.AbrirSolicitacaoPage })),
 );
 
 function SuspenseFallback() {
@@ -93,10 +99,26 @@ export const portalRoutes: RouteObject = {
           ),
         },
         {
+          path: 'ocorrencias/abrir',
+          element: (
+            <Suspense fallback={<SuspenseFallback />}>
+              <AbrirOcorrenciaPage />
+            </Suspense>
+          ),
+        },
+        {
           path: 'solicitacoes',
           element: (
             <Suspense fallback={<SuspenseFallback />}>
               <SolicitacoesPage />
+            </Suspense>
+          ),
+        },
+        {
+          path: 'solicitacoes/abrir',
+          element: (
+            <Suspense fallback={<SuspenseFallback />}>
+              <AbrirSolicitacaoPage />
             </Suspense>
           ),
         },

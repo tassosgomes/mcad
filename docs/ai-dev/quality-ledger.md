@@ -1251,3 +1251,40 @@ Evidências da validação:
 - RF-32: AddEvent("cadastro.ocorrencia.aberta") com string literal (Clean Arch preservada); testado com Times.Once.
 - AsNoTracking confirmado em OcorrenciaRepository.ListarAsync e GetByIdAsync.
 - DI: IOcorrenciaRepository registrado (Program.cs:96); handlers via Scrutor assembly scan; validator via AddValidatorsFromAssemblyContaining.
+
+---
+
+## 2026-06-15 | PRD: prd-acesso-titulares | Task: 14.0
+
+Modelo utilizado: deepseek-v4-pro (via AI Flow Validator)
+
+### Problemas Identificados
+
+Zero Defects Identified
+Iteracoes ate estabilizacao: 1
+
+### Resumo da Tarefa
+
+Total de Problemas: 0 (2 observacoes non-blocking)
+Categoria Tecnica mais frequente: N/A (sem defeitos)
+Origem mais frequente: N/A
+Indicio de fragilidade estrutural? Nao — feature-sliced structure consistente com `features/cadastro/titulares/`. Portal isolado via `PortalAuthProvider`/`PortalProtectedRoute`/`PortalLayout` com contexto React proprio. TanStack Query padronizado com query keys `['portal', recurso]`. Cache invalidation em mutations. ViaCEP apenas no frontend (desacoplado do backend). `createAuthenticatedFetchClient` com `tokenProvider` proprio. Badges semanticos com variantes tipadas.
+
+Sugestao de melhoria no:
+- PRD: Nenhuma — requisitos de UI e fluxos cobertos (HU-01 a HU-07, RF-01 a RF-32 lado titular).
+- TechSpec: Nenhuma — ViaCEP no frontend, UI considerations, feature-sliced structure seguidos fielmente.
+- Template de Task: 14_task.md menciona `npm run lint` como criterio de sucesso, mas `package.json` nao possui script `"lint"`. A verificacao de tipos e feita via `tsc -b` no build. Recomendacao: adicionar script de lint ou remover o criterio.
+- Skill: Nenhuma — `react-architecture` (feature-based com api/hooks/pages/types/index.ts, aliases @/, kebab-case/PascalCase) e `react-code-quality` (no any, typed props, useX hooks, components <300 lines, role/aria attributes) integralmente seguidas.
+
+Evidencias da validacao:
+- Build: PASS — `tsc -b && vite build`, 0 erros, 2313 modulos transformados, 4.46s.
+- Tests: PASS — 16/16 (PortalLoginPage: 4, AutoCadastroPage: 6, AbrirSolicitacaoPage: 6).
+- Routes: 9 rotas (/portal/*) com auth propria isolada do OIDC.
+- Subtasks: 14.1 a 14.10 todas implementadas e verificadas.
+- RF-06: mensagem generica "Credenciais invalidas" no login, testada.
+- RF-11: validacao de formato email/CEP/UF em ContatoPage, cap 5 telefones.
+- RF-20: validacao de destino obrigatorio para ASSOCIACAO em AbrirSolicitacaoPage, testada.
+- RF-21: aviso de janela de processamento exibido ao selecionar ASSOCIACAO, nao bloqueia submit, testado.
+- RF-26: filtro por titulo e ordenacao A-Z/Z-A em RepertorioPage.
+- RF-27/RF-28: AbrirOcorrenciaPage com pre-preenchimento via query params (obraId/fonogramaId/titulo).
+- RF-29/RF-30: OcorrenciasPage com filtro por status, badges semanticos, resolucao visivel.
