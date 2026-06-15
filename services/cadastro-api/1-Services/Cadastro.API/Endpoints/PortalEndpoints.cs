@@ -54,6 +54,16 @@ public static class PortalEndpoints
         group.MapGet("/ocorrencias", ListarMinhasOcorrencias)
              .WithName("ListarMinhasOcorrencias")
              .WithSummary("Lista as ocorrências do titular autenticado (com filtro opcional por status)");
+
+        // POST /api/v1/portal/solicitacoes-alteracao — RF-14, RF-15, RF-20, RF-21.
+        group.MapPost("/solicitacoes-alteracao", AbrirSolicitacaoAlteracao)
+             .WithName("AbrirSolicitacaoAlteracao")
+             .WithSummary("Abre uma nova solicitação de alteração de dado sensível (nasce SOLICITADA)");
+
+        // GET /api/v1/portal/solicitacoes-alteracao — RF-17.
+        group.MapGet("/solicitacoes-alteracao", ListarMinhasSolicitacoes)
+             .WithName("ListarMinhasSolicitacoesAlteracao")
+             .WithSummary("Lista as solicitações de alteração do titular autenticado (com filtro opcional por status)");
     }
 
     private static async Task<IResult> GetMe(
@@ -241,6 +251,58 @@ public static class PortalEndpoints
         var result = await dispatcher.QueryAsync(query, cancellationToken);
         return Results.Ok(result);
     }
+
+    // ──────────────────────────────────────────────────────────────────────────
+    // RF-14, RF-15, RF-17, RF-20, RF-21: abertura e listagem de solicitações de
+    // alteração de dado sensível pelo titular. Aprovação/rejeição fica na task 12.0.
+    // titularId NUNCA vem da query string/body — sempre do ICurrentTitular (JWT).
+    // ──────────────────────────────────────────────────────────────────────────
+
+    private static async Task<IResult> AbrirSolicitacaoAlteracao(
+        [FromServices] IDispatcher dispatcher,
+        [FromServices] ICurrentTitular currentTitular,
+        [FromBody] AbrirSolicitacaoRequest request,
+        CancellationToken cancellationToken)
+    {
+        if (!currentTitular.IsAutenticado || currentTitular.TitularId == Guid.Empty)
+        {
+            return Results.Unauthorized();
+        }
+
+        // RF-17: anti-tampering — titularId vem do JWT, nunca do body.
+        var command = new AbrirSolicitacaoCommand(
+            TitularId: currentTitular.TitularId,
+            Campo: request.Campo,
+            ValorPretendido: request.ValorPretendido,
+            Justificativa: request.Justificativa);
+
+        var result = await dispatcher.SendAsync(command, cancellationToken);
+        return Results.Created($"/api/v1/portal/solicitacoes-alteracao/{result.Id}", result);
+    }
+
+    private static async Task<IResult> ListarMinhasSolicitacoes(
+        [FromServices] IDispatcher dispatcher,
+        [FromServices] ICurrentTitular currentTitular,
+        CancellationToken cancellationToken,
+        string? status = null,
+        int page = 1,
+        int size = 20)
+    {
+        if (!currentTitular.IsAutenticado || currentTitular.TitularId == Guid.Empty)
+        {
+            return Results.Unauthorized();
+        }
+
+        // RF-17: titularId extraído do token — o cliente não pode informar o seu próprio.
+        var query = new ListarMinhasSolicitacoesQuery(
+            TitularId: currentTitular.TitularId,
+            Status: status,
+            Page: page,
+            Size: size);
+
+        var result = await dispatcher.QueryAsync(query, cancellationToken);
+        return Results.Ok(result);
+    }
 }
 
 /// <summary>Body da atualização de contato (RF-09). TitularId vem do token, não do body.</summary>
@@ -258,3 +320,13 @@ public record CriarOcorrenciaRequest(
     Guid? ObraId,
     Guid? FonogramaId,
     string Descricao);
+
+/// <summary>
+/// Body da abertura de solicitação de alteração (RF-14). TitularId vem do token, não do body.
+/// <c>Campo</c> em SCREAMING_SNAKE_CASE (<c>NOME</c>, <c>CAE_IPI</c>, <c>ASSOCIACAO</c>, <c>CATEGORIA</c>).
+/// Quando <c>Campo == ASSOCIACAO</c>, <c>ValorPretendido</c> deve ser o GUID da nova associação (RF-20).
+/// </summary>
+public record AbrirSolicitacaoRequest(
+    string Campo,
+    string ValorPretendido,
+    string Justificativa);
