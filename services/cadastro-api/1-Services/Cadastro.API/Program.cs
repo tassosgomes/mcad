@@ -9,11 +9,13 @@ using Cadastro.Application.Associacoes.Queries;
 using Cadastro.Application.Common.Authorization;
 using Cadastro.Application.Common.CQRS;
 using Cadastro.Application.Titulares.Commands;
+using Cadastro.Application.Titulares.Services;
 using Cadastro.Domain.Interfaces;
 using Cadastro.Infra.Audit;
 using Cadastro.Infra.Data;
 using Cadastro.Infra.Events;
 using Cadastro.Infra.Repositories;
+using Cadastro.Infra.Services;
 using Cadastro.Infra.Storage;
 using Ecad.Audit.AspNetCore;
 using Ecad.Audit.Sdk;
@@ -29,6 +31,7 @@ using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 using Polly;
 using Prometheus;
+using System.Text;
 
 DotEnvLoader.LoadIfPresent();
 
@@ -171,6 +174,18 @@ var oidcAuthority = Environment.GetEnvironmentVariable("OIDC_AUTHORITY")
     ?? throw new InvalidOperationException("OIDC_AUTHORITY is required.");
 var oidcAudience = Environment.GetEnvironmentVariable("OIDC_AUDIENCE") ?? "https://api.mcad.local";
 
+// ─── Portal do Titular — JWT HMAC-SHA256 secret (fail-fast no startup) ──
+var portalJwtSecret = Environment.GetEnvironmentVariable("PORTAL_JWT_SECRET")
+    ?? throw new InvalidOperationException("PORTAL_JWT_SECRET é obrigatório (≥ 32 bytes).");
+
+if (Encoding.UTF8.GetByteCount(portalJwtSecret) < 32)
+{
+    throw new InvalidOperationException(
+        "PORTAL_JWT_SECRET deve ter no mínimo 32 bytes (HMAC-SHA256).");
+}
+
+// Scheme default = Keycloak/Logto ( JwtBearerDefaults.AuthenticationScheme ).
+// Segundo scheme nomeado "Titular" valida tokens HMAC emitidos pelo próprio serviço.
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
@@ -185,17 +200,41 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidateAudience = true,
             ValidAudiences = [oidcAudience]
         };
+    })
+    .AddJwtBearer("Titular", options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidIssuer = "cadastro-api-portal",
+            ValidateAudience = false,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(portalJwtSecret)),
+            ValidateIssuerSigningKey = true,
+            ValidateLifetime = true,
+            ClockSkew = TimeSpan.FromMinutes(1)
+        };
     });
 
 builder.Services.AddTransient<IClaimsTransformation, LogtoClaimsTransformation>();
 
 builder.Services.AddAuthorization(options =>
 {
+    // DefaultPolicy/FallbackPolicy preservados: endpoints internos continuam exigindo Keycloak.
     options.FallbackPolicy = new AuthorizationPolicyBuilder()
         .RequireAuthenticatedUser()
         .Build();
+    // Policy do Portal do Titular — aceita apenas tokens do scheme "Titular".
+    options.AddPolicy("PortalTitular", p => p
+        .RequireAuthenticatedUser()
+        .AddAuthenticationSchemes("Titular")
+        .Build());
 });
 builder.Services.AddEcadAuthz(builder.Configuration);
+
+// ─── Portal do Titular — DI ────────────────────────────────────────────
+// IHttpContextAccessor já registrado acima (linha AddHttpContextAccessor).
+builder.Services.AddScoped<ICurrentTitular, HttpContextCurrentTitular>();
+builder.Services.AddScoped<ITitularTokenService>(_ => new TitularTokenService(portalJwtSecret));
 
 // ─── Logging estruturado ───────────────────────────────────────────────
 builder.Logging.AddConsole();

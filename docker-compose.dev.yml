@@ -236,6 +236,8 @@ services:
       - distribuicao-api
 
 # NOTE: cadastro-api e identificacao-api rodam no host via `dotnet run`
+# NOTE: cadastro-api exige a env var PORTAL_JWT_SECRET (≥ 32 bytes) — lida do .env
+#       pelo DotEnvLoader. Validada fail-fast no startup do serviço (Program.cs).
 # NOTE: arrecadacao-api rodará no host via Spring Boot na porta 5003
 # NOTE: distribuicao-api pode rodar via Docker Compose ou host via `./dev.sh`
 # Ver README para instruções de execução local das APIs

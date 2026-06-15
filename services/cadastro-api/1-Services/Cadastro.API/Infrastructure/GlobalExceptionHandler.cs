@@ -10,6 +10,7 @@ namespace Cadastro.API.Infrastructure;
 /// Global Exception Handler — captura exceções não tratadas e retorna ProblemDetails (RFC 7807).
 /// Registrado em Program.cs via AddExceptionHandler.
 /// Mapeamentos:
+/// - AutenticacaoTitularException → 401 (mensagem genérica "Credenciais inválidas" — RF-06)
 /// - NotFoundException → 404
 /// - ConflictException (Application) → 409
 /// - StatusConflictException (Domain) → 409
@@ -40,6 +41,7 @@ public class GlobalExceptionHandler : IExceptionHandler
         var (statusCode, title) = exception switch
         {
             AuthzServiceUnavailableException => (StatusCodes.Status503ServiceUnavailable, "Authorization Service Unavailable"),
+            AutenticacaoTitularException => (StatusCodes.Status401Unauthorized, "Unauthorized"),
             NotFoundException => (StatusCodes.Status404NotFound, "Resource Not Found"),
             ConflictException => (StatusCodes.Status409Conflict, "Conflict"),
             StatusConflictException => (StatusCodes.Status409Conflict, "Conflict"),
@@ -70,6 +72,12 @@ public class GlobalExceptionHandler : IExceptionHandler
             }
 
             problemDetails.Extensions["errors"] = validationException.Errors;
+        }
+
+        // RF-06: sempre mensagem genérica — nunca revela se CPF ou senha falhou.
+        if (exception is AutenticacaoTitularException)
+        {
+            problemDetails.Detail = "Credenciais inválidas";
         }
 
         if (exception is DepuracaoNecessariaException depException)
