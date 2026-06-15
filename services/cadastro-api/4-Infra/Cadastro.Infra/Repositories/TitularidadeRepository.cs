@@ -37,6 +37,17 @@ public class TitularidadeRepository : ITitularidadeRepository
             .ToListAsync(ct);
     }
 
+    // RF-22, RF-24, RF-25: lista as titularidades autorais de um titular (somente leitura).
+    // AsNoTracking + Include(Obra) carrega título e ISWC para a projeção.
+    public async Task<IEnumerable<TitularidadeAutoral>> GetByTitularIdAsync(Guid titularId, CancellationToken ct)
+    {
+        return await _context.TitularidadesAutorais
+            .AsNoTracking()
+            .Include(t => t.Obra)
+            .Where(t => t.TitularId == titularId)
+            .ToListAsync(ct);
+    }
+
     public async Task<TitularidadeAutoral?> GetByIdAsync(Guid id, CancellationToken ct)
     {
         return await _context.TitularidadesAutorais

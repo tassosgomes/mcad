@@ -1,6 +1,7 @@
 using Cadastro.API.Authorization;
 using Cadastro.Application.Common.CQRS;
 using Cadastro.Application.Portal.Commands;
+using Cadastro.Application.Portal.Queries;
 using Cadastro.Application.Portal.Responses;
 using Cadastro.Application.Titulares;
 using Cadastro.Domain.Interfaces;
@@ -33,6 +34,16 @@ public static class PortalEndpoints
         group.MapPut("/me/contato", AtualizarContato)
              .WithName("AtualizarMeuContato")
              .WithSummary("Atualiza endereço, telefone e e-mail de contato do titular autenticado");
+
+        // GET /api/v1/portal/minhas-obras — RF-22, RF-24, RF-25, RF-26.
+        group.MapGet("/minhas-obras", GetMinhasObras)
+             .WithName("ObterMinhasObras")
+             .WithSummary("Lista as obras (titularidades autorais) do titular autenticado");
+
+        // GET /api/v1/portal/meus-fonogramas — RF-23, RF-24, RF-25.
+        group.MapGet("/meus-fonogramas", GetMeusFonogramas)
+             .WithName("ObterMeusFonogramas")
+             .WithSummary("Lista os fonogramas (participações conexas) do titular autenticado");
     }
 
     private static async Task<IResult> GetMe(
@@ -109,6 +120,63 @@ public static class PortalEndpoints
             request.Telefones ?? []);
 
         var result = await dispatcher.SendAsync(command, cancellationToken);
+        return Results.Ok(result);
+    }
+
+    // ──────────────────────────────────────────────────────────────────────────
+    // RF-22 / RF-24 / RF-25 / RF-26: consulta de repertório (somente leitura).
+    // titularId NUNCA vem da query string — sempre do ICurrentTitular (JWT).
+    // ──────────────────────────────────────────────────────────────────────────
+
+    private static async Task<IResult> GetMinhasObras(
+        [FromServices] IDispatcher dispatcher,
+        [FromServices] ICurrentTitular currentTitular,
+        CancellationToken cancellationToken,
+        int page = 1,
+        int size = 20,
+        string? filtro = null,
+        string? sort = "titulo")
+    {
+        if (!currentTitular.IsAutenticado || currentTitular.TitularId == Guid.Empty)
+        {
+            return Results.Unauthorized();
+        }
+
+        // RF-24: titularId extraído do token — o cliente não pode informar o seu próprio.
+        var query = new ObterMinhasObrasQuery(
+            TitularId: currentTitular.TitularId,
+            Page: page,
+            Size: size,
+            Filtro: filtro,
+            Sort: sort);
+
+        var result = await dispatcher.QueryAsync(query, cancellationToken);
+        return Results.Ok(result);
+    }
+
+    private static async Task<IResult> GetMeusFonogramas(
+        [FromServices] IDispatcher dispatcher,
+        [FromServices] ICurrentTitular currentTitular,
+        CancellationToken cancellationToken,
+        int page = 1,
+        int size = 20,
+        string? filtro = null,
+        string? sort = "titulo")
+    {
+        if (!currentTitular.IsAutenticado || currentTitular.TitularId == Guid.Empty)
+        {
+            return Results.Unauthorized();
+        }
+
+        // RF-24: titularId extraído do token — o cliente não pode informar o seu próprio.
+        var query = new ObterMeusFonogramasQuery(
+            TitularId: currentTitular.TitularId,
+            Page: page,
+            Size: size,
+            Filtro: filtro,
+            Sort: sort);
+
+        var result = await dispatcher.QueryAsync(query, cancellationToken);
         return Results.Ok(result);
     }
 }

@@ -39,6 +39,18 @@ public class ParticipacaoRepository : IParticipacaoRepository
             .ToListAsync(ct);
     }
 
+    // RF-23, RF-24, RF-25: lista as participações conexas de um titular (somente leitura).
+    // AsNoTracking + Include(Fonograma.Obra) carrega ISRC e título da obra para a projeção.
+    public async Task<IEnumerable<ParticipacaoConexa>> GetByTitularIdAsync(Guid titularId, CancellationToken ct)
+    {
+        return await _context.ParticipacoesConexas
+            .AsNoTracking()
+            .Include(p => p.Fonograma)
+            .ThenInclude(f => f.Obra)
+            .Where(p => p.TitularId == titularId)
+            .ToListAsync(ct);
+    }
+
     public async Task<ParticipacaoConexa?> GetByIdAsync(Guid id, CancellationToken ct)
     {
         return await _context.ParticipacoesConexas

@@ -1029,3 +1029,25 @@ Sugestão de melhoria no:
 - TechSpec: A subtarefa 6.3 diz `_outbox.AddEvent(EventTypes.TitularContatoAtualizado, ...)`, mas `EventTypes` reside em `4-Infra/Cadastro.Infra/Events/EventTypes.cs` — Application não referencia Infra (Clean Architecture inward-pointing). O implementer usou string literal `"cadastro.titular.contato.atualizado"` (idêntico ao valor da constante, sem typo), alinhado ao padrão de `CriarTitularCommandHandler`. Recomendação futura: mover `EventTypes` para `2-Application` (ou `Contracts`) para eliminar typo-risk em 20+ handlers; abrir task de refatoração separada. Non-blocking.
 - Template de Task: A subtarefa 6.7 pede "audit publisher chamado com diff + outbox AddEvent chamado"; implementer entregou teste extra que prova empiricamente (via Callback) que o snapshot "antes" reflete o valor anterior — superou o exigido. Considerar exigir esse padrão em tasks que envolvam RF-12/auditoria.
 - Skill: `dotnet-architecture` poderia documentar explicitamente a regra "constantes de routing key devem viver na camada Application (ou superior), não em Infra, para que handlers possam referenciá-las sem violar dependências" — hoje isso é implícito.
+
+## [2026-06-15] | PRD: prd-acesso-titulares | Task: 7.0
+
+Modelo utilizado:
+(Preenchido pelo Orquestrador)
+
+### Problemas Identificados
+
+Zero Defects Identified
+Iterações até estabilização: 1
+
+### Resumo da Tarefa
+
+Total de Problemas: 0 (3 observações menores não-bloqueantes registradas no review)
+Categoria Técnica mais frequente: N/A (observações: code smell em default de switch; edge case Page≤0; desvio justificado de especificação)
+Origem mais frequente: N/A
+Indício de fragilidade estrutural? Não — handlers seguem fielmente o padrão CQRS nativo (IQuery/IQueryHandler, auto-registro Scrutor, PaginationResponse não-genérico envolvido em response wrapper). RF-24 (isolamento por titular) empiricamente provado por testes com `Verify(outroTitularId, Times.Never)` em ambos handlers. RF-25 (somente leitura) garantido por AsNoTracking em ambos repositórios e ausência total de endpoints de escrita.
+Sugestão de melhoria no:
+- PRD: Nenhuma — RF-22 a RF-26 claros e rastreáveis.
+- TechSpec: As subtarefas 7.1/7.3 especificavam `record ObterMinhasObrasQuery(Guid TitularId, string? Filtro, string? Sort)` e `record ObterMeusFonogramasQuery(Guid TitularId, string? Filtro)` sem parâmetros de paginação (`Page`/`Size`), e mencionavam `IQuery<PaginationResponse<T>>` genérico — mas o codebase usa `PaginationResponse` não-genérico (Page, Size, Total, TotalPages) envolvido em response wrapper. O implementer corretamente alinhou ao padrão real do projeto. Recomendação: alinhar o texto das tasks com a convenção do codebase (incluir Page/Size na query; usar response wrapper em vez de PaginationResponse<T> genérico inexistente).
+- Template de Task: Considerar adicionar clamp/validação de `Page ≥ 1` como padrão em queries paginadas — hoje é um edge case pré-existente em todo o codebase (Skip com offset negativo lança ArgumentOutOfRangeException). Non-blocking, mas afeta todos os handlers de listagem.
+- Skill: `dotnet-code-quality` poderia documentar a regra "braço `default` de switch sobre enums deve usar `ToString().ToUpperInvariant()`, nunca um valor literal hardcoded" — hoje o handler de obras faz corretamente mas o de fonogramas usa `"INTERPRETE"` como fallback (funcional hoje, mas fragiliza futuras adições de enum).
