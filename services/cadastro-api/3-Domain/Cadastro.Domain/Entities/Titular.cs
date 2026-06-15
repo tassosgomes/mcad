@@ -1,4 +1,6 @@
+using System.ComponentModel.DataAnnotations.Schema;
 using Cadastro.Domain.Enums;
+using Cadastro.Domain.Exceptions;
 using Cadastro.Domain.ValueObjects;
 
 namespace Cadastro.Domain.Entities;
@@ -122,6 +124,44 @@ public class Titular
         AssociacaoId = associacaoId;
         Status = status;
         CaeIpi = caeIpi;
+        AtualizadoEm = DateTime.UtcNow;
+    }
+
+    /// <summary>E-mail de contato do titular (RF-09). Nullable — titular pode não ter e-mail.</summary>
+    [NotMapped]
+    public Email? Email { get; private set; }
+
+    /// <summary>Endereço postal do titular (RF-09). Nullable — titular pode não ter endereço.</summary>
+    [NotMapped]
+    public Endereco? Endereco { get; private set; }
+
+    /// <summary>
+    /// Telefones de contato do titular (RF-09). Coleção substituída integralmente
+    /// por <see cref="AtualizarContato"/>. Cap máximo de 5 telefones.
+    /// </summary>
+    [NotMapped]
+    public IReadOnlyList<TelefoneTitular> Telefones { get; private set; } = [];
+
+    private const int MaxTelefones = 5;
+
+    /// <summary>
+    /// Atualiza os dados de contato do titular (RF-09, RF-13).
+    /// Substitui integralmente a coleção de telefones (sem delta parcial).
+    /// Aceita no máximo 5 telefones — acima disso lança <see cref="Exceptions.DomainException"/>.
+    /// </summary>
+    public void AtualizarContato(
+        Email? email,
+        Endereco? endereco,
+        IReadOnlyList<TelefoneTitular> telefones)
+    {
+        if (telefones is null)
+            throw new ArgumentNullException(nameof(telefones));
+        if (telefones.Count > MaxTelefones)
+            throw new DomainException($"Titular pode ter no máximo {MaxTelefones} telefones");
+
+        Email = email;
+        Endereco = endereco;
+        Telefones = telefones.ToList();
         AtualizadoEm = DateTime.UtcNow;
     }
 }

@@ -22,6 +22,11 @@ public static class EventTypes
 
     // ── Titular ───────────────────────────────────────────────────────────────
     public const string TitularCriado = "cadastro.titular.criado";
+    public const string TitularContatoAtualizado = "cadastro.titular.contato.atualizado";
+
+    // ── Ocorrência ────────────────────────────────────────────────────────────
+    public const string OcorrenciaAberta   = "cadastro.ocorrencia.aberta";
+    public const string OcorrenciaResolvida = "cadastro.ocorrencia.resolvida";
 
     // ── Anexos ────────────────────────────────────────────────────────────────
     public const string ObraAnexoAdicionado        = "cadastro.obra.anexo.adicionado";

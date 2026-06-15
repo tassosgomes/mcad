@@ -860,3 +860,30 @@ Sugestao de melhoria no:
 - TechSpec: Nenhuma sugestao especifica.
 - Template de Task: Nenhuma sugestao especifica.
 - Skill: Nenhuma sugestao especifica.
+
+---
+
+## 2026-06-14 | PRD: prd-acesso-titulares | Task: 2.0
+
+Modelo utilizado: (Preenchido pelo Orquestrador)
+
+### Problemas Identificados
+
+1. Categoria Técnica: Violação de padrão arquitetural (marginal / não-bloqueante)
+   Severidade: Baixa (non-blocking observation)
+   Fase Detectada: Revisão
+   Origem Provável: Task (escopo 2.0 vs 3.0 — config EF é da task 3.0)
+   Necessitou Reimplementação Significativa? Não
+   Descrição: O implementer adicionou `[NotMapped]` (data annotation de `System.ComponentModel.DataAnnotations.Schema`, BCL) às 3 novas propriedades de `Titular` (`Email`, `Endereco`, `Telefones`) como ponte transitória, pois o EF Core não consegue descobrir mapeamento para VOs record e coleções sem `OwnsOne`/`OwnsMany` (escopo explícito da task 3.0). A convenção do projeto é Fluent API puro. Contudo: (a) `Cadastro.Domain.csproj` permanece com zero referências de pacote (a anotação é BCL), (b) não há vazamento de `OwnsOne`/`IEntityTypeConfiguration` para o domínio (confirmado por grep), (c) o estado é semanticamente correto (não-mapeamento) enquanto a config EF não existe, (d) testes de integração da task 3.0 detectarão qualquer config ausente. Aceito como transitional. Recomendação para o validador da task 3.0: verificar remoção dos 3 `[NotMapped]` + do `using System.ComponentModel.DataAnnotations.Schema;` quando `OwnsOne`/`OwnsMany` forem adicionados em `TitularConfiguration`.
+
+### Resumo da Tarefa
+
+Total de Problemas: 1 (não-bloqueante)
+Categoria Técnica mais frequente: Violação de padrão arquitetural (marginal, transitional)
+Origem mais frequente: Task (divisão de escopo 2.0/3.0)
+Indício de fragilidade estrutural? Não
+Sugestão de melhoria no:
+- PRD: Nenhuma.
+- TechSpec: Considerar mencionar explicitamente que `[NotMapped]` será necessário como ponte na task 2.0 até a task 3.0 adicionar Fluent API configs — reduz surpresa na revisão.
+- Template de Task: Ao particionar domínio (task N) e EF mapping (task N+1), incluir nota sobre a ponte `[NotMapped]` para evitar reabertura de escopo.
+- Skill: Nenhuma.
