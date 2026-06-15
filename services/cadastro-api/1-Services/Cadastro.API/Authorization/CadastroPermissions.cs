@@ -55,4 +55,14 @@ public static class CadastroPermissions
     public const string AnexoUpload  = "cadastro:default:anexo:upload";
     public const string AnexoRemover = "cadastro:default:anexo:remover";
     public const string AnexoDownload = "cadastro:default:anexo:download";
+
+    public const string OcorrenciaListar = "cadastro:default:ocorrencia:listar";
+    public const string OcorrenciaVisualizar = "cadastro:default:ocorrencia:visualizar";
+    public const string OcorrenciaAnalisar = "cadastro:default:ocorrencia:analisar";
+    public const string OcorrenciaResolver = "cadastro:default:ocorrencia:resolver";
+    public const string OcorrenciaCancelar = "cadastro:default:ocorrencia:cancelar";
+
+    public const string SolicitacaoAlteracaoListar = "cadastro:default:solicitacao-alteracao:listar";
+    public const string SolicitacaoAlteracaoAprovar = "cadastro:default:solicitacao-alteracao:aprovar";
+    public const string SolicitacaoAlteracaoRejeitar = "cadastro:default:solicitacao-alteracao:rejeitar";
 }

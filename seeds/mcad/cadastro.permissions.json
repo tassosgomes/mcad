@@ -51,6 +51,16 @@
     { "key": "cadastro:default:status:desbloquear-obra", "displayName": "Desbloquear obra", "description": "Desbloqueia uma obra previamente bloqueada.", "resource": "status", "action": "desbloquear-obra" },
     { "key": "cadastro:default:status:liberar-fonograma", "displayName": "Liberar fonograma", "description": "Libera um fonograma para distribuição.", "resource": "status", "action": "liberar-fonograma" },
     { "key": "cadastro:default:status:bloquear-fonograma", "displayName": "Bloquear fonograma", "description": "Bloqueia um fonograma.", "resource": "status", "action": "bloquear-fonograma" },
-    { "key": "cadastro:default:status:desbloquear-fonograma", "displayName": "Desbloquear fonograma", "description": "Desbloqueia um fonograma previamente bloqueado.", "resource": "status", "action": "desbloquear-fonograma" }
+    { "key": "cadastro:default:status:desbloquear-fonograma", "displayName": "Desbloquear fonograma", "description": "Desbloqueia um fonograma previamente bloqueado.", "resource": "status", "action": "desbloquear-fonograma" },
+
+    { "key": "cadastro:default:ocorrencia:listar", "displayName": "Listar ocorrências (todas)", "description": "Permite listar todas as ocorrências no painel do analista.", "resource": "ocorrencia", "action": "listar" },
+    { "key": "cadastro:default:ocorrencia:visualizar", "displayName": "Visualizar ocorrência", "description": "Acesso aos detalhes de uma ocorrência específica.", "resource": "ocorrencia", "action": "visualizar" },
+    { "key": "cadastro:default:ocorrencia:analisar", "displayName": "Assumir análise de ocorrência", "description": "Move uma ocorrência para o status EM_ANALISE.", "resource": "ocorrencia", "action": "analisar" },
+    { "key": "cadastro:default:ocorrencia:resolver", "displayName": "Resolver ocorrência", "description": "Registra parecer e resolve uma ocorrência.", "resource": "ocorrencia", "action": "resolver" },
+    { "key": "cadastro:default:ocorrencia:cancelar", "displayName": "Cancelar ocorrência", "description": "Cancela uma ocorrência com justificativa.", "resource": "ocorrencia", "action": "cancelar" },
+
+    { "key": "cadastro:default:solicitacao-alteracao:listar", "displayName": "Listar solicitações de alteração", "description": "Lista todas as solicitações de alteração no painel do analista.", "resource": "solicitacao-alteracao", "action": "listar" },
+    { "key": "cadastro:default:solicitacao-alteracao:aprovar", "displayName": "Aprovar solicitação de alteração", "description": "Aprova uma solicitação e aplica o efeito no titular.", "resource": "solicitacao-alteracao", "action": "aprovar" },
+    { "key": "cadastro:default:solicitacao-alteracao:rejeitar", "displayName": "Rejeitar solicitação de alteração", "description": "Rejeita uma solicitação com justificativa.", "resource": "solicitacao-alteracao", "action": "rejeitar" }
   ]
 }
