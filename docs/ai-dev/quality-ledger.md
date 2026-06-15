@@ -983,3 +983,27 @@ Sugestão de melhoria no:
 - TechSpec: Nenhuma sugestão específica.
 - Template de Task: Nenhuma sugestão específica.
 - Skill: Nenhuma sugestão específica.
+
+---
+
+## 2026-06-15 | PRD: prd-acesso-titulares | Task: 5.0
+
+Modelo utilizado:
+(Preenchido pelo Orquestrador)
+
+### Problemas Identificados
+
+Zero Defects Identified
+Iterações até estabilização: 1
+
+### Resumo da Tarefa
+
+Total de Problemas: 0 (2 observações menores não-bloqueantes registradas no review)
+Categoria Técnica mais frequente: N/A (observações: duplicação de constante TTL; query extra de titular no login)
+Origem mais frequente: N/A
+Indício de fragilidade estrutural? Não — handlers seguem padrões CQRS existentes; RF-06 (mensagem genérica) totalmente atendido em todos os caminhos de falha.
+Sugestão de melhoria no:
+- PRD: Nenhuma — RF-01 a RF-07 claros e rastreáveis.
+- TechSpec: Considerar que `ITitularTokenService.Gerar(titular)` poderia retornar `(token, expiraEm)` para evitar que o handler duplique a constante TTL (atualmente `LoginTitularCommandHandler.TokenTtl = 60min` espelha `TitularTokenService.ExpiraEm = 60min`; divergência futura faria a resposta mentir sobre a expiração). Non-blocking.
+- Template de Task: A subtarefa 5.6 diz `ICommand<NoContent>`, mas o projeto não tem marker `NoContent` — todos os commands sem payload usam `ICommand<bool>` (`ExcluirTitularCommand`, `RemoverAnexoCommand`). O implementer seguiu a convenção real do codebase. Sugestão: alinhar o texto da task com a convenção existente para evitar confusão.
+- Skill: Nenhuma.

@@ -33,6 +33,13 @@ public interface ITitularRepository
     Task<bool> ExisteDocumentoAsync(string documento, CancellationToken cancellationToken);
 
     /// <summary>
+    /// Busca titular pelo documento (CPF/CNPJ) já normalizado (apenas dígitos/letras).
+    /// Usado no auto-cadastro do Portal para validar CAE/IPI (RF-02) e verificar
+    /// se já existe credencial associada (RF-03). Retorna null quando não encontrado.
+    /// </summary>
+    Task<Titular?> GetByDocumentoAsync(string documento, CancellationToken cancellationToken);
+
+    /// <summary>
     /// Verifica unicidade excluindo um ID específico.
     /// Usado na atualização para permitir manter o mesmo documento.
     /// </summary>

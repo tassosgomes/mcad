@@ -87,6 +87,23 @@ public class CredencialTitular
         AtualizadoEm = DateTime.UtcNow;
     }
 
+    /// <summary>
+    /// Substitui o hash de senha (RF-07 — alterar senha do titular autenticado).
+    /// <paramref name="novoSenhaHash"/> deve ser o hash BCrypt gerado pela camada
+    /// de aplicação (work factor 12). Reseta tentativas falhas e bloqueio para
+    /// evitar estado inconsistente após troca de senha.
+    /// </summary>
+    public void AtualizarSenhaHash(string novoSenhaHash)
+    {
+        if (string.IsNullOrWhiteSpace(novoSenhaHash))
+            throw new DomainException("SenhaHash é obrigatório");
+
+        SenhaHash = novoSenhaHash;
+        TentativasFalhas = 0;
+        BloqueadoAte = null;
+        AtualizadoEm = DateTime.UtcNow;
+    }
+
     private static TimeSpan DuracaoLockout(int ciclo) => ciclo switch
     {
         1 => TimeSpan.FromMinutes(1),

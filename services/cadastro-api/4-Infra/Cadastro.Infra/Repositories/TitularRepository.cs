@@ -116,6 +116,30 @@ public class TitularRepository : ITitularRepository
         return count > 0;
     }
 
+    /// <summary>
+    /// Busca titular por documento (CPF/CNPJ) normalizado.
+    /// Usa SqlQuery interpolada pois "Cpf"/"Cnpj" são VOs com HasConversion
+    /// (o LINQ não consegue traduzir t.Cpf.Valor para SQL).
+    /// </summary>
+    public async Task<Titular?> GetByDocumentoAsync(string documento, CancellationToken cancellationToken)
+    {
+        var doc = (documento ?? string.Empty).ToUpperInvariant();
+        var titularId = await _context.Database
+            .SqlQuery<Guid>($"""
+                SELECT "Id" AS "Value" FROM cadastro.titulares
+                WHERE "Cpf" = {doc} OR "Cnpj" = {doc}
+                """)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (titularId == Guid.Empty)
+            return null;
+
+        return await _context.Titulares
+            .AsNoTracking()
+            .Include(t => t.Associacao)
+            .FirstOrDefaultAsync(t => t.Id == titularId, cancellationToken);
+    }
+
     public async Task<bool> ExisteDocumentoAsync(
         string documento, Guid excludeId, CancellationToken cancellationToken)
     {

@@ -55,6 +55,17 @@ public class CredencialTitularRepository : ICredencialTitularRepository
         await _context.CredenciaisTitular.AddAsync(credencial, cancellationToken);
     }
 
+    /// <summary>
+    /// Anexa a credencial ao contexto como Modified para que mutações de lockout
+    /// (IncrementarFalha/ResetarFalhas) persistam ao SaveChangesAsync.
+    /// Necessário porque <see cref="ByDocumentoAsync"/> / <see cref="ByTitularIdAsync"/>
+    /// retornam entidades AsNoTracking.
+    /// </summary>
+    public void Update(CredencialTitular credencial)
+    {
+        _context.CredenciaisTitular.Update(credencial);
+    }
+
     public async Task SaveChangesAsync(CancellationToken cancellationToken)
     {
         await _context.SaveChangesAsync(cancellationToken);

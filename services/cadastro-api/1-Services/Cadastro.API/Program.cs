@@ -280,6 +280,7 @@ app.MapBuscaEndpoints();
 app.MapDistribuicaoEndpoints();
 app.MapDashboardEndpoints();
 app.MapAnexoEndpoints();
+app.MapPortalAuthEndpoints();
 
 // ─── AsyncAPI (documentação de eventos — pública) ─────────────────────
 app.MapAsyncApiDocs();

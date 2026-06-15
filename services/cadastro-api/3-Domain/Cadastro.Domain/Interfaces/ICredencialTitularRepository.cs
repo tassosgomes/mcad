@@ -14,5 +14,13 @@ public interface ICredencialTitularRepository
 
     Task AddAsync(CredencialTitular credencial, CancellationToken cancellationToken);
 
+    /// <summary>
+    /// Marca a credencial como modificada no contexto EF para que mudanças
+    /// em <see cref="CredencialTitular.TentativasFalhas"/> / <see cref="CredencialTitular.BloqueadoAte"/>
+    /// sejam detectadas pelo change tracker ao <see cref="SaveChangesAsync"/>.
+    /// Espelha <c>ITitularRepository.Update</c>.
+    /// </summary>
+    void Update(CredencialTitular credencial);
+
     Task SaveChangesAsync(CancellationToken cancellationToken);
 }
