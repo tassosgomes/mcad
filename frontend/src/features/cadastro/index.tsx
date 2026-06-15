@@ -3,6 +3,8 @@ import { AssociacoesPage } from './associacoes';
 import { TitularesPage, TitularCreatePage, TitularEditPage } from './titulares';
 import { ObrasPage, ObraCreatePage, ObraDetailPage } from './obras';
 import { FonogramasPage, FonogramaCreatePage, FonogramaDetailPage } from './fonogramas';
+import { OcorrenciasPage, OcorrenciaDetailPage } from './ocorrencias';
+import { SolicitacoesPage } from './solicitacoes';
 
 export default function CadastroRoutes() {
   return (
@@ -17,6 +19,9 @@ export default function CadastroRoutes() {
       <Route path="fonogramas" element={<FonogramasPage />} />
       <Route path="fonogramas/novo" element={<FonogramaCreatePage />} />
       <Route path="fonogramas/:id" element={<FonogramaDetailPage />} />
+      <Route path="ocorrencias" element={<OcorrenciasPage />} />
+      <Route path="ocorrencias/:id" element={<OcorrenciaDetailPage />} />
+      <Route path="solicitacoes" element={<SolicitacoesPage />} />
     </Routes>
   );
 }

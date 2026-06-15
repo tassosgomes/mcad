@@ -1,0 +1,60 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  max-width: 900px;
+}
+
+.detailCard {
+  background: var(--color-bg-floor);
+  border-radius: var(--radius-lg);
+  border: 1px solid rgba(67, 70, 85, 0.1);
+  padding: var(--space-8);
+}
+
+.field {
+  margin-bottom: var(--space-4);
+}
+
+.fieldLabel {
+  display: block;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--color-text-secondary);
+  margin-bottom: var(--space-1);
+}
+
+.fieldValue {
+  color: var(--color-text-primary);
+  font-size: var(--text-base);
+  line-height: 1.6;
+}
+
+.actions {
+  display: flex;
+  gap: var(--space-3);
+  margin-top: var(--space-6);
+  flex-wrap: wrap;
+}
+
+.modalFields {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  margin-bottom: var(--space-4);
+}
+
+.backLink {
+  color: var(--color-accent);
+  font-size: var(--text-sm);
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.backLink:hover {
+  text-decoration: underline;
+}

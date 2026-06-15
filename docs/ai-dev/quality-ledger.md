@@ -1288,3 +1288,39 @@ Evidencias da validacao:
 - RF-26: filtro por titulo e ordenacao A-Z/Z-A em RepertorioPage.
 - RF-27/RF-28: AbrirOcorrenciaPage com pre-preenchimento via query params (obraId/fonogramaId/titulo).
 - RF-29/RF-30: OcorrenciasPage com filtro por status, badges semanticos, resolucao visivel.
+
+---
+
+## 2026-06-15 | PRD: prd-acesso-titulares | Task: 15.0
+
+Modelo utilizado: (Preenchido pelo Orquestrador)
+
+### Problemas Identificados
+
+Zero Defects Identified
+1 observacao non-blocking: rotas individuais em features/cadastro/index.tsx nao envolvidas em `<RequirePermission>` conforme texto do task file. Module-level gating (cadastro:default:associacao:listar em routes.tsx) + sidebar requiredPermissions atingem protecao equivalente de UX. ADR 0004 confirma backend como fonte real de authz.
+Iteracoes ate estabilizacao: 1
+
+### Resumo da Tarefa
+
+Total de Problemas: 0 (1 observacao non-blocking sobre rotas nao individualmente embrulhadas em RequirePermission)
+Categoria Tecnica mais frequente: N/A (sem defeitos)
+Origem mais frequente: N/A
+Indicio de fragilidade estrutural? Nao — implementacao solida seguindo os padroes existentes de features/cadastro/* (titulares, obras, fonogramas). Componentes `<Can>` para actions de escrita, apiClient OIDC (nao portalClient), sidebar com requiredPermissions, TanStack Query hooks com invalidacao de cache em mutacoes. Confirmacao de aprovacao com diff (valor atual → valor pretendido) implementada via modal dedicado.
+Sugestao de melhoria no:
+- PRD: Nenhuma — HU-08 e HU-09 cobertas, RF-33 (filtros por status/titular/tipo) e RF-34-39 (transicoes de estado) atendidas.
+- TechSpec: Nenhuma — endpoints e permissoes alinhados. Confirmacao de aprovacao com diff seguida fielmente.
+- Template de Task: Subtarefa 15.4 pode ser esclarecida sobre se o wrapping individual de rotas e obrigatorio ou se module-level gating existente + sidebar e suficiente.
+- Skill: `react-architecture` (feature-based, kebab-case, PascalCase, aliases, public API via index.ts) e `react-code-quality` (sem any, typed props, useX hooks, componentes <300 linhas, English code) integralmente seguidas.
+
+Evidencias da validacao:
+- Build: PASS — `tsc -b && vite build`, 0 erros, 2331 modulos transformados, 3.61s.
+- Tests: PASS — 171/171. analistaPages.test.tsx: 4/4 (OcorrenciasPage header+filter rendering, SolicitacoesPage header, SolicitacoesPage permission gating, OcorrenciaDetailPage loading state).
+- API client: ambos features usam `@services/apiClient` (OIDC `authenticatedFetchClient`), nenhum uso de `portalClient`.
+- Subtasks: 15.1 a 15.6 todas implementadas e verificadas.
+- 15.1 Ocorrencias: tabela com filtros (status/titular/tipo), badges semanticos, paginacao, detail page com Assumir/Resolver/Cancelar via `<Can>`.
+- 15.2 Solicitacoes: tabela com badges, diff valor atual → pretendido, modal de confirmacao de aprovacao mostrando diff, modal de rejeicao com justificativa.
+- 15.3 Sidebar: entradas Ocorrencias e Solicitacoes de Alteracao com requiredPermissions.
+- 15.4 Routes: /cadastro/ocorrencias, /cadastro/ocorrencias/:id, /cadastro/solicitacoes no cadastro/index.tsx.
+- 15.5 Permission-gated: 5 botoes de acao com `<Can permission="...">` (Assumir, Resolver, Cancelar, Aprovar, Rejeitar).
+- 15.6 Tests: 4 testes com render condicional por permissao mockada (usePermissions + Can).

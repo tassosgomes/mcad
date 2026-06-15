@@ -8,7 +8,7 @@
     "build": "tsc -b && vite build",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
-    "test:authz-lifecycle": "vitest run src/features/authz/contract/authzPermissionLifecycleContract.test.ts src/features/authz/types/permission.test.ts src/features/authz/components/PermissionStatusBadge.test.tsx src/features/authz/api/authzPermissionLifecycleApi.test.ts src/features/authz/hooks/usePermissionLifecycle.test.tsx src/features/authz/pages/PermissionDetailPage.test.tsx src/features/authz/pages/PermissionsPage.test.tsx",
+    "test:authz-lifecycle": "vitest run src/features/authz/contract/authzPermissionLifecycleContract.test.ts src/features/authz/types/permission.test.ts src/features/authz/components/PermissionStatusBadge.test.tsx src/features/authz/api/authzPermissionLifecycleApi.test.ts src/features/authz/hooks/usePermissionLifecycle.test.tsx src/features/authz/pages/PermissionCreatePage.test.tsx src/features/authz/pages/PermissionDetailPage.test.tsx src/features/authz/pages/PermissionsPage.test.tsx",
     "test:coverage:authz-lifecycle": "vitest run --config vitest.authz-lifecycle.config.ts --coverage",
     "preview": "vite preview"
   },

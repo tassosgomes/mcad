@@ -44,6 +44,16 @@ const navigation: SidebarGroup[] = [
       { label: 'Titulares', path: '/cadastro/titulares' },
       { label: 'Obras', path: '/cadastro/obras' },
       { label: 'Fonogramas', path: '/cadastro/fonogramas' },
+      {
+        label: 'Ocorrências',
+        path: '/cadastro/ocorrencias',
+        requiredPermissions: ['cadastro:default:ocorrencia:listar'],
+      },
+      {
+        label: 'Solicitações de Alteração',
+        path: '/cadastro/solicitacoes',
+        requiredPermissions: ['cadastro:default:solicitacao-alteracao:listar'],
+      },
     ],
   },
   // Fases futuras (desabilitados):

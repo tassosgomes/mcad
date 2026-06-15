@@ -1,0 +1,137 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.filters {
+  display: flex;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.tableWrapper {
+  overflow-x: auto;
+  background: var(--color-bg-floor);
+  border-radius: var(--radius-lg);
+  border: 1px solid rgba(67, 70, 85, 0.1);
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.thead tr {
+  background: var(--color-bg-surface);
+}
+
+.th {
+  padding: var(--space-4) var(--space-6);
+  text-align: left;
+  font-family: var(--font-body);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+}
+
+.textRight {
+  text-align: right;
+}
+
+.row {
+  background: transparent;
+  transition: background var(--transition-fast);
+}
+
+.row:hover {
+  background: var(--color-bg-surface);
+}
+
+.td {
+  padding: var(--space-5) var(--space-6);
+  vertical-align: middle;
+  border-bottom: 1px solid rgba(67, 70, 85, 0.05);
+}
+
+.actions {
+  display: flex;
+  gap: var(--space-2);
+  justify-content: flex-end;
+}
+
+.empty {
+  text-align: center;
+  padding: var(--space-12) var(--space-4);
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}
+
+.nome {
+  color: var(--color-text-primary);
+  font-weight: 600;
+}
+
+.diff {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.oldValue {
+  color: var(--color-text-muted);
+  text-decoration: line-through;
+  font-size: var(--text-sm);
+}
+
+.arrow {
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}
+
+.newValue {
+  color: var(--color-accent);
+  font-weight: 600;
+}
+
+.modalDiff {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  margin-bottom: var(--space-4);
+  padding: var(--space-4);
+  background: var(--color-bg-surface);
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(67, 70, 85, 0.15);
+}
+
+.diffRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.diffLabel {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--color-text-secondary);
+}
+
+.diffValues {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.modalFields {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  margin-bottom: var(--space-4);
+}
