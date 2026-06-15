@@ -36,4 +36,15 @@ public sealed record TitularAuditOperation(
         "Atualizar contato do titular",
         "Contato do titular atualizado pelo próprio titular no Portal",
         DataAction.UPDATE);
+
+    /// <summary>
+    /// Aprovação de solicitação de alteração de dado sensível pelo Analista (RF-16, RF-18).
+    /// Aplica o efeito colateral no titular — registra diff antes/depois via
+    /// <see cref="TitularAuditEventFactory"/> (RF-18).
+    /// </summary>
+    public static readonly TitularAuditOperation AprovacaoSolicitacao = new(
+        "APROVAR_SOLICITACAO_ALTERACAO",
+        "Aprovar solicitação de alteração",
+        "Dado sensível do titular alterado via aprovação de solicitação pelo Analista",
+        DataAction.UPDATE);
 }

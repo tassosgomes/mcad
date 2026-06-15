@@ -41,7 +41,7 @@ Testes de integração fim-a-fim (WebApplicationFactory + Testcontainers), métr
 - [x] 9.0 Solicitações de Alteração — Lado do Titular (RF-14, RF-15, RF-17, RF-20, RF-21)
 - [x] 10.0 Permissões do Analista + Seed (8 chaves)
 - [x] 11.0 Triagem e Resolução de Ocorrências pelo Analista (RF-33 a RF-39)
-- [ ] 12.0 Aprovação/Rejeição de Solicitações pelo Analista (RF-16, RF-18, RF-19)
+- [x] 12.0 Aprovação/Rejeição de Solicitações pelo Analista (RF-16, RF-18, RF-19)
 - [ ] 13.0 Frontend — Infraestrutura do Portal (PortalAuthProvider, PortalLayout, authenticatedFetch, rotas)
 - [ ] 14.0 Frontend — Páginas do Titular (auto-cadastro, login, dashboard, contato, repertório, ocorrências, solicitações)
 - [ ] 15.0 Frontend — Páginas do Analista (triagem de ocorrências, aprovação de solicitações)

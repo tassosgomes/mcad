@@ -2,6 +2,44 @@
 
 ---
 
+## 2026-06-15 | PRD: prd-acesso-titulares | Task: 12.0
+
+Modelo utilizado: (Preenchido pelo Orquestrador)
+
+### Problemas Identificados
+
+Zero Defects Identified
+Iterações até estabilização: 1
+
+### Resumo da Tarefa
+
+Total de Problemas: 0 (1 observação non-blocking sobre CATEGORIA sem efeito colateral)
+Categoria Técnica mais frequente: N/A (sem defeitos)
+Origem mais frequente: N/A
+Indício de fragilidade estrutural? Não — implementação consistente com Clean Architecture, CQRS nativo, audit two-tier e state machine de domínio. Handlers espelham fielmente o padrão de `AbrirSolicitacaoCommandHandler` (task 9.0) e `AtualizarTitularCommandHandler` (padrão existente de audit diff). RF-16, RF-18, RF-19 todos atendidos e testados (10 testes novos).
+Sugestão de melhoria no:
+- PRD: Nenhuma — RF-16, RF-18, RF-19 claros e rastreáveis.
+- TechSpec: O campo CATEGORIA é listado como efeito colateral no fluxo de aprovação mas o Titular aparenta não ter campo mutável de Categoria/Tipo. Recomendação: clarificar na TechSpec se CATEGORIA deve ter efeito colateral ou se é apenas uma solicitação aprovada sem mutação (como implementado).
+- Template de Task: A subtarefa 12.2 menciona "outbox emite EventTypes.TitularContatoAtualizado se aplicável" mas o handler corretamente não injeta IOutboxEventWriter (nomes/CAE/associação/categoria não são campos de contato). A ambiguidade do task file foi resolvida corretamente pelo implementer.
+- Skill: `dotnet-testing` — o padrão de teste "Snapshot + assert audit PublishAsync + verify SaveChanges Times.Once/Never" foi aplicado com sucesso nos 6 testes de aprovação (idêntico ao padrão usado em AtualizarContato).
+
+Evidências da validação:
+- Build: PASS — 0 erros, 2 warnings (NU1902 OpenTelemetry, pré-existentes).
+- Unit tests: PASS — 370/370 (+10 vs baseline 360).
+- Clean Architecture: PASS — Application.csproj sem referência a Cadastro.Infra.
+- State machine: `SolicitacaoAlteracao.Aprovar` valida `SOLICITADA → APROVADA`; `Rejeitar` valida `SOLICITADA → REJEITADA`; ambas testadas para transições inválidas.
+- Audit two-tier: `Snapshot(titular)` (before) + `PublishAsync(titular, AprovacaoSolicitacao, before, ct)` (after) — RF-18 totalmente atendido.
+- RF-16: efeito colateral aplicado apenas após `solicitacao.Aprovar(analistaId)` para NOME, CAE_IPI e ASSOCIACAO.
+- RF-19: `JustificativaRejeicao` validada pelo domínio (`string.IsNullOrWhiteSpace` → DomainException) e registrada na entidade.
+- Endpoints: 3/3 com permissões corretas (Keycloak default + RequireCadastroPermission); `Program.cs:286` registra `MapSolicitacaoAlteracaoEndpoints`.
+- AsNoTracking workaround: `_repo.Update(solicitacao)` chamado nos handlers de aprovação e rejeição antes de SaveChanges.
+- Atomic transaction: SaveChangesAsync único persiste solicitação + titular + audit; testes verificam `SaveChangesAsync Times.Never` nos caminhos de erro (transição inválida, associação inexistente, not-found).
+- Sem mudanças de entidade/migration: apenas novos arquivos (Commands, Queries, Handlers, Endpoints, Tests).
+
+Observação de domínio (não desta task): `CampoSolicitacao.Categoria` é aprovado sem efeito colateral no Titular pois Tipo é imutável. Se houver intenção futura de alterar o Tipo do Titular, será necessário adicionar método de mutação na entidade. Não bloqueante para esta task.
+
+---
+
 ## 2026-06-15 | PRD: prd-acesso-titulares | Task: 11.0
 
 Modelo utilizado: (Preenchido pelo Orquestrador)
