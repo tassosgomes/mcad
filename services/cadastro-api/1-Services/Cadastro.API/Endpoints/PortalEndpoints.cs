@@ -44,6 +44,16 @@ public static class PortalEndpoints
         group.MapGet("/meus-fonogramas", GetMeusFonogramas)
              .WithName("ObterMeusFonogramas")
              .WithSummary("Lista os fonogramas (participações conexas) do titular autenticado");
+
+        // POST /api/v1/portal/ocorrencias — RF-27, RF-28, RF-32.
+        group.MapPost("/ocorrencias", CriarOcorrencia)
+             .WithName("CriarOcorrencia")
+             .WithSummary("Abre uma nova ocorrência (nasce ABERTA) para o titular autenticado");
+
+        // GET /api/v1/portal/ocorrencias — RF-29, RF-30, RF-31.
+        group.MapGet("/ocorrencias", ListarMinhasOcorrencias)
+             .WithName("ListarMinhasOcorrencias")
+             .WithSummary("Lista as ocorrências do titular autenticado (com filtro opcional por status)");
     }
 
     private static async Task<IResult> GetMe(
@@ -179,6 +189,58 @@ public static class PortalEndpoints
         var result = await dispatcher.QueryAsync(query, cancellationToken);
         return Results.Ok(result);
     }
+
+    // ──────────────────────────────────────────────────────────────────────────
+    // RF-27 a RF-32: abertura e listagem de ocorrências pelo titular.
+    // titularId NUNCA vem da query string/body — sempre do ICurrentTitular (JWT).
+    // ──────────────────────────────────────────────────────────────────────────
+
+    private static async Task<IResult> CriarOcorrencia(
+        [FromServices] IDispatcher dispatcher,
+        [FromServices] ICurrentTitular currentTitular,
+        [FromBody] CriarOcorrenciaRequest request,
+        CancellationToken cancellationToken)
+    {
+        if (!currentTitular.IsAutenticado || currentTitular.TitularId == Guid.Empty)
+        {
+            return Results.Unauthorized();
+        }
+
+        // RF-31: anti-tampering — titularId vem do JWT, nunca do body.
+        var command = new CriarOcorrenciaCommand(
+            TitularId: currentTitular.TitularId,
+            Tipo: request.Tipo,
+            ObraId: request.ObraId,
+            FonogramaId: request.FonogramaId,
+            Descricao: request.Descricao);
+
+        var result = await dispatcher.SendAsync(command, cancellationToken);
+        return Results.Created($"/api/v1/portal/ocorrencias/{result.Id}", result);
+    }
+
+    private static async Task<IResult> ListarMinhasOcorrencias(
+        [FromServices] IDispatcher dispatcher,
+        [FromServices] ICurrentTitular currentTitular,
+        CancellationToken cancellationToken,
+        string? status = null,
+        int page = 1,
+        int size = 20)
+    {
+        if (!currentTitular.IsAutenticado || currentTitular.TitularId == Guid.Empty)
+        {
+            return Results.Unauthorized();
+        }
+
+        // RF-31: titularId extraído do token — o cliente não pode informar o seu próprio.
+        var query = new ListarMinhasOcorrenciasQuery(
+            TitularId: currentTitular.TitularId,
+            Status: status,
+            Page: page,
+            Size: size);
+
+        var result = await dispatcher.QueryAsync(query, cancellationToken);
+        return Results.Ok(result);
+    }
 }
 
 /// <summary>Body da atualização de contato (RF-09). TitularId vem do token, não do body.</summary>
@@ -186,3 +248,13 @@ public record AtualizarContatoRequest(
     string? Email,
     EnderecoDto? Endereco,
     IReadOnlyList<TelefoneDto>? Telefones);
+
+/// <summary>
+/// Body da abertura de ocorrência (RF-27). TitularId vem do token, não do body.
+/// <c>Tipo</c> em SCREAMING_SNAKE_CASE (ex: <c>TITULARIDADE_DIVERGENTE</c>).
+/// </summary>
+public record CriarOcorrenciaRequest(
+    string Tipo,
+    Guid? ObraId,
+    Guid? FonogramaId,
+    string Descricao);

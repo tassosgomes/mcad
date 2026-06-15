@@ -37,7 +37,7 @@ Testes de integração fim-a-fim (WebApplicationFactory + Testcontainers), métr
 - [x] 5.0 Auto-cadastro, Login e Alteração de Senha do Titular (RF-01 a RF-07)
 - [x] 6.0 Gestão de Dados de Contato (RF-09 a RF-13)
 - [x] 7.0 Consulta de Repertório — Obras e Fonogramas (RF-22 a RF-26)
-- [ ] 8.0 Ocorrências — CRUD do Titular (RF-27 a RF-32)
+- [x] 8.0 Ocorrências — CRUD do Titular (RF-27 a RF-32)
 - [ ] 9.0 Solicitações de Alteração — Lado do Titular (RF-14, RF-15, RF-17, RF-20, RF-21)
 - [ ] 10.0 Permissões do Analista + Seed (8 chaves)
 - [ ] 11.0 Triagem e Resolução de Ocorrências pelo Analista (RF-33 a RF-39)

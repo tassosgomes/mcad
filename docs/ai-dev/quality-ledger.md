@@ -1051,3 +1051,36 @@ Sugestão de melhoria no:
 - TechSpec: As subtarefas 7.1/7.3 especificavam `record ObterMinhasObrasQuery(Guid TitularId, string? Filtro, string? Sort)` e `record ObterMeusFonogramasQuery(Guid TitularId, string? Filtro)` sem parâmetros de paginação (`Page`/`Size`), e mencionavam `IQuery<PaginationResponse<T>>` genérico — mas o codebase usa `PaginationResponse` não-genérico (Page, Size, Total, TotalPages) envolvido em response wrapper. O implementer corretamente alinhou ao padrão real do projeto. Recomendação: alinhar o texto das tasks com a convenção do codebase (incluir Page/Size na query; usar response wrapper em vez de PaginationResponse<T> genérico inexistente).
 - Template de Task: Considerar adicionar clamp/validação de `Page ≥ 1` como padrão em queries paginadas — hoje é um edge case pré-existente em todo o codebase (Skip com offset negativo lança ArgumentOutOfRangeException). Non-blocking, mas afeta todos os handlers de listagem.
 - Skill: `dotnet-code-quality` poderia documentar a regra "braço `default` de switch sobre enums deve usar `ToString().ToUpperInvariant()`, nunca um valor literal hardcoded" — hoje o handler de obras faz corretamente mas o de fonogramas usa `"INTERPRETE"` como fallback (funcional hoje, mas fragiliza futuras adições de enum).
+
+---
+
+## 2026-06-15 | PRD: prd-acesso-titulares | Task: 8.0
+
+Modelo utilizado: (Preenchido pelo Orquestrador)
+
+### Problemas Identificados
+
+Zero Defects Identified
+Iterações até estabilização: 1
+
+### Resumo da Tarefa
+
+Total de Problemas: 0 (4 observações non-blocking: 1 Low, 3 Info)
+Categoria Técnica mais frequente: N/A (sem defeitos)
+Origem mais frequente: N/A
+Indício de fragilidade estrutural? Não — implementação consistente com Clean Architecture, CQRS nativo, Outbox Pattern e padrões do codebase (espelha `AtualizarContatoCommandHandler`/`MinhasObrasResponse`).
+Sugestão de melhoria no:
+- PRD: Nenhuma — RF-27 a RF-32 claros e rastreáveis.
+- TechSpec: A subtarefa 8.4 mencionava `IQuery<PaginationResponse<OcorrenciaResponse>>` genérico, mas o codebase usa `PaginationResponse` não-genérico + response wrapper (padrão `MinhasObrasResponse`). O implementer alinhou ao padrão real. Recomendação: alinhar o texto das tasks com a convenção do codebase em futuras especificações.
+- Template de Task: Considar padronizar o comportamento de filtros de status inválidos (atualmente `ParseStatus` retorna null = "sem filtro"; alternativas: lançar 400). Decisão não-bloqueante, mas deve ser consistente entre handlers do titular (8.5) e do analista (11.0).
+- Skill: `dotnet-testing` poderia documentar o padrão "mockar validator testa o pipeline do handler; testes do validator real devem ser diretos (sem mock)" — hoje os testes mockam o validator (consistente com o projeto), mas não há testes diretos do `CriarOcorrenciaCommandValidator`. Non-blocking.
+
+Evidências da validação:
+- Build: PASS — 0 erros, 2 warnings (NU1902 OpenTelemetry, pré-existentes).
+- Unit tests: PASS — 319/319 (0 regressões vs baseline 299; +20 novos de Task 8.0).
+- Cobertura: CriarOcorrenciaCommandHandler (8 testes) + ListarMinhasOcorrenciasQueryHandler (12 testes).
+- RF-28: Ocorrencia.Criar força Status=Aberta; testado.
+- RF-31: titularId exclusivamente de ICurrentTitular; CriarOcorrenciaRequest sem campo TitularId; filtro repassado ao repositório testado empiricamente.
+- RF-32: AddEvent("cadastro.ocorrencia.aberta") com string literal (Clean Arch preservada); testado com Times.Once.
+- AsNoTracking confirmado em OcorrenciaRepository.ListarAsync e GetByIdAsync.
+- DI: IOcorrenciaRepository registrado (Program.cs:96); handlers via Scrutor assembly scan; validator via AddValidatorsFromAssemblyContaining.
