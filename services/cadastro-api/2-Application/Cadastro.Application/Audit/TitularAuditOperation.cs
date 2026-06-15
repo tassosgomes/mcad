@@ -25,4 +25,15 @@ public sealed record TitularAuditOperation(
         "Excluir titular",
         "Titular excluído",
         DataAction.DELETE);
+
+    /// <summary>
+    /// Atualização dos dados de contato (RF-09 a RF-13).
+    /// Reaproveita <see cref="DataAction.UPDATE"/> para que o diff before/after seja gerado
+    /// pelo <see cref="TitularAuditEventFactory"/>.
+    /// </summary>
+    public static readonly TitularAuditOperation AtualizarContato = new(
+        "ATUALIZAR_CONTATO_TITULAR",
+        "Atualizar contato do titular",
+        "Contato do titular atualizado pelo próprio titular no Portal",
+        DataAction.UPDATE);
 }

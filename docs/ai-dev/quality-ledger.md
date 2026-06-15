@@ -1007,3 +1007,25 @@ Sugestão de melhoria no:
 - TechSpec: Considerar que `ITitularTokenService.Gerar(titular)` poderia retornar `(token, expiraEm)` para evitar que o handler duplique a constante TTL (atualmente `LoginTitularCommandHandler.TokenTtl = 60min` espelha `TitularTokenService.ExpiraEm = 60min`; divergência futura faria a resposta mentir sobre a expiração). Non-blocking.
 - Template de Task: A subtarefa 5.6 diz `ICommand<NoContent>`, mas o projeto não tem marker `NoContent` — todos os commands sem payload usam `ICommand<bool>` (`ExcluirTitularCommand`, `RemoverAnexoCommand`). O implementer seguiu a convenção real do codebase. Sugestão: alinhar o texto da task com a convenção existente para evitar confusão.
 - Skill: Nenhuma.
+
+## [2026-06-15] | PRD: prd-acesso-titulares | Task: 6.0
+
+Modelo utilizado:
+(Preenchido pelo Orquestrador)
+
+### Problemas Identificados
+
+Zero Defects Identified
+Iterações até estabilização: 1
+
+### Resumo da Tarefa
+
+Total de Problemas: 0 (2 observações menores não-bloqueantes registradas no review)
+Categoria Técnica mais frequente: N/A (observações: redundância em teste unitário; localização arquitetural de EventTypes)
+Origem mais frequente: N/A
+Indício de fragilidade estrutural? Não — handler segue fielmente o padrão CQRS/audit existente (`CriarTitularCommandHandler`); RF-12 (snapshot antes da mutação) empiricamente provado por teste com `.Callback`. Anti-tampering (titularId do JWT), LGPD (documento mascarado) e atomicidade (SaveChanges único com entidade+outbox+audit) totalmente atendidos.
+Sugestão de melhoria no:
+- PRD: Nenhuma — RF-09 a RF-13 claros e rastreáveis.
+- TechSpec: A subtarefa 6.3 diz `_outbox.AddEvent(EventTypes.TitularContatoAtualizado, ...)`, mas `EventTypes` reside em `4-Infra/Cadastro.Infra/Events/EventTypes.cs` — Application não referencia Infra (Clean Architecture inward-pointing). O implementer usou string literal `"cadastro.titular.contato.atualizado"` (idêntico ao valor da constante, sem typo), alinhado ao padrão de `CriarTitularCommandHandler`. Recomendação futura: mover `EventTypes` para `2-Application` (ou `Contracts`) para eliminar typo-risk em 20+ handlers; abrir task de refatoração separada. Non-blocking.
+- Template de Task: A subtarefa 6.7 pede "audit publisher chamado com diff + outbox AddEvent chamado"; implementer entregou teste extra que prova empiricamente (via Callback) que o snapshot "antes" reflete o valor anterior — superou o exigido. Considerar exigir esse padrão em tasks que envolvam RF-12/auditoria.
+- Skill: `dotnet-architecture` poderia documentar explicitamente a regra "constantes de routing key devem viver na camada Application (ou superior), não em Infra, para que handlers possam referenciá-las sem violar dependências" — hoje isso é implícito.

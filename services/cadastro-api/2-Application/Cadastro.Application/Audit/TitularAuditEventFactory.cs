@@ -78,7 +78,28 @@ public sealed class TitularAuditEventFactory
             ["associacaoId"] = titular.AssociacaoId.ToString(),
             ["status"] = titular.Status.ToString().ToUpperInvariant(),
             ["criadoEm"] = titular.CriadoEm,
-            ["atualizadoEm"] = titular.AtualizadoEm
+            ["atualizadoEm"] = titular.AtualizadoEm,
+            // ── Contato (RF-09 a RF-13) ──────────────────────────────────────
+            // Permite que o diff before/after capturado pela auditoria two-tier
+            // inclua alterações de contato feitas pelo titular no Portal (RF-12).
+            ["email"] = titular.Email?.Valor,
+            ["endereco"] = titular.Endereco is null ? null : new Dictionary<string, object?>
+            {
+                ["cep"] = titular.Endereco.Cep.Valor,
+                ["logradouro"] = titular.Endereco.Logradouro,
+                ["numero"] = titular.Endereco.Numero,
+                ["complemento"] = titular.Endereco.Complemento,
+                ["bairro"] = titular.Endereco.Bairro,
+                ["cidade"] = titular.Endereco.Cidade,
+                ["uf"] = titular.Endereco.Uf.Valor
+            },
+            ["telefones"] = titular.Telefones
+                .Select(t => new Dictionary<string, object?>
+                {
+                    ["tipo"] = t.Tipo.ToString().ToUpperInvariant(),
+                    ["numero"] = t.Numero.Valor
+                })
+                .ToList<object?>()
         };
 
     private static AuditSource Source() => new(ServiceName, SystemName, SourceSchema, EnvironmentName);
