@@ -41,7 +41,7 @@ public class CancelarRolCommandHandlerTests
     {
         var rubricaId = Guid.NewGuid();
         var rubrica = Rubrica.Criar(rubricaId, sigla, "Geral", false);
-        var captacao = Captacao.Criar(rubricaId, new DateOnly(2026, 1, 15), "Rede Globo", analistaId, "Joao");
+        var captacao = Captacao.Criar(rubricaId, new DateOnly(2026, 1, 15), Guid.NewGuid(), "Rede Globo", analistaId, "Joao");
         typeof(Captacao).GetProperty("Rubrica")!.SetValue(captacao, rubrica);
         captacao.Fechar();
         return captacao;

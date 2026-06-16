@@ -9,7 +9,7 @@ public class CaptacaoCancelamentoTests
 {
     private static Captacao CriarFechada()
     {
-        var captacao = Captacao.Criar(Guid.NewGuid(), new DateOnly(2026, 1, 15), "Rede Globo", Guid.NewGuid(), "Joao");
+        var captacao = Captacao.Criar(Guid.NewGuid(), new DateOnly(2026, 1, 15), Guid.NewGuid(), "Rede Globo", Guid.NewGuid(), "Joao");
         captacao.Fechar();
         return captacao;
     }
@@ -31,7 +31,7 @@ public class CaptacaoCancelamentoTests
     [Fact]
     public void Cancelar_Aberta_LancaDomainException()
     {
-        var captacao = Captacao.Criar(Guid.NewGuid(), new DateOnly(2026, 1, 15), "Rede Globo", Guid.NewGuid(), "Joao");
+        var captacao = Captacao.Criar(Guid.NewGuid(), new DateOnly(2026, 1, 15), Guid.NewGuid(), "Rede Globo", Guid.NewGuid(), "Joao");
 
         var act = () => captacao.Cancelar("Motivo qualquer suficientemente longo");
 

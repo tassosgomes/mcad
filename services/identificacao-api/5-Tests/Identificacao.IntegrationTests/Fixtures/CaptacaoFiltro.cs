@@ -12,6 +12,7 @@ public class CaptacaoFiltro
     public DateOnly? PeriodoFinal { get; set; }
     public string? Status { get; set; }
     public Guid? AnalistaResponsavelId { get; set; }
+    public Guid? UsuarioMusicaId { get; set; }
     public string? Sort { get; set; }
     public int? Page { get; set; }
     public int? Size { get; set; }

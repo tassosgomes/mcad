@@ -11,27 +11,29 @@ public class CaptacaoTests
     [Fact]
     public void Atualizar_CaptacaoAberta_AtualizaDados()
     {
-        var captacao = Captacao.Criar(Guid.NewGuid(), new DateOnly(2023, 10, 1), "Netflix", Guid.NewGuid(), "Joao");
+        var captacao = Captacao.Criar(Guid.NewGuid(), new DateOnly(2023, 10, 1), Guid.NewGuid(), "Netflix", Guid.NewGuid(), "Joao");
         var novaRubricaId = Guid.NewGuid();
         var novoPeriodo = new DateOnly(2023, 11, 1);
+        var novoUsuarioMusicaId = Guid.NewGuid();
 
-        captacao.Atualizar(novaRubricaId, novoPeriodo, "Globo");
+        captacao.Atualizar(novaRubricaId, novoPeriodo, novoUsuarioMusicaId, "Globo");
 
         captacao.RubricaId.Should().Be(novaRubricaId);
         captacao.Periodo.Should().Be(novoPeriodo);
-        captacao.UsuarioDeMusica.Should().Be("Globo");
+        captacao.UsuarioMusicaId.Should().Be(novoUsuarioMusicaId);
+        captacao.UsuarioMusicaNome.Should().Be("Globo");
     }
 
     [Fact]
     public void Atualizar_CaptacaoFechada_LancaDomainException()
     {
-        var captacao = Captacao.Criar(Guid.NewGuid(), new DateOnly(2023, 10, 1), "Netflix", Guid.NewGuid(), "Joao");
+        var captacao = Captacao.Criar(Guid.NewGuid(), new DateOnly(2023, 10, 1), Guid.NewGuid(), "Netflix", Guid.NewGuid(), "Joao");
         
         // Simular fechamento via reflection (pois não temos método fechar ainda, mas o status é private set)
         var prop = typeof(Captacao).GetProperty("Status");
         prop!.SetValue(captacao, StatusCaptacao.Fechada);
 
-        var act = () => captacao.Atualizar(Guid.NewGuid(), new DateOnly(2023, 11, 1), "Globo");
+        var act = () => captacao.Atualizar(Guid.NewGuid(), new DateOnly(2023, 11, 1), Guid.NewGuid(), "Globo");
 
         act.Should().Throw<DomainException>().WithMessage("Apenas captações com status ABERTA podem ser modificadas.");
     }
@@ -39,7 +41,7 @@ public class CaptacaoTests
     [Fact]
     public void ValidarPropriedade_OutroAnalista_LancaDomainException()
     {
-        var captacao = Captacao.Criar(Guid.NewGuid(), new DateOnly(2023, 10, 1), "Netflix", Guid.NewGuid(), "Joao");
+        var captacao = Captacao.Criar(Guid.NewGuid(), new DateOnly(2023, 10, 1), Guid.NewGuid(), "Netflix", Guid.NewGuid(), "Joao");
 
         var act = () => captacao.ValidarPropriedade(Guid.NewGuid());
 
@@ -49,7 +51,7 @@ public class CaptacaoTests
     // ───────────── Cobertura faltante de máquina de estados ─────────────
 
     private static Captacao CriarAberta() =>
-        Captacao.Criar(Guid.NewGuid(), new DateOnly(2023, 10, 1), "Netflix", Guid.NewGuid(), "Joao");
+        Captacao.Criar(Guid.NewGuid(), new DateOnly(2023, 10, 1), Guid.NewGuid(), "Netflix", Guid.NewGuid(), "Joao");
 
     [Fact]
     public void Fechar_CaptacaoJaFechada_LancaDomainException()
@@ -103,7 +105,7 @@ public class CaptacaoTests
         captacao.Fechar();
         captacao.Cancelar("Motivo");
 
-        var act = () => captacao.Atualizar(Guid.NewGuid(), new DateOnly(2023, 11, 1), "Globo");
+        var act = () => captacao.Atualizar(Guid.NewGuid(), new DateOnly(2023, 11, 1), Guid.NewGuid(), "Globo");
 
         act.Should().Throw<DomainException>().WithMessage("Apenas captações com status ABERTA podem ser modificadas.");
     }

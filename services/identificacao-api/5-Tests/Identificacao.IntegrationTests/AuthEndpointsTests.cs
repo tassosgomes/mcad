@@ -110,7 +110,7 @@ public class AuthEndpointsTests : IClassFixture<IdentificacaoApiFactory>
         {
             rubricaId = Guid.NewGuid(),
             periodo = DateOnly.FromDateTime(DateTime.UtcNow),
-            usuarioDeMusica = "Rádio Teste"
+            usuarioMusicaId = Guid.NewGuid(), usuarioMusicaNome = "Rádio Teste"
         };
 
         var response = await client.PostAsJsonAsync("/api/v1/captacoes", payload);

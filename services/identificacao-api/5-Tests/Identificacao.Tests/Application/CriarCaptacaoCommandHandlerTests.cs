@@ -36,7 +36,7 @@ public class CriarCaptacaoCommandHandlerTests
         _captacaoRepoMock.Setup(r => r.ExisteAtivaParaRubricaPeriodoAsync(rubricaId, It.IsAny<DateOnly>(), null, It.IsAny<CancellationToken>())).ReturnsAsync(false);
         _usuarioRepoMock.Setup(r => r.BuscarPorSubjectAsync("test-subject", It.IsAny<CancellationToken>())).ReturnsAsync((UsuarioIdentidade?)null);
 
-        var cmd = new CriarCaptacaoCommand(rubricaId, new DateOnly(2023, 10, 1), "Usuário", Guid.NewGuid(), "test-subject", null);
+        var cmd = new CriarCaptacaoCommand(rubricaId, new DateOnly(2023, 10, 1), Guid.NewGuid(), "Usuário", Guid.NewGuid(), "test-subject", null);
 
         var response = await _handler.HandleAsync(cmd, CancellationToken.None);
 
@@ -54,7 +54,7 @@ public class CriarCaptacaoCommandHandlerTests
         _rubricaRepoMock.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(rubricas);
         _captacaoRepoMock.Setup(r => r.ExisteAtivaParaRubricaPeriodoAsync(rubricaId, It.IsAny<DateOnly>(), null, It.IsAny<CancellationToken>())).ReturnsAsync(true);
 
-        var cmd = new CriarCaptacaoCommand(rubricaId, new DateOnly(2023, 10, 1), "Usuário", Guid.NewGuid(), "test-subject", "claim-name");
+        var cmd = new CriarCaptacaoCommand(rubricaId, new DateOnly(2023, 10, 1), Guid.NewGuid(), "Usuário", Guid.NewGuid(), "test-subject", "claim-name");
 
         var act = () => _handler.HandleAsync(cmd, CancellationToken.None);
 
@@ -66,7 +66,7 @@ public class CriarCaptacaoCommandHandlerTests
     {
         _rubricaRepoMock.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<Rubrica>());
 
-        var cmd = new CriarCaptacaoCommand(Guid.NewGuid(), new DateOnly(2023, 10, 1), "Usuário", Guid.NewGuid(), "test-subject", "claim-name");
+        var cmd = new CriarCaptacaoCommand(Guid.NewGuid(), new DateOnly(2023, 10, 1), Guid.NewGuid(), "Usuário", Guid.NewGuid(), "test-subject", "claim-name");
 
         var act = () => _handler.HandleAsync(cmd, CancellationToken.None);
 
@@ -91,7 +91,7 @@ public class CriarCaptacaoCommandHandlerTests
         };
         _usuarioRepoMock.Setup(r => r.BuscarPorSubjectAsync("subject-1", It.IsAny<CancellationToken>())).ReturnsAsync(usuario);
 
-        var cmd = new CriarCaptacaoCommand(rubricaId, new DateOnly(2023, 10, 1), "Usuário", analistaId, "subject-1", "claim-name");
+        var cmd = new CriarCaptacaoCommand(rubricaId, new DateOnly(2023, 10, 1), Guid.NewGuid(), "Usuário", analistaId, "subject-1", "claim-name");
 
         var response = await _handler.HandleAsync(cmd, CancellationToken.None);
 
@@ -108,7 +108,7 @@ public class CriarCaptacaoCommandHandlerTests
         _captacaoRepoMock.Setup(r => r.ExisteAtivaParaRubricaPeriodoAsync(rubricaId, It.IsAny<DateOnly>(), null, It.IsAny<CancellationToken>())).ReturnsAsync(false);
         _usuarioRepoMock.Setup(r => r.BuscarPorSubjectAsync("subject-2", It.IsAny<CancellationToken>())).ReturnsAsync((UsuarioIdentidade?)null);
 
-        var cmd = new CriarCaptacaoCommand(rubricaId, new DateOnly(2023, 10, 1), "Usuário", analistaId, "subject-2", "Maria Claim");
+        var cmd = new CriarCaptacaoCommand(rubricaId, new DateOnly(2023, 10, 1), Guid.NewGuid(), "Usuário", analistaId, "subject-2", "Maria Claim");
 
         var response = await _handler.HandleAsync(cmd, CancellationToken.None);
 
@@ -125,7 +125,7 @@ public class CriarCaptacaoCommandHandlerTests
         _captacaoRepoMock.Setup(r => r.ExisteAtivaParaRubricaPeriodoAsync(rubricaId, It.IsAny<DateOnly>(), null, It.IsAny<CancellationToken>())).ReturnsAsync(false);
         _usuarioRepoMock.Setup(r => r.BuscarPorSubjectAsync("subject-3", It.IsAny<CancellationToken>())).ReturnsAsync((UsuarioIdentidade?)null);
 
-        var cmd = new CriarCaptacaoCommand(rubricaId, new DateOnly(2023, 10, 1), "Usuário", analistaId, "subject-3", null);
+        var cmd = new CriarCaptacaoCommand(rubricaId, new DateOnly(2023, 10, 1), Guid.NewGuid(), "Usuário", analistaId, "subject-3", null);
 
         var response = await _handler.HandleAsync(cmd, CancellationToken.None);
 

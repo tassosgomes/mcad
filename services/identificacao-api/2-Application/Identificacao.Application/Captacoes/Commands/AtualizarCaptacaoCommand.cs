@@ -8,7 +8,8 @@ public record AtualizarCaptacaoCommand(
     Guid Id,
     Guid RubricaId,
     DateOnly Periodo,
-    string UsuarioDeMusica,
+    Guid UsuarioMusicaId,
+    string UsuarioMusicaNome,
     Guid AnalistaId
 ) : ICommand<CaptacaoResponse>;
 
@@ -19,7 +20,8 @@ public class AtualizarCaptacaoCommandValidator : AbstractValidator<AtualizarCapt
         RuleFor(x => x.Id).NotEmpty();
         RuleFor(x => x.RubricaId).NotEmpty();
         RuleFor(x => x.Periodo).NotEmpty();
-        RuleFor(x => x.UsuarioDeMusica).NotEmpty().MaximumLength(255);
+        RuleFor(x => x.UsuarioMusicaId).NotEmpty();
+        RuleFor(x => x.UsuarioMusicaNome).NotEmpty().MaximumLength(200);
         RuleFor(x => x.AnalistaId).NotEmpty();
     }
 }

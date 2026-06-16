@@ -21,7 +21,10 @@ public class CaptacaoConfiguration : IEntityTypeConfiguration<Captacao>
         builder.Property(c => c.Periodo)
             .IsRequired();
 
-        builder.Property(c => c.UsuarioDeMusica)
+        builder.Property(c => c.UsuarioMusicaId)
+            .IsRequired();
+
+        builder.Property(c => c.UsuarioMusicaNome)
             .IsRequired()
             .HasMaxLength(200);
 

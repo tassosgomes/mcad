@@ -59,6 +59,12 @@ public class CaptacaoRepository : ICaptacaoRepository
             query = query.Where(c => c.AnalistaResponsavelId == analistaId);
         }
 
+        if (filtro.UsuarioMusicaId != null)
+        {
+            var usuarioMusicaId = (Guid)filtro.UsuarioMusicaId;
+            query = query.Where(c => c.UsuarioMusicaId == usuarioMusicaId);
+        }
+
         var sort = ((string)filtro.Sort) ?? "-periodo";
 
         query = sort switch

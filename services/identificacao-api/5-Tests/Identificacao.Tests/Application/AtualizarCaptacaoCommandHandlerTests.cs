@@ -33,20 +33,22 @@ public class AtualizarCaptacaoCommandHandlerTests
         var novoRubricaId = Guid.NewGuid();
         var novaRubrica = Rubrica.Criar(novoRubricaId, "TV", "TV", false);
         
-        var captacao = Captacao.Criar(rubricaId, new DateOnly(2023, 10, 1), "User", analistaId, "Nome");
+        var captacao = Captacao.Criar(rubricaId, new DateOnly(2023, 10, 1), Guid.NewGuid(), "User", analistaId, "Nome");
         
         _captacaoRepoMock.Setup(r => r.GetByIdAsync(captacao.Id, It.IsAny<CancellationToken>())).ReturnsAsync(captacao);
         _rubricaRepoMock.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<Rubrica> { rubrica, novaRubrica });
         _captacaoRepoMock.Setup(r => r.ContarExecucoesAsync(captacao.Id, It.IsAny<CancellationToken>())).ReturnsAsync(0);
 
-        var cmd = new AtualizarCaptacaoCommand(captacao.Id, novoRubricaId, new DateOnly(2023, 11, 1), "Novo User", analistaId);
+        var novoUsuarioMusicaId = Guid.NewGuid();
+        var cmd = new AtualizarCaptacaoCommand(captacao.Id, novoRubricaId, new DateOnly(2023, 11, 1), novoUsuarioMusicaId, "Novo User", analistaId);
 
         var response = await _handler.HandleAsync(cmd, CancellationToken.None);
 
         response.Should().NotBeNull();
         captacao.RubricaId.Should().Be(novoRubricaId);
         captacao.Periodo.Should().Be(new DateOnly(2023, 11, 1));
-        captacao.UsuarioDeMusica.Should().Be("Novo User");
+        captacao.UsuarioMusicaId.Should().Be(novoUsuarioMusicaId);
+        captacao.UsuarioMusicaNome.Should().Be("Novo User");
         _captacaoRepoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
@@ -54,14 +56,14 @@ public class AtualizarCaptacaoCommandHandlerTests
     public async Task Handle_CaptacaoFechada_LancaDomainException()
     {
         var analistaId = Guid.NewGuid();
-        var captacao = Captacao.Criar(Guid.NewGuid(), new DateOnly(2023, 10, 1), "User", analistaId, "Nome");
+        var captacao = Captacao.Criar(Guid.NewGuid(), new DateOnly(2023, 10, 1), Guid.NewGuid(), "User", analistaId, "Nome");
         // Reflection ou workaround para fechar captação, pois só há factory
         var prop = typeof(Captacao).GetProperty("Status");
         prop!.SetValue(captacao, Identificacao.Domain.Enums.StatusCaptacao.Fechada);
 
         _captacaoRepoMock.Setup(r => r.GetByIdAsync(captacao.Id, It.IsAny<CancellationToken>())).ReturnsAsync(captacao);
 
-        var cmd = new AtualizarCaptacaoCommand(captacao.Id, Guid.NewGuid(), new DateOnly(2023, 11, 1), "Novo", analistaId);
+        var cmd = new AtualizarCaptacaoCommand(captacao.Id, Guid.NewGuid(), new DateOnly(2023, 11, 1), Guid.NewGuid(), "Novo", analistaId);
 
         var act = () => _handler.HandleAsync(cmd, CancellationToken.None);
 
@@ -73,11 +75,11 @@ public class AtualizarCaptacaoCommandHandlerTests
     {
         var analistaOriginal = Guid.NewGuid();
         var outroAnalista = Guid.NewGuid();
-        var captacao = Captacao.Criar(Guid.NewGuid(), new DateOnly(2023, 10, 1), "User", analistaOriginal, "Nome");
+        var captacao = Captacao.Criar(Guid.NewGuid(), new DateOnly(2023, 10, 1), Guid.NewGuid(), "User", analistaOriginal, "Nome");
 
         _captacaoRepoMock.Setup(r => r.GetByIdAsync(captacao.Id, It.IsAny<CancellationToken>())).ReturnsAsync(captacao);
 
-        var cmd = new AtualizarCaptacaoCommand(captacao.Id, Guid.NewGuid(), new DateOnly(2023, 11, 1), "Novo", outroAnalista);
+        var cmd = new AtualizarCaptacaoCommand(captacao.Id, Guid.NewGuid(), new DateOnly(2023, 11, 1), Guid.NewGuid(), "Novo", outroAnalista);
 
         var act = () => _handler.HandleAsync(cmd, CancellationToken.None);
 
@@ -90,7 +92,7 @@ public class AtualizarCaptacaoCommandHandlerTests
         var analistaId = Guid.NewGuid();
         var rubricaId = Guid.NewGuid();
         var novoRubricaId = Guid.NewGuid();
-        var captacao = Captacao.Criar(rubricaId, new DateOnly(2023, 10, 1), "User", analistaId, "Nome");
+        var captacao = Captacao.Criar(rubricaId, new DateOnly(2023, 10, 1), Guid.NewGuid(), "User", analistaId, "Nome");
 
         _captacaoRepoMock.Setup(r => r.GetByIdAsync(captacao.Id, It.IsAny<CancellationToken>())).ReturnsAsync(captacao);
         _rubricaRepoMock.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<Rubrica> { 
@@ -99,7 +101,7 @@ public class AtualizarCaptacaoCommandHandlerTests
         });
         _captacaoRepoMock.Setup(r => r.ContarExecucoesAsync(captacao.Id, It.IsAny<CancellationToken>())).ReturnsAsync(5);
 
-        var cmd = new AtualizarCaptacaoCommand(captacao.Id, novoRubricaId, new DateOnly(2023, 10, 1), "User", analistaId);
+        var cmd = new AtualizarCaptacaoCommand(captacao.Id, novoRubricaId, new DateOnly(2023, 10, 1), Guid.NewGuid(), "User", analistaId);
 
         var act = () => _handler.HandleAsync(cmd, CancellationToken.None);
 
@@ -112,7 +114,7 @@ public class AtualizarCaptacaoCommandHandlerTests
         var analistaId = Guid.NewGuid();
         var rubricaId = Guid.NewGuid();
         var novoRubricaId = Guid.NewGuid();
-        var captacao = Captacao.Criar(rubricaId, new DateOnly(2023, 10, 1), "User", analistaId, "Nome");
+        var captacao = Captacao.Criar(rubricaId, new DateOnly(2023, 10, 1), Guid.NewGuid(), "User", analistaId, "Nome");
 
         _captacaoRepoMock.Setup(r => r.GetByIdAsync(captacao.Id, It.IsAny<CancellationToken>())).ReturnsAsync(captacao);
         _rubricaRepoMock.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<Rubrica> { 
@@ -121,7 +123,7 @@ public class AtualizarCaptacaoCommandHandlerTests
         });
         _captacaoRepoMock.Setup(r => r.ContarExecucoesAsync(captacao.Id, It.IsAny<CancellationToken>())).ReturnsAsync(0);
 
-        var cmd = new AtualizarCaptacaoCommand(captacao.Id, novoRubricaId, new DateOnly(2023, 10, 1), "User", analistaId);
+        var cmd = new AtualizarCaptacaoCommand(captacao.Id, novoRubricaId, new DateOnly(2023, 10, 1), Guid.NewGuid(), "User", analistaId);
 
         await _handler.HandleAsync(cmd, CancellationToken.None);
 
@@ -133,7 +135,7 @@ public class AtualizarCaptacaoCommandHandlerTests
     {
         var analistaId = Guid.NewGuid();
         var rubricaId = Guid.NewGuid();
-        var captacao = Captacao.Criar(rubricaId, new DateOnly(2023, 10, 1), "User", analistaId, "Nome");
+        var captacao = Captacao.Criar(rubricaId, new DateOnly(2023, 10, 1), Guid.NewGuid(), "User", analistaId, "Nome");
 
         var novaData = new DateOnly(2023, 11, 1);
 
@@ -144,7 +146,7 @@ public class AtualizarCaptacaoCommandHandlerTests
         _captacaoRepoMock.Setup(r => r.ContarExecucoesAsync(captacao.Id, It.IsAny<CancellationToken>())).ReturnsAsync(0);
         _captacaoRepoMock.Setup(r => r.ExisteAtivaParaRubricaPeriodoAsync(rubricaId, novaData, captacao.Id, It.IsAny<CancellationToken>())).ReturnsAsync(true);
 
-        var cmd = new AtualizarCaptacaoCommand(captacao.Id, rubricaId, novaData, "User", analistaId);
+        var cmd = new AtualizarCaptacaoCommand(captacao.Id, rubricaId, novaData, Guid.NewGuid(), "User", analistaId);
 
         var act = () => _handler.HandleAsync(cmd, CancellationToken.None);
 

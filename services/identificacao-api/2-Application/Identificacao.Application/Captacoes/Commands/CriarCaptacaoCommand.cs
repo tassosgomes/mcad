@@ -7,7 +7,8 @@ namespace Identificacao.Application.Captacoes.Commands;
 public record CriarCaptacaoCommand(
     Guid RubricaId,
     DateOnly Periodo,
-    string UsuarioDeMusica,
+    Guid UsuarioMusicaId,
+    string UsuarioMusicaNome,
     Guid AnalistaId,
     string AnalistaSubject,
     string? AnalistaNomeClaim
@@ -19,7 +20,8 @@ public class CriarCaptacaoCommandValidator : AbstractValidator<CriarCaptacaoComm
     {
         RuleFor(x => x.RubricaId).NotEmpty();
         RuleFor(x => x.Periodo).NotEmpty();
-        RuleFor(x => x.UsuarioDeMusica).NotEmpty().MaximumLength(255);
+        RuleFor(x => x.UsuarioMusicaId).NotEmpty();
+        RuleFor(x => x.UsuarioMusicaNome).NotEmpty().MaximumLength(200);
         RuleFor(x => x.AnalistaId).NotEmpty();
         RuleFor(x => x.AnalistaSubject).NotEmpty();
     }

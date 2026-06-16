@@ -21,7 +21,7 @@ public class CaptacaoRepositoryTests
         Rubrica.Criar(Guid.NewGuid(), sigla, $"Rubrica {sigla}", exigeClassificacao);
 
     private static Captacao CriarCaptacao(Guid rubricaId, DateOnly periodo, Guid? analistaId = null) =>
-        Captacao.Criar(rubricaId, periodo, "User Música", analistaId ?? Guid.NewGuid(), "Analista");
+        Captacao.Criar(rubricaId, periodo, Guid.NewGuid(), "User Música", analistaId ?? Guid.NewGuid(), "Analista");
 
     [Fact]
     public async Task GetByIdAsync_QuandoExiste_RetornaComRubricaIncluida()

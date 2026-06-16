@@ -39,8 +39,8 @@ public class CriarCaptacaoCommandHandler : ICommandHandler<CriarCaptacaoCommand,
         var usuario = await _usuarioRepo.BuscarPorSubjectAsync(cmd.AnalistaSubject, ct);
         var nome = usuario?.NomeExibicao ?? cmd.AnalistaNomeClaim ?? "Desconhecido";
 
-        var captacao = Captacao.Criar(cmd.RubricaId, cmd.Periodo, cmd.UsuarioDeMusica,
-            cmd.AnalistaId, nome);
+        var captacao = Captacao.Criar(cmd.RubricaId, cmd.Periodo, cmd.UsuarioMusicaId,
+            cmd.UsuarioMusicaNome, cmd.AnalistaId, nome);
 
         await _captacaoRepo.AddAsync(captacao, ct);
         await _auditPublisher.PublishAsync(
@@ -55,7 +55,8 @@ public class CriarCaptacaoCommandHandler : ICommandHandler<CriarCaptacaoCommand,
             captacao.Id,
             rubricaResponse,
             captacao.Periodo.ToString("yyyy-MM-dd"),
-            captacao.UsuarioDeMusica,
+            captacao.UsuarioMusicaId,
+            captacao.UsuarioMusicaNome,
             captacao.Status.ToString(),
             new AnalistaResumoResponse(captacao.AnalistaResponsavelId, captacao.AnalistaResponsavelNome),
             captacao.CriadoEm,

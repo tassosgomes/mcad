@@ -10,7 +10,8 @@ public class Captacao
     public Guid RubricaId { get; private set; }
     public Rubrica? Rubrica { get; private set; }
     public DateOnly Periodo { get; private set; }
-    public string UsuarioDeMusica { get; private set; } = string.Empty;
+    public Guid UsuarioMusicaId { get; private set; }
+    public string UsuarioMusicaNome { get; private set; } = string.Empty;
     public StatusCaptacao Status { get; private set; }
     public Guid AnalistaResponsavelId { get; private set; }
     public string AnalistaResponsavelNome { get; private set; } = string.Empty;
@@ -23,13 +24,14 @@ public class Captacao
 
     private Captacao() { } // EF Core
 
-    public static Captacao Criar(Guid rubricaId, DateOnly periodo, string usuarioDeMusica,
-        Guid analistaId, string analistaNome) => new()
+    public static Captacao Criar(Guid rubricaId, DateOnly periodo, Guid usuarioMusicaId,
+        string usuarioMusicaNome, Guid analistaId, string analistaNome) => new()
     {
         Id = Guid.NewGuid(),
         RubricaId = rubricaId,
         Periodo = periodo,
-        UsuarioDeMusica = usuarioDeMusica,
+        UsuarioMusicaId = usuarioMusicaId,
+        UsuarioMusicaNome = usuarioMusicaNome,
         Status = StatusCaptacao.Aberta,
         AnalistaResponsavelId = analistaId,
         AnalistaResponsavelNome = analistaNome,
@@ -37,12 +39,13 @@ public class Captacao
         AtualizadoEm = DateTime.UtcNow
     };
 
-    public void Atualizar(Guid rubricaId, DateOnly periodo, string usuarioDeMusica)
+    public void Atualizar(Guid rubricaId, DateOnly periodo, Guid usuarioMusicaId, string usuarioMusicaNome)
     {
         ValidarAberta();
         RubricaId = rubricaId;
         Periodo = periodo;
-        UsuarioDeMusica = usuarioDeMusica;
+        UsuarioMusicaId = usuarioMusicaId;
+        UsuarioMusicaNome = usuarioMusicaNome;
         AtualizadoEm = DateTime.UtcNow;
     }
 

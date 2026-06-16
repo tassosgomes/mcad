@@ -46,7 +46,7 @@ public class AtualizarCaptacaoCommandHandler : ICommandHandler<AtualizarCaptacao
             throw new ConflictException($"Já existe uma captação ativa para {rubrica.Nome} em {cmd.Periodo}");
 
         var before = IdentificacaoAuditMappers.Map(captacao);
-        captacao.Atualizar(cmd.RubricaId, cmd.Periodo, cmd.UsuarioDeMusica);
+        captacao.Atualizar(cmd.RubricaId, cmd.Periodo, cmd.UsuarioMusicaId, cmd.UsuarioMusicaNome);
 
         await _auditPublisher.PublishAsync(
             "Captacao", captacao.Id.ToString(), IdentificacaoAuditOperation.CaptacaoUpdate,
@@ -60,7 +60,8 @@ public class AtualizarCaptacaoCommandHandler : ICommandHandler<AtualizarCaptacao
             captacao.Id,
             rubricaResponse,
             captacao.Periodo.ToString("yyyy-MM-dd"),
-            captacao.UsuarioDeMusica,
+            captacao.UsuarioMusicaId,
+            captacao.UsuarioMusicaNome,
             captacao.Status.ToString(),
             new AnalistaResumoResponse(captacao.AnalistaResponsavelId, captacao.AnalistaResponsavelNome),
             captacao.CriadoEm,

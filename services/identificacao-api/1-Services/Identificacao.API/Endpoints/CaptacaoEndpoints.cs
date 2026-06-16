@@ -7,8 +7,8 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Identificacao.API.Endpoints;
 
-public record CriarCaptacaoRequest(Guid RubricaId, DateOnly Periodo, string UsuarioDeMusica);
-public record AtualizarCaptacaoRequest(Guid RubricaId, DateOnly Periodo, string UsuarioDeMusica);
+public record CriarCaptacaoRequest(Guid RubricaId, DateOnly Periodo, Guid UsuarioMusicaId, string UsuarioMusicaNome);
+public record AtualizarCaptacaoRequest(Guid RubricaId, DateOnly Periodo, Guid UsuarioMusicaId, string UsuarioMusicaNome);
 
 public static class CaptacaoEndpoints
 {
@@ -23,6 +23,7 @@ public static class CaptacaoEndpoints
             [FromQuery] DateOnly? periodoFinal,
             [FromQuery] string? status,
             [FromQuery] Guid? analistaResponsavelId,
+            [FromQuery] Guid? usuarioMusicaId,
             [FromQuery] string? sort,
             [FromQuery] int? page,
             [FromQuery] int? size,
@@ -30,7 +31,7 @@ public static class CaptacaoEndpoints
             CancellationToken ct) =>
         {
             var query = new ListarCaptacoesQuery(
-                rubricaId, periodoInicial, periodoFinal, status, analistaResponsavelId, sort, page ?? 1, size ?? 10);
+                rubricaId, periodoInicial, periodoFinal, status, analistaResponsavelId, usuarioMusicaId, sort, page ?? 1, size ?? 10);
 
             var result = await dispatcher.QueryAsync(query, ct);
             return Results.Ok(result);
@@ -59,7 +60,7 @@ public static class CaptacaoEndpoints
             var analistaNomeClaim = httpContext.User.GetAnalistaNomeClaim();
 
             var command = new CriarCaptacaoCommand(
-                request.RubricaId, request.Periodo, request.UsuarioDeMusica,
+                request.RubricaId, request.Periodo, request.UsuarioMusicaId, request.UsuarioMusicaNome,
                 analistaId, analistaSubject, analistaNomeClaim);
 
             var result = await dispatcher.SendAsync(command, ct);
@@ -77,7 +78,7 @@ public static class CaptacaoEndpoints
             var analistaId = httpContext.User.GetAnalistaId();
 
             var command = new AtualizarCaptacaoCommand(
-                id, request.RubricaId, request.Periodo, request.UsuarioDeMusica, analistaId);
+                id, request.RubricaId, request.Periodo, request.UsuarioMusicaId, request.UsuarioMusicaNome, analistaId);
 
             var result = await dispatcher.SendAsync(command, ct);
             return Results.Ok(result);

@@ -71,7 +71,8 @@ public class CancelarRolCommandHandler : ICommandHandler<CancelarRolCommand, Can
             var nova = Captacao.Criar(
                 captacao.RubricaId,
                 captacao.Periodo,
-                captacao.UsuarioDeMusica,
+                captacao.UsuarioMusicaId,
+                captacao.UsuarioMusicaNome,
                 command.AnalistaId,
                 command.AnalistaNome);
 
