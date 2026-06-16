@@ -1,6 +1,5 @@
 using System.Security.Claims;
-using System.Security.Cryptography;
-using System.Text;
+using Identificacao.Domain.Identidade;
 
 namespace Identificacao.API.Infrastructure;
 
@@ -10,14 +9,7 @@ public static class UserContextExtensions
     {
         var sub = user.FindFirst("sub")?.Value
             ?? throw new UnauthorizedAccessException("Usuário ausente no token");
-
-        if (Guid.TryParse(sub, out var guid))
-        {
-            return guid;
-        }
-
-        var bytes = MD5.HashData(Encoding.UTF8.GetBytes(sub));
-        return new Guid(bytes);
+        return AnalistaIdentificador.FromSubject(sub);
     }
 
     public static string GetAnalistaNome(this ClaimsPrincipal user) =>
