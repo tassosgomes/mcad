@@ -43,7 +43,7 @@ Sem um processo estruturado de captação e identificação, a Distribuição n�
 
 | Entidade | Descrição | Atributos Principais | Relacionamentos |
 |---|---|---|---|
-| Captação | Contêiner que agrupa todas as execuções de uma rubrica em um dia específico. Criada pelo Analista, transita pelos estados Aberta → Fechada ou Cancelada. Representa o Rol de Execuções quando no estado Fechado. | rubrica, período (data diária `YYYY-MM-DD`), usuário de música (texto livre), status (ABERTA / FECHADA / CANCELADA), analista responsável, distribuicaoProcessada (bool — flag de bloqueio de cancelamento), justificativaCancelamento (texto) | possui: Execuções |
+| Captação | Contêiner que agrupa todas as execuções de uma rubrica em um dia específico. Criada pelo Analista, transita pelos estados Aberta → Fechada ou Cancelada. Representa o Rol de Execuções quando no estado Fechado. | rubrica, período (data diária `YYYY-MM-DD`), `usuarioMusicaId` (Guid — referência ao Usuário de Música da Arrecadação), `usuarioMusicaNome` (snapshot denormalizado para exibição resiliente), status (ABERTA / FECHADA / CANCELADA), analista responsável, distribuicaoProcessada (bool — flag de bloqueio de cancelamento), justificativaCancelamento (texto) | possui: Execuções |
 | Execução | Registro de uma obra/fonograma executado dentro de uma captação. Acumula contagem de ocorrências. Pode estar Identificada (vinculada a obra/fonograma do Cadastro) ou Pendente de Identificação. | ISRC ou ISWC informado, obra_id (resolvido), fonograma_id (resolvido), tipo de utilização, quantidade de ocorrências, status (IDENTIFICADA / PENDENTE) | pertence a: Captação; referencia: Obra e Fonograma (Cadastro) |
 | Tipo de Utilização | Classificação do uso da música com fator de peso. Seed fixo, não editável pelo usuário. | sigla, descrição, peso (fator decimal) | atribuído a: Execução |
 | Rubrica | Segmento de utilização musical que contextualiza uma captação. Cada rubrica determina se suas execuções exigem classificação por tipo de utilização. Seed fixo. | sigla, nome, exige classificação (boolean) | usada por: Captação |
@@ -96,6 +96,7 @@ Sem um processo estruturado de captação e identificação, a Distribuição n�
 | Domínio | O que consome | Tipo | Criticidade |
 |---|---|---|---|
 | Cadastro | Resolução de ISRC → fonograma e ISWC → obra. Valida se obra/fonograma existe e está liberado. | Consulta HTTP (ACL — Anti-Corruption Layer) | Alta |
+| Arrecadação | Projeção local de Usuários de Música (id, razão social, CNPJ, status) sincronizada via eventos `arrecadacao.usuario-musica.criado`/`atualizado`. Event-driven ACL, sem acoplamento HTTP runtime. | Evento assíncrono | Alta |
 
 ### Fornece para (Downstream)
 

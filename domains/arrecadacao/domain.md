@@ -137,6 +137,8 @@ A Arrecadação é independente para seu fluxo principal. A codebase consome eve
 ### Produz (Publishes)
 - `arrecadacao.rubrica.criada` — rubrica inserida via seed. Identificação e Distribuição sincronizam cópia local. Contém: sigla, nome, exige classificação
 - `arrecadacao.rubrica.atualizada` — rubrica alterada (caso futuro; listener consumidor existe em Distribuição, mas a Arrecadação ainda não tem fluxo de alteração de rubrica)
+- `arrecadacao.usuario-musica.criado` — usuário de música criado. Identificação sincroniza projeção local. Contém: id, razaoSocial, nomeFantasia, cnpj, cnpjFormatado, status, timestamps
+- `arrecadacao.usuario-musica.atualizado` — usuário de música atualizado/ativado/inativado. Mesmo payload completo (fat event)
 - `arrecadacao.pagamento.registrado` — pagamento confirmado contra uma licença
 - `arrecadacao.verba.disponivel` — verba líquida atualizada para rubrica+período. Publicado incrementalmente a cada pagamento confirmado. Contém: rubrica, período, valor bruto total, deduções, verba líquida calculada
 - `arrecadacao.pagamento.estornado` — pagamento cancelado com justificativa. Distribuição deve considerar o estorno na próxima execução. Contém: rubrica, período, valor estornado, verba líquida recalculada
