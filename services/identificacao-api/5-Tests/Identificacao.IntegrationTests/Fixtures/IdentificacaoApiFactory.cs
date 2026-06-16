@@ -6,6 +6,7 @@ using Identificacao.Infra.Data;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.AspNetCore.TestHost;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
@@ -165,6 +166,50 @@ public class IdentificacaoApiFactory : WebApplicationFactory<Program>, IAsyncLif
         return client;
     }
 
+    public HttpClient CreateClientWithSub(string sub, string? displayName = null, params string[] roles)
+    {
+        EnsureAuthEnvironment();
+        var client = CreateClient();
+        client.DefaultRequestHeaders.Remove(TestAuthHandler.AuthModeHeader);
+        client.DefaultRequestHeaders.Remove(TestAuthHandler.RolesHeader);
+        client.DefaultRequestHeaders.Remove(TestAuthHandler.UsernameHeader);
+        client.DefaultRequestHeaders.Remove(TestAuthHandler.SubHeader);
+        client.DefaultRequestHeaders.Remove(TestAuthHandler.NameHeader);
+        client.DefaultRequestHeaders.Add(TestAuthHandler.UsernameHeader, DefaultUsername);
+        client.DefaultRequestHeaders.Add(TestAuthHandler.SubHeader, sub);
+        if (displayName != null)
+            client.DefaultRequestHeaders.Add(TestAuthHandler.NameHeader, displayName);
+        client.DefaultRequestHeaders.Add(
+            TestAuthHandler.RolesHeader,
+            roles.Length == 0 ? "identificacao.analista" : string.Join(',', roles));
+        return client;
+    }
+
+    public HttpClient CreateClientWithDeniedAuthz(string roles = "identificacao.analista")
+    {
+        var deniedMock = new Mock<IEcadAuthzClient>();
+        deniedMock
+            .Setup(c => c.CheckAsync(
+                It.IsAny<AuthzCheckRequest>(),
+                It.IsAny<string?>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new AuthzDecision(false, "DENIED_TEST", 0));
+
+        return CreateAuthenticatedClient(
+            configureWebHost: builder => builder.ConfigureTestServices(services =>
+            {
+                var descriptors = services
+                    .Where(d => d.ServiceType == typeof(IEcadAuthzClient))
+                    .ToList();
+                foreach (var d in descriptors)
+                {
+                    services.Remove(d);
+                }
+                services.AddSingleton(deniedMock.Object);
+            }),
+            roles: roles);
+    }
+
     public async Task InitializeAsync()
     {
         await _dbContainer.StartAsync();
@@ -192,6 +237,8 @@ internal sealed class TestAuthHandler : AuthenticationHandler<AuthenticationSche
     public const string AuthModeHeader = "X-Test-Auth";
     public const string RolesHeader = "X-Test-Roles";
     public const string UsernameHeader = "X-Test-Username";
+    public const string SubHeader = "X-Test-Sub";
+    public const string NameHeader = "X-Test-Name";
 
     public TestAuthHandler(
         IOptionsMonitor<AuthenticationSchemeOptions> options,
@@ -215,12 +262,20 @@ internal sealed class TestAuthHandler : AuthenticationHandler<AuthenticationSche
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .ToArray();
 
+        var sub = Request.Headers[SubHeader].FirstOrDefault() ?? Guid.NewGuid().ToString();
+
         var claims = new List<Claim>
         {
             new(ClaimTypes.Name, username),
             new("preferred_username", username),
-            new("sub", Guid.NewGuid().ToString())
+            new("sub", sub)
         };
+
+        var name = Request.Headers[NameHeader].FirstOrDefault();
+        if (!string.IsNullOrEmpty(name))
+        {
+            claims.Add(new("name", name));
+        }
 
         claims.AddRange(roles.Select(role => new Claim(ClaimTypes.Role, role)));
 

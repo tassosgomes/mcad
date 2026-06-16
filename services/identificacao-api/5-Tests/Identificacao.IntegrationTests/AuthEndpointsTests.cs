@@ -165,7 +165,7 @@ public class AuthEndpointsTests : IClassFixture<IdentificacaoApiFactory>
             .Select(f => (string)f.GetRawConstantValue()!)
             .ToList();
 
-        permissions.Should().HaveCount(20, "o catálogo de Identificação deve manter as 20 permissões 4-segmentos declaradas");
+        permissions.Should().HaveCount(22, "o catálogo de Identificação deve manter as 22 permissões 4-segmentos declaradas");
         permissions.Should().OnlyContain(p => p.StartsWith("identificacao:default:"), "todas as permissões do catálogo devem ser 4-seg no domínio identificacao:default");
         permissions.Distinct().Should().HaveCount(permissions.Count, "não deve haver chaves duplicadas no catálogo");
     }
