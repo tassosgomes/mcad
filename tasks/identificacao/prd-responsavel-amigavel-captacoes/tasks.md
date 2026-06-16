@@ -26,7 +26,7 @@ Testes de integração (Testcontainers) que cruzam as três features end-to-end,
 ## Tarefas
 
 - [x] 1.0 AnalistaIdentificador + refactor de UserContextExtensions
-- [ ] 2.0 Read model UsuarioIdentidade + repositório + DI
+- [x] 2.0 Read model UsuarioIdentidade + repositório + DI
 - [ ] 3.0 F1 Backend — ListarAnalistasQuery + endpoint GET /analistas
 - [ ] 4.0 F1 Frontend — Combo de Responsável no filtro
 - [ ] 5.0 F2 — Resolução do nome do responsável no cadastro

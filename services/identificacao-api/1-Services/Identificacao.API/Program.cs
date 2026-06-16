@@ -82,6 +82,7 @@ builder.Services.AddScoped<IExecucaoRepository, ExecucaoRepository>();
 builder.Services.AddScoped<ITipoUtilizacaoRepository, TipoUtilizacaoRepository>();
 builder.Services.AddScoped<IUploadRepository, UploadRepository>();
 builder.Services.AddScoped<IErroUploadRepository, ErroUploadRepository>();
+builder.Services.AddScoped<IUsuarioIdentidadeRepository, UsuarioIdentidadeRepository>();
 builder.Services.AddScoped<CsvParser>();
 builder.Services.AddHostedService<CsvProcessorWorker>();
 builder.Services.AddHostedService<Identificacao.Application.Pendentes.Services.PendentesVerificadorWorker>();
