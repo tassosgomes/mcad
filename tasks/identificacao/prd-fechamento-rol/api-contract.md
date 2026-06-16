@@ -195,7 +195,9 @@ Publicado via Outbox Worker no RabbitMQ após fechamento. Payload:
         "fim": "15:02:30",
         "duracaoSegundos": 150
       }
-    ]
+    ],
+    "usuarioMusicaId": "u1m2u3s4-1111-2222-3333-444444444444",
+    "usuarioMusicaNome": "Radio Globo"
   }
 }
 ```
@@ -221,7 +223,9 @@ Publicado via Outbox Worker no RabbitMQ após fechamento. Payload:
         "fim": null,
         "duracaoSegundos": null
       }
-    ]
+    ],
+    "usuarioMusicaId": "u1m2u3s4-1111-2222-3333-444444444444",
+    "usuarioMusicaNome": "Radio Globo"
   }
 }
 ```

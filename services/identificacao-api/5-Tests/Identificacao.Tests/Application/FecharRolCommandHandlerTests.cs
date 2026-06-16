@@ -39,7 +39,7 @@ public class FecharRolCommandHandlerTests
         var rubricaId = Guid.NewGuid();
         var rubrica = Rubrica.Criar(rubricaId, exigeClassificacao ? "TV" : "RADIO", "Geral", exigeClassificacao);
         
-        var captacao = Captacao.Criar(rubricaId, new DateOnly(2023, 10, 1), "User", analistaId, "Analista");
+        var captacao = Captacao.Criar(rubricaId, new DateOnly(2023, 10, 1), Guid.NewGuid(), "User", analistaId, "Analista");
         var propertyInfo = typeof(Captacao).GetProperty("Rubrica");
         propertyInfo!.SetValue(captacao, rubrica);
 
@@ -167,6 +167,34 @@ public class FecharRolCommandHandlerTests
 
         _outboxWriterMock.Verify(w => w.AddEvent("identificacao.rol.fechado", captacao.Id.ToString(), 
             It.Is<object>(o => ((Identificacao.Application.Fechamento.Payloads.RolFechadoPayload)o).Execucoes.ElementAt(0).Peso == null)), Times.Once);
+    }
+
+    [Fact]
+    public async Task Handle_PayloadContemUsuarioMusicaIdENome()
+    {
+        var usuarioMusicaId = Guid.NewGuid();
+        var analistaId = Guid.NewGuid();
+
+        var rubricaId = Guid.NewGuid();
+        var rubrica = Rubrica.Criar(rubricaId, "RADIO", "Geral", false);
+        var captacao = Captacao.Criar(rubricaId, new DateOnly(2023, 10, 1), usuarioMusicaId, "Radio Globo", analistaId, "Analista");
+        typeof(Captacao).GetProperty("Rubrica")!.SetValue(captacao, rubrica);
+
+        _captacaoRepoMock.Setup(r => r.GetByIdAsync(captacao.Id, It.IsAny<CancellationToken>())).ReturnsAsync(captacao);
+
+        var okResponse = new PreRequisitosResponse(captacao.Id, true, new List<PreRequisitoItem>(), null!);
+        _preReqHandlerMock.Setup(h => h.HandleAsync(It.IsAny<ValidarPreRequisitosQuery>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(okResponse);
+
+        _execucaoRepoMock.Setup(r => r.ListarTodasDaCaptacaoAsync(captacao.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<Execucao>());
+
+        var cmd = new FecharRolCommand(captacao.Id, analistaId);
+        await _handler.HandleAsync(cmd, CancellationToken.None);
+
+        _outboxWriterMock.Verify(w => w.AddEvent("identificacao.rol.fechado", captacao.Id.ToString(),
+            It.Is<object>(o => ((Identificacao.Application.Fechamento.Payloads.RolFechadoPayload)o).UsuarioMusicaId == usuarioMusicaId
+                            && ((Identificacao.Application.Fechamento.Payloads.RolFechadoPayload)o).UsuarioMusicaNome == "Radio Globo")), Times.Once);
     }
 
     // ───────────── Cobertura faltante ─────────────

@@ -6,7 +6,9 @@ public record RolFechadoPayload(
     string Periodo,
     DateTime FechadoEm,
     Guid AnalistaId,
-    IEnumerable<ExecucaoRolPayload> Execucoes);
+    IEnumerable<ExecucaoRolPayload> Execucoes,
+    Guid UsuarioMusicaId,
+    string UsuarioMusicaNome);
 
 public record ExecucaoRolPayload(
     Guid ObraId,
