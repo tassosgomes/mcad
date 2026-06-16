@@ -1,10 +1,8 @@
-import { useState, useEffect } from 'react';
 import { Select } from '@components/ui/select';
-import { TextInput } from '@components/ui/text-input';
 import { FormField } from '@components/ui/form-field';
 import type { CaptacaoFiltros } from '../types/captacao';
 import { useRubricas } from '../hooks/useRubricas';
-import { useDebounce } from '@hooks/useDebounce';
+import { useAnalistas } from '../hooks/useAnalistas';
 import styles from './CaptacaoFilters.module.css';
 
 interface CaptacaoFiltersProps {
@@ -14,19 +12,7 @@ interface CaptacaoFiltersProps {
 
 export function CaptacaoFilters({ filtros, onChange }: CaptacaoFiltersProps) {
   const { data: rubricas, isLoading: isLoadingRubricas } = useRubricas();
-  const [responsavelDraft, setResponsavelDraft] = useState(filtros.analistaResponsavelId || '');
-  const responsavelDebouncado = useDebounce(responsavelDraft, 300);
-
-  useEffect(() => {
-    if (responsavelDebouncado !== (filtros.analistaResponsavelId || '')) {
-      onChange({
-        ...filtros,
-        analistaResponsavelId: responsavelDebouncado || undefined,
-        page: 1,
-      });
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [responsavelDebouncado]);
+  const { data: analistas, isLoading: isLoadingAnalistas } = useAnalistas();
 
   const handleChange = (key: keyof CaptacaoFiltros, value: string) => {
     onChange({
@@ -39,6 +25,11 @@ export function CaptacaoFilters({ filtros, onChange }: CaptacaoFiltersProps) {
   const rubricaOptions = rubricas?.map(r => ({
     value: r.id,
     label: r.nome,
+  })) ?? [];
+
+  const analistaOptions = analistas?.map(a => ({
+    value: a.id,
+    label: a.nome,
   })) ?? [];
 
   return (
@@ -84,12 +75,12 @@ export function CaptacaoFilters({ filtros, onChange }: CaptacaoFiltersProps) {
         />
       </FormField>
 
-      <FormField label="Responsável (ID)">
-        <TextInput
-          id="filtro-responsavel"
-          value={responsavelDraft}
-          onChange={(val) => setResponsavelDraft(val)}
-          placeholder="Filtrar por UUID..."
+      <FormField label="Responsável">
+        <Select
+          value={filtros.analistaResponsavelId || ''}
+          onChange={(val) => handleChange('analistaResponsavelId', val)}
+          disabled={isLoadingAnalistas || (!isLoadingAnalistas && analistaOptions.length === 0)}
+          options={[{ value: '', label: 'Todos' }, ...analistaOptions]}
         />
       </FormField>
     </div>

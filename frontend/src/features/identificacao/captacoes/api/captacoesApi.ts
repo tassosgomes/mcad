@@ -2,7 +2,7 @@ import { apiGetIden, apiPostIden, apiPutIden, apiDeleteIden } from '@services/ap
 import type {
   CaptacaoListResponse, CaptacaoDetalhe, Captacao,
   CriarCaptacaoRequest, AtualizarCaptacaoRequest,
-  CaptacaoFiltros, Rubrica,
+  CaptacaoFiltros, Rubrica, AnalistaResumo,
 } from '../types/captacao';
 
 const BASE = '/rubricas';
@@ -11,6 +11,11 @@ const CAPTACOES = '/captacoes';
 // ── Rubricas ──
 export function getRubricas(): Promise<Rubrica[]> {
   return apiGetIden<Rubrica[]>(BASE);
+}
+
+// ── Analistas ──
+export function getAnalistas(): Promise<AnalistaResumo[]> {
+  return apiGetIden<AnalistaResumo[]>('/analistas');
 }
 
 // ── Captações ──
