@@ -35,7 +35,7 @@ Autocomplete no form e filtros, tipos, hooks. Atualização dos domain docs.
 
 - [x] 1.0 Arrecadação — Publicar eventos de Usuário de Música no Outbox (RF-01)
 - [x] 2.0 Arrecadação — Endpoint de backfill para snapshot (RF-02 suporte)
-- [ ] 3.0 Identificação — Projeção local + Consumer RabbitMQ idempotente (RF-02)
+- [x] 3.0 Identificação — Projeção local + Consumer RabbitMQ idempotente (RF-02)
 - [ ] 4.0 Identificação — Endpoint de busca local de Usuários de Música (RF-03)
 - [ ] 5.0 Identificação — Persistência de referência na Captação (RF-04)
 - [ ] 6.0 Identificação — Contrato do evento rol.fechado com usuarioMusicaId (RF-07)

@@ -20,6 +20,7 @@ public class IdentificacaoDbContext : DbContext
     public DbSet<OutboxEvent> OutboxEvents => Set<OutboxEvent>();
     public DbSet<AuditOutboxEvent> AuditOutboxEvents => Set<AuditOutboxEvent>();
     public DbSet<UsuarioIdentidade> UsuariosIdentidade => Set<UsuarioIdentidade>();
+    public DbSet<UsuarioMusicaSnapshot> UsuariosMusicaSnapshot => Set<UsuarioMusicaSnapshot>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

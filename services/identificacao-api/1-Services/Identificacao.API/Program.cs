@@ -83,6 +83,7 @@ builder.Services.AddScoped<ITipoUtilizacaoRepository, TipoUtilizacaoRepository>(
 builder.Services.AddScoped<IUploadRepository, UploadRepository>();
 builder.Services.AddScoped<IErroUploadRepository, ErroUploadRepository>();
 builder.Services.AddScoped<IUsuarioIdentidadeRepository, UsuarioIdentidadeRepository>();
+builder.Services.AddScoped<IUsuarioMusicaSnapshotRepository, UsuarioMusicaSnapshotRepository>();
 builder.Services.AddScoped<CsvParser>();
 builder.Services.AddHostedService<CsvProcessorWorker>();
 builder.Services.AddHostedService<Identificacao.Application.Pendentes.Services.PendentesVerificadorWorker>();
@@ -96,6 +97,7 @@ builder.Services.AddSingleton<Identificacao.Domain.Interfaces.IRabbitMqPublisher
 builder.Services.AddHostedService<Identificacao.Infra.Events.OutboxPublisherWorker>();
 builder.Services.AddHostedService<Identificacao.Infra.Events.DistribuicaoEventConsumer>();
 builder.Services.AddHostedService<Identificacao.Infra.Events.IdentityUserEventConsumer>();
+builder.Services.AddHostedService<Identificacao.Infra.Events.ArrecadacaoUsuarioMusicaEventConsumer>();
 
 // HttpClient para Cadastro
 var cadastroBaseUrl = Environment.GetEnvironmentVariable("CADASTRO_API_BASE_URL")
