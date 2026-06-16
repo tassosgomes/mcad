@@ -106,6 +106,13 @@ public class CaptacaoRepository : ICaptacaoRepository
         return Task.CompletedTask;
     }
 
+    public async Task<IReadOnlyList<Captacao>> ListarPorNomeResponsavelAsync(string nome, CancellationToken ct)
+    {
+        return await _context.Captacoes
+            .Where(c => c.AnalistaResponsavelNome == nome)
+            .ToListAsync(ct);
+    }
+
     public async Task<int> SaveChangesAsync(CancellationToken ct)
     {
         return await _context.SaveChangesAsync(ct);

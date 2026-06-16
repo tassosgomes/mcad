@@ -80,6 +80,12 @@ public class Captacao
         AtualizadoEm = DateTime.UtcNow;
     }
 
+    public void ReatribuirNomeResponsavel(string nome)
+    {
+        AnalistaResponsavelNome = nome;
+        AtualizadoEm = DateTime.UtcNow;
+    }
+
     public void MarcarDistribuicaoProcessada(DateTime processadoEm)
     {
         if (DistribuicaoProcessada) return;

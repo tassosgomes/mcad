@@ -10,5 +10,6 @@ public interface ICaptacaoRepository
     Task<int> ContarExecucoesAsync(Guid captacaoId, CancellationToken ct);
     Task AddAsync(Captacao captacao, CancellationToken ct);
     Task RemoveAsync(Captacao captacao, CancellationToken ct);
+    Task<IReadOnlyList<Captacao>> ListarPorNomeResponsavelAsync(string nome, CancellationToken ct);
     Task SaveChangesAsync(CancellationToken ct);
 }

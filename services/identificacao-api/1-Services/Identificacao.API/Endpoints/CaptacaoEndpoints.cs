@@ -98,5 +98,15 @@ public static class CaptacaoEndpoints
             return Results.NoContent();
         })
         .RequireIdentificacaoPermission(IdentificacaoPermissions.CaptacaoExcluir);
+
+        group.MapPost("/manutencao/reprocessar-responsaveis", async (
+            IDispatcher dispatcher,
+            CancellationToken ct) =>
+        {
+            var result = await dispatcher.SendAsync(
+                new ReprocessarResponsaveisDesconhecidosCommand(), ct);
+            return Results.Ok(result);
+        })
+        .RequireIdentificacaoPermission(IdentificacaoPermissions.CaptacaoManutencao);
     }
 }

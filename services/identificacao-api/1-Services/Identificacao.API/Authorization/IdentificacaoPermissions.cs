@@ -17,6 +17,7 @@ public static class IdentificacaoPermissions
     public const string CaptacaoExcluir = "identificacao:default:captacao:excluir";
     public const string CaptacaoCancelar = "identificacao:default:captacao:cancelar";
     public const string CaptacaoFechar = "identificacao:default:captacao:fechar";
+    public const string CaptacaoManutencao = "identificacao:default:captacao:manutencao";
 
     // ── Execução musical dentro de uma captação ──────────────────────────
     public const string ExecucaoListar = "identificacao:default:execucao:listar";
