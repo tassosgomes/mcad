@@ -24,6 +24,9 @@ public static class IdentificacaoPermissions
     public const string ExecucaoEditar = "identificacao:default:execucao:editar";
     public const string ExecucaoExcluir = "identificacao:default:execucao:excluir";
 
+    // ── Analista (responsáveis de captação) ───────────────────────────────
+    public const string AnalistaListar = "identificacao:default:analista:listar";
+
     // ── Rubrica e tipo de utilização (cadastros auxiliares) ──────────────
     public const string RubricaListar = "identificacao:default:rubrica:listar";
     public const string TipoUtilizacaoListar = "identificacao:default:tipo-utilizacao:listar";

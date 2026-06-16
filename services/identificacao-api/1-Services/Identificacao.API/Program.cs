@@ -233,6 +233,7 @@ app.MapHealthChecks("/health").AllowAnonymous();
 app.MapMetrics("/metrics").AllowAnonymous();
 app.MapFechamentoEndpoints();
 app.MapCancelamentoEndpoints();
+app.MapAnalistaEndpoints();
 app.MapRubricaEndpoints();
 app.MapCaptacaoEndpoints();
 app.MapExecucaoEndpoints();
