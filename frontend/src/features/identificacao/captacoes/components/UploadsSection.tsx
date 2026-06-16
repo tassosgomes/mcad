@@ -12,9 +12,10 @@ interface UploadsSectionProps {
   captacaoId: string;
   captacaoAberta: boolean;
   isOwner: boolean;
+  canUpload: boolean;
 }
 
-export function UploadsSection({ captacaoId, captacaoAberta, isOwner }: UploadsSectionProps) {
+export function UploadsSection({ captacaoId, captacaoAberta, isOwner, canUpload }: UploadsSectionProps) {
   const [page, setPage] = useState(1);
   const size = 10;
   
@@ -64,7 +65,7 @@ export function UploadsSection({ captacaoId, captacaoAberta, isOwner }: UploadsS
           <p>Importe ou verifique o histórico de uploads CSV de execuções (obras e fonogramas).</p>
         </div>
         <div className={styles.actions}>
-          {isOwner && (
+          {canUpload && isOwner && (
             <UploadCsvButton 
               captacaoId={captacaoId} 
               onUploadStart={handleUploadStart}

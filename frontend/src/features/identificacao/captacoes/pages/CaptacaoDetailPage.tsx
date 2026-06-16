@@ -50,6 +50,7 @@ export function CaptacaoDetailPage() {
   const isOwner = captacao.analistaResponsavel.id === currentUserId;
   const canWrite = can('identificacao:default:captacao:editar');
   const canEdit = canWrite && isOwner && !isFechada && captacao.status !== 'CANCELADA';
+  const canUploadCsv = can('identificacao:default:upload:importar');
   const canDelete = canEdit && captacao.status?.toUpperCase() === 'ABERTA';
 
   const temExecucoes = captacao.resumoExecucoes.total > 0;
@@ -179,7 +180,8 @@ export function CaptacaoDetailPage() {
       <UploadsSection
         captacaoId={captacao.id}
         captacaoAberta={captacao.status?.toUpperCase() === 'ABERTA'}
-        isOwner={canEdit}
+        isOwner={isOwner}
+        canUpload={canUploadCsv}
       />
 
       <DeleteCaptacaoModal
