@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
 import { Select } from '@components/ui/select';
-import { TextInput } from '@components/ui/text-input';
 import { Button } from '@components/ui/button';
 import { FormField } from '@components/ui/form-field';
+import { Autocomplete } from '@components/ui/autocomplete';
 import type { CaptacaoDetalhe, CriarCaptacaoRequest, AtualizarCaptacaoRequest } from '../types/captacao';
+import type { UsuarioMusicaSnapshot } from '../types/usuario-musica-snapshot';
 import { useRubricas } from '../hooks/useRubricas';
+import { useBuscaUsuariosMusica } from '../hooks/useBuscaUsuariosMusica';
 import styles from './CaptacaoForm.module.css';
 
 interface CaptacaoFormProps {
@@ -26,16 +28,21 @@ export function CaptacaoForm({
 
   const [rubricaId, setRubricaId] = useState(initialData?.rubrica?.id ?? '');
   const [periodo, setPeriodo] = useState(initialData?.periodo ?? '');
-  const [usuarioDeMusica, setUsuarioDeMusica] = useState(initialData?.usuarioDeMusica ?? '');
+  const [usuarioMusicaId, setUsuarioMusicaId] = useState(initialData?.usuarioMusicaId ?? '');
+  const [usuarioDisplay, setUsuarioDisplay] = useState(initialData?.usuarioMusicaNome ?? '');
+  const [usuarioBusca, setUsuarioBusca] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const isReadOnly = initialData && initialData.status?.toUpperCase() !== 'ABERTA';
+
+  const { results: usuariosResults, isFetching: isFetchingUsuarios } = useBuscaUsuariosMusica(usuarioBusca);
 
   useEffect(() => {
     if (initialData) {
       setRubricaId(initialData.rubrica.id);
       setPeriodo(initialData.periodo);
-      setUsuarioDeMusica(initialData.usuarioDeMusica);
+      setUsuarioMusicaId(initialData.usuarioMusicaId ?? '');
+      setUsuarioDisplay(initialData.usuarioMusicaNome ?? '');
     }
   }, [initialData]);
 
@@ -43,8 +50,7 @@ export function CaptacaoForm({
     const newErrors: Record<string, string> = {};
     if (!rubricaId) newErrors.rubricaId = 'Selecione uma rubrica';
     if (!periodo) newErrors.periodo = 'Informe o período (data)';
-    if (!usuarioDeMusica.trim()) newErrors.usuarioDeMusica = 'Informe o usuário de música';
-    if (usuarioDeMusica.length > 255) newErrors.usuarioDeMusica = 'Máximo 255 caracteres';
+    if (!usuarioMusicaId) newErrors.usuarioMusicaId = 'Selecione um usuário de música';
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -56,7 +62,8 @@ export function CaptacaoForm({
     onSubmit({
       rubricaId,
       periodo,
-      usuarioDeMusica,
+      usuarioMusicaId,
+      usuarioMusicaNome: usuarioDisplay,
     });
   };
 
@@ -81,6 +88,7 @@ export function CaptacaoForm({
         <FormField label="Período" error={errors.periodo}>
           <input
             type="date"
+            id="captacao-periodo"
             className={styles.dateInput}
             value={periodo}
             onChange={(e) => setPeriodo(e.target.value)}
@@ -89,14 +97,36 @@ export function CaptacaoForm({
         </FormField>
 
         <div className={styles.fullWidth}>
-          <FormField label="Usuário de Música" error={errors.usuarioDeMusica}>
-            <TextInput
+          <FormField label="Usuário de Música" required error={errors.usuarioMusicaId}>
+            <Autocomplete<UsuarioMusicaSnapshot>
               id="captacao-usuario"
-              value={usuarioDeMusica}
-              onChange={(val) => setUsuarioDeMusica(val)}
-              placeholder="Ex: Rádio Globo SP, TV Globo, Netflix BR"
+              placeholder="Buscar por razão social (mín. 2 caracteres)..."
+              value={usuarioDisplay}
+              onSearch={(q) => {
+                setUsuarioBusca(q);
+                if (!q) {
+                  setUsuarioMusicaId('');
+                  setUsuarioDisplay('');
+                }
+              }}
+              results={usuariosResults}
+              isLoading={isFetchingUsuarios}
+              renderItem={(u, _highlighted) => (
+                <div>
+                  <span>{u.razaoSocial}</span>
+                  <span style={{ color: 'var(--color-text-muted)', fontSize: 'var(--text-xs)', marginLeft: 'var(--space-2)' }}>
+                    {u.cnpjFormatado || u.cnpj}
+                  </span>
+                </div>
+              )}
+              onSelect={(u) => {
+                setUsuarioMusicaId(u.id);
+                setUsuarioDisplay(u.razaoSocial);
+                setErrors((prev) => ({ ...prev, usuarioMusicaId: '' }));
+              }}
+              minChars={2}
               disabled={isReadOnly}
-              maxLength={255}
+              emptyStateMessage="Nenhum usuário encontrado. Verifique o cadastro na Arrecadação."
             />
           </FormField>
         </div>

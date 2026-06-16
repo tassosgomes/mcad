@@ -29,6 +29,7 @@ export function getCaptacoes(filtros: CaptacaoFiltros): Promise<CaptacaoListResp
   if (filtros.periodoFim) params.set('periodoFim', filtros.periodoFim);
   if (filtros.status) params.set('status', filtros.status);
   if (filtros.analistaResponsavelId) params.set('analistaResponsavelId', filtros.analistaResponsavelId);
+  if (filtros.usuarioMusicaId) params.set('usuarioMusicaId', filtros.usuarioMusicaId);
   return apiGetIden<CaptacaoListResponse>(`${CAPTACOES}?${params}`);
 }
 

@@ -111,8 +111,8 @@ export function CaptacoesTable({
                 </td>
                 <td className={styles.td}>{formatDate(captacao.periodo)}</td>
                 <td className={styles.td}>
-                  <div className={styles.truncate} title={captacao.usuarioDeMusica}>
-                    {captacao.usuarioDeMusica}
+                  <div className={styles.truncate} title={captacao.usuarioMusicaNome}>
+                    {captacao.usuarioMusicaNome}
                   </div>
                 </td>
                 <td className={styles.td}>
@@ -125,7 +125,7 @@ export function CaptacoesTable({
                   <RowAuditHistoryButton
                     entityType={auditEntityTypes.captacao}
                     entityId={captacao.id}
-                    entityLabel={captacao.usuarioDeMusica}
+                    entityLabel={captacao.usuarioMusicaNome}
                   />
                   <button
                     className={styles.actionButton}

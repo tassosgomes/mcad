@@ -39,7 +39,7 @@ Autocomplete no form e filtros, tipos, hooks. Atualização dos domain docs.
 - [x] 4.0 Identificação — Endpoint de busca local de Usuários de Música (RF-03)
 - [x] 5.0 Identificação — Persistência de referência na Captação (RF-04)
 - [x] 6.0 Identificação — Contrato do evento rol.fechado com usuarioMusicaId (RF-07)
-- [ ] 7.0 Frontend — Autocomplete no CaptacaoForm, Filtros e Tabela (RF-05, RF-06)
+- [x] 7.0 Frontend — Autocomplete no CaptacaoForm, Filtros e Tabela (RF-05, RF-06)
 - [ ] 8.0 Documentação — Atualizar Domain Docs de Arrecadação e Identificação
 
 ## Matriz de Execução por Agente

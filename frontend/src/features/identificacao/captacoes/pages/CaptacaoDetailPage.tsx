@@ -121,6 +121,7 @@ export function CaptacaoDetailPage() {
     <div className={styles.container}>
       <PageHeader 
         title={`${captacao.rubrica.nome} — ${formatDate(captacao.periodo)}`}
+        description={`Usuário de Música: ${captacao.usuarioMusicaNome}`}
         action={
           <div className={styles.headerActions}>
             <Badge variant={getStatusVariant(captacao.status) as any}>{captacao.status}</Badge>

@@ -20,6 +20,8 @@ export interface AutocompleteProps<T> {
   minChars?: number;
   disabled?: boolean;
   id?: string;
+  emptyStateMessage?: string;
+  searchingMessage?: string;
 }
 
 export function Autocomplete<T>({
@@ -33,6 +35,8 @@ export function Autocomplete<T>({
   minChars = 2,
   disabled = false,
   id,
+  emptyStateMessage = 'Nenhum resultado encontrado',
+  searchingMessage = 'Buscando...',
 }: AutocompleteProps<T>) {
   const [inputValue, setInputValue] = useState(value);
   const [isOpen, setIsOpen] = useState(false);
@@ -136,9 +140,9 @@ export function Autocomplete<T>({
       {showDropdown && (
         <div className={styles.dropdown} role="listbox">
           {isLoading && results.length === 0 ? (
-            <div className={styles.stateMessage}>Buscando...</div>
+            <div className={styles.stateMessage}>{searchingMessage}</div>
           ) : results.length === 0 ? (
-            <div className={styles.stateMessage}>Nenhum resultado encontrado</div>
+            <div className={styles.stateMessage}>{emptyStateMessage}</div>
           ) : (
             results.map((item, index) => (
               <div

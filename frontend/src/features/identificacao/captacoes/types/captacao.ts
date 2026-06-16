@@ -25,6 +25,8 @@ export interface Captacao {
   rubrica: Rubrica;
   periodo: string;           // "YYYY-MM-DD"
   usuarioDeMusica: string;
+  usuarioMusicaId: string;
+  usuarioMusicaNome: string;
   status: StatusCaptacao;
   analistaResponsavel: AnalistaResumo;
   criadoEm: string;         // ISO 8601
@@ -42,13 +44,15 @@ export interface CaptacaoDetalhe extends Captacao {
 export interface CriarCaptacaoRequest {
   rubricaId: string;
   periodo: string;           // "YYYY-MM-DD"
-  usuarioDeMusica: string;
+  usuarioMusicaId: string;
+  usuarioMusicaNome: string;
 }
 
 export interface AtualizarCaptacaoRequest {
   rubricaId: string;
   periodo: string;           // "YYYY-MM-DD"
-  usuarioDeMusica: string;
+  usuarioMusicaId: string;
+  usuarioMusicaNome: string;
 }
 
 // ── Responses ──
@@ -72,4 +76,5 @@ export interface CaptacaoFiltros {
   periodoFim?: string;       // "YYYY-MM-DD"
   status?: StatusCaptacao;
   analistaResponsavelId?: string;
+  usuarioMusicaId?: string;
 }
