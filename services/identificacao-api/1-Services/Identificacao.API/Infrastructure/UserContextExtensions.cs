@@ -12,8 +12,14 @@ public static class UserContextExtensions
         return AnalistaIdentificador.FromSubject(sub);
     }
 
-    public static string GetAnalistaNome(this ClaimsPrincipal user) =>
+    public static string GetAnalistaSubject(this ClaimsPrincipal user)
+    {
+        return user.FindFirst("sub")?.Value
+            ?? throw new UnauthorizedAccessException("Usuário ausente no token");
+    }
+
+    public static string? GetAnalistaNomeClaim(this ClaimsPrincipal user) =>
         user.FindFirst("name")?.Value
         ?? user.FindFirst("username")?.Value
-        ?? "Desconhecido";
+        ?? null;
 }

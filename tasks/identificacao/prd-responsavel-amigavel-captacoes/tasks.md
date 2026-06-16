@@ -29,7 +29,7 @@ Testes de integração (Testcontainers) que cruzam as três features end-to-end,
 - [x] 2.0 Read model UsuarioIdentidade + repositório + DI
 - [x] 3.0 F1 Backend — ListarAnalistasQuery + endpoint GET /analistas
 - [x] 4.0 F1 Frontend — Combo de Responsável no filtro
-- [ ] 5.0 F2 — Resolução do nome do responsável no cadastro
+- [x] 5.0 F2 — Resolução do nome do responsável no cadastro
 - [ ] 6.0 F3 — Backfill de responsáveis "Desconhecido"
 - [ ] 7.0 Testes de Integração (Testcontainers) end-to-end
 

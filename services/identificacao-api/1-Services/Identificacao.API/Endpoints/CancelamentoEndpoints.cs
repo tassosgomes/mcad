@@ -33,7 +33,7 @@ public static class CancelamentoEndpoints
             CancellationToken ct) =>
         {
             var analistaId = httpContext.User.GetAnalistaId();
-            var analistaNome = httpContext.User.GetAnalistaNome();
+            var analistaNome = httpContext.User.GetAnalistaNomeClaim() ?? "Desconhecido";
 
             var command = new CancelarRolCommand(
                 captacaoId,

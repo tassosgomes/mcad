@@ -9,7 +9,8 @@ public record CriarCaptacaoCommand(
     DateOnly Periodo,
     string UsuarioDeMusica,
     Guid AnalistaId,
-    string AnalistaNome
+    string AnalistaSubject,
+    string? AnalistaNomeClaim
 ) : ICommand<CaptacaoResponse>;
 
 public class CriarCaptacaoCommandValidator : AbstractValidator<CriarCaptacaoCommand>
@@ -20,6 +21,6 @@ public class CriarCaptacaoCommandValidator : AbstractValidator<CriarCaptacaoComm
         RuleFor(x => x.Periodo).NotEmpty();
         RuleFor(x => x.UsuarioDeMusica).NotEmpty().MaximumLength(255);
         RuleFor(x => x.AnalistaId).NotEmpty();
-        RuleFor(x => x.AnalistaNome).NotEmpty();
+        RuleFor(x => x.AnalistaSubject).NotEmpty();
     }
 }

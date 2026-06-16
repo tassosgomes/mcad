@@ -55,11 +55,12 @@ public static class CaptacaoEndpoints
             CancellationToken ct) =>
         {
             var analistaId = httpContext.User.GetAnalistaId();
-            var analistaNome = httpContext.User.GetAnalistaNome();
+            var analistaSubject = httpContext.User.GetAnalistaSubject();
+            var analistaNomeClaim = httpContext.User.GetAnalistaNomeClaim();
 
             var command = new CriarCaptacaoCommand(
                 request.RubricaId, request.Periodo, request.UsuarioDeMusica,
-                analistaId, analistaNome);
+                analistaId, analistaSubject, analistaNomeClaim);
 
             var result = await dispatcher.SendAsync(command, ct);
             return Results.Created($"/api/v1/captacoes/{result.Id}", result);

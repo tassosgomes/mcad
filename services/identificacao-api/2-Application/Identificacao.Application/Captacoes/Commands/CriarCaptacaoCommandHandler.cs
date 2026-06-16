@@ -13,15 +13,18 @@ public class CriarCaptacaoCommandHandler : ICommandHandler<CriarCaptacaoCommand,
     private readonly ICaptacaoRepository _captacaoRepo;
     private readonly IRubricaRepository _rubricaRepo;
     private readonly IIdentificacaoAuditPublisher _auditPublisher;
+    private readonly IUsuarioIdentidadeRepository _usuarioRepo;
 
     public CriarCaptacaoCommandHandler(
         ICaptacaoRepository captacaoRepo,
         IRubricaRepository rubricaRepo,
-        IIdentificacaoAuditPublisher auditPublisher)
+        IIdentificacaoAuditPublisher auditPublisher,
+        IUsuarioIdentidadeRepository usuarioRepo)
     {
         _captacaoRepo = captacaoRepo;
         _rubricaRepo = rubricaRepo;
         _auditPublisher = auditPublisher;
+        _usuarioRepo = usuarioRepo;
     }
 
     public async Task<CaptacaoResponse> HandleAsync(CriarCaptacaoCommand cmd, CancellationToken ct)
@@ -33,8 +36,11 @@ public class CriarCaptacaoCommandHandler : ICommandHandler<CriarCaptacaoCommand,
         if (await _captacaoRepo.ExisteAtivaParaRubricaPeriodoAsync(cmd.RubricaId, cmd.Periodo, null, ct))
             throw new ConflictException($"Já existe uma captação ativa para {rubrica.Nome} em {cmd.Periodo}");
 
+        var usuario = await _usuarioRepo.BuscarPorSubjectAsync(cmd.AnalistaSubject, ct);
+        var nome = usuario?.NomeExibicao ?? cmd.AnalistaNomeClaim ?? "Desconhecido";
+
         var captacao = Captacao.Criar(cmd.RubricaId, cmd.Periodo, cmd.UsuarioDeMusica,
-            cmd.AnalistaId, cmd.AnalistaNome);
+            cmd.AnalistaId, nome);
 
         await _captacaoRepo.AddAsync(captacao, ct);
         await _auditPublisher.PublishAsync(
