@@ -34,6 +34,29 @@ public class UsuarioMusicaSnapshotRepository : IUsuarioMusicaSnapshotRepository
         }
     }
 
+    public async Task<(List<UsuarioMusicaSnapshot> Items, int Total)> BuscarAsync(string q, string? cnpj, int page, int size, CancellationToken ct)
+    {
+        var query = _context.UsuariosMusicaSnapshot
+            .AsNoTracking()
+            .Where(u => u.Status == "ATIVO");
+
+        if (q.Length >= 2)
+            query = query.Where(u => u.RazaoSocial.ToLower().Contains(q.ToLower()));
+
+        if (!string.IsNullOrEmpty(cnpj))
+            query = query.Where(u => u.Cnpj == cnpj);
+
+        var total = await query.CountAsync(ct);
+
+        var items = await query
+            .OrderBy(u => u.RazaoSocial)
+            .Skip((page - 1) * size)
+            .Take(size)
+            .ToListAsync(ct);
+
+        return (items, total);
+    }
+
     public async Task SaveChangesAsync(CancellationToken ct)
     {
         await _context.SaveChangesAsync(ct);

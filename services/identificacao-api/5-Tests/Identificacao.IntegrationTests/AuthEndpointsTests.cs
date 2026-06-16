@@ -33,6 +33,7 @@ public class AuthEndpointsTests : IClassFixture<IdentificacaoApiFactory>
     [InlineData("/api/v1/rubricas")]
     [InlineData("/api/v1/tipos-utilizacao")]
     [InlineData("/api/v1/pendentes")]
+    [InlineData("/api/v1/usuarios-musica?q=test")]
     [InlineData("/api/v1/captacoes/00000000-0000-0000-0000-000000000000/uploads")]
     [InlineData("/api/v1/captacoes/00000000-0000-0000-0000-000000000000/execucoes")]
     public async Task Get_WithoutToken_Returns401(string url)
@@ -82,6 +83,16 @@ public class AuthEndpointsTests : IClassFixture<IdentificacaoApiFactory>
         var client = _factory.CreateAuthenticatedClient(roles: ["identificacao.consultor"]);
 
         var response = await client.GetAsync("/api/v1/pendentes");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+    }
+
+    [Fact]
+    public async Task GetUsuariosMusica_WithAuthenticatedAndAllowed_Returns200()
+    {
+        var client = _factory.CreateAuthenticatedClient(roles: ["identificacao.consultor"]);
+
+        var response = await client.GetAsync("/api/v1/usuarios-musica?q=test");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
     }
@@ -165,7 +176,7 @@ public class AuthEndpointsTests : IClassFixture<IdentificacaoApiFactory>
             .Select(f => (string)f.GetRawConstantValue()!)
             .ToList();
 
-        permissions.Should().HaveCount(22, "o catálogo de Identificação deve manter as 22 permissões 4-segmentos declaradas");
+        permissions.Should().HaveCount(23, "o catálogo de Identificação deve manter as 23 permissões 4-segmentos declaradas");
         permissions.Should().OnlyContain(p => p.StartsWith("identificacao:default:"), "todas as permissões do catálogo devem ser 4-seg no domínio identificacao:default");
         permissions.Distinct().Should().HaveCount(permissions.Count, "não deve haver chaves duplicadas no catálogo");
     }

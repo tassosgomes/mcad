@@ -38,6 +38,9 @@ public static class IdentificacaoPermissions
     public const string UploadVisualizarErros = "identificacao:default:upload:visualizar-erros";
     public const string UploadImportar = "identificacao:default:upload:importar";
 
+    // ── Usuário de Música (projeção local da Arrecadação) ────────────────
+    public const string UsuarioMusicaListar = "identificacao:default:usuario-musica:listar";
+
     // ── Pendentes (execuções sem obra/fonograma identificado) ────────────
     public const string PendenteListar = "identificacao:default:pendente:listar";
     public const string PendenteVisualizarImpacto = "identificacao:default:pendente:visualizar-impacto";

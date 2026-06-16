@@ -243,6 +243,7 @@ app.MapTipoUtilizacaoEndpoints();
 app.MapUploadEndpoints();
 app.MapPendenteEndpoints();
 app.MapDashboardEndpoints();
+app.MapUsuarioMusicaEndpoints();
 
 // Executa Migrations no Startup
 using (var scope = app.Services.CreateScope())
