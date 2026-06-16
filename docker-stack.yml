@@ -32,34 +32,6 @@ services:
       restart_policy:
         condition: on-failure
 
-  mcad-minio:
-    image: minio/minio:latest
-    command: server /data --console-address ":9001"
-    environment:
-      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-mcadadmin}
-      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?MINIO_ROOT_PASSWORD is required}
-    volumes:
-      - mcad_minio_data:/data
-    networks:
-      - mcad-internal
-    healthcheck:
-      test: ["CMD", "mc", "ready", "local"]
-      interval: 10s
-      timeout: 5s
-      retries: 10
-    deploy:
-      replicas: 0
-      restart_policy:
-        condition: on-failure
-    labels:
-      - traefik.enable=true
-      - traefik.docker.network=traefik-public
-      - traefik.http.routers.mcad-minio.rule=Host(`minio.tasso.dev.br`)
-      - traefik.http.routers.mcad-minio.entrypoints=websecure
-      - traefik.http.routers.mcad-minio.tls=true
-      - traefik.http.routers.mcad-minio.tls.certresolver=cloudflare-resolver
-      - traefik.http.services.mcad-minio.loadbalancer.server.port=9000
-
   mcad-cadastro-api:
     image: ${CADASTRO_API_IMAGE:-mcad-cadastro-api:latest}
     labels:
@@ -139,9 +111,10 @@ services:
       IDENTIFICACAO_DB_PASSWORD: ${IDENTIFICACAO_DB_PASSWORD:?IDENTIFICACAO_DB_PASSWORD is required}
       IDENTIFICACAO_DB_SSL_MODE: Disable
       CADASTRO_API_BASE_URL: http://mcad-cadastro-api:5001/api/v1
-      MINIO_ENDPOINT: mcad-minio:9000
-      MINIO_ACCESS_KEY: ${MINIO_ROOT_USER:-mcadadmin}
-      MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD:?MINIO_ROOT_PASSWORD is required}
+      STORAGE_SERVICE_URL: ${STORAGE_SERVICE_URL:-https://storage.tasso.dev.br}
+      STORAGE_LOGTO_ISSUER: ${STORAGE_LOGTO_ISSUER:-https://9lcinu.logto.app/oidc}
+      STORAGE_LOGTO_CLIENT_ID: ${STORAGE_LOGTO_CLIENT_ID:?STORAGE_LOGTO_CLIENT_ID is required}
+      STORAGE_LOGTO_CLIENT_SECRET: ${STORAGE_LOGTO_CLIENT_SECRET:?STORAGE_LOGTO_CLIENT_SECRET is required}
       RABBITMQ_HOST: kebnekaise.lmq.cloudamqp.com
       RABBITMQ_PORT: 5672
       RABBITMQ_USER: ${RABBITMQ_USER:-mcad}
@@ -408,7 +381,6 @@ networks:
 volumes:
   mcad_pg_data:
   mcad_rmq_data:
-  mcad_minio_data:
 
 configs:
   postgres_00_create_app_schemas:

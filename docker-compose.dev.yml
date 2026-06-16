@@ -133,26 +133,6 @@ services:
     ports:
       - "5310:80"
 
-  # ── MinIO ─────────────────────────────────────────────────────────
-  mcad-minio:
-    image: minio/minio:latest
-    container_name: mcad-minio
-    restart: unless-stopped
-    command: server /data --console-address ":9001"
-    environment:
-      MINIO_ROOT_USER: mcadadmin
-      MINIO_ROOT_PASSWORD: mcadadmin123
-    ports:
-      - "9000:9000"
-      - "9001:9001"
-    volumes:
-      - mcad_minio_data:/data
-    healthcheck:
-      test: ["CMD", "mc", "ready", "local"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
   distribuicao-api:
     build:
       context: ./services/distribuicao-api
@@ -245,6 +225,5 @@ services:
 volumes:
   mcad_pg_data:
   mcad_rmq_data:
-  mcad_minio_data:
   mcad_authz_pg_data:
   mcad_authz_redis_data:

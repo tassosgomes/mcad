@@ -12,7 +12,7 @@ public class UploadTests
     public void MarcarConcluido_SemErros_StatusConcluido()
     {
         // Arrange
-        var upload = Upload.Criar(Guid.NewGuid(), "arquivo.csv", "key", Guid.NewGuid());
+        var upload = Upload.Criar(Guid.NewGuid(), "arquivo.csv", "01KV3XT3BMMBGQ0KP057ZXTMKX", Guid.NewGuid());
 
         // Act
         upload.MarcarConcluido(100, 100, 0);
@@ -29,7 +29,7 @@ public class UploadTests
     public void MarcarConcluido_ComErros_StatusConcluidoComErros()
     {
         // Arrange
-        var upload = Upload.Criar(Guid.NewGuid(), "arquivo.csv", "key", Guid.NewGuid());
+        var upload = Upload.Criar(Guid.NewGuid(), "arquivo.csv", "01KV3XT3BMMBGQ0KP057ZXTMKX", Guid.NewGuid());
 
         // Act
         upload.MarcarConcluido(100, 95, 5);
@@ -46,7 +46,7 @@ public class UploadTests
     public void MarcarErro_StatusErroComMensagem()
     {
         // Arrange
-        var upload = Upload.Criar(Guid.NewGuid(), "arquivo.csv", "key", Guid.NewGuid());
+        var upload = Upload.Criar(Guid.NewGuid(), "arquivo.csv", "01KV3XT3BMMBGQ0KP057ZXTMKX", Guid.NewGuid());
 
         // Act
         upload.MarcarErro("Erro interno");

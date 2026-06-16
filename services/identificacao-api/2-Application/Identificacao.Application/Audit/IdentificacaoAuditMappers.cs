@@ -46,7 +46,7 @@ public static class IdentificacaoAuditMappers
             ["id"] = u.Id.ToString(),
             ["captacaoId"] = u.CaptacaoId.ToString(),
             ["nomeArquivo"] = u.NomeArquivo,
-            ["minioKey"] = u.MinioKey,
+            ["storageFileId"] = u.StorageFileId,
             ["analistaId"] = u.AnalistaId.ToString(),
             ["status"] = u.Status.ToString().ToUpperInvariant(),
             ["totalLinhas"] = u.TotalLinhas,

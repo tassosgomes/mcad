@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
 using FluentValidation;
+using Identificacao.Application.Storage;
 using Identificacao.Application.Uploads.Commands;
 using Identificacao.Application.Common.Exceptions;
 using Identificacao.Domain.Entities;
@@ -20,13 +21,13 @@ public class CriarUploadCommandHandlerTests
 {
     private readonly Mock<ICaptacaoRepository> _captacaoRepoMock = new();
     private readonly Mock<IUploadRepository> _uploadRepoMock = new();
-    private readonly Mock<IMinioService> _minioServiceMock = new();
+    private readonly Mock<IStorageServiceClient> _storageServiceMock = new();
     
     private CriarUploadCommandHandler CreateHandler() 
         => new(
             _captacaoRepoMock.Object,
             _uploadRepoMock.Object,
-            _minioServiceMock.Object,
+            _storageServiceMock.Object,
             Mock.Of<IIdentificacaoAuditPublisher>());
 
     private Stream CreateStream(string content) 
@@ -41,13 +42,16 @@ public class CriarUploadCommandHandlerTests
         _captacaoRepoMock.Setup(r => r.GetByIdAsync(captacao.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(captacao);
 
+        _storageServiceMock.Setup(s => s.UploadAsync(It.IsAny<Stream>(), "text/csv", "arq.csv", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new StorageFileResult("01KV3XT3BMMBGQ0KP057ZXTMKX", "arq.csv", 100, "text/csv", "pending_scan"));
+
         var stream = CreateStream("isrc;iswc\n1;2");
         var cmd = new CriarUploadCommand(captacao.Id, "arq.csv", stream, captacao.AnalistaResponsavelId);
 
         var result = await handler.HandleAsync(cmd, default);
 
         result.Status.Should().Be("Processando");
-        _minioServiceMock.Verify(m => m.UploadAsync(It.IsAny<string>(), stream, "text/csv", default), Times.Once);
+        _storageServiceMock.Verify(s => s.UploadAsync(stream, "text/csv", "arq.csv", default), Times.Once);
         _uploadRepoMock.Verify(u => u.AddAsync(It.IsAny<Upload>(), default), Times.Once);
     }
 
@@ -69,7 +73,7 @@ public class CriarUploadCommandHandlerTests
         
         _captacaoRepoMock.Setup(r => r.GetByIdAsync(captacao.Id, It.IsAny<CancellationToken>())).ReturnsAsync(captacao);
 
-        var stream = new MemoryStream(); // Zero bytes
+        var stream = new MemoryStream();
         var cmd = new CriarUploadCommand(captacao.Id, "arq.csv", stream, captacao.AnalistaResponsavelId);
 
         await Assert.ThrowsAsync<ValidationException>(() => handler.HandleAsync(cmd, default));
@@ -99,12 +103,10 @@ public class CriarUploadCommandHandlerTests
         _captacaoRepoMock.Setup(r => r.GetByIdAsync(captacao.Id, It.IsAny<CancellationToken>())).ReturnsAsync(captacao);
 
         var stream = CreateStream("teste");
-        var cmd = new CriarUploadCommand(captacao.Id, "arq.csv", stream, Guid.NewGuid()); // Diferente
+        var cmd = new CriarUploadCommand(captacao.Id, "arq.csv", stream, Guid.NewGuid());
 
-        await Assert.ThrowsAsync<DomainException>(() => handler.HandleAsync(cmd, default)); // Captacao throws DomainException by default for validation
+        await Assert.ThrowsAsync<DomainException>(() => handler.HandleAsync(cmd, default));
     }
-
-    // ───────────── Cobertura faltante ─────────────
 
     [Fact]
     public async Task Handle_CaptacaoInexistente_LancaNotFoundException()
@@ -120,13 +122,13 @@ public class CriarUploadCommandHandlerTests
     }
 
     [Fact]
-    public async Task Handle_MinioFalha_NaoPersisteUpload()
+    public async Task Handle_StorageFalha_NaoPersisteUpload()
     {
         var handler = CreateHandler();
         var captacao = Captacao.Criar(Guid.NewGuid(), DateOnly.FromDateTime(DateTime.Today), "Teste", Guid.NewGuid(), "Nome");
         _captacaoRepoMock.Setup(r => r.GetByIdAsync(captacao.Id, It.IsAny<CancellationToken>())).ReturnsAsync(captacao);
-        _minioServiceMock.Setup(m => m.UploadAsync(It.IsAny<string>(), It.IsAny<Stream>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .ThrowsAsync(new InvalidOperationException("MinIO indisponível"));
+        _storageServiceMock.Setup(s => s.UploadAsync(It.IsAny<Stream>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new InvalidOperationException("Storage indisponivel"));
 
         var stream = CreateStream("isrc;iswc\n1;2");
         var cmd = new CriarUploadCommand(captacao.Id, "arq.csv", stream, captacao.AnalistaResponsavelId);
@@ -138,16 +140,15 @@ public class CriarUploadCommandHandlerTests
     }
 
     [Fact]
-    public async Task Handle_FormatoMinioKey_RespeitaPadrao()
+    public async Task Handle_Upload_CriaUploadComStorageFileId()
     {
         var handler = CreateHandler();
         var captacao = Captacao.Criar(Guid.NewGuid(), DateOnly.FromDateTime(DateTime.Today), "Teste", Guid.NewGuid(), "Nome");
         _captacaoRepoMock.Setup(r => r.GetByIdAsync(captacao.Id, It.IsAny<CancellationToken>())).ReturnsAsync(captacao);
 
-        string? keyCapturada = null;
-        _minioServiceMock.Setup(m => m.UploadAsync(It.IsAny<string>(), It.IsAny<Stream>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .Callback<string, Stream, string, CancellationToken>((k, _, _, _) => keyCapturada = k)
-            .ReturnsAsync((string k, Stream _, string _, CancellationToken _) => k);
+        var storageFileId = "01KV3XT3BMMBGQ0KP057ZXTMKX";
+        _storageServiceMock.Setup(s => s.UploadAsync(It.IsAny<Stream>(), "text/csv", "meu-arquivo.csv", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new StorageFileResult(storageFileId, "meu-arquivo.csv", 200, "text/csv", "pending_scan"));
 
         Upload? uploadCapturado = null;
         _uploadRepoMock.Setup(u => u.AddAsync(It.IsAny<Upload>(), It.IsAny<CancellationToken>()))
@@ -159,9 +160,7 @@ public class CriarUploadCommandHandlerTests
 
         await handler.HandleAsync(cmd, default);
 
-        keyCapturada.Should().NotBeNull();
         uploadCapturado.Should().NotBeNull();
-        keyCapturada.Should().Be($"uploads/{captacao.Id}/{uploadCapturado!.Id}/meu-arquivo.csv");
-        uploadCapturado.MinioKey.Should().Be(keyCapturada);
+        uploadCapturado!.StorageFileId.Should().Be(storageFileId);
     }
 }

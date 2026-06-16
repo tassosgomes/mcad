@@ -6,7 +6,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="AWSSDK.S3" Version="4.0.23" />
     <PackageReference Include="DotNetEnv" Version="3.1.1" />
     <PackageReference Include="Ecad.Audit.AspNetCore" Version="1.0.0" />
     <PackageReference Include="Ecad.Authz.AspNetCore" Version="1.0.1" />

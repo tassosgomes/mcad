@@ -9,7 +9,7 @@ public class Upload
     public Guid CaptacaoId { get; private set; }
     public Captacao Captacao { get; private set; } = null!;
     public string NomeArquivo { get; private set; } = string.Empty;
-    public string MinioKey { get; private set; } = string.Empty;
+    public string StorageFileId { get; private set; } = string.Empty;
     public StatusUpload Status { get; private set; }
     public int? TotalLinhas { get; private set; }
     public int? ExecucoesCriadas { get; private set; }
@@ -21,12 +21,12 @@ public class Upload
 
     private Upload() { }
 
-    public static Upload Criar(Guid captacaoId, string nomeArquivo, string minioKey, Guid analistaId) => new()
+    public static Upload Criar(Guid captacaoId, string nomeArquivo, string storageFileId, Guid analistaId) => new()
     {
         Id = Guid.NewGuid(),
         CaptacaoId = captacaoId,
         NomeArquivo = nomeArquivo,
-        MinioKey = minioKey,
+        StorageFileId = storageFileId,
         Status = StatusUpload.Processando,
         AnalistaId = analistaId,
         CriadoEm = DateTime.UtcNow,

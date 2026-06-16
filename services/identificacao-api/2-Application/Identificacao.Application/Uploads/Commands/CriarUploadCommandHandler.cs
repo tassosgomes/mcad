@@ -5,6 +5,7 @@ using FluentValidation;
 using Identificacao.Application.Audit;
 using Identificacao.Application.Common;
 using Identificacao.Application.Common.Exceptions;
+using Identificacao.Application.Storage;
 using Identificacao.Application.Uploads.Responses;
 using Identificacao.Domain.Entities;
 using Identificacao.Domain.Exceptions;
@@ -16,18 +17,18 @@ public class CriarUploadCommandHandler : ICommandHandler<CriarUploadCommand, Upl
 {
     private readonly ICaptacaoRepository _captacaoRepo;
     private readonly IUploadRepository _uploadRepo;
-    private readonly IMinioService _minioService;
+    private readonly IStorageServiceClient _storageService;
     private readonly IIdentificacaoAuditPublisher _auditPublisher;
 
     public CriarUploadCommandHandler(
         ICaptacaoRepository captacaoRepo,
         IUploadRepository uploadRepo,
-        IMinioService minioService,
+        IStorageServiceClient storageService,
         IIdentificacaoAuditPublisher auditPublisher)
     {
         _captacaoRepo = captacaoRepo;
         _uploadRepo = uploadRepo;
-        _minioService = minioService;
+        _storageService = storageService;
         _auditPublisher = auditPublisher;
     }
 
@@ -45,12 +46,9 @@ public class CriarUploadCommandHandler : ICommandHandler<CriarUploadCommand, Upl
         captacao.ValidarAberta();
         captacao.ValidarPropriedade(cmd.AnalistaId);
 
-        var upload = Upload.Criar(cmd.CaptacaoId, cmd.NomeArquivo, "", cmd.AnalistaId);
-        
-        var minioKey = $"uploads/{cmd.CaptacaoId}/{upload.Id}/{cmd.NomeArquivo}";
-        await _minioService.UploadAsync(minioKey, cmd.ArquivoStream, "text/csv", ct);
+        var storageResult = await _storageService.UploadAsync(cmd.ArquivoStream, "text/csv", cmd.NomeArquivo, ct);
 
-        typeof(Upload).GetProperty("MinioKey")?.SetValue(upload, minioKey);
+        var upload = Upload.Criar(cmd.CaptacaoId, cmd.NomeArquivo, storageResult.Id, cmd.AnalistaId);
 
         await _uploadRepo.AddAsync(upload, ct);
         await _auditPublisher.PublishAsync(

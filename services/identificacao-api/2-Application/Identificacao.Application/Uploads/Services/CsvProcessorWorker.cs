@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Identificacao.Application.Storage;
 using Identificacao.Domain.Entities;
 using Identificacao.Domain.Enums;
 using Identificacao.Domain.Interfaces;
@@ -54,7 +55,7 @@ public class CsvProcessorWorker : BackgroundService
         var erroRepo = sp.GetRequiredService<IErroUploadRepository>();
         var captacaoRepo = sp.GetRequiredService<ICaptacaoRepository>();
         var execRepo = sp.GetRequiredService<IExecucaoRepository>();
-        var minioService = sp.GetRequiredService<IMinioService>();
+        var storageService = sp.GetRequiredService<IStorageServiceClient>();
         var csvParser = sp.GetRequiredService<CsvParser>();
         var cadastroClient = sp.GetRequiredService<ICadastroHttpClient>();
         var tipoRepo = sp.GetRequiredService<ITipoUtilizacaoRepository>();
@@ -72,14 +73,46 @@ public class CsvProcessorWorker : BackgroundService
             // ExigeClassificacao => Rubrica = TV Aberta
             bool exigeClassificacao = captacao.Rubrica?.Nome?.Contains("TV Aberta", StringComparison.OrdinalIgnoreCase) ?? false;
 
-            Stream stream;
+            // Verificar status do scan antes de baixar
+            StorageFileResult metadata;
             try
             {
-                stream = await minioService.DownloadAsync(upload.MinioKey, ct);
+                metadata = await storageService.GetMetadataAsync(upload.StorageFileId, ct);
             }
             catch (Exception)
             {
-                upload.MarcarErro("Arquivo não encontrado no MinIO.");
+                upload.MarcarErro("Arquivo não encontrado no storage service.");
+                await uploadRepo.SaveChangesAsync(ct);
+                return;
+            }
+
+            if (metadata.Status == "pending_scan")
+            {
+                return; // Scan ainda em andamento — worker tentara novamente na proxima iteracao
+            }
+
+            if (metadata.Status == "infected")
+            {
+                upload.MarcarErro("Arquivo infectado detectado pelo antivirus. O upload foi descartado.");
+                await uploadRepo.SaveChangesAsync(ct);
+                return;
+            }
+
+            if (metadata.Status != "clean")
+            {
+                upload.MarcarErro($"Status de arquivo inesperado: {metadata.Status}");
+                await uploadRepo.SaveChangesAsync(ct);
+                return;
+            }
+
+            Stream stream;
+            try
+            {
+                stream = await storageService.DownloadAsync(upload.StorageFileId, ct);
+            }
+            catch (Exception)
+            {
+                upload.MarcarErro("Falha ao baixar arquivo do storage service.");
                 await uploadRepo.SaveChangesAsync(ct);
                 return;
             }
@@ -150,7 +183,6 @@ public class CsvProcessorWorker : BackgroundService
 
             await execRepo.SaveChangesAsync(ct);
 
-            int countErros = 0;
             foreach (var erro in listErrosUpload)
             {
                 await erroRepo.AddAsync(erro, ct);

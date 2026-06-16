@@ -13,20 +13,20 @@ using Identificacao.Application.Audit;
 using Identificacao.Application.Common;
 using Identificacao.Application.Captacoes.Commands;
 using Identificacao.Application.Rubricas.Queries;
+using Identificacao.Application.Storage;
 using Identificacao.Application.Uploads.Services;
 using Identificacao.Domain.Interfaces;
 using Identificacao.Infra.Audit;
 using Identificacao.Infra.Data;
 using Identificacao.Infra.ExternalServices;
 using Identificacao.Infra.Repositories;
+using Identificacao.Infra.Storage;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using Polly;
 using Microsoft.IdentityModel.Tokens;
-using Amazon.S3;
-using Amazon.Runtime;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 using Prometheus;
@@ -105,47 +105,26 @@ builder.Services.AddHttpClient<ICadastroHttpClient, CadastroHttpClient>(client =
     client.Timeout = TimeSpan.FromSeconds(10);
 }).AddTransientHttpErrorPolicy(p => p.RetryAsync(2));
 
-// Object Storage (Cloudflare R2 em prod; MinIO local em dev — ambos S3-compatíveis)
-var r2S3Api = Environment.GetEnvironmentVariable("R2_S3_API");
-var r2AccountId = Environment.GetEnvironmentVariable("R2_ACCOUNT_ID");
-var useR2 = !string.IsNullOrWhiteSpace(r2S3Api) || !string.IsNullOrWhiteSpace(r2AccountId);
-
-string storageServiceUrl;
-string storageAccessKey;
-string storageSecretKey;
-
-if (useR2)
+// ─── Storage Service (proxy para upload/download com antivirus) ────────
+var storageBaseUrl = Environment.GetEnvironmentVariable("STORAGE_SERVICE_URL") ?? "https://storage.tasso.dev.br/";
+builder.Services.Configure<StorageOptions>(opts =>
 {
-    storageServiceUrl = !string.IsNullOrWhiteSpace(r2S3Api)
-        ? r2S3Api!
-        : $"https://{r2AccountId}.r2.cloudflarestorage.com";
-    storageAccessKey = Environment.GetEnvironmentVariable("R2_ACCESS_KEY_ID")
-        ?? throw new InvalidOperationException("R2_ACCESS_KEY_ID é obrigatório quando R2 está habilitado.");
-    storageSecretKey = Environment.GetEnvironmentVariable("R2_SECRET_ACCESS_KEY")
-        ?? throw new InvalidOperationException("R2_SECRET_ACCESS_KEY é obrigatório quando R2 está habilitado.");
-}
-else
-{
-    var minioEndpoint = Environment.GetEnvironmentVariable("MINIO_ENDPOINT") ?? "http://localhost:9000";
-    storageServiceUrl = minioEndpoint.StartsWith("http", StringComparison.OrdinalIgnoreCase)
-        ? minioEndpoint
-        : $"http://{minioEndpoint}";
-    storageAccessKey = Environment.GetEnvironmentVariable("MINIO_ACCESS_KEY") ?? "mcadadmin";
-    storageSecretKey = Environment.GetEnvironmentVariable("MINIO_SECRET_KEY") ?? "mcadadmin123";
-}
-
-builder.Services.AddSingleton<IAmazonS3>(_ =>
-{
-    var config = new AmazonS3Config
-    {
-        ServiceURL = storageServiceUrl,
-        ForcePathStyle = true,
-        AuthenticationRegion = "auto",
-    };
-    return new AmazonS3Client(new BasicAWSCredentials(storageAccessKey, storageSecretKey), config);
+    opts.BaseUrl       = storageBaseUrl;
+    opts.LogToIssuer   = Environment.GetEnvironmentVariable("STORAGE_LOGTO_ISSUER") ?? "https://9lcinu.logto.app/oidc";
+    opts.ClientId      = Environment.GetEnvironmentVariable("STORAGE_LOGTO_CLIENT_ID") ?? string.Empty;
+    opts.ClientSecret  = Environment.GetEnvironmentVariable("STORAGE_LOGTO_CLIENT_SECRET") ?? string.Empty;
+    opts.Resource      = storageBaseUrl.TrimEnd('/');
 });
-
-builder.Services.AddScoped<IMinioService, MinioService>();
+builder.Services.AddHttpClient<LogToM2MTokenService>(client =>
+{
+    client.Timeout = TimeSpan.FromSeconds(10);
+});
+builder.Services.AddSingleton<LogToM2MTokenService>();
+builder.Services.AddHttpClient<IStorageServiceClient, StorageServiceClient>(client =>
+{
+    client.BaseAddress = new Uri(storageBaseUrl);
+    client.Timeout = TimeSpan.FromMinutes(5);
+}).AddTransientHttpErrorPolicy(p => p.RetryAsync(1));
 
 // CQRS - Dispatcher e Handlers via Scrutor
 builder.Services.AddScoped<IDispatcher, Dispatcher>();

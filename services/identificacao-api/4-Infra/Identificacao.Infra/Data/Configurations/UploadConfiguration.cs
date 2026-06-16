@@ -16,7 +16,7 @@ public class UploadConfiguration : IEntityTypeConfiguration<Upload>
             .OnDelete(DeleteBehavior.Cascade);
 
         builder.Property(u => u.NomeArquivo).HasMaxLength(255).IsRequired();
-        builder.Property(u => u.MinioKey).HasMaxLength(500).IsRequired();
+        builder.Property(u => u.StorageFileId).HasMaxLength(500).IsRequired();
         builder.Property(u => u.Status).HasConversion<string>().HasMaxLength(30).IsRequired();
         
         builder.HasIndex(u => u.CaptacaoId).HasDatabaseName("ix_uploads_captacao");
