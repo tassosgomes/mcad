@@ -26,7 +26,7 @@ public class ExcluirCaptacaoCommandHandlerTests
     public async Task Handle_CaptacaoAberta_ExcluiComSucesso()
     {
         var analistaId = Guid.NewGuid();
-        var captacao = Captacao.Criar(Guid.NewGuid(), new DateOnly(2023, 10, 1), "User", analistaId, "Nome");
+        var captacao = Captacao.Criar(Guid.NewGuid(), new DateOnly(2023, 10, 1), Guid.NewGuid(), "User", analistaId, "Nome");
 
         _captacaoRepoMock.Setup(r => r.GetByIdAsync(captacao.Id, It.IsAny<CancellationToken>())).ReturnsAsync(captacao);
 
@@ -43,7 +43,7 @@ public class ExcluirCaptacaoCommandHandlerTests
     public async Task Handle_CaptacaoFechada_LancaDomainException()
     {
         var analistaId = Guid.NewGuid();
-        var captacao = Captacao.Criar(Guid.NewGuid(), new DateOnly(2023, 10, 1), "User", analistaId, "Nome");
+        var captacao = Captacao.Criar(Guid.NewGuid(), new DateOnly(2023, 10, 1), Guid.NewGuid(), "User", analistaId, "Nome");
         var prop = typeof(Captacao).GetProperty("Status");
         prop!.SetValue(captacao, Identificacao.Domain.Enums.StatusCaptacao.Fechada);
 
@@ -61,7 +61,7 @@ public class ExcluirCaptacaoCommandHandlerTests
     {
         var analistaId = Guid.NewGuid();
         var outroAnalista = Guid.NewGuid();
-        var captacao = Captacao.Criar(Guid.NewGuid(), new DateOnly(2023, 10, 1), "User", analistaId, "Nome");
+        var captacao = Captacao.Criar(Guid.NewGuid(), new DateOnly(2023, 10, 1), Guid.NewGuid(), "User", analistaId, "Nome");
 
         _captacaoRepoMock.Setup(r => r.GetByIdAsync(captacao.Id, It.IsAny<CancellationToken>())).ReturnsAsync(captacao);
 

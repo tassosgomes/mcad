@@ -29,7 +29,7 @@ public class ValidarPreRequisitosQueryHandlerTests
         var rubricaId = Guid.NewGuid();
         var rubrica = Rubrica.Criar(rubricaId, exigeClassificacao ? "TV" : "RADIO", "Geral", exigeClassificacao);
         
-        var captacao = Captacao.Criar(rubricaId, new DateOnly(2023, 10, 1), "User", Guid.NewGuid(), "Analista");
+        var captacao = Captacao.Criar(rubricaId, new DateOnly(2023, 10, 1), Guid.NewGuid(), "User", Guid.NewGuid(), "Analista");
         var propertyInfo = typeof(Captacao).GetProperty("Rubrica");
         propertyInfo!.SetValue(captacao, rubrica);
         

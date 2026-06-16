@@ -2,6 +2,68 @@
 
 ---
 
+## 2026-06-16 | PRD: prd-lookup-usuario-musica-captacao | Task: 2.0
+
+Modelo utilizado: (Preenchido pelo Orquestrador)
+
+### Problemas Identificados
+
+Zero Defects Identified
+Iterações até estabilização: 1
+
+### Resumo da Tarefa
+
+Total de Problemas: 0
+Categoria Técnica mais frequente: N/A
+Origem mais frequente: N/A
+Indício de fragilidade estrutural? Não — implementação replica o padrão Outbox + CommandHandler existente, com endpoint de manutenção REST (análogo conceitual ao `OutboxSeedService` de Rubricas). Todas as camadas (command, handler, controller, repository, testes unitários e de integração) integralmente alinhadas ao task file, PRD (RF-02) e TechSpec (§Backfill).
+Sugestão de melhoria no:
+- PRD: Nenhuma — RF-02 claro e verificável.
+- TechSpec: Nenhuma — §Backfill integralmente seguido.
+- Template de Task: Nenhuma — subtarefas bem definidas; molde de código (command, handler, teste) exato e sem ambiguidades.
+- Skill: Nenhuma — `java-architecture` (Clean Architecture, constructor injection, domain ports), `java-code-quality` (sem field injection, final fields, SLF4J parameterizado), `java-testing` (JUnit 5 + AssertJ + Mockito, AAA, IT com verificação de outbox_events table) integralmente seguidas.
+
+Evidências da validação:
+- Build: PASS — `mvn -pl arrecadacao-application test` (100/100, 0 failures), `mvn -pl arrecadacao-api compile` (0 errors), `mvn -pl arrecadacao-tests compile` (0 errors).
+- Unit tests: +3 novos (ReplicarUsuariosMusicaSnapshotCommandHandlerTest — 3 cenários: vazio, múltiplos, único).
+- Integration tests: +2 novos (UsuarioMusicaEndpointsIntegrationTest — happy path + 403 consultor).
+- Files: 4 new + 3 modified; zero changes em domain layer.
+- Event type: `arrecadacao.usuario-musica.atualizado` publicado para cada UsuarioMusica existente.
+- Permission: `arrecadacao:default:cliente:editar` (reuso alinhado ao catálogo `docs/authz/catalog/arrecadacao.md`).
+
+---
+
+## 2026-06-16 | PRD: prd-lookup-usuario-musica-captacao | Task: 1.0
+
+Modelo utilizado: (Preenchido pelo Orquestrador)
+
+### Problemas Identificados
+
+Zero Defects Identified
+Iterações até estabilização: 1
+
+### Resumo da Tarefa
+
+Total de Problemas: 0
+Categoria Técnica mais frequente: N/A
+Origem mais frequente: N/A
+Indício de fragilidade estrutural? Não — implementação replica padrão consagrado de handlers de Rubrica (OutboxEventWriter + mapper estático), com payload, tipos de evento, posicionamento transacional e asserções de teste integralmente alinhados ao task file, PRD (RF-01) e TechSpec.
+Sugestão de melhoria no:
+- PRD: Nenhuma — RF-01 claro e verificável.
+- TechSpec: Nenhuma — §Contrato de Evento e §Componente — Produtor integralmente seguidos.
+- Template de Task: Nenhuma — subtarefas bem definidas; molde de código (mapper, handler, teste) exato e sem ambiguidades.
+- Skill: Nenhuma — `java-architecture` (Clean Architecture, constructor injection, domain ports), `java-code-quality` (sem field injection, final fields, private constructor no mapper), `java-testing` (JUnit 5 + AssertJ + Mockito, AAA, verify never nos failure paths) integralmente seguidas.
+
+Evidências da validação:
+- Build: PASS — `mvn -pl arrecadacao-application compile` 0 erros.
+- Unit tests: PASS — 97/97 (0 regressões; +11 novos vs baseline).
+- Integration tests: 4/4 skipped (no Docker — `@Testcontainers(disabledWithoutDocker = true)`, 0 failures).
+- Files: 3 new + 8 modified; zero changes em domain layer.
+- Event types: `arrecadacao.usuario-musica.criado` + `.atualizado` nos 4 handlers (criar/atualizar/ativar/inativar).
+- Payload: id, razaoSocial, nomeFantasia, cnpj, cnpjFormatado, status, criadoEm, atualizadoEm (sem endereco/contato).
+
+---
+
 ## 2026-06-15 | PRD: prd-acesso-titulares | Task: 16.0
 
 Modelo utilizado: (Preenchido pelo Orquestrador)
@@ -1361,3 +1423,209 @@ Evidencias da validacao:
 - 15.4 Routes: /cadastro/ocorrencias, /cadastro/ocorrencias/:id, /cadastro/solicitacoes no cadastro/index.tsx.
 - 15.5 Permission-gated: 5 botoes de acao com `<Can permission="...">` (Assumir, Resolver, Cancelar, Aprovar, Rejeitar).
 - 15.6 Tests: 4 testes com render condicional por permissao mockada (usePermissions + Can).
+
+---
+
+## 2026-06-16 | PRD: prd-lookup-usuario-musica-captacao | Task: 3.0
+
+Modelo utilizado: (Preenchido pelo Orquestrador)
+
+### Problemas Identificados
+
+Zero Defects Identified
+Iterações até estabilização: 1
+
+### Resumo da Tarefa
+
+Total de Problemas: 0
+Categoria Técnica mais frequente: N/A
+Origem mais frequente: N/A
+Indício de fragilidade estrutural? Não — implementação replica a arquitetura do `DistribuicaoEventConsumer` com adaptações para dois routing keys e guard de `AtualizadoEm`. Todas as camadas (entidade, interface, repository, configuração EF, migration, consumer BackgroundService, testes unitários e de integração) alinhadas ao task file (3.0), PRD (RF-02) e TechSpec (§Componente — Consumer).
+Sugestão de melhoria no:
+- PRD: Nenhuma — RF-02 coberto com projeção local, consumer idempotente, guard de AtualizadoEm.
+- TechSpec: Nenhuma — consumer, projeção, modelo de dados e migração seguem especificação.
+- Template de Task: Nenhuma — subtarefas 3.1 a 3.10 claramente definidas e implementadas.
+- Skill: `dotnet-architecture` (Repository+EF, Clean Architecture), `dotnet-testing` (xUnit+Moq+FluentAssertions+Testcontainers) e `dotnet-code-quality` integralmente seguidas.
+
+Evidências da validação:
+- Build: PASS — 7 projetos, 0 erros.
+- Consumer tests: 7/7 (create, update, stale guard, equal guard, empty payload, invalid Id, exception/nack).
+- Repo unit tests: 4/4 (Add, Update, GetById found, GetById null).
+- Repo integration tests: 4/4 (Testcontainers PostgreSQL).
+- Full suite: 225/225 (167 unit + 58 integration).
+
+---
+
+## 2026-06-16 | PRD: prd-lookup-usuario-musica-captacao | Task: 4.0
+
+Modelo utilizado: (Preenchido pelo Orquestrador)
+
+### Problemas Identificados
+
+Zero Defects Identified
+
+### Resumo da Tarefa
+
+Total de Problemas: 0
+Categoria Técnica mais frequente: N/A
+Origem mais frequente: N/A
+Indício de fragilidade estrutural? Não — implementação replica o padrão CQRS nativo existente (record query `: IQuery<T>`, handler `: IQueryHandler<T,Q>`, Minimal API endpoint com `RequireIdentificacaoPermission`). Repositório com `AsNoTracking()`, filtro ATIVO obrigatório, paginação padronizada e validação de mínimo 2 caracteres no handler. Todas as camadas (query, handler, DTOs, endpoint, permissão, repositório, testes unitários e de integração, atualização de test de auth) alinhadas ao task file (4.0), PRD (RF-03) e TechSpec (§Endpoints de API).
+
+Sugestão de melhoria no:
+- PRD: Nenhuma — RF-03 coberto com busca local, status ATIVO, min 2 chars, paginação, CNPJ opcional.
+- TechSpec: Nenhuma — endpoint, caminho, query params, permissão e paginação seguem especificação.
+- Template de Task: Nenhuma — subtarefas 4.1 a 4.7 claramente definidas e implementadas.
+- Skill: `dotnet-architecture` (CQRS nativo, Minimal API, Repository), `dotnet-testing` (xUnit+Moq+FluentAssertions+Testcontainers) e `dotnet-code-quality` integralmente seguidas.
+
+Evidências da validação:
+- Build: PASS — 7 projetos, 0 erros.
+- Handler unit tests: 5/5 (min 2 chars, null Q, busca ativos paginada, busca por CNPJ, sem resultados).
+- Full unit suite: 172/172.
+- Auth tests updated: endpoint included in 401 check + new 200 test.
+
+---
+
+## 2026-06-16 | PRD: prd-lookup-usuario-musica-captacao | Task: 5.0
+
+Modelo utilizado:
+(Preenchido pelo Orquestrador)
+
+### Problemas Identificados
+
+1. Categoria Técnica: Falha de validação
+   Severidade: Alta
+   Fase Detectada: Teste (Integração)
+   Origem Provável: Contexto Insuficiente (fixture de teste esquecida no escopo de mudança)
+   Necessitou Reimplementação Significativa? Não
+   Descrição: CaptacaoFiltro fixture não atualizada com `UsuarioMusicaId`, quebrando 4 ITs com RuntimeBinderException. Propriedade `public Guid? UsuarioMusicaId { get; set; }` ausente em `Fixtures/CaptacaoFiltro.cs`.
+
+2. Categoria Técnica: Edge case ignorado
+   Severidade: Baixa
+   Fase Detectada: Revisão
+   Origem Provável: Contexto Insuficiente
+   Necessitou Reimplementação Significativa? Não
+   Descrição: `AuthEndpointsTests.cs:113` ainda usa `usuarioDeMusica = "Rádio Teste"` no payload de teste (campo obsoleto). Teste passa apenas porque auth rejeita antes da validação.
+
+3. Categoria Técnica: Teste inadequado (pré-existente)
+   Severidade: Média
+   Fase Detectada: Teste (Integração)
+   Origem Provável: Task mal fragmentada (Task 3.0)
+   Necessitou Reimplementação Significativa? Não (escopo Task 3.0)
+   Descrição: `UsuarioMusicaEndpointsIntegrationTests` com contaminação de dados entre testes — sem cleanup no DisposeAsync, registros acumulam e quebram asserts de contagem.
+
+### Resumo da Tarefa
+
+Total de Problemas: 3 (1 crítico task 5.0, 1 menor, 1 pré-existente)
+Categoria Técnica mais frequente: Falha de validação
+Origem mais frequente: Contexto Insuficiente
+Indício de fragilidade estrutural? Não
+Sugestão de melhoria no:
+- PRD: Nenhuma — RF-04 e RF-06 cobertos.
+- TechSpec: Nenhuma — modelo de dados da Captação, análise de impacto e inventário seguem especificação.
+- Template de Task: Incluir checklist explícito de "Fixtures de IT a atualizar" como subtarefa dedicada. A subtarefa 5.12 menciona "IT fixtures" mas não lista `CaptacaoFiltro.cs` nominalmente, o que levou ao esquecimento.
+- Skill: `dotnet-architecture` e `dotnet-testing` seguidas. `dotnet-code-quality` — sem violações.
+
+Evidências da validação:
+- Build: PASS — 7 projetos, 0 erros.
+- Unit tests: 172/172.
+- Integration tests: 4 falhas (CaptacaoFiltro sem UsuarioMusicaId) + 3 falhas pré-existentes (UsuarioMusicaEndpoints contaminação).
+- Grep source code (layers 1-3): 0 stale references.
+- CancelarRolCommandHandler.cs:74: correto.
+- Migrations: corretas.
+- FluentValidation: NotEmpty + MaxLength(200) aplicados.
+
+---
+
+## 2026-06-16 | PRD: prd-lookup-usuario-musica-captacao | Task: 6.0
+
+Modelo utilizado: (Preenchido pelo Orquestrador)
+
+### Problemas Identificados
+
+Zero Defects Identified
+Iterações até estabilização: 1
+
+### Resumo da Tarefa
+
+Total de Problemas: 0
+Categoria Técnica mais frequente: N/A
+Origem mais frequente: N/A
+Indício de fragilidade estrutural? Não — campos aditivos no final do record (backward compatible), MontarPayload popula a partir da captação (tarefa 5.0), teste verifica ambos os campos não-vazios, api-contract.md atualizado com exemplos JSON. Mudança isolada em 2-Application (payload + handler) e 5-Tests.
+Sugestão de melhoria no:
+- PRD: Nenhuma — RF-07 coberto com clareza.
+- TechSpec: Nenhuma — §Análise de Impacto e §Inventário seguidos fielmente.
+- Template de Task: Nenhuma — subtarefas 6.1 a 6.4 bem definidas e verificáveis.
+- Skill: `dotnet-testing` (teste unitário com Moq `It.Is<>` type-cast, padrão AAA) seguida.
+
+Evidências da validação:
+- Build: PASS — `dotnet build`, 7 projetos, 0 erros.
+- Tests: PASS — `dotnet test --filter "FullyQualifiedName~FecharRol"`, 10/10 (0 regressões).
+- `RolFechadoPayload.cs`: `Guid UsuarioMusicaId, string UsuarioMusicaNome` adicionados ao final do record (linhas 10-11).
+- `FecharRolCommandHandler.MontarPayload`: popula `captacao.UsuarioMusicaId, captacao.UsuarioMusicaNome` (linhas 88-89).
+- Teste `Handle_PayloadContemUsuarioMusicaIdENome`: verifica ambos os campos no payload via outbox.
+- `api-contract.md` (prd-fechamento-rol): ambos exemplos JSON atualizados com `usuarioMusicaId` + `usuarioMusicaNome`.
+
+---
+
+## 2026-06-16 | PRD: prd-lookup-usuario-musica-captacao | Task: 7.0
+
+Modelo utilizado: (Preenchido pelo Orquestrador)
+
+### Problemas Identificados
+
+Zero Defects Identified
+Iterações até estabilização: 1
+
+### Resumo da Tarefa
+
+Total de Problemas: 0
+Categoria Técnica mais frequente: N/A
+Origem mais frequente: N/A
+Indício de fragilidade estrutural? Não — implementação replica o padrão do LicencaForm (Autocomplete + debounce + TanStack Query), divergindo corretamente para `apiGetIden` (Identificação) conforme exigido pelo PRD (RF-05, RF-06) e TechSpec (§Frontend). Todos os 6 review points atendidos; 10 subtarefas verificadas; 180 testes passando; 0 `any` types em código novo.
+Sugestão de melhoria no:
+- PRD: Nenhuma — RF-05 e RF-06 claros e verificáveis.
+- TechSpec: Nenhuma — §Inventário (Frontend) integralmente seguido.
+- Template de Task: Nenhuma — 10 subtarefas bem definidas com molde exato de código (debounce, min 2 chars, empty state message) e referências precisas aos arquivos existentes.
+- Skill: Nenhuma — `react-architecture` (feature-based, aliases, kebab-case/PascalCase), `react-code-quality` (sem any, typed props, English, components <300 lines), `react-testing` (Vitest + RTL + MSW, AAA, semantic queries) integralmente seguidas.
+
+Evidências da validação:
+- Build: PASS — `tsc -b && vite build`, 0 erros, 2334 módulos transformados.
+- Tests: PASS — `vitest run`, 180/180 (44 test files), 0 regressões.
+- Lint: N/A — sem script `lint` no `package.json` (decisão de projeto; sem ESLint configurado).
+- Uses `apiGetIden`: VERIFIED — `usuariosMusicaApi.ts:1` e `captacoesApi.ts:1` importam de `@services/apiIdentificacaoClient`.
+- Validation: VERIFIED — submit bloqueado sem `usuarioMusicaId` (CaptacaoForm.tsx:53).
+- Empty state: VERIFIED — mensagem correta em CaptacaoForm e CaptacaoFilters.
+- Edit pre-populate: VERIFIED — `usuarioDisplay` inicializado de `initialData?.usuarioMusicaNome`.
+- No `any` types in new code: VERIFIED — zero `any` nos 8 novos arquivos.
+- Files: 8 new + 9 modified; padrão LicencaForm seguido com divergência correta (apiGetIden vs apiGetArr).
+
+---
+
+## 2026-06-16 | PRD: prd-lookup-usuario-musica-captacao | Task: 8.0
+
+Modelo utilizado:
+(Preenchido pelo Orquestrador)
+
+### Problemas Identificados
+
+Zero Defects Identified
+Iterações até estabilização: 1
+
+### Resumo da Tarefa
+
+Total de Problemas: 0
+Categoria Técnica mais frequente: N/A
+Origem mais frequente: N/A
+Indício de fragilidade estrutural? Não
+Sugestão de melhoria no:
+- PRD: N/A
+- TechSpec: N/A
+- Template de Task: N/A
+- Skill: N/A
+
+Task de documentação. 3 arquivos alterados (+5/-1 linhas):
+- `domains/arrecadacao/domain.md` §7: +2 eventos (`usuario-musica.criado/atualizado`)
+- `domains/identificacao/domain.md` §3 + §5: entidade Captação atualizada + dependência Arrecadação
+- `vision.md`: +1 entrada v1.11 no changelog
+
+Todas as alterações seguem exatamente o especificado na task. Sem código modificado.

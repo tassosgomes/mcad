@@ -72,7 +72,7 @@ public class OutboxEventWriterTests
             var writer = new OutboxEventWriter(ctx);
 
             // Captação com RubricaId inválida (FK violada) — não há rubrica com esse Id
-            var captacaoInvalida = Captacao.Criar(Guid.NewGuid(), new DateOnly(2026, 1, 1), "U", Guid.NewGuid(), "A");
+            var captacaoInvalida = Captacao.Criar(Guid.NewGuid(), new DateOnly(2026, 1, 1), Guid.NewGuid(), "U", Guid.NewGuid(), "A");
             ctx.Captacoes.Add(captacaoInvalida);
             writer.AddEvent("evento.deveriaCair", captacaoInvalida.Id.ToString(), new { x = 1 });
 

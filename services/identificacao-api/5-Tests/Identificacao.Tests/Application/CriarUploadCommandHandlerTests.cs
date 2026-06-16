@@ -37,7 +37,7 @@ public class CriarUploadCommandHandlerTests
     public async Task Handle_CsvValido_CriaUploadProcessando()
     {
         var handler = CreateHandler();
-        var captacao = Captacao.Criar(Guid.NewGuid(), DateOnly.FromDateTime(DateTime.Today), "Teste", Guid.NewGuid(), "Nome");
+        var captacao = Captacao.Criar(Guid.NewGuid(), DateOnly.FromDateTime(DateTime.Today), Guid.NewGuid(), "Teste", Guid.NewGuid(), "Nome");
         
         _captacaoRepoMock.Setup(r => r.GetByIdAsync(captacao.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(captacao);
@@ -69,7 +69,7 @@ public class CriarUploadCommandHandlerTests
     public async Task Handle_ArquivoVazio_LancaValidation()
     {
         var handler = CreateHandler();
-        var captacao = Captacao.Criar(Guid.NewGuid(), DateOnly.FromDateTime(DateTime.Today), "Teste", Guid.NewGuid(), "Nome");
+        var captacao = Captacao.Criar(Guid.NewGuid(), DateOnly.FromDateTime(DateTime.Today), Guid.NewGuid(), "Teste", Guid.NewGuid(), "Nome");
         
         _captacaoRepoMock.Setup(r => r.GetByIdAsync(captacao.Id, It.IsAny<CancellationToken>())).ReturnsAsync(captacao);
 
@@ -83,7 +83,7 @@ public class CriarUploadCommandHandlerTests
     public async Task Handle_CaptacaoFechada_LancaDomainException()
     {
         var handler = CreateHandler();
-        var captacao = Captacao.Criar(Guid.NewGuid(), DateOnly.FromDateTime(DateTime.Today), "Teste", Guid.NewGuid(), "Nome");
+        var captacao = Captacao.Criar(Guid.NewGuid(), DateOnly.FromDateTime(DateTime.Today), Guid.NewGuid(), "Teste", Guid.NewGuid(), "Nome");
         typeof(Captacao).GetProperty("Status")?.SetValue(captacao, StatusCaptacao.Fechada);
 
         _captacaoRepoMock.Setup(r => r.GetByIdAsync(captacao.Id, It.IsAny<CancellationToken>())).ReturnsAsync(captacao);
@@ -98,7 +98,7 @@ public class CriarUploadCommandHandlerTests
     public async Task Handle_OutroAnalista_LancaForbidden()
     {
         var handler = CreateHandler();
-        var captacao = Captacao.Criar(Guid.NewGuid(), DateOnly.FromDateTime(DateTime.Today), "Teste", Guid.NewGuid(), "Nome");
+        var captacao = Captacao.Criar(Guid.NewGuid(), DateOnly.FromDateTime(DateTime.Today), Guid.NewGuid(), "Teste", Guid.NewGuid(), "Nome");
 
         _captacaoRepoMock.Setup(r => r.GetByIdAsync(captacao.Id, It.IsAny<CancellationToken>())).ReturnsAsync(captacao);
 
@@ -125,7 +125,7 @@ public class CriarUploadCommandHandlerTests
     public async Task Handle_StorageFalha_NaoPersisteUpload()
     {
         var handler = CreateHandler();
-        var captacao = Captacao.Criar(Guid.NewGuid(), DateOnly.FromDateTime(DateTime.Today), "Teste", Guid.NewGuid(), "Nome");
+        var captacao = Captacao.Criar(Guid.NewGuid(), DateOnly.FromDateTime(DateTime.Today), Guid.NewGuid(), "Teste", Guid.NewGuid(), "Nome");
         _captacaoRepoMock.Setup(r => r.GetByIdAsync(captacao.Id, It.IsAny<CancellationToken>())).ReturnsAsync(captacao);
         _storageServiceMock.Setup(s => s.UploadAsync(It.IsAny<Stream>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ThrowsAsync(new InvalidOperationException("Storage indisponivel"));
@@ -143,7 +143,7 @@ public class CriarUploadCommandHandlerTests
     public async Task Handle_Upload_CriaUploadComStorageFileId()
     {
         var handler = CreateHandler();
-        var captacao = Captacao.Criar(Guid.NewGuid(), DateOnly.FromDateTime(DateTime.Today), "Teste", Guid.NewGuid(), "Nome");
+        var captacao = Captacao.Criar(Guid.NewGuid(), DateOnly.FromDateTime(DateTime.Today), Guid.NewGuid(), "Teste", Guid.NewGuid(), "Nome");
         _captacaoRepoMock.Setup(r => r.GetByIdAsync(captacao.Id, It.IsAny<CancellationToken>())).ReturnsAsync(captacao);
 
         var storageFileId = "01KV3XT3BMMBGQ0KP057ZXTMKX";

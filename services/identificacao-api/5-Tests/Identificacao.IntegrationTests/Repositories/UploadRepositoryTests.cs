@@ -20,7 +20,7 @@ public class UploadRepositoryTests
         Rubrica.Criar(Guid.NewGuid(), "RADIO", "Rubrica Teste", false);
 
     private static Captacao CriarCaptacao(Guid rubricaId) =>
-        Captacao.Criar(rubricaId, new DateOnly(2026, 1, 1), "User", Guid.NewGuid(), "Analista");
+        Captacao.Criar(rubricaId, new DateOnly(2026, 1, 1), Guid.NewGuid(), "User", Guid.NewGuid(), "Analista");
 
     [Fact]
     public async Task GetByIdAsync_QuandoExiste_RetornaUpload()
@@ -149,7 +149,7 @@ public class ErroUploadRepositoryTests
     {
         await _fixture.ResetAsync();
         var rubrica = Rubrica.Criar(Guid.NewGuid(), "R", "Rubrica", false);
-        var captacao = Captacao.Criar(rubrica.Id, new DateOnly(2026, 1, 1), "U", Guid.NewGuid(), "A");
+        var captacao = Captacao.Criar(rubrica.Id, new DateOnly(2026, 1, 1), Guid.NewGuid(), "U", Guid.NewGuid(), "A");
         var upload = Upload.Criar(captacao.Id, "arq.csv", "k", captacao.AnalistaResponsavelId);
 
         var erros = new[]
@@ -182,7 +182,7 @@ public class ErroUploadRepositoryTests
     {
         await _fixture.ResetAsync();
         var rubrica = Rubrica.Criar(Guid.NewGuid(), "R", "Rubrica", false);
-        var captacao = Captacao.Criar(rubrica.Id, new DateOnly(2026, 1, 1), "U", Guid.NewGuid(), "A");
+        var captacao = Captacao.Criar(rubrica.Id, new DateOnly(2026, 1, 1), Guid.NewGuid(), "U", Guid.NewGuid(), "A");
         var uploadA = Upload.Criar(captacao.Id, "A.csv", "kA", captacao.AnalistaResponsavelId);
         var uploadB = Upload.Criar(captacao.Id, "B.csv", "kB", captacao.AnalistaResponsavelId);
 

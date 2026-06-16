@@ -26,7 +26,7 @@ public class ResolverPendenteCommandHandlerTests
     private Captacao CriarCaptacao(StatusCaptacao status)
     {
         var rubrica = Rubrica.Criar(Guid.NewGuid(), "TST", "Teste", false);
-        var captacao = Captacao.Criar(rubrica.Id, new DateOnly(2026, 1, 1), "Emissora XYZ", Guid.NewGuid(), "João");
+        var captacao = Captacao.Criar(rubrica.Id, new DateOnly(2026, 1, 1), Guid.NewGuid(), "Emissora XYZ", Guid.NewGuid(), "João");
         typeof(Captacao).GetProperty("Status")!.SetValue(captacao, status);
         typeof(Captacao).GetProperty("Rubrica")!.SetValue(captacao, rubrica);
         return captacao;

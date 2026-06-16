@@ -30,7 +30,7 @@ public class AtualizarExecucaoCommandHandlerTests
     private static Captacao CriarCaptacaoAberta(Guid analistaId, bool exigeClassificacao = false)
     {
         var rubrica = Rubrica.Criar(Guid.NewGuid(), exigeClassificacao ? "TV" : "TST", "Teste", exigeClassificacao);
-        var captacao = Captacao.Criar(rubrica.Id, new DateOnly(2026, 1, 1), "Emissora XYZ", analistaId, "João");
+        var captacao = Captacao.Criar(rubrica.Id, new DateOnly(2026, 1, 1), Guid.NewGuid(), "Emissora XYZ", analistaId, "João");
         typeof(Captacao).GetProperty("Rubrica")!.SetValue(captacao, rubrica);
         return captacao;
     }

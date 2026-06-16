@@ -102,7 +102,8 @@ VALUES ({LogtoUserId1}, 'ana.silva', 'Ana Silva', 'ana@mcad.local', jsonb_build_
         {
             rubricaId = rubricaId,
             periodo = DateOnly.FromDateTime(DateTime.UtcNow),
-            usuarioDeMusica = "Rádio Teste E2E"
+            usuarioMusicaId = Guid.NewGuid(),
+            usuarioMusicaNome = "Rádio Teste E2E"
         };
 
         var createResponse = await client.PostAsJsonAsync("/api/v1/captacoes", payload);
@@ -147,10 +148,10 @@ VALUES ({LogtoUserId1}, 'ana.silva', 'Ana Silva', 'ana@mcad.local', jsonb_build_
 
         await using (var ctx = CreateDbContext())
         {
-            var c1 = Captacao.Criar(rubricaId, periodoBase, "Música A", AnalistaId1, "Desconhecido");
-            var c2 = Captacao.Criar(rubricaId, periodoBase.AddDays(-1), "Música B",
+            var c1 = Captacao.Criar(rubricaId, periodoBase, Guid.NewGuid(), "Música A", AnalistaId1, "Desconhecido");
+            var c2 = Captacao.Criar(rubricaId, periodoBase.AddDays(-1), Guid.NewGuid(), "Música B",
                 AnalistaIdentificador.FromSubject(LogtoUserId3), "Desconhecido");
-            var c3 = Captacao.Criar(rubricaId, periodoBase.AddDays(-2), "Música C", idNaoExistente, "Desconhecido");
+            var c3 = Captacao.Criar(rubricaId, periodoBase.AddDays(-2), Guid.NewGuid(), "Música C", idNaoExistente, "Desconhecido");
 
             ctx.Captacoes.AddRange(c1, c2, c3);
             await ctx.SaveChangesAsync();
@@ -218,7 +219,8 @@ VALUES ({LogtoUserId1}, 'ana.silva', 'Ana Silva', 'ana@mcad.local', jsonb_build_
         {
             rubricaId = rubricaId,
             periodo = DateOnly.FromDateTime(DateTime.UtcNow),
-            usuarioDeMusica = "Rádio Claim Fallback"
+            usuarioMusicaId = Guid.NewGuid(),
+            usuarioMusicaNome = "Rádio Claim Fallback"
         };
 
         var response = await client.PostAsJsonAsync("/api/v1/captacoes", payload);
@@ -243,7 +245,8 @@ VALUES ({LogtoUserId1}, 'ana.silva', 'Ana Silva', 'ana@mcad.local', jsonb_build_
         {
             rubricaId = rubricaId,
             periodo = DateOnly.FromDateTime(DateTime.UtcNow),
-            usuarioDeMusica = "Rádio Desconhecido"
+            usuarioMusicaId = Guid.NewGuid(),
+            usuarioMusicaNome = "Rádio Desconhecido"
         };
 
         var response = await client.PostAsJsonAsync("/api/v1/captacoes", payload);

@@ -20,7 +20,7 @@ public class ExecucaoRepositoryTests
         Rubrica.Criar(Guid.NewGuid(), "RADIO", "Rubrica Teste", false);
 
     private static Captacao CriarCaptacao(Guid rubricaId) =>
-        Captacao.Criar(rubricaId, new DateOnly(2026, 1, 1), "User", Guid.NewGuid(), "Analista");
+        Captacao.Criar(rubricaId, new DateOnly(2026, 1, 1), Guid.NewGuid(), "User", Guid.NewGuid(), "Analista");
 
     private static Execucao CriarExecucao(
         Guid captacaoId,
@@ -43,7 +43,7 @@ public class ExecucaoRepositoryTests
         await _fixture.ResetAsync();
         var rubrica = CriarRubrica();
         var c1 = CriarCaptacao(rubrica.Id);
-        var c2 = Captacao.Criar(rubrica.Id, new DateOnly(2026, 2, 1), "U2", Guid.NewGuid(), "A2");
+        var c2 = Captacao.Criar(rubrica.Id, new DateOnly(2026, 2, 1), Guid.NewGuid(), "U2", Guid.NewGuid(), "A2");
 
         var e1 = CriarExecucao(c1.Id, StatusExecucao.Pendente, isrc: "BRUM99", titulo: "Obra 1");
         var e2 = CriarExecucao(c2.Id, StatusExecucao.Pendente, isrc: "BRUM99", titulo: "Obra 1 dif");

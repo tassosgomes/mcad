@@ -42,9 +42,9 @@ public class ReprocessarResponsaveisDesconhecidosCommandHandlerTests
     {
         var analistaId = AnalistaIdentificador.FromSubject("user-1");
         var captacao1 = Captacao.Criar(Guid.NewGuid(), DateOnly.FromDateTime(DateTime.UtcNow),
-            "Usuário", analistaId, "Desconhecido");
+            Guid.NewGuid(), "Usuário", analistaId, "Desconhecido");
         var captacao2 = Captacao.Criar(Guid.NewGuid(), DateOnly.FromDateTime(DateTime.UtcNow),
-            "Usuário", Guid.NewGuid(), "Desconhecido");
+            Guid.NewGuid(), "Usuário", Guid.NewGuid(), "Desconhecido");
 
         var captacoes = new List<Captacao> { captacao1, captacao2 };
         var usuarios = new List<UsuarioIdentidade> { CriarUsuario("user-1", "João Silva") };
@@ -74,7 +74,7 @@ public class ReprocessarResponsaveisDesconhecidosCommandHandlerTests
         var captacoes = new List<Captacao>
         {
             Captacao.Criar(Guid.NewGuid(), DateOnly.FromDateTime(DateTime.UtcNow),
-                "Usuário", Guid.NewGuid(), "Desconhecido")
+                Guid.NewGuid(), "Usuário", Guid.NewGuid(), "Desconhecido")
         };
         var usuarios = new List<UsuarioIdentidade> { CriarUsuario("user-x", "Maria") };
 
@@ -98,7 +98,7 @@ public class ReprocessarResponsaveisDesconhecidosCommandHandlerTests
     {
         var analistaId = AnalistaIdentificador.FromSubject("user-1");
         var captacao = Captacao.Criar(Guid.NewGuid(), DateOnly.FromDateTime(DateTime.UtcNow),
-            "Usuário", analistaId, "Desconhecido");
+            Guid.NewGuid(), "Usuário", analistaId, "Desconhecido");
         var usuarios = new List<UsuarioIdentidade> { CriarUsuario("user-1", "João Silva") };
 
         _captacaoRepoMock
@@ -128,7 +128,7 @@ public class ReprocessarResponsaveisDesconhecidosCommandHandlerTests
     {
         var analistaId = AnalistaIdentificador.FromSubject("suspended-user");
         var captacao = Captacao.Criar(Guid.NewGuid(), DateOnly.FromDateTime(DateTime.UtcNow),
-            "Usuário", analistaId, "Desconhecido");
+            Guid.NewGuid(), "Usuário", analistaId, "Desconhecido");
         var usuarios = new List<UsuarioIdentidade>
         {
             new UsuarioIdentidade
