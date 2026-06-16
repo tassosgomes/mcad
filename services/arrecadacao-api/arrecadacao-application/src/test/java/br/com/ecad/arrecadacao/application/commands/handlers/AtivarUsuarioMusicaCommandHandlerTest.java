@@ -8,6 +8,7 @@ import br.com.ecad.arrecadacao.application.commands.AtivarUsuarioMusicaCommand;
 import br.com.ecad.arrecadacao.domain.entities.HistoricoStatusUsuario;
 import br.com.ecad.arrecadacao.domain.entities.UsuarioMusica;
 import br.com.ecad.arrecadacao.domain.interfaces.HistoricoStatusUsuarioRepository;
+import br.com.ecad.arrecadacao.domain.interfaces.OutboxEventWriter;
 import br.com.ecad.arrecadacao.domain.interfaces.UsuarioMusicaRepository;
 import br.com.ecad.arrecadacao.domain.valueobjects.Cnpj;
 import br.com.ecad.arrecadacao.domain.valueobjects.Contato;
@@ -25,6 +26,9 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyMap;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -48,6 +52,9 @@ class AtivarUsuarioMusicaCommandHandlerTest {
     @Mock
     private AuditContextProvider auditContextProvider;
 
+    @Mock
+    private OutboxEventWriter outboxEventWriter;
+
     @InjectMocks
     private AtivarUsuarioMusicaCommandHandler handler;
 
@@ -62,6 +69,7 @@ class AtivarUsuarioMusicaCommandHandlerTest {
                 "maria@mcad.dev");
         UsuarioMusica entity = usuarioInativo();
         when(repository.findById(id)).thenReturn(Optional.of(entity));
+        when(repository.save(any(UsuarioMusica.class))).thenAnswer(i -> i.getArguments()[0]);
         when(auditContextProvider.current(actor.label())).thenReturn(AuditContext.system(actor.label()));
 
         var command = new AtivarUsuarioMusicaCommand(id, "justificativa-valida", actor);
@@ -75,6 +83,7 @@ class AtivarUsuarioMusicaCommandHandlerTest {
         assertThat(historico.getAutorRotulo()).isEqualTo(actor.label());
         assertThat(historico.getAutor()).isEqualTo(actor.label());
         verify(auditClient, times(2)).publish(any());
+        verify(outboxEventWriter).addEvent(eq("arrecadacao.usuario-musica.atualizado"), anyString(), anyMap());
     }
 
     @Test
@@ -88,6 +97,7 @@ class AtivarUsuarioMusicaCommandHandlerTest {
         assertThatThrownBy(() -> handler.handle(command))
                 .isInstanceOf(IllegalStateException.class);
         verify(auditClient, never()).publish(any());
+        verify(outboxEventWriter, never()).addEvent(anyString(), anyString(), anyMap());
     }
 
     private UsuarioMusica usuarioInativo() {

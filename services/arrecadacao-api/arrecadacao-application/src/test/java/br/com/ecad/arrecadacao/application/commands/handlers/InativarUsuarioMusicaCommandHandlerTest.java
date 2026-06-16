@@ -8,6 +8,7 @@ import br.com.ecad.arrecadacao.application.commands.InativarUsuarioMusicaCommand
 import br.com.ecad.arrecadacao.domain.entities.HistoricoStatusUsuario;
 import br.com.ecad.arrecadacao.domain.entities.UsuarioMusica;
 import br.com.ecad.arrecadacao.domain.interfaces.HistoricoStatusUsuarioRepository;
+import br.com.ecad.arrecadacao.domain.interfaces.OutboxEventWriter;
 import br.com.ecad.arrecadacao.domain.interfaces.UsuarioMusicaRepository;
 import br.com.ecad.arrecadacao.domain.valueobjects.Cnpj;
 import br.com.ecad.arrecadacao.domain.valueobjects.Contato;
@@ -26,6 +27,9 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyMap;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -35,6 +39,7 @@ class InativarUsuarioMusicaCommandHandlerTest {
     @Mock private AuditClient auditClient;
     @Mock private UsuarioMusicaAuditEventFactory auditEventFactory;
     @Mock private AuditContextProvider auditContextProvider;
+    @Mock private OutboxEventWriter outboxEventWriter;
     @InjectMocks private InativarUsuarioMusicaCommandHandler handler;
 
     @Test
@@ -48,6 +53,7 @@ class InativarUsuarioMusicaCommandHandlerTest {
                 "maria@mcad.dev");
         UsuarioMusica entity = UsuarioMusica.criar("Old", "Old", Cnpj.criar("33683111000107"), Endereco.criar("123", "Rua", "1", "", "Bairro", "Cidade", "UF"), Contato.criar("Resp", "123", "a@a.com"));
         when(repository.findById(id)).thenReturn(Optional.of(entity));
+        when(repository.save(any(UsuarioMusica.class))).thenAnswer(i -> i.getArguments()[0]);
         when(auditContextProvider.current(actor.label())).thenReturn(AuditContext.system(actor.label()));
 
         InativarUsuarioMusicaCommand cmd = new InativarUsuarioMusicaCommand(id, "justificativa-valida", actor);
@@ -61,6 +67,7 @@ class InativarUsuarioMusicaCommandHandlerTest {
         assertThat(historico.getAutorRotulo()).isEqualTo(actor.label());
         assertThat(historico.getAutor()).isEqualTo(actor.label());
         verify(auditClient, times(2)).publish(any());
+        verify(outboxEventWriter).addEvent(eq("arrecadacao.usuario-musica.atualizado"), anyString(), anyMap());
     }
 
     @Test
@@ -74,5 +81,6 @@ class InativarUsuarioMusicaCommandHandlerTest {
         assertThatThrownBy(() -> handler.handle(cmd))
                 .isInstanceOf(IllegalStateException.class);
         verify(auditClient, never()).publish(any());
+        verify(outboxEventWriter, never()).addEvent(anyString(), anyString(), anyMap());
     }
 }

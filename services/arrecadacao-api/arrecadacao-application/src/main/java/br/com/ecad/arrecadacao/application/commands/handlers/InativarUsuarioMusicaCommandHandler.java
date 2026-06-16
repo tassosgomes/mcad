@@ -7,6 +7,8 @@ import br.com.ecad.arrecadacao.application.audit.UsuarioMusicaAuditEventFactory.
 import br.com.ecad.arrecadacao.application.actor.ActorSnapshots;
 import br.com.ecad.arrecadacao.application.commands.InativarUsuarioMusicaCommand;
 import br.com.ecad.arrecadacao.application.cqrs.CommandHandler;
+import br.com.ecad.arrecadacao.application.events.UsuarioMusicaIntegrationEventMapper;
+import br.com.ecad.arrecadacao.domain.interfaces.OutboxEventWriter;
 import br.com.ecad.arrecadacao.domain.entities.HistoricoStatusUsuario;
 import br.com.ecad.arrecadacao.domain.entities.UsuarioMusica;
 import br.com.ecad.arrecadacao.domain.exceptions.EntidadeNaoEncontradaException;
@@ -26,17 +28,20 @@ public class InativarUsuarioMusicaCommandHandler implements CommandHandler<Inati
     private final AuditClient auditClient;
     private final UsuarioMusicaAuditEventFactory auditEventFactory;
     private final AuditContextProvider auditContextProvider;
+    private final OutboxEventWriter outboxEventWriter;
 
     public InativarUsuarioMusicaCommandHandler(UsuarioMusicaRepository repository,
                                                HistoricoStatusUsuarioRepository historicoRepository,
                                                AuditClient auditClient,
                                                UsuarioMusicaAuditEventFactory auditEventFactory,
-                                               AuditContextProvider auditContextProvider) {
+                                               AuditContextProvider auditContextProvider,
+                                               OutboxEventWriter outboxEventWriter) {
         this.repository = repository;
         this.historicoRepository = historicoRepository;
         this.auditClient = auditClient;
         this.auditEventFactory = auditEventFactory;
         this.auditContextProvider = auditContextProvider;
+        this.outboxEventWriter = outboxEventWriter;
     }
 
     @Override
@@ -48,8 +53,10 @@ public class InativarUsuarioMusicaCommandHandler implements CommandHandler<Inati
 
         HistoricoStatusUsuario historico = entity.inativar(
                 cmd.justificativa(), ActorSnapshots.subjectOf(cmd.actor()), cmd.autor());
-        repository.save(entity);
+        UsuarioMusica saved = repository.save(entity);
         historicoRepository.save(historico);
+
+        publicarEvento(saved);
 
         var auditContext = auditContextProvider.current(cmd.autor());
         auditClient.publish(auditEventFactory.userAction(entity, auditContext, UsuarioMusicaAuditOperation.INACTIVATE));
@@ -57,5 +64,14 @@ public class InativarUsuarioMusicaCommandHandler implements CommandHandler<Inati
                 new UsuarioMusicaAuditChange(entity, UsuarioMusicaAuditOperation.INACTIVATE, before), auditContext));
 
         return null;
+    }
+
+    private void publicarEvento(UsuarioMusica usuarioMusica) {
+        var payload = UsuarioMusicaIntegrationEventMapper.toPayload(usuarioMusica);
+        outboxEventWriter.addEvent(
+            "arrecadacao.usuario-musica.atualizado",
+            usuarioMusica.getId().toString(),
+            payload
+        );
     }
 }

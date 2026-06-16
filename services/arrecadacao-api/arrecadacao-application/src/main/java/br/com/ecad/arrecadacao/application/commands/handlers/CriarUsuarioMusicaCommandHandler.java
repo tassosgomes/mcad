@@ -7,6 +7,8 @@ import br.com.ecad.arrecadacao.application.audit.UsuarioMusicaAuditEventFactory.
 import br.com.ecad.arrecadacao.application.actor.ActorSnapshots;
 import br.com.ecad.arrecadacao.application.commands.CriarUsuarioMusicaCommand;
 import br.com.ecad.arrecadacao.application.cqrs.CommandHandler;
+import br.com.ecad.arrecadacao.application.events.UsuarioMusicaIntegrationEventMapper;
+import br.com.ecad.arrecadacao.domain.interfaces.OutboxEventWriter;
 import br.com.ecad.arrecadacao.application.dto.ContatoResponse;
 import br.com.ecad.arrecadacao.application.dto.EnderecoResponse;
 import br.com.ecad.arrecadacao.application.dto.UsuarioMusicaResponse;
@@ -31,17 +33,20 @@ public class CriarUsuarioMusicaCommandHandler implements CommandHandler<CriarUsu
     private final AuditClient auditClient;
     private final UsuarioMusicaAuditEventFactory auditEventFactory;
     private final AuditContextProvider auditContextProvider;
+    private final OutboxEventWriter outboxEventWriter;
 
     public CriarUsuarioMusicaCommandHandler(UsuarioMusicaRepository repository,
                                             HistoricoStatusUsuarioRepository historicoRepository,
                                             AuditClient auditClient,
                                             UsuarioMusicaAuditEventFactory auditEventFactory,
-                                            AuditContextProvider auditContextProvider) {
+                                            AuditContextProvider auditContextProvider,
+                                            OutboxEventWriter outboxEventWriter) {
         this.repository = repository;
         this.historicoRepository = historicoRepository;
         this.auditClient = auditClient;
         this.auditEventFactory = auditEventFactory;
         this.auditContextProvider = auditContextProvider;
+        this.outboxEventWriter = outboxEventWriter;
     }
 
     @Override
@@ -71,12 +76,23 @@ public class CriarUsuarioMusicaCommandHandler implements CommandHandler<CriarUsu
                 ActorSnapshots.subjectOf(cmd.actor()), cmd.autor());
         historicoRepository.save(historico);
 
+        publicarEvento(saved);
+
         var auditContext = auditContextProvider.current(cmd.autor());
         auditClient.publish(auditEventFactory.userAction(saved, auditContext, UsuarioMusicaAuditOperation.CREATE));
         auditClient.publish(auditEventFactory.dataChange(
                 new UsuarioMusicaAuditChange(saved, UsuarioMusicaAuditOperation.CREATE, null), auditContext));
 
         return mapToResponse(saved);
+    }
+
+    private void publicarEvento(UsuarioMusica usuarioMusica) {
+        var payload = UsuarioMusicaIntegrationEventMapper.toPayload(usuarioMusica);
+        outboxEventWriter.addEvent(
+            "arrecadacao.usuario-musica.criado",
+            usuarioMusica.getId().toString(),
+            payload
+        );
     }
 
     private UsuarioMusicaResponse mapToResponse(UsuarioMusica u) {

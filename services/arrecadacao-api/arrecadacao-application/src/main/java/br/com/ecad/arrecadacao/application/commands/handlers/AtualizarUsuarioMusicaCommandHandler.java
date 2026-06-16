@@ -6,6 +6,8 @@ import br.com.ecad.arrecadacao.application.audit.UsuarioMusicaAuditEventFactory;
 import br.com.ecad.arrecadacao.application.audit.UsuarioMusicaAuditEventFactory.UsuarioMusicaAuditOperation;
 import br.com.ecad.arrecadacao.application.commands.AtualizarUsuarioMusicaCommand;
 import br.com.ecad.arrecadacao.application.cqrs.CommandHandler;
+import br.com.ecad.arrecadacao.application.events.UsuarioMusicaIntegrationEventMapper;
+import br.com.ecad.arrecadacao.domain.interfaces.OutboxEventWriter;
 import br.com.ecad.arrecadacao.application.dto.ContatoResponse;
 import br.com.ecad.arrecadacao.application.dto.EnderecoResponse;
 import br.com.ecad.arrecadacao.application.dto.UsuarioMusicaResponse;
@@ -27,15 +29,18 @@ public class AtualizarUsuarioMusicaCommandHandler implements CommandHandler<Atua
     private final AuditClient auditClient;
     private final UsuarioMusicaAuditEventFactory auditEventFactory;
     private final AuditContextProvider auditContextProvider;
+    private final OutboxEventWriter outboxEventWriter;
 
     public AtualizarUsuarioMusicaCommandHandler(UsuarioMusicaRepository repository,
                                                 AuditClient auditClient,
                                                 UsuarioMusicaAuditEventFactory auditEventFactory,
-                                                AuditContextProvider auditContextProvider) {
+                                                AuditContextProvider auditContextProvider,
+                                                OutboxEventWriter outboxEventWriter) {
         this.repository = repository;
         this.auditClient = auditClient;
         this.auditEventFactory = auditEventFactory;
         this.auditContextProvider = auditContextProvider;
+        this.outboxEventWriter = outboxEventWriter;
     }
 
     @Override
@@ -59,12 +64,23 @@ public class AtualizarUsuarioMusicaCommandHandler implements CommandHandler<Atua
         entity.atualizar(cmd.razaoSocial(), cmd.nomeFantasia(), endereco, contato);
         UsuarioMusica saved = repository.save(entity);
 
+        publicarEvento(saved);
+
         var auditContext = auditContextProvider.current(cmd.autor());
         auditClient.publish(auditEventFactory.userAction(saved, auditContext, UsuarioMusicaAuditOperation.UPDATE));
         auditClient.publish(auditEventFactory.dataChange(
                 new UsuarioMusicaAuditChange(saved, UsuarioMusicaAuditOperation.UPDATE, before), auditContext));
 
         return mapToResponse(saved);
+    }
+
+    private void publicarEvento(UsuarioMusica usuarioMusica) {
+        var payload = UsuarioMusicaIntegrationEventMapper.toPayload(usuarioMusica);
+        outboxEventWriter.addEvent(
+            "arrecadacao.usuario-musica.atualizado",
+            usuarioMusica.getId().toString(),
+            payload
+        );
     }
 
     private UsuarioMusicaResponse mapToResponse(UsuarioMusica u) {

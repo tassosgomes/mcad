@@ -11,6 +11,7 @@ import br.com.ecad.arrecadacao.application.dto.UsuarioMusicaResponse;
 import br.com.ecad.arrecadacao.domain.entities.HistoricoStatusUsuario;
 import br.com.ecad.arrecadacao.domain.exceptions.CnpjDuplicadoException;
 import br.com.ecad.arrecadacao.domain.interfaces.HistoricoStatusUsuarioRepository;
+import br.com.ecad.arrecadacao.domain.interfaces.OutboxEventWriter;
 import br.com.ecad.arrecadacao.domain.interfaces.UsuarioMusicaRepository;
 import br.org.ecad.audit.sdk.AuditClient;
 import org.junit.jupiter.api.Test;
@@ -23,6 +24,9 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyMap;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -42,6 +46,9 @@ class CriarUsuarioMusicaCommandHandlerTest {
 
     @Mock
     private AuditContextProvider auditContextProvider;
+
+    @Mock
+    private OutboxEventWriter outboxEventWriter;
 
     @InjectMocks
     private CriarUsuarioMusicaCommandHandler handler;
@@ -73,6 +80,7 @@ class CriarUsuarioMusicaCommandHandlerTest {
         assertThat(historico.getAutorRotulo()).isEqualTo(actor.label());
         assertThat(historico.getAutor()).isEqualTo(actor.label());
         verify(auditClient, times(2)).publish(any());
+        verify(outboxEventWriter).addEvent(eq("arrecadacao.usuario-musica.criado"), anyString(), anyMap());
     }
 
     @Test
@@ -85,5 +93,6 @@ class CriarUsuarioMusicaCommandHandlerTest {
         assertThatThrownBy(() -> handler.handle(command))
                 .isInstanceOf(CnpjDuplicadoException.class);
         verify(auditClient, never()).publish(any());
+        verify(outboxEventWriter, never()).addEvent(anyString(), anyString(), anyMap());
     }
 }
