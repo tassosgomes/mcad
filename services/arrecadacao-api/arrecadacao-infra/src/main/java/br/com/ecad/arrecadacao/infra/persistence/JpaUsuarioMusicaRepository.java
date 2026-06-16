@@ -8,6 +8,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -38,5 +39,10 @@ public class JpaUsuarioMusicaRepository implements UsuarioMusicaRepository {
     @Override
     public Page<UsuarioMusica> findAll(Specification<UsuarioMusica> spec, Pageable pageable) {
         return springData.findAll(spec, pageable);
+    }
+
+    @Override
+    public List<UsuarioMusica> findAll() {
+        return springData.findAll();
     }
 }

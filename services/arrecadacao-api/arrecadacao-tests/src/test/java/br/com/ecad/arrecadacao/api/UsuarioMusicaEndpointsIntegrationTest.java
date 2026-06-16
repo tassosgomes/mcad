@@ -20,6 +20,7 @@ import org.springframework.amqp.rabbit.core.RabbitTemplate;
 
 import java.util.UUID;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -269,6 +270,32 @@ class UsuarioMusicaEndpointsIntegrationTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"justificativa\": \"Tentativa de ativar usuario ja ativo\"}"))
                 .andExpect(status().isUnprocessableEntity());
+    }
+
+    // ── 2.5: Backfill — POST /manutencao/replicar-snapshot ──────────
+
+    @Test
+    @WithMockUser(roles = "analista-arrecadacao")
+    void replicarSnapshot_DevePublicarUmEventoPorUsuario() throws Exception {
+        criarUsuarioERetornarId("Radio Snap 1", "50997063000132");
+        criarUsuarioERetornarId("Radio Snap 2", "11222333000181");
+
+        mockMvc.perform(post("/api/v1/usuarios-musica/manutencao/replicar-snapshot"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.eventosPublicados").value(2));
+
+        Integer count = jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM arrecadacao.outbox_events WHERE type = ?",
+                Integer.class,
+                "arrecadacao.usuario-musica.atualizado");
+        assertThat(count).isEqualTo(2);
+    }
+
+    @Test
+    @WithMockUser(roles = "consultor-arrecadacao")
+    void replicarSnapshot_ConsultorDeveSer403() throws Exception {
+        mockMvc.perform(post("/api/v1/usuarios-musica/manutencao/replicar-snapshot"))
+                .andExpect(status().isForbidden());
     }
 
 }

@@ -7,6 +7,8 @@ import br.com.ecad.arrecadacao.application.commands.AtivarUsuarioMusicaCommand;
 import br.com.ecad.arrecadacao.application.commands.InativarUsuarioMusicaCommand;
 import br.com.ecad.arrecadacao.application.commands.AtualizarUsuarioMusicaCommand;
 import br.com.ecad.arrecadacao.application.commands.CriarUsuarioMusicaCommand;
+import br.com.ecad.arrecadacao.application.commands.ReplicarUsuariosMusicaSnapshotCommand;
+import br.com.ecad.arrecadacao.application.dto.ReplicarSnapshotResponse;
 import br.com.ecad.arrecadacao.application.cqrs.CommandDispatcher;
 import br.com.ecad.arrecadacao.application.cqrs.QueryDispatcher;
 import br.com.ecad.arrecadacao.application.dto.AlterarStatusRequest;
@@ -138,6 +140,15 @@ public class UsuarioMusicaController {
                 id, request.justificativa(), resolveActorSnapshot(authentication));
         commandDispatcher.dispatch(command);
         return buscarPorId(id);
+    }
+
+    @PostMapping("/manutencao/replicar-snapshot")
+    @RequiresPermission("arrecadacao:default:cliente:editar")
+    public ResponseEntity<ReplicarSnapshotResponse> replicarSnapshot() {
+        log.info("Iniciando replicação de snapshot de usuários de música");
+        var command = new ReplicarUsuariosMusicaSnapshotCommand();
+        var response = (ReplicarSnapshotResponse) commandDispatcher.dispatch(command);
+        return ResponseEntity.ok(response);
     }
 
     private ActorSnapshot resolveActorSnapshot(Authentication authentication) {
