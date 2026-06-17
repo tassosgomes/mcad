@@ -1,0 +1,139 @@
+# Microcks — stack de Swarm (Fase 2a: portal + mocks REST + contract test REST).
+# Deploy via Portainer. Variáveis em infra/microcks/.env.microcks (ver .example).
+#
+# Pré-deploy:
+#   1. cp infra/microcks/.env.microcks.example infra/microcks/.env.microcks  # preencha
+#   2. infra/microcks/render-realm.sh   # gera o realm com os secrets (gitignored)
+#   3. garanta o realm renderizado disponível no nó do Swarm (a config abaixo o lê)
+#   4. deploy do stack (Portainer) com o env-file infra/microcks/.env.microcks
+#
+# Roteamento (host único MICROCKS_HOST):
+#   - https://<host>/auth/*  -> Keycloak (SSO do Microcks)
+#   - https://<host>/*       -> Microcks (UI + API + mocks)
+#
+# Async (async-minion + broker) entra na Fase 2b — ver bloco comentado ao final.
+
+services:
+  mongo:
+    image: ${MICROCKS_MONGO_IMAGE:-mongo:4.4.29}
+    volumes:
+      - microcks_mongo_data:/data/db
+    networks:
+      - microcks-internal
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+    healthcheck:
+      test: ["CMD", "mongo", "--eval", "db.adminCommand('ping')"]
+      interval: 30s
+      timeout: 2s
+      retries: 3
+
+  keycloak:
+    image: ${MICROCKS_KEYCLOAK_IMAGE:-quay.io/keycloak/keycloak:26.0.0}
+    command: ["start-dev", "--import-realm", "--health-enabled=true"]
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: ${KEYCLOAK_BOOTSTRAP_ADMIN:-admin}
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_BOOTSTRAP_ADMIN_PASSWORD:?defina KEYCLOAK_BOOTSTRAP_ADMIN_PASSWORD}
+      KC_HTTP_RELATIVE_PATH: /auth
+      # Inclui o /auth para o issuer/frontend ficar https://host/auth/realms/... (casa com o Microcks)
+      KC_HOSTNAME: https://${MICROCKS_HOST}/auth
+      KC_HOSTNAME_STRICT: "false"
+      KC_HTTP_ENABLED: "true"
+      KC_PROXY_HEADERS: xforwarded
+    configs:
+      - source: microcks_realm
+        target: /opt/keycloak/data/import/microcks-realm.json
+    networks:
+      - microcks-internal
+      - traefik-public
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+      labels:
+        - traefik.enable=true
+        - traefik.docker.network=traefik-public
+        - traefik.http.routers.mcad-docs-auth.rule=Host(`${MICROCKS_HOST}`) && PathPrefix(`/auth`)
+        - traefik.http.routers.mcad-docs-auth.entrypoints=websecure
+        - traefik.http.routers.mcad-docs-auth.priority=100
+        - traefik.http.routers.mcad-docs-auth.tls=true
+        - traefik.http.routers.mcad-docs-auth.tls.certresolver=cloudflare-resolver
+        - traefik.http.services.mcad-docs-auth.loadbalancer.server.port=8080
+
+  postman:
+    image: ${MICROCKS_POSTMAN_IMAGE:-quay.io/microcks/microcks-postman-runtime:0.7.2}
+    networks:
+      - microcks-internal
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+
+  app:
+    image: ${MICROCKS_IMAGE:-quay.io/microcks/microcks:1.14.0}
+    depends_on:
+      - mongo
+      - keycloak
+      - postman
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+      - SPRING_DATA_MONGODB_URI=mongodb://mongo:27017
+      - SPRING_DATA_MONGODB_DATABASE=microcks
+      - POSTMAN_RUNNER_URL=http://postman:3000
+      - TEST_CALLBACK_URL=http://app:8080
+      - SERVICES_UPDATE_INTERVAL=0 0 0/2 * * *
+      - KEYCLOAK_ENABLED=true
+      - KEYCLOAK_URL=http://keycloak:8080/auth
+      - KEYCLOAK_PUBLIC_URL=https://${MICROCKS_HOST}/auth
+      - JAVA_OPTIONS=-Dspring.security.oauth2.resourceserver.jwt.issuer-uri=https://${MICROCKS_HOST}/auth/realms/microcks -Dspring.security.oauth2.resourceserver.jwt.jwk-set-uri=http://keycloak:8080/auth/realms/microcks/protocol/openid-connect/certs
+    networks:
+      - microcks-internal
+      - traefik-public
+    deploy:
+      replicas: ${MICROCKS_REPLICAS:-1}
+      restart_policy:
+        condition: on-failure
+      labels:
+        - traefik.enable=true
+        - traefik.docker.network=traefik-public
+        - traefik.http.routers.mcad-docs.rule=Host(`${MICROCKS_HOST}`)
+        - traefik.http.routers.mcad-docs.entrypoints=websecure
+        - traefik.http.routers.mcad-docs.tls=true
+        - traefik.http.routers.mcad-docs.tls.certresolver=cloudflare-resolver
+        - traefik.http.services.mcad-docs.loadbalancer.server.port=8080
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/api/health"]
+      start_period: 40s
+      interval: 15s
+      timeout: 3s
+      retries: 5
+
+configs:
+  # Config externa do Swarm (imutável). Criar antes do deploy a partir do realm renderizado:
+  #   infra/microcks/render-realm.sh
+  #   ssh mcad-server "docker config create microcks_realm -" < infra/microcks/keycloak-realm/microcks-realm-prod.json
+  # Para atualizar o realm: criar microcks_realm_vN e trocar o name abaixo (configs são imutáveis).
+  microcks_realm:
+    external: true
+
+volumes:
+  microcks_mongo_data:
+
+networks:
+  microcks-internal:
+    driver: overlay
+    attachable: true
+  traefik-public:
+    external: true
+
+# ── Fase 2b (async mocking/testing) — adicionar depois ─────────────────────
+# Requer async-minion + um bus interno (Kafka) e o binding AMQP para o RabbitMQ
+# do mcad. Esboço:
+#   kafka/zookeeper:  bus interno app<->minion (quay.io/strimzi/kafka)
+#   async-minion:     quay.io/microcks/microcks-async-minion:1.14.0
+#                     config AMQP apontando para o broker mcad (vhost mcad)
+#   app: + ASYNC_MINION_URL=http://async-minion:8081  + KAFKA_BOOTSTRAP_SERVER=kafka:19092
+# Caveat conhecido: binding AMQP do Microcks ignora headers; nossos eventos são
+# CloudEvents *structured* (tudo no corpo), então não afeta.

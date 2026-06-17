@@ -1,0 +1,46 @@
+# Overlay de exemplos (Microcks APIExamples) — artefato SECUNDÁRIO.
+# Mescla exemplos sobre o openapi.json (primário) sem sujar o spec gerado.
+# metadata.name/version DEVEM casar com o serviço importado (Arrecadacao API : v1).
+# Importar com mainArtifact=false.
+apiVersion: mocks.microcks.io/v1alpha1
+kind: APIExamples
+metadata:
+  name: Arrecadacao API
+  version: v1
+operations:
+  'GET /api/v1/rubricas':
+    lista-rubricas:
+      request:
+        headers:
+          Accept: application/json
+      response:
+        status: '200'
+        mediaType: application/json
+        body:
+          - id: 6d3f2a10-1c44-4f0a-9b8e-1f0a2b3c4d5e
+            sigla: SHOW
+            nome: Shows e eventos
+            exigeClassificacao: true
+            ativo: true
+          - id: 2a7c9b41-8e22-4d63-bb10-77c0e9a1d2f3
+            sigla: MEC
+            nome: Execução mecânica
+            exigeClassificacao: false
+            ativo: true
+
+  'GET /api/v1/rubricas/{id}':
+    rubrica-show:
+      request:
+        parameters:
+          id: 6d3f2a10-1c44-4f0a-9b8e-1f0a2b3c4d5e
+        headers:
+          Accept: application/json
+      response:
+        status: '200'
+        mediaType: application/json
+        body:
+          id: 6d3f2a10-1c44-4f0a-9b8e-1f0a2b3c4d5e
+          sigla: SHOW
+          nome: Shows e eventos
+          exigeClassificacao: true
+          ativo: true

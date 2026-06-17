@@ -1,0 +1,81 @@
+# Microcks — protótipo LOCAL (Fase 2a: core / portal + mocks REST + contract test REST).
+# Baseado no docker-compose oficial do microcks (install/docker-compose), pinado em 1.14.0.
+# O async-minion + broker (Fase 2b) NÃO está aqui ainda.
+#
+# Subir:   docker compose -f infra/microcks/docker-compose.yml up -d
+# UI:      http://localhost:18081   (login admin / microcks123)
+# Keycloak http://localhost:18080
+#
+# Portas escolhidas (18080/18081) para não colidir com a infra mcad já de pé.
+services:
+  mongo:
+    image: mongo:4.4.29
+    container_name: mcad-microcks-db
+    restart: unless-stopped
+    volumes:
+      - microcks_mongo_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongo", "--eval", "db.adminCommand('ping')"]
+      interval: 30s
+      timeout: 2s
+      retries: 3
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.0.0
+    container_name: mcad-microcks-sso
+    restart: unless-stopped
+    ports:
+      - "18080:8080"
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+    volumes:
+      - "./keycloak-realm/microcks-realm-sample.json:/opt/keycloak/data/import/microcks-realm.json:ro"
+    command: ["start-dev", "--hostname=http://localhost:18080", "--import-realm", "--health-enabled=true"]
+    healthcheck:
+      test: ["CMD", "sh", "-c", "echo -e 'GET /health/live HTTP/1.1\r\nHost: localhost\r\n\r\n' > /dev/tcp/localhost/9000"]
+      start_period: 15s
+      interval: 10s
+      timeout: 2s
+      retries: 5
+
+  postman:
+    image: quay.io/microcks/microcks-postman-runtime:0.7.2
+    container_name: mcad-microcks-postman
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      start_period: 5s
+      interval: 20s
+      timeout: 3s
+      retries: 3
+
+  app:
+    image: quay.io/microcks/microcks:1.14.0
+    container_name: mcad-microcks
+    restart: unless-stopped
+    depends_on:
+      - mongo
+      - keycloak
+      - postman
+    ports:
+      - "18081:8080"
+      - "19090:9090"
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+      - SPRING_DATA_MONGODB_URI=mongodb://mongo:27017
+      - SPRING_DATA_MONGODB_DATABASE=microcks
+      - POSTMAN_RUNNER_URL=http://postman:3000
+      - TEST_CALLBACK_URL=http://app:8080
+      - SERVICES_UPDATE_INTERVAL=0 0 0/2 * * *
+      # Protótipo local: Keycloak desabilitado (upload aberto). No Swarm fica habilitado.
+      - KEYCLOAK_ENABLED=false
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/api/health"]
+      start_period: 40s
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+volumes:
+  microcks_mongo_data:
