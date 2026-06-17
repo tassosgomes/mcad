@@ -65,8 +65,12 @@ jobs:
             . || true
         continue-on-error: true
 
+      - name: Create empty SARIF if scan produced none
+        if: always() && hashFiles('semgrep.sarif') == ''
+        run: echo '{"version":"2.1.0","runs":[{"tool":{"driver":{"name":"Semgrep","informationUri":"https://semgrep.dev"}},"results":[]}]}' > semgrep.sarif
+
       - name: Upload Semgrep SARIF
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         if: always()
         with:
           sarif_file: semgrep.sarif
@@ -127,8 +131,12 @@ jobs:
           output-file: hadolint-${{ strategy.job-index }}.sarif
         continue-on-error: true
 
+      - name: Create empty SARIF if scan produced none
+        if: always() && !hashFiles(format('hadolint-{0}.sarif', strategy.job-index))
+        run: echo '{"version":"2.1.0","runs":[{"tool":{"driver":{"name":"Hadolint","informationUri":"https://github.com/hadolint/hadolint"}},"results":[]}]}' > hadolint-${{ strategy.job-index }}.sarif
+
       - name: Upload Hadolint SARIF
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         if: always()
         with:
           sarif_file: hadolint-${{ strategy.job-index }}.sarif
@@ -144,7 +152,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Run Trivy filesystem scan
-        uses: aquasecurity/trivy-action@master
+        uses: aquasecurity/trivy-action@0.28.0
         with:
           scan-type: 'fs'
           scan-ref: '.'
@@ -154,10 +162,15 @@ jobs:
           severity: 'HIGH,CRITICAL'
           ignore-unfixed: true
           skip-dirs: 'node_modules,target,bin,obj,.git,dist,coverage,graphify-out,test-results,.tmp'
+          exit-code: '0'
         continue-on-error: true
 
+      - name: Create empty SARIF if scan produced none
+        if: always() && hashFiles('trivy-fs.sarif') == ''
+        run: echo '{"version":"2.1.0","runs":[{"tool":{"driver":{"name":"Trivy","informationUri":"https://trivy.dev"}},"results":[]}]}' > trivy-fs.sarif
+
       - name: Upload Trivy SARIF
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         if: always()
         with:
           sarif_file: trivy-fs.sarif

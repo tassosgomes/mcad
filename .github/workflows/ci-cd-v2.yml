@@ -20,6 +20,14 @@ on:
     branches: [main]
   workflow_dispatch:
 
+# Permissions must be declared at caller level so the reusable workflow
+# (_service-build.yml) can inherit id-token + attestations for Cosign/SLSA.
+permissions:
+  contents: read
+  packages: read
+  id-token: write
+  attestations: write
+
 concurrency:
   group: ci-cd-v2-${{ github.ref }}
   cancel-in-progress: true

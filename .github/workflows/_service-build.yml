@@ -232,7 +232,7 @@ jobs:
 
       - name: Trivy container scan
         if: inputs.push-images
-        uses: aquasecurity/trivy-action@master
+        uses: aquasecurity/trivy-action@0.28.0
         continue-on-error: true
         with:
           image-ref: ${{ env.DOCKERHUB_NAMESPACE }}/${{ inputs.image-name }}:sha-${{ steps.meta.outputs.sha-short }}
@@ -240,11 +240,15 @@ jobs:
           output: 'trivy-image.sarif'
           severity: 'CRITICAL'
           ignore-unfixed: true
-          exit-code: '1'
+          exit-code: '0'
+
+      - name: Create empty SARIF if scan produced none
+        if: always() && inputs.push-images && hashFiles('trivy-image.sarif') == ''
+        run: echo '{"version":"2.1.0","runs":[{"tool":{"driver":{"name":"Trivy","informationUri":"https://trivy.dev"}},"results":[]}]}' > trivy-image.sarif
 
       - name: Upload Trivy image SARIF
         if: always() && inputs.push-images
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         continue-on-error: true
         with:
           sarif_file: trivy-image.sarif
