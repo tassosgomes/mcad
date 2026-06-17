@@ -1,0 +1,64 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended",
+    ":semanticCommits",
+    ":semanticCommitScope(deps)",
+    ":automergeMinor",
+    "schedule:earlyMondays"
+  ],
+  "labels": ["dependencies"],
+  "automergeStrategy": "squash",
+  "commitBodyTable": true,
+  "packageRules": [
+    {
+      "description": "Auto-merge patch and minor updates after CI passes",
+      "matchUpdateTypes": ["patch", "minor"],
+      "automerge": true,
+      "automergeType": "pr",
+      "labels": ["auto-merge"]
+    },
+    {
+      "description": "Major updates require human review",
+      "matchUpdateTypes": ["major"],
+      "automerge": false,
+      "labels": ["major"]
+    },
+    {
+      "description": "Group Docker base image updates",
+      "matchDatasources": ["docker"],
+      "groupName": "docker base images",
+      "automerge": true
+    },
+    {
+      "description": "Group GitHub Actions updates",
+      "matchManagers": ["github-actions"],
+      "groupName": "github actions",
+      "automerge": true
+    },
+    {
+      "description": "Group NuGet dependencies",
+      "matchManagers": ["nuget"],
+      "groupName": "nuget (dotnet)"
+    },
+    {
+      "description": "Group Maven dependencies",
+      "matchManagers": ["maven"],
+      "groupName": "maven (java)"
+    },
+    {
+      "description": "Group npm dependencies per package",
+      "matchManagers": ["npm"],
+      "groupName": "npm (node)"
+    }
+  ],
+  "vulnerabilityAlerts": {
+    "enabled": true,
+    "automerge": true,
+    "labels": ["security"]
+  },
+  "dockerfile": {
+    "fileMatch": ["(^|/)Dockerfile$"]
+  },
+  "ignoreDeps": []
+}

@@ -1,0 +1,33 @@
+name: commitlint
+
+# PHASE 1 (advisory): validates Conventional Commits on PRs without blocking.
+# Promote to blocking after team is comfortable with the format:
+#   remove `continue-on-error: true` and add this check to branch protection.
+#
+# Companion to release-please (Fase 2): without conventional commits,
+# automatic version bumping cannot work.
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  lint-commits:
+    name: Validate commit messages
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run commitlint on PR commits
+        uses: wagoid/commitlint-github-action@v6
+        continue-on-error: true
+        with:
+          configFile: commitlint.config.js
+          failOnWarnings: false

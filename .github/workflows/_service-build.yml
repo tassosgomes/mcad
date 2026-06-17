@@ -1,0 +1,282 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# _service-build.yml — Reusable workflow for service test + build + push
+#
+# Called by ci-cd-v2.yml (shadow pipeline). Consolidates the ~540 lines of
+# duplicated per-service logic into a single parameterized workflow.
+#
+# Phase 1 (shadow): push-images=false → runs tests + validates Docker build,
+#                   NO registry push (zero conflict with current ci-cd.yml).
+# Phase 3 (cutover): push-images=true → builds, pushes with sha+main tags,
+#                     signs with Cosign, generates SBOM.
+# ─────────────────────────────────────────────────────────────────────────────
+name: Service build (reusable)
+
+on:
+  workflow_call:
+    inputs:
+      service-name:
+        description: "Logical service name for display (e.g. cadastro-api)"
+        type: string
+        required: true
+      language:
+        description: "dotnet | maven | node"
+        type: string
+        required: true
+      working-directory:
+        description: "Working directory for test steps"
+        type: string
+        required: true
+      dockerfile:
+        description: "Path to Dockerfile (relative to repo root)"
+        type: string
+        required: true
+      context:
+        description: "Docker build context (relative to repo root)"
+        type: string
+        required: true
+      image-name:
+        description: "Docker Hub image name without namespace (e.g. mcad-cadastro-api)"
+        type: string
+        required: true
+      test-command:
+        description: "Full shell command to run unit tests"
+        type: string
+        required: true
+      restore-command:
+        description: "Optional: restore/install command before tests (e.g. dotnet restore)"
+        type: string
+        required: false
+        default: ""
+      test-results-path:
+        description: "Glob pattern for test result artifacts (relative to working-directory)"
+        type: string
+        required: false
+        default: ""
+      docker-secret-files:
+        description: "Optional: secret-files mapping for docker/build-push-action"
+        type: string
+        required: false
+        default: ""
+      push-images:
+        description: "Push images to registry (false in shadow mode)"
+        type: boolean
+        default: false
+    secrets:
+      DOCKERHUB_USERNAME:
+        required: false
+      DOCKERHUB_TOKEN:
+        required: false
+      GH_PACKAGES_READ_TOKEN:
+        required: false
+
+env:
+  DOCKERHUB_NAMESPACE: tassosgomes
+  REGISTRY: docker.io
+
+jobs:
+  build:
+    name: ${{ inputs.service-name }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: read
+      id-token: write  # required for Cosign keyless signing (OIDC)
+      attestations: write  # required for build provenance attestation
+    defaults:
+      run:
+        working-directory: ${{ inputs.working-directory }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # ── Compute short SHA for immutable image tag ──────────────────────────
+      - name: Compute short SHA
+        id: meta
+        run: echo "sha-short=${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+
+      # ═══════════════════════════════════════════════════════════════════════
+      # Language-specific setup + tests
+      # ═══════════════════════════════════════════════════════════════════════
+
+      # ── .NET 8 ─────────────────────────────────────────────────────────────
+      - name: Setup .NET 8
+        if: inputs.language == 'dotnet'
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Generate NuGet config
+        if: inputs.language == 'dotnet'
+        env:
+          GITHUB_PACKAGES_TOKEN: ${{ secrets.GH_PACKAGES_READ_TOKEN || github.token }}
+        run: |
+          mkdir -p .ci
+          cat > .ci/NuGet.config <<EOF
+          <?xml version="1.0" encoding="utf-8"?>
+          <configuration>
+            <packageSources>
+              <clear />
+              <add key="nuget.org" value="https://api.nuget.org/v3/index.json" />
+              <add key="github" value="https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json" />
+            </packageSources>
+            <packageSourceCredentials>
+              <github>
+                <add key="Username" value="${{ github.actor }}" />
+                <add key="ClearTextPassword" value="${GITHUB_PACKAGES_TOKEN}" />
+              </github>
+            </packageSourceCredentials>
+          </configuration>
+          EOF
+
+      - name: Restore dependencies
+        if: inputs.language == 'dotnet' && inputs.restore-command != ''
+        run: ${{ inputs.restore-command }}
+
+      # ── Java 21 / Maven ────────────────────────────────────────────────────
+      - name: Setup Java 21 (Temurin)
+        if: inputs.language == 'maven'
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      # ── Node.js 22 ─────────────────────────────────────────────────────────
+      - name: Setup Node.js 22
+        if: inputs.language == 'node'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: ${{ inputs.working-directory }}/package-lock.json
+
+      - name: Install dependencies
+        if: inputs.language == 'node'
+        run: npm ci
+
+      - name: Build
+        if: inputs.language == 'node'
+        run: npm run build
+
+      # ── Run tests (all languages) ──────────────────────────────────────────
+      - name: Run unit tests
+        env:
+          MAVEN_GH_USER: ${{ github.actor }}
+          MAVEN_GH_TOKEN: ${{ secrets.GH_PACKAGES_READ_TOKEN || github.token }}
+        run: ${{ inputs.test-command }}
+
+      - name: Upload test results
+        if: always() && inputs.test-results-path != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ inputs.service-name }}-test-results
+          path: ${{ inputs.working-directory }}/${{ inputs.test-results-path }}
+          if-no-files-found: ignore
+
+      # ═══════════════════════════════════════════════════════════════════════
+      # Docker build + push
+      # ═══════════════════════════════════════════════════════════════════════
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Docker Hub
+        if: inputs.push-images
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      # Maven services: generate settings.xml for Docker build secret
+      - name: Generate Maven settings for Docker build
+        if: inputs.language == 'maven'
+        run: |
+          mkdir -p .ci
+          cat > .ci/settings.xml <<'EOF'
+          <?xml version="1.0" encoding="UTF-8"?>
+          <settings xmlns="http://maven.apache.org/SETTINGS/1.0.0">
+            <servers>
+              <server>
+                <id>github-ecad-auditoria</id>
+                <username>${{ github.actor }}</username>
+                <password>${{ secrets.GH_PACKAGES_READ_TOKEN || github.token }}</password>
+              </server>
+              <server>
+                <id>github-ecad-authz</id>
+                <username>${{ github.actor }}</username>
+                <password>${{ secrets.GH_PACKAGES_READ_TOKEN || github.token }}</password>
+              </server>
+            </servers>
+          </settings>
+          EOF
+
+      - name: Build${{ inputs.push-images && ' and push' || '' }} image
+        id: build
+        uses: docker/build-push-action@v6
+        with:
+          context: ${{ inputs.context }}
+          file: ${{ inputs.dockerfile }}
+          push: ${{ inputs.push-images }}
+          tags: |
+            ${{ env.DOCKERHUB_NAMESPACE }}/${{ inputs.image-name }}:sha-${{ steps.meta.outputs.sha-short }}
+            ${{ env.DOCKERHUB_NAMESPACE }}/${{ inputs.image-name }}:main
+          provenance: true
+          sbom: true
+          cache-from: type=gha,scope=${{ inputs.service-name }}
+          cache-to: type=gha,mode=max,scope=${{ inputs.service-name }}
+          secret-files: ${{ inputs.docker-secret-files }}
+
+      # ═══════════════════════════════════════════════════════════════════════
+      # Post-push: container scan + sign + SBOM (only when pushing)
+      # ═══════════════════════════════════════════════════════════════════════
+
+      - name: Trivy container scan
+        if: inputs.push-images
+        uses: aquasecurity/trivy-action@master
+        continue-on-error: true
+        with:
+          image-ref: ${{ env.DOCKERHUB_NAMESPACE }}/${{ inputs.image-name }}:sha-${{ steps.meta.outputs.sha-short }}
+          format: 'sarif'
+          output: 'trivy-image.sarif'
+          severity: 'CRITICAL'
+          ignore-unfixed: true
+          exit-code: '1'
+
+      - name: Upload Trivy image SARIF
+        if: always() && inputs.push-images
+        uses: github/codeql-action/upload-sarif@v3
+        continue-on-error: true
+        with:
+          sarif_file: trivy-image.sarif
+          category: trivy-image-${{ inputs.service-name }}
+
+      - name: Install Cosign
+        if: inputs.push-images
+        uses: sigstore/cosign-installer@v3
+
+      - name: Sign image by digest (keyless, OIDC)
+        if: inputs.push-images
+        continue-on-error: true
+        env:
+          IMAGE_REF: ${{ env.REGISTRY }}/${{ env.DOCKERHUB_NAMESPACE }}/${{ inputs.image-name }}@${{ steps.build.outputs.digest }}
+        run: cosign sign --yes "$IMAGE_REF"
+
+      - name: Generate SBOM (Syft)
+        if: inputs.push-images
+        uses: anchore/sbom-action@v0
+        continue-on-error: true
+        with:
+          image: ${{ env.DOCKERHUB_NAMESPACE }}/${{ inputs.image-name }}:sha-${{ steps.meta.outputs.sha-short }}
+          format: cyclonedx-json
+          artifact-name: ${{ inputs.service-name }}-sbom.cdx.json
+          upload-artifact: true
+          upload-release-assets: false
+
+      - name: Attest build provenance (SLSA)
+        if: inputs.push-images
+        uses: actions/attest-build-provenance@v1
+        continue-on-error: true
+        with:
+          subject-name: ${{ env.REGISTRY }}/${{ env.DOCKERHUB_NAMESPACE }}/${{ inputs.image-name }}
+          subject-digest: ${{ steps.build.outputs.digest }}
+          push-to-registry: false

@@ -1,0 +1,197 @@
+name: security-scan
+
+# ─────────────────────────────────────────────────────────────────────────────
+# PHASE 1 — Advisory mode (non-blocking)
+#
+# All scan steps use `continue-on-error: true`. Findings are reported via:
+#   - SARIF → GitHub Security tab (Security > Code scanning alerts)
+#   - Job annotations on the PR
+#
+# To promote to BLOCKING (after 5-10 merges with clean results):
+#   1. Remove `continue-on-error: true` from scan steps
+#   2. Add `security-scan` to branch protection required checks
+#   3. Tune severity thresholds (raise --severity to MEDIUM if too noisy)
+#
+# See: docs/ops/ci-cd-improvement-plan.md § 5
+# ─────────────────────────────────────────────────────────────────────────────
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: '0 6 * * 1'  # weekly full scan: Monday 06:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  security-events: write  # required to upload SARIF to GitHub Security tab
+
+concurrency:
+  group: security-scan-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ───────────────────────────────────────────────────────────────────────────
+  # SAST — Semgrep (multi-language: C#, Java, JS/TS, React, Dockerfile)
+  # ───────────────────────────────────────────────────────────────────────────
+  semgrep:
+    name: SAST · Semgrep
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # full history for better diff-aware scans
+
+      - name: Install Semgrep
+        run: python -m pip install --quiet semgrep
+
+      - name: Run Semgrep (SARIF output)
+        run: |
+          semgrep scan \
+            --config p/default \
+            --config p/owasp-top-ten \
+            --config p/csharp \
+            --config p/java \
+            --config p/javascript \
+            --config p/react \
+            --config p/nodejs \
+            --config p/dockerfile \
+            --config p/sql-injection \
+            --config p/security-audit \
+            --sarif --output semgrep.sarif \
+            --error \
+            . || true
+        continue-on-error: true
+
+      - name: Upload Semgrep SARIF
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: semgrep.sarif
+          category: semgrep
+
+      - name: Upload Semgrep results artifact
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: semgrep-sarif
+          path: semgrep.sarif
+          if-no-files-found: ignore
+
+  # ───────────────────────────────────────────────────────────────────────────
+  # Secret scanning — Gitleaks (detects hardcoded credentials/API keys)
+  # ───────────────────────────────────────────────────────────────────────────
+  secret-scan:
+    name: Secret Scan · Gitleaks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # scan full git history
+
+      - name: Run Gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_ENABLE_COMMENTS: 'true'
+          GITLEAKS_ENABLE_UPLOAD_ARTIFACT: 'false'
+        continue-on-error: true
+
+  # ───────────────────────────────────────────────────────────────────────────
+  # Dockerfile lint — Hadolint (best practices for all service Dockerfiles)
+  # ───────────────────────────────────────────────────────────────────────────
+  dockerfile-lint:
+    name: Dockerfile Lint · Hadolint
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        dockerfile:
+          - services/cadastro-api/Dockerfile
+          - services/identificacao-api/Dockerfile
+          - services/arrecadacao-api/Dockerfile
+          - services/distribuicao-api/Dockerfile
+          - services/bff/Dockerfile
+          - services/identity-sync-api/Dockerfile
+          - frontend/Dockerfile
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run Hadolint on ${{ matrix.dockerfile }}
+        uses: hadolint/hadolint-action@v3.1.0
+        with:
+          dockerfile: ${{ matrix.dockerfile }}
+          format: sarif
+          output-file: hadolint-${{ strategy.job-index }}.sarif
+        continue-on-error: true
+
+      - name: Upload Hadolint SARIF
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: hadolint-${{ strategy.job-index }}.sarif
+          category: hadolint-${{ matrix.dockerfile }}
+
+  # ───────────────────────────────────────────────────────────────────────────
+  # SCA — Trivy filesystem scan (dependency vulnerabilities in manifests)
+  # ───────────────────────────────────────────────────────────────────────────
+  dependency-scan:
+    name: SCA · Trivy fs
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run Trivy filesystem scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          scanners: 'vuln'
+          format: 'sarif'
+          output: 'trivy-fs.sarif'
+          severity: 'HIGH,CRITICAL'
+          ignore-unfixed: true
+          skip-dirs: 'node_modules,target,bin,obj,.git,dist,coverage,graphify-out,test-results,.tmp'
+        continue-on-error: true
+
+      - name: Upload Trivy SARIF
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: trivy-fs.sarif
+          category: trivy-dependency-scan
+
+      - name: Upload Trivy results artifact
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: trivy-fs-sarif
+          path: trivy-fs.sarif
+          if-no-files-found: ignore
+
+  # ───────────────────────────────────────────────────────────────────────────
+  # Summary — aggregate job (not yet blocking; will become the quality gate)
+  # ───────────────────────────────────────────────────────────────────────────
+  security-summary:
+    name: security-scan summary
+    runs-on: ubuntu-latest
+    needs: [semgrep, secret-scan, dockerfile-lint, dependency-scan]
+    if: always()
+    steps:
+      - name: Aggregate scan results
+        run: |
+          echo "═══ Security Scan Summary (advisory mode) ═══"
+          echo ""
+          echo "semgrep:         ${{ needs.semgrep.result }}"
+          echo "secret-scan:     ${{ needs.secret-scan.result }}"
+          echo "dockerfile-lint: ${{ needs.dockerfile-lint.result }}"
+          echo "dependency-scan: ${{ needs.dependency-scan.result }}"
+          echo ""
+          echo "⚠️  PHASE 1: All scans run in ADVISORY mode (non-blocking)."
+          echo "    Review findings in: GitHub → Security → Code scanning alerts"
+          echo "    Promote to blocking after calibration per docs/ops/ci-cd-improvement-plan.md"
+          echo ""
+          # Advisory: always succeed in Phase 1
+          exit 0
