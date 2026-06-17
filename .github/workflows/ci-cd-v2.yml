@@ -53,7 +53,7 @@ jobs:
       identity-sync: ${{ steps.filter.outputs.identity-sync }}
       frontend: ${{ steps.filter.outputs.frontend }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: dorny/paths-filter@v3
         id: filter
         with:

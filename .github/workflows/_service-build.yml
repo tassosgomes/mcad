@@ -87,7 +87,7 @@ jobs:
         working-directory: ${{ inputs.working-directory }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       # ── Compute short SHA for immutable image tag ──────────────────────────
       - name: Compute short SHA
@@ -167,7 +167,7 @@ jobs:
 
       - name: Upload test results
         if: always() && inputs.test-results-path != ''
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ inputs.service-name }}-test-results
           path: ${{ inputs.working-directory }}/${{ inputs.test-results-path }}

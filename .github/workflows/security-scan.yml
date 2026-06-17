@@ -40,7 +40,7 @@ jobs:
     name: SAST · Semgrep
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0  # full history for better diff-aware scans
 
@@ -77,7 +77,7 @@ jobs:
           category: semgrep
 
       - name: Upload Semgrep results artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         if: always()
         with:
           name: semgrep-sarif
@@ -91,12 +91,12 @@ jobs:
     name: Secret Scan · Gitleaks
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0  # scan full git history
 
       - name: Run Gitleaks
-        uses: gitleaks/gitleaks-action@v2
+        uses: gitleaks/gitleaks-action@v3
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITLEAKS_ENABLE_COMMENTS: 'true'
@@ -121,7 +121,7 @@ jobs:
           - services/identity-sync-api/Dockerfile
           - frontend/Dockerfile
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Run Hadolint on ${{ matrix.dockerfile }}
         uses: hadolint/hadolint-action@v3.1.0
@@ -149,7 +149,7 @@ jobs:
     name: SCA · Trivy fs
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Run Trivy filesystem scan
         uses: aquasecurity/trivy-action@v0.36.0
@@ -177,7 +177,7 @@ jobs:
           category: trivy-dependency-scan
 
       - name: Upload Trivy results artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         if: always()
         with:
           name: trivy-fs-sarif
