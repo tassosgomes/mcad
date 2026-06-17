@@ -1,0 +1,46 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# contracts-reimport.yml — reimporta os contratos no Microcks de produção.
+#
+# Fecha o ciclo CI→portal: ao mergear em main mudanças em contracts/, reimporta
+# os specs no Microcks (https://mcad-docs.tasso.dev.br) via o client de automação.
+#
+# Secret necessário (repo/Settings/Secrets/Actions):
+#   MICROCKS_AUTOMATION_SECRET  — secret do client 'microcks-automation'
+#                                 (mesmo valor de infra/microcks/.env.microcks)
+# ─────────────────────────────────────────────────────────────────────────────
+name: Contracts reimport (Microcks)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'contracts/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: contracts-reimport
+  cancel-in-progress: false
+
+jobs:
+  reimport:
+    name: reimport to Microcks (prod)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Reimport contracts
+        env:
+          MICROCKS_URL: https://mcad-docs.tasso.dev.br
+          MICROCKS_HOST: mcad-docs.tasso.dev.br
+          MICROCKS_AUTOMATION_CLIENT_ID: microcks-automation
+          MICROCKS_AUTOMATION_SECRET: ${{ secrets.MICROCKS_AUTOMATION_SECRET }}
+        run: |
+          if [ -z "${MICROCKS_AUTOMATION_SECRET:-}" ]; then
+            echo "::error::Secret MICROCKS_AUTOMATION_SECRET não configurado."
+            exit 1
+          fi
+          scripts/import-contracts-microcks.sh
