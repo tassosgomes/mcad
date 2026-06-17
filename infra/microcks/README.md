@@ -44,10 +44,46 @@ Host único `MICROCKS_HOST` (Microcks na raiz, Keycloak em `/auth`), TLS via
   (client_credentials) recebe token com `resource_access.microcks-app: [manager]` — ok p/ upload.
 - Os 8 contratos importam e geram 4 serviços REST + 4 EVENT no Microcks.
 
-## Caveats
-- **Mocks vazios sem exemplos**: os specs gerados (springdoc/Swashbuckle/Saunter) têm poucos
-  exemplos; o Microcks documenta as operações mas os mocks retornam vazio até semearmos
-  exemplos (`@Schema(example=…)` no código ou artefatos de exemplo/Postman no Microcks).
-- **Async (Fase 2b)**: requer async-minion + bus interno (Kafka) + binding AMQP para o
-  RabbitMQ do mcad. Binding AMQP do Microcks ignora headers — ok, pois os eventos são
-  CloudEvents *structured* (tudo no corpo). Ver bloco comentado em `microcks-stack.yml`.
+## Fase 2b — async mock (Kafka + LavinMQ + async-minion)
+
+Mock de **eventos** AMQP. Componentes que entram na stack:
+- **kafka** — bus interno do Microcks (webapp ↔ minion). KRaft single-node (sem Zookeeper).
+- **lavinmq** — alvo AMQP 0.9.1 dos mocks (drop-in RabbitMQ, leve). **Interno à stack**
+  (sem porta publicada). Contorna o CloudAMQP do mcad não permitir vhost dedicado.
+- **async-minion** — publica os mocks no LavinMQ a partir dos exemplos dos AsyncAPI.
+
+Config do minion: `config/application.properties` (bus Kafka + `supported-bindings=KAFKA,WS,AMQP`
++ `amqp.server=lavinmq:5672` guest/guest). Os mesmos nomes de serviço valem local e no Swarm.
+
+### Validado localmente (ponta-a-ponta)
+- `docker compose -f infra/microcks/docker-compose.yml up -d` sobe tudo healthy.
+- Evento real `arrecadacao.pagamento.registrado` (CloudEvents) é mockado e **consumido do
+  LavinMQ** com payload realista. UI do LavinMQ em `http://localhost:25672` (guest/guest).
+
+### Deploy da Fase 2b no Swarm
+Além dos passos da Fase 2a, antes de subir o stack:
+```bash
+# Cria a config externa do minion (conteúdo sem segredo — LavinMQ interno guest/guest):
+ssh mcad-server "docker config create microcks_minion_props -" < infra/microcks/config/application.properties
+```
+Depois, atualizar o stack no Portainer (Portainer puxa as imagens novas: apache/kafka,
+cloudamqp/lavinmq, microcks-async-minion).
+
+### Convenção de nome da exchange (IMPORTANTE p/ consumir mock)
+O Microcks **ignora o `exchange.name` do spec** e cria a exchange como
+`{serviço}-{versão}-{operação}` (ex.: `ArrecadacaoEvents-1.0.0-sendPagamentoRegistrado`).
+Consumidores de mock bindam **nessa** exchange no LavinMQ, não na `arrecadacao.events` real.
+
+### Cobertura por serviço (o que falta p/ mockar cada evento)
+| Serviço | Binding AMQP | Exemplo de msg | Falta |
+|---|---|---|---|
+| arrecadacao, distribuicao (Java) | ✅ inline | ⏳ parcial | adicionar `examples:` nas mensagens |
+| cadastro, identificacao (.NET/Saunter) | ❌ `$ref` não-resolvido | ✅ | emitir binding AMQP **inline** (fix Saunter) |
+
+> Consumo cross-stack (serviços do mcad ↔ LavinMQ): pendente — exige rede overlay
+> compartilhada ou porta AMQP exposta. 1º deploy mantém LavinMQ interno.
+
+## Caveats gerais
+- **Mocks vazios sem exemplos**: specs gerados têm poucos exemplos; o Microcks documenta as
+  operações mas os mocks (REST e async) ficam vazios até semearmos exemplos.
+- **Binding AMQP ignora headers** — ok, pois os eventos são CloudEvents *structured* (tudo no corpo).

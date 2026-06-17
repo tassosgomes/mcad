@@ -34,7 +34,20 @@
     `KC_HOSTNAME` precisou incluir `/auth` para o issuer casar. Secrets em
     `infra/microcks/.env.microcks` (local/gitignored). Keycloak em `start-dev` (H2, realm
     reimportado a cada restart).
-  - **Fase 2b (async) — pendente.** async-minion + bus + binding AMQP no RabbitMQ do mcad.
+  - **Fase 2b (async mock) — VALIDADA local; Swarm pronto p/ deploy (2026-06-17).**
+    Stack: **Kafka KRaft single-node** (bus interno, sem Zookeeper) + **LavinMQ 2.8.1**
+    (alvo AMQP, drop-in RabbitMQ leve, interno à stack) + **async-minion 1.14.0**. Escolha
+    do LavinMQ porque o **CloudAMQP do mcad não permite vhost dedicado** p/ mocks — então
+    sobe broker próprio na stack. Provado ponta-a-ponta no compose local: evento real
+    `arrecadacao.pagamento.registrado` (CloudEvents) mockado → LavinMQ → consumido com payload
+    realista. Espelhado no `microcks-stack.yml` (config do minion via Swarm config externa
+    `microcks_minion_props`; ver `infra/microcks/README.md` p/ deploy). Caveats achados:
+    (a) Microcks **nomeia a exchange `{serviço}-{versão}-{operação}`**, ignora `exchange.name`
+    do spec → consumidor binda nessa; (b) **binding via `$ref` não é resolvido** pelo Microcks
+    (erra `type null`) → cadastro/identificacao (Saunter) precisam de binding **inline**;
+    (c) Java (arrecadacao/distribuicao) têm binding inline ok mas faltam `examples:` de
+    mensagem. **Pendente:** deploy em prod (Portainer); cobertura dos demais eventos; fix
+    Saunter inline; consumo cross-stack mcad↔LavinMQ.
   - **Caveat**: mocks retornam vazio sem exemplos nos specs.
   - **Mocks úteis — INICIADO (2026-06-17, caminho B).** Overlay de exemplos `APIExamples`
     como artefato secundário (`contracts/<svc>/examples.yaml`), mesclado sobre o OpenAPI sem

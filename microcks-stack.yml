@@ -88,6 +88,12 @@ services:
       - KEYCLOAK_URL=http://keycloak:8080/auth
       - KEYCLOAK_PUBLIC_URL=https://${MICROCKS_HOST}/auth
       - JAVA_OPTIONS=-Dspring.security.oauth2.resourceserver.jwt.issuer-uri=https://${MICROCKS_HOST}/auth/realms/microcks -Dspring.security.oauth2.resourceserver.jwt.jwk-set-uri=http://keycloak:8080/auth/realms/microcks/protocol/openid-connect/certs
+      # Async (Fase 2b): bus Kafka + minion
+      - ASYNC_MINION_URL=http://async-minion:8081
+      - KAFKA_BOOTSTRAP_SERVER=kafka:19092
+    configs:
+      - source: microcks_minion_props
+        target: /deployments/config/application.properties
     networks:
       - microcks-internal
       - traefik-public
@@ -110,6 +116,80 @@ services:
       timeout: 3s
       retries: 5
 
+  # ── Fase 2b (async mock) ────────────────────────────────────────────────
+  # Bus interno Kafka (KRaft single-node, sem Zookeeper) — webapp <-> minion.
+  kafka:
+    image: ${MICROCKS_KAFKA_IMAGE:-apache/kafka:3.8.0}
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:19092,CONTROLLER://0.0.0.0:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:19092
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+    volumes:
+      - microcks_kafka_data:/var/lib/kafka/data
+    networks:
+      - microcks-internal
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:19092 >/dev/null 2>&1 || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 25s
+
+  # LavinMQ — alvo AMQP 0.9.1 dos mocks (drop-in RabbitMQ, leve). Interno à stack.
+  lavinmq:
+    image: ${MICROCKS_LAVINMQ_IMAGE:-cloudamqp/lavinmq:2.8.1}
+    volumes:
+      - microcks_lavinmq_data:/var/lib/lavinmq
+    networks:
+      - microcks-internal
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+    healthcheck:
+      test: ["CMD-SHELL", "lavinmqctl status >/dev/null 2>&1 || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  async-minion:
+    image: ${MICROCKS_ASYNC_MINION_IMAGE:-quay.io/microcks/microcks-async-minion:1.14.0}
+    depends_on:
+      - app
+      - kafka
+      - lavinmq
+    environment:
+      - QUARKUS_PROFILE=docker-compose
+    configs:
+      - source: microcks_minion_props
+        target: /deployments/config/application.properties
+    networks:
+      - microcks-internal
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8081/q/health/ready"]
+      start_period: 25s
+      interval: 15s
+      timeout: 3s
+      retries: 5
+
 configs:
   # Config externa do Swarm (imutável). Criar antes do deploy a partir do realm renderizado:
   #   infra/microcks/render-realm.sh
@@ -117,9 +197,16 @@ configs:
   # Para atualizar o realm: criar microcks_realm_vN e trocar o name abaixo (configs são imutáveis).
   microcks_realm:
     external: true
+  # Config do async-minion (Fase 2b). Conteúdo = infra/microcks/config/application.properties
+  # (sem segredo — LavinMQ interno com guest/guest). Criar antes do deploy:
+  #   ssh mcad-server "docker config create microcks_minion_props -" < infra/microcks/config/application.properties
+  microcks_minion_props:
+    external: true
 
 volumes:
   microcks_mongo_data:
+  microcks_kafka_data:
+  microcks_lavinmq_data:
 
 networks:
   microcks-internal:
@@ -127,13 +214,3 @@ networks:
     attachable: true
   traefik-public:
     external: true
-
-# ── Fase 2b (async mocking/testing) — adicionar depois ─────────────────────
-# Requer async-minion + um bus interno (Kafka) e o binding AMQP para o RabbitMQ
-# do mcad. Esboço:
-#   kafka/zookeeper:  bus interno app<->minion (quay.io/strimzi/kafka)
-#   async-minion:     quay.io/microcks/microcks-async-minion:1.14.0
-#                     config AMQP apontando para o broker mcad (vhost mcad)
-#   app: + ASYNC_MINION_URL=http://async-minion:8081  + KAFKA_BOOTSTRAP_SERVER=kafka:19092
-# Caveat conhecido: binding AMQP do Microcks ignora headers; nossos eventos são
-# CloudEvents *structured* (tudo no corpo), então não afeta.

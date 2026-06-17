@@ -256,6 +256,26 @@ components:
               data:
                 $ref: '#/components/schemas/PagamentoRegistradoData'
             required: [data]
+      examples:
+        - name: pagamentoRegistrado
+          summary: Pagamento de licenca registrado (exemplo de mock)
+          payload:
+            specversion: "1.0"
+            id: "a1b2c3d4-0001-4a2b-8c3d-000000000001"
+            source: "urn:arrecadacao-api"
+            type: arrecadacao.pagamento.registrado
+            subject: "pagamento/a1b2c3d4-0001-4a2b-8c3d-000000000001"
+            time: "2026-01-15T10:30:00Z"
+            datacontenttype: application/json
+            data:
+              pagamentoId: "a1b2c3d4-0001-4a2b-8c3d-000000000001"
+              licencaId: "b2c3d4e5-0002-4b3c-9d4e-000000000002"
+              periodo: "2025-12"
+              quantidadeUdas: "1500.00"
+              valorUdaNoMomento: "2.35"
+              valorBruto: "3525.00"
+              status: REGISTRADO
+              dataRegistro: "2026-01-15T10:30:00Z"
     PagamentoEstornado:
       name: PagamentoEstornado
       title: Pagamento estornado
