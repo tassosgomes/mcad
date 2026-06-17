@@ -27,8 +27,6 @@ export interface Pagamento {
   boletoLinhaDigitavel: string | null;
   boletoCodigoBarras: string | null;
   boletoVencimento: string | null;
-  boletoStorageFileId: string | null;
-  boletoStorageStatus: string | null;
   boletoEmitidoEm: string | null;
 }
 
@@ -53,6 +51,10 @@ export interface EmitirBoletoPagamentoRequest extends RegistrarPagamentoRequest 
 export interface BoletoDownloadResponse {
   downloadUrl: string;
   expiresAt: string;
+}
+
+export interface BoletoStatusResponse {
+  disponivel: boolean;
 }
 
 export interface PagamentoFiltros {

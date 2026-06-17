@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Download, RefreshCcw } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
 import { PageHeader } from '@components/ui/page-header';
 import { Button } from '@components/ui/button';
 import { Loading } from '@components/ui/loading';
@@ -8,7 +9,7 @@ import { ErrorState } from '@components/ui/error-state';
 import { usePermissions } from '@shared/authz';
 import { ActorDisplay } from '../../shared/components/actor-display';
 import { usePagamento } from '../hooks/usePagamento';
-import { getBoletoDownloadUrl } from '../api/pagamentosApi';
+import { getBoletoDownloadUrl, getBoletoStatus } from '../api/pagamentosApi';
 import { StatusBadgePagamento } from '../components/StatusBadgePagamento';
 import { EstornarPagamentoModal } from '../components/EstornarPagamentoModal';
 import { formatBRL, formatUdas } from '../../shared/utils/formatCurrency';
@@ -38,6 +39,12 @@ export function PagamentoDetailPage() {
   const [downloadError, setDownloadError] = useState('');
   const [isDownloading, setIsDownloading] = useState(false);
   const { data: pagamento, isLoading, error, refetch } = usePagamento(id!);
+  const boletoStatus = useQuery({
+    queryKey: ['pagamentos', id, 'boleto-status'],
+    queryFn: () => getBoletoStatus(id!),
+    enabled: Boolean(id && pagamento?.boletoLinhaDigitavel),
+    refetchInterval: (query) => (query.state.data?.disponivel ? false : 3000),
+  });
 
   if (isLoading) return <Loading />;
   if (error || !pagamento) {
@@ -46,6 +53,7 @@ export function PagamentoDetailPage() {
 
   const pagamentoAtual = pagamento;
   const idTruncado = pagamentoAtual.id.slice(0, 8).toUpperCase();
+  const boletoDisponivel = boletoStatus.data?.disponivel === true;
 
   async function handleDownloadBoleto() {
     setDownloadError('');
@@ -56,7 +64,7 @@ export function PagamentoDetailPage() {
     } catch (err: unknown) {
       const problem = err as { detail?: string; status?: number };
       if (problem.status === 409) {
-        setDownloadError('Arquivo em verificação no storage. Tente novamente em alguns segundos.');
+        setDownloadError('Arquivo em verificação. Tente novamente em alguns segundos.');
       } else {
         setDownloadError(problem.detail || 'Erro ao gerar link de download do boleto.');
       }
@@ -128,10 +136,6 @@ export function PagamentoDetailPage() {
                 {pagamento.boletoVencimento ? formatDate(pagamento.boletoVencimento) : '-'}
               </span>
             </div>
-            <div className={styles.field}>
-              <span className={styles.fieldLabel}>Storage</span>
-              <span className={`${styles.fieldSub} ${styles.mono}`}>{pagamento.boletoStorageStatus ?? '-'}</span>
-            </div>
             <div className={`${styles.field} ${styles.fullWidth}`}>
               <span className={styles.fieldLabel}>Linha Digitável</span>
               <span className={`${styles.fieldValue} ${styles.mono}`}>{pagamento.boletoLinhaDigitavel}</span>
@@ -146,11 +150,16 @@ export function PagamentoDetailPage() {
               variant="secondary"
               type="button"
               onClick={handleDownloadBoleto}
-              disabled={isDownloading || !pagamento.boletoStorageFileId}
+              disabled={isDownloading || !boletoDisponivel}
               id="btn-download-boleto"
             >
               <Download size={16} /> {isDownloading ? 'Gerando link...' : 'Baixar Boleto'}
             </Button>
+            {!boletoDisponivel && !downloadError && (
+              <span className={styles.downloadInfo}>
+                Aguardando verificação do arquivo para liberar o download.
+              </span>
+            )}
             {downloadError && <span className={styles.downloadError}>{downloadError}</span>}
           </div>
         </div>

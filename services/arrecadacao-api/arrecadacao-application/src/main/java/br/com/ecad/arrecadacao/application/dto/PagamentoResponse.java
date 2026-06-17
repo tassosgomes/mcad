@@ -25,8 +25,6 @@ public record PagamentoResponse(
     String boletoLinhaDigitavel,
     String boletoCodigoBarras,
     LocalDate boletoVencimento,
-    String boletoStorageFileId,
-    String boletoStorageStatus,
     Instant boletoEmitidoEm
 ) {
 
@@ -65,8 +63,6 @@ public record PagamentoResponse(
                 null,
                 null,
                 null,
-                null,
-                null,
                 null);
     }
 
@@ -100,8 +96,6 @@ public record PagamentoResponse(
                 estornadoPor,
                 null,
                 estornadoEm,
-                null,
-                null,
                 null,
                 null,
                 null,

@@ -86,7 +86,6 @@ class EmitirBoletoPagamentoCommandHandlerTest {
                 br.com.ecad.arrecadacao.application.actor.ActorSnapshots.legacy("analista")));
 
         assertThat(response.status()).isEqualTo("BOLETO_EMITIDO");
-        assertThat(response.boletoStorageFileId()).isEqualTo("01KVFAKE");
         assertThat(response.boletoLinhaDigitavel()).isNotBlank();
         verify(verbaService).validarLockParaAlteracao(eq(RUBRICA_ID), anyString());
         verify(verbaService, never()).recalcularVerba(any(), anyString());

@@ -1,5 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ActorDisplayResponse } from '../../shared/types/actor';
 import { usePagamento } from '../hooks/usePagamento';
@@ -52,20 +53,23 @@ function createPagamento(overrides: Partial<Pagamento>): Pagamento {
     boletoLinhaDigitavel: null,
     boletoCodigoBarras: null,
     boletoVencimento: null,
-    boletoStorageFileId: null,
-    boletoStorageStatus: null,
     boletoEmitidoEm: null,
     ...overrides,
   };
 }
 
 function renderPage() {
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  });
   return render(
-    <MemoryRouter initialEntries={['/arrecadacao/pagamentos/pagamento-1']}>
-      <Routes>
-        <Route path="/arrecadacao/pagamentos/:id" element={<PagamentoDetailPage />} />
-      </Routes>
-    </MemoryRouter>,
+    <QueryClientProvider client={queryClient}>
+      <MemoryRouter initialEntries={['/arrecadacao/pagamentos/pagamento-1']}>
+        <Routes>
+          <Route path="/arrecadacao/pagamentos/:id" element={<PagamentoDetailPage />} />
+        </Routes>
+      </MemoryRouter>
+    </QueryClientProvider>,
   );
 }
 

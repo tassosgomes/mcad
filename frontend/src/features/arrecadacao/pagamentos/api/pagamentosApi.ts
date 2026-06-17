@@ -5,6 +5,7 @@ import type {
   RegistrarPagamentoRequest,
   EmitirBoletoPagamentoRequest,
   BoletoDownloadResponse,
+  BoletoStatusResponse,
   EstornarPagamentoRequest,
   PagamentoFiltros,
 } from '../types/pagamento';
@@ -60,6 +61,10 @@ export function emitirBoletoPagamento(data: EmitirBoletoPagamentoRequest): Promi
 
 export function getBoletoDownloadUrl(id: string): Promise<BoletoDownloadResponse> {
   return apiGetArr<BoletoDownloadResponse>(`/pagamentos/${id}/boleto/download`);
+}
+
+export function getBoletoStatus(id: string): Promise<BoletoStatusResponse> {
+  return apiGetArr<BoletoStatusResponse>(`/pagamentos/${id}/boleto/status`);
 }
 
 export function estornarPagamento(id: string, data: EstornarPagamentoRequest): Promise<Pagamento> {

@@ -67,6 +67,18 @@ public class HttpStorageFileClient implements StorageFileClient {
     }
 
     @Override
+    public StorageFileMetadata getMetadata(String fileId) {
+        String token = requestAccessToken();
+        HttpRequest httpRequest = HttpRequest.newBuilder(URI.create(baseUrl + "/api/v1/files/" + fileId))
+                .timeout(Duration.ofSeconds(15))
+                .header("Authorization", "Bearer " + token)
+                .GET()
+                .build();
+        JsonNode json = sendJson(httpRequest, 200);
+        return new StorageFileMetadata(json.path("id").asText(), json.path("status").asText());
+    }
+
+    @Override
     public StorageDownloadData getDownloadUrl(String fileId) {
         String token = requestAccessToken();
         HttpRequest httpRequest = HttpRequest.newBuilder(URI.create(baseUrl + "/api/v1/files/" + fileId + "/download"))
@@ -107,7 +119,7 @@ public class HttpStorageFileClient implements StorageFileClient {
         try {
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
             if (response.statusCode() == 409) {
-                throw new StorageFilePendingScanException("Arquivo ainda esta em verificacao antivirus no Storage Service");
+                throw new StorageFilePendingScanException("Arquivo ainda esta em verificacao antivirus");
             }
             if (response.statusCode() != expectedStatus) {
                 throw new StorageServiceException("Storage Service retornou HTTP " + response.statusCode());

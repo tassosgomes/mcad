@@ -41,8 +41,6 @@ function createPagamento(overrides: Partial<Pagamento>): Pagamento {
     boletoLinhaDigitavel: null,
     boletoCodigoBarras: null,
     boletoVencimento: null,
-    boletoStorageFileId: null,
-    boletoStorageStatus: null,
     boletoEmitidoEm: null,
     ...overrides,
   };

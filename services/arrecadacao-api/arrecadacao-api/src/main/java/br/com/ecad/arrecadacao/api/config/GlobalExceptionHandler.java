@@ -137,7 +137,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(StorageFilePendingScanException.class)
     ProblemDetail handleStorageFilePendingScan(StorageFilePendingScanException ex) {
         ProblemDetail pd = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, ex.getMessage());
-        pd.setTitle("Storage File Pending Scan");
+        pd.setTitle("Arquivo em Verificacao");
         return pd;
     }
 

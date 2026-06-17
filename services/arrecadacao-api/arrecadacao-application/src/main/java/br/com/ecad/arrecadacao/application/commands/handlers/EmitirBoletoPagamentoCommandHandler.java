@@ -194,8 +194,6 @@ public class EmitirBoletoPagamentoCommandHandler
                 pagamento.getBoletoLinhaDigitavel(),
                 pagamento.getBoletoCodigoBarras(),
                 pagamento.getBoletoVencimento(),
-                pagamento.getBoletoStorageFileId(),
-                pagamento.getBoletoStorageStatus(),
                 pagamento.getBoletoEmitidoEm());
     }
 

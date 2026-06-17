@@ -23,29 +23,22 @@ public class SimpleBoletoPdfGenerator implements BoletoPdfGenerator {
 
     private String buildContentStream(BoletoPdfData data) {
         StringBuilder content = new StringBuilder();
-        content.append("0.95 0.95 0.95 rg 40 730 515 55 re f\n");
-        content.append("0 0 0 rg BT /F1 20 Tf 55 765 Td (BOLETO FAKE - SEM VALOR BANCARIO) Tj ET\n");
-        content.append("BT /F1 10 Tf 55 745 Td (Uso academico/POC. Nao registrar em rede bancaria.) Tj ET\n");
-        appendText(content, 55, 705, "Banco de Testes Academicos: 000");
-        appendText(content, 55, 685, "Pagamento: " + data.pagamentoId());
-        appendText(content, 55, 665, "Pagador: " + data.razaoSocial());
-        appendText(content, 55, 645, "Documento: " + data.documento());
-        appendText(content, 55, 625, "Rubrica: " + data.rubrica());
-        appendText(content, 55, 605, "Periodo: " + data.periodo());
-        appendText(content, 55, 585, "Valor: R$ " + data.valor());
-        appendText(content, 55, 565, "Vencimento: " + data.vencimento().format(DATE_FORMAT));
-        appendText(content, 55, 545, "Nosso numero fake: " + data.nossoNumero());
-        appendText(content, 55, 505, "Linha digitavel:");
-        appendText(content, 55, 485, data.linhaDigitavel());
-        appendText(content, 55, 445, "Codigo de barras fake: " + data.codigoBarras());
-        appendFakeBarcode(content, data.codigoBarras());
-        appendText(content, 55, 250, "Este documento nao representa cobranca bancaria real.");
-        appendText(content, 55, 232, "Arquivo gerado para fins academicos e de estudo.");
+        content.append("0 0 0 rg 0.8 w\n");
+        appendWatermark(content, 87, 790);
+        appendReceiptSection(content, data);
+        appendCutLine(content, 414);
+        appendCompensationSection(content, data);
         return content.toString();
     }
 
     private void appendText(StringBuilder content, int x, int y, String text) {
-        content.append("BT /F1 11 Tf ")
+        appendText(content, x, y, 9, text);
+    }
+
+    private void appendText(StringBuilder content, int x, int y, int size, String text) {
+        content.append("BT /F1 ")
+                .append(size)
+                .append(" Tf ")
                 .append(x)
                 .append(' ')
                 .append(y)
@@ -54,14 +47,100 @@ public class SimpleBoletoPdfGenerator implements BoletoPdfGenerator {
                 .append(") Tj ET\n");
     }
 
-    private void appendFakeBarcode(StringBuilder content, String barcode) {
-        int x = 55;
-        int y = 320;
+    private void appendReceiptSection(StringBuilder content, BoletoPdfData data) {
+        appendText(content, 45, 800, 11, "Recibo do Pagador");
+        appendText(content, 382, 800, 9, "BOLETO FAKE - SEM VALOR BANCARIO");
+        appendHeader(content, 45, 760, data);
+        appendCell(content, 45, 716, 365, 36, "Beneficiario", "MCAD Arrecadacao - POC Academica");
+        appendCell(content, 410, 716, 140, 36, "Agencia/Codigo Beneficiario", "0000 / 000000");
+        appendCell(content, 45, 680, 155, 36, "Pagador", data.razaoSocial());
+        appendCell(content, 200, 680, 120, 36, "Documento", data.documento());
+        appendCell(content, 320, 680, 90, 36, "Nosso Numero", data.nossoNumero());
+        appendCell(content, 410, 680, 140, 36, "Valor do Documento", "R$ " + data.valor());
+        appendCell(content, 45, 644, 155, 36, "Rubrica", data.rubrica());
+        appendCell(content, 200, 644, 120, 36, "Periodo", data.periodo());
+        appendCell(content, 320, 644, 90, 36, "Vencimento", data.vencimento().format(DATE_FORMAT));
+        appendCell(content, 410, 644, 140, 36, "Autenticacao Mecanica", "Ficha fake");
+        appendText(content, 45, 614, 8, "Uso academico/POC. Nao pagar, nao registrar e nao apresentar em rede bancaria.");
+    }
+
+    private void appendCompensationSection(StringBuilder content, BoletoPdfData data) {
+        appendText(content, 45, 390, 11, "Ficha de Compensacao");
+        appendHeader(content, 45, 354, data);
+        appendCell(content, 45, 318, 365, 36, "Local de Pagamento", "Pagavel apenas em ambiente academico/POC");
+        appendCell(content, 410, 318, 140, 36, "Vencimento", data.vencimento().format(DATE_FORMAT));
+        appendCell(content, 45, 282, 365, 36, "Beneficiario", "MCAD Arrecadacao - Banco de Testes 000");
+        appendCell(content, 410, 282, 140, 36, "Agencia/Codigo Beneficiario", "0000 / 000000");
+        appendCell(content, 45, 246, 120, 36, "Data Documento", data.vencimento().format(DATE_FORMAT));
+        appendCell(content, 165, 246, 125, 36, "Numero Documento", data.pagamentoId().substring(0, 8).toUpperCase());
+        appendCell(content, 290, 246, 120, 36, "Nosso Numero", data.nossoNumero());
+        appendCell(content, 410, 246, 140, 36, "Valor do Documento", "R$ " + data.valor());
+        appendCell(content, 45, 210, 365, 36, "Pagador", data.razaoSocial() + " - " + data.documento());
+        appendCell(content, 410, 210, 140, 36, "Quantidade / Moeda", "R$");
+        appendCell(content, 45, 174, 505, 36, "Instrucoes", "BOLETO FAKE. Documento sem valor bancario. Gerado para estudo da estrutura de boleto.");
+        appendText(content, 45, 142, 8, "Codigo de barras fake:");
+        appendFakeBarcode(content, data.codigoBarras(), 45, 58);
+        appendText(content, 392, 40, 8, "Autenticacao mecanica - ficha fake");
+    }
+
+    private void appendHeader(StringBuilder content, int x, int y, BoletoPdfData data) {
+        appendRect(content, x, y, 505, 34);
+        appendText(content, x + 8, y + 12, 18, "000-0");
+        appendLine(content, x + 72, y, x + 72, y + 34);
+        appendText(content, x + 82, y + 13, 11, "Banco de Testes Academicos");
+        appendText(content, x + 230, y + 13, 11, data.linhaDigitavel());
+    }
+
+    private void appendCell(StringBuilder content, int x, int y, int width, int height, String label, String value) {
+        appendRect(content, x, y, width, height);
+        appendText(content, x + 4, y + height - 11, 7, label);
+        appendText(content, x + 4, y + 8, 9, value);
+    }
+
+    private void appendWatermark(StringBuilder content, int x, int y) {
+        content.append("0.92 0.92 0.92 rg 45 770 505 36 re f\n");
+        content.append("0 0 0 rg\n");
+        appendText(content, x, y, 18, "BOLETO FAKE - USO ACADEMICO - SEM VALOR BANCARIO");
+    }
+
+    private void appendCutLine(StringBuilder content, int y) {
+        content.append("0.6 w [3 3] 0 d 45 ")
+                .append(y)
+                .append(" m 550 ")
+                .append(y)
+                .append(" l S [] 0 d\n");
+        appendText(content, 45, y + 8, 7, "Corte na linha pontilhada");
+    }
+
+    private void appendRect(StringBuilder content, int x, int y, int width, int height) {
+        content.append(x)
+                .append(' ')
+                .append(y)
+                .append(' ')
+                .append(width)
+                .append(' ')
+                .append(height)
+                .append(" re S\n");
+    }
+
+    private void appendLine(StringBuilder content, int x1, int y1, int x2, int y2) {
+        content.append(x1)
+                .append(' ')
+                .append(y1)
+                .append(" m ")
+                .append(x2)
+                .append(' ')
+                .append(y2)
+                .append(" l S\n");
+    }
+
+    private void appendFakeBarcode(StringBuilder content, String barcode, int startX, int y) {
+        int x = startX;
         content.append("0 0 0 rg\n");
         for (int index = 0; index < barcode.length(); index++) {
             int digit = Character.digit(barcode.charAt(index), 10);
             int width = digit % 3 + 1;
-            int height = 70 + (digit % 4) * 8;
+            int height = 58 + (digit % 4) * 6;
             content.append(x)
                     .append(' ')
                     .append(y)

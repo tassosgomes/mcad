@@ -124,8 +124,6 @@ public class ListarPagamentosQueryHandler
             pagamento.getBoletoLinhaDigitavel(),
             pagamento.getBoletoCodigoBarras(),
             pagamento.getBoletoVencimento(),
-            pagamento.getBoletoStorageFileId(),
-            pagamento.getBoletoStorageStatus(),
             pagamento.getBoletoEmitidoEm()
         );
     }

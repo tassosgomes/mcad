@@ -9,6 +9,7 @@ import br.com.ecad.arrecadacao.application.commands.RegistrarPagamentoCommand;
 import br.com.ecad.arrecadacao.application.cqrs.CommandDispatcher;
 import br.com.ecad.arrecadacao.application.cqrs.QueryDispatcher;
 import br.com.ecad.arrecadacao.application.dto.BoletoDownloadResponse;
+import br.com.ecad.arrecadacao.application.dto.BoletoStatusResponse;
 import br.com.ecad.arrecadacao.application.dto.EmitirBoletoPagamentoRequest;
 import br.com.ecad.arrecadacao.application.dto.EstornarPagamentoRequest;
 import br.com.ecad.arrecadacao.application.dto.PageResponse;
@@ -16,6 +17,7 @@ import br.com.ecad.arrecadacao.application.dto.PagamentoResponse;
 import br.com.ecad.arrecadacao.application.dto.RegistrarPagamentoRequest;
 import br.com.ecad.arrecadacao.application.queries.BuscarBoletoDownloadQuery;
 import br.com.ecad.arrecadacao.application.queries.BuscarPagamentoPorIdQuery;
+import br.com.ecad.arrecadacao.application.queries.ConsultarBoletoStatusQuery;
 import br.com.ecad.arrecadacao.application.queries.ListarPagamentosQuery;
 import br.com.ecad.arrecadacao.domain.enums.StatusPagamento;
 import br.org.ecad.authz.sdk.annotation.RequiresPermission;
@@ -102,6 +104,12 @@ public class PagamentoController {
     @RequiresPermission("arrecadacao:default:pagamento:visualizar")
     public ResponseEntity<BoletoDownloadResponse> baixarBoleto(@PathVariable("id") UUID id) {
         return ResponseEntity.ok(queryDispatcher.dispatch(new BuscarBoletoDownloadQuery(id)));
+    }
+
+    @GetMapping("/{id}/boleto/status")
+    @RequiresPermission("arrecadacao:default:pagamento:visualizar")
+    public ResponseEntity<BoletoStatusResponse> consultarStatusBoleto(@PathVariable("id") UUID id) {
+        return ResponseEntity.ok(queryDispatcher.dispatch(new ConsultarBoletoStatusQuery(id)));
     }
 
     @PostMapping("/{id}/estornar")

@@ -113,3 +113,8 @@
   font-size: var(--text-xs);
   color: var(--color-error);
 }
+
+.downloadInfo {
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+}
