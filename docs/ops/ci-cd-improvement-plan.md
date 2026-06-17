@@ -1,6 +1,6 @@
 # Plano de melhoria — CI/CD do mcad
 
-> Status: **Fase 1 implementada** — workflows advisory/shadow ativos e rodando verde.
+> Status: **Fases 1 + 2 implementadas** — security gates (advisory), shadow pipeline e versionamento semântico ativos.
 > Última atualização: 2026-06-17.
 > Documenta as decisões, a arquitetura-alvo, as 3 fases de execução e a
 > estratégia de migração **shadow pipeline** (zero downtime de entregas).
@@ -16,11 +16,12 @@
 | 1 | `commitlint.yml` + husky local | **DONE** | Advisory no CI, hook local ativo |
 | 1 | `_service-build.yml` (reusable) | **DONE** | 3 stacks, scan/sign/SBOM no push |
 | 1 | `ci-cd-v2.yml` (shadow) | **DONE** | `push-images: false`, path filtering |
-| 1 | `.github/renovate.json` | **DONE** | Config criada (instalação do app = manual) |
-| 1 | Calibração de falsos positivos | **PENDENTE** | Observar 5-10 merges, suprimir no Security tab |
+| 1 | `.github/renovate.json` + app instalado | **DONE** | Config criada + app Renovate ativo no GitHub |
+| 1 | Calibração de falsos positivos | **EM ANDAMENTO** | Observar 5-10 merges, suprimir no Security tab |
 | 1 | Promoção advisory → blocking | **PENDENTE** | Após calibração, remover `continue-on-error` |
 | 1 | Cutover `ci-cd.yml` → dispatch-only | **PENDENTE** | Quando v2 estável por 2+ semanas |
-| 2 | `release-please` + tags semver | **DONE** | Config + manifest + workflows criados |
+| 2 | `release-please` + tags semver | **DONE** | Config + manifest + workflows (`release-please.yml` + `release.yml`) criados |
+| 2 | Validação com primeiro Release PR real | **PENDENTE** | Confirmar que `feat(service):` gera Release PR → tag → imagem semver |
 | 3 | Migração Portainer + CD dev + DAST | **PENDENTE** | Iniciar após cutover |
 
 ---
