@@ -20,8 +20,8 @@
 | 1 | Calibração de falsos positivos | **PENDENTE** | Observar 5-10 merges, suprimir no Security tab |
 | 1 | Promoção advisory → blocking | **PENDENTE** | Após calibração, remover `continue-on-error` |
 | 1 | Cutover `ci-cd.yml` → dispatch-only | **PENDENTE** | Quando v2 estável por 2+ semanas |
-| 2 | `release-please` + tags semver | **PENDENTE** | Iniciar após cutover |
-| 3 | Migração Portainer + CD dev + DAST | **PENDENTE** | Iniciar após Fase 2 |
+| 2 | `release-please` + tags semver | **DONE** | Config + manifest + workflows criados |
+| 3 | Migração Portainer + CD dev + DAST | **PENDENTE** | Iniciar após cutover |
 
 ---
 
@@ -270,32 +270,70 @@ Problemas encontrados e resolvidos durante o deploy da Fase 1:
 
 ## 6. FASE 2 — Versionamento Semântico
 
-### Arquivos a criar/modificar
+### Arquivos criados (implementado)
 
-| Arquivo | Ação |
+| Arquivo | Status |
 |---|---|
-| `release-please-config.json` (raiz) | criar (monorepo manifest) |
-| `.release-please-manifest.json` (raiz) | criar (estado inicial das versões por serviço) |
-| `.github/workflows/release.yml` | criar (`on: push: tags: ['v*']` — build + push semver + sign) |
-| `.github/workflows/ci-cd.yml` (pós-cutover `ci-cd-v2.yml`) | modificar tags |
+| `release-please-config.json` (raiz) | **criado** — monorepo manifest, 7 packages, `skip-version-file`, `include-component-in-tag` |
+| `.release-please-manifest.json` (raiz) | **criado** — versão inicial `0.1.0` para todos os serviços |
+| `.github/workflows/release-please.yml` | **criado** — `googleapis/release-please-action@v4`, mantém Release PRs por serviço |
+| `.github/workflows/release.yml` | **criado** — `on: push: tags`, parse da tag → chama `_service-build.yml` com `push-images: true` + `release-version` |
+| `_service-build.yml` (modificado) | **atualizado** — novo input `release-version` + step "Prepare image tags" que adiciona `:vX.Y.Z` e `:vX.Y` |
+| `.github/workflows/ci-cd.yml` | **intacto** — pipeline atual permanece funcional |
+
+### Fluxo de versionamento
+
+```
+feat(cadastro-api): nova funcionalidade      ← Conventional Commit no main
+                    ↓
+release-please.yml cria/atualiza Release PR  ← "chore(main): Release cadastro-api v0.2.0"
+                    ↓
+ humano mergeia o Release PR
+                    ↓
+release-please cria tag "cadastro-api-v0.2.0"
+                    ↓
+release.yml dispara (tag push)
+  → parse-tag: component=cadastro-api, version=0.2.0
+  → _service-build.yml: push-images=true, release-version=0.2.0
+  → imagem publicada com tags:
+      mcad-cadastro-api:sha-abc1234
+      mcad-cadastro-api:main
+      mcad-cadastro-api:0.2.0
+      mcad-cadastro-api:0.2
+  → Trivy scan + Cosign sign + SBOM + SLSA attest
+```
 
 ### Estratégia de tags — período de transição (dupla publicação)
 
 Durante a Fase 3, antes de remover `:latest`:
 ```yaml
+# Publicado pelo ci-cd.yml (atual, legado):
+tags: |
+  tassosgomes/mcad-${service}:latest
+  tassosgomes/mcad-${service}:${{ run_number }}
+
+# Publicado pelo ci-cd-v2.yml (pós-cutover, push to main):
 tags: |
   tassosgomes/mcad-${service}:sha-${{ short_sha }}
   tassosgomes/mcad-${service}:main
-  tassosgomes/mcad-${service}:latest         # mantido durante transição
-  tassosgomes/mcad-${service}:${{ run_number }}  # mantido durante transição
+
+# Publicado pelo release.yml (tag push):
+tags: |
+  tassosgomes/mcad-${service}:sha-${{ short_sha }}
+  tassosgomes/mcad-${service}:main
+  tassosgomes/mcad-${service}:0.2.0
+  tassosgomes/mcad-${service}:0.2
 ```
 
 ### Critérios de aceite — Fase 2
 
-- [ ] Commits `feat:`/`fix:` no main geram Release PR automático por serviço
-- [ ] Merge do Release PR cria tag `vX.Y.Z` + GitHub Release com changelog
-- [ ] Workflow `release.yml` builda e publica imagem com tag semver + assina
-- [ ] Período de transição mantém `:latest` funcional
+- [x] `release-please-config.json` + manifest criados (7 serviços)
+- [x] `release-please.yml` cria Release PRs por serviço a partir de Conventional Commits
+- [x] `release.yml` builda e publica imagem com tag semver + assina (Cosign) + SBOM
+- [x] `_service-build.yml` suporta `release-version` para tags `:vX.Y.Z` + `:vX.Y`
+- [ ] Commit `feat(cadastro-api):` no main gera Release PR (validar no primeiro PR real)
+- [ ] Merge do Release PR cria tag `cadastro-api-vX.Y.Z` + GitHub Release
+- [ ] Período de transição mantém `:latest` funcional (via `ci-cd.yml` atual)
 
 ---
 

@@ -1,0 +1,230 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# release.yml — Build + push image on release tag (Fase 2)
+#
+# Triggered when release-please creates a tag like "cadastro-api-v0.2.0".
+# Parses the tag → identifies the service → calls _service-build.yml with
+# push-images: true + release-version → image gets :vX.Y.Z + :vX.Y tags.
+#
+# Flow:
+#   1. Conventional Commit merged to main
+#   2. release-please.yml maintains Release PR per service
+#   3. Human merges Release PR → tag "component-vX.Y.Z" created
+#   4. THIS workflow fires → builds + pushes image with semver tag + signs
+# ─────────────────────────────────────────────────────────────────────────────
+name: release
+
+on:
+  push:
+    tags:
+      - 'cadastro-api-v[0-9]*'
+      - 'identificacao-api-v[0-9]*'
+      - 'arrecadacao-api-v[0-9]*'
+      - 'distribuicao-api-v[0-9]*'
+      - 'bff-v[0-9]*'
+      - 'identity-sync-api-v[0-9]*'
+      - 'frontend-v[0-9]*'
+
+permissions:
+  contents: read
+  packages: read
+  id-token: write
+  attestations: write
+
+jobs:
+  # ───────────────────────────────────────────────────────────────────────────
+  # Parse tag → extract component name + semver version
+  # ───────────────────────────────────────────────────────────────────────────
+  parse-tag:
+    name: parse release tag
+    runs-on: ubuntu-latest
+    outputs:
+      component: ${{ steps.parse.outputs.component }}
+      version: ${{ steps.parse.outputs.version }}
+    steps:
+      - name: Parse tag name
+        id: parse
+        run: |
+          TAG="${{ github.ref_name }}"
+          # tag format: "component-vX.Y.Z" (tag-separator: "-")
+          VERSION="${TAG##*-v}"
+          COMPONENT="${TAG%-v*}"
+          echo "component=$COMPONENT" >> "$GITHUB_OUTPUT"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "Parsed: component=$COMPONENT version=$VERSION"
+
+  # ───────────────────────────────────────────────────────────────────────────
+  # Cadastro API (.NET 8)
+  # ───────────────────────────────────────────────────────────────────────────
+  cadastro-api:
+    needs: parse-tag
+    if: needs.parse-tag.outputs.component == 'cadastro-api'
+    uses: ./.github/workflows/_service-build.yml
+    with:
+      service-name: cadastro-api
+      language: dotnet
+      working-directory: services/cadastro-api
+      dockerfile: services/cadastro-api/Dockerfile
+      context: .
+      image-name: mcad-cadastro-api
+      restore-command: dotnet restore Cadastro.sln --configfile .ci/NuGet.config
+      test-command: >-
+        dotnet test 5-Tests/Cadastro.UnitTests/Cadastro.UnitTests.csproj
+        --configuration Release --no-restore
+        --logger "trx;LogFileName=cadastro-unit.trx"
+      test-results-path: 5-Tests/**/TestResults/*.trx
+      docker-secret-files: nuget_config=services/cadastro-api/.ci/NuGet.config
+      push-images: true
+      release-version: ${{ needs.parse-tag.outputs.version }}
+    secrets: inherit
+
+  # ───────────────────────────────────────────────────────────────────────────
+  # Identificacao API (.NET 8)
+  # ───────────────────────────────────────────────────────────────────────────
+  identificacao-api:
+    needs: parse-tag
+    if: needs.parse-tag.outputs.component == 'identificacao-api'
+    uses: ./.github/workflows/_service-build.yml
+    with:
+      service-name: identificacao-api
+      language: dotnet
+      working-directory: services/identificacao-api
+      dockerfile: services/identificacao-api/Dockerfile
+      context: .
+      image-name: mcad-identificacao-api
+      restore-command: >-
+        dotnet restore 5-Tests/Identificacao.Tests/Identificacao.Tests.csproj
+        --configfile .ci/NuGet.config
+      test-command: >-
+        dotnet test 5-Tests/Identificacao.Tests/Identificacao.Tests.csproj
+        --configuration Release --no-restore
+        --logger "trx;LogFileName=identificacao-unit.trx"
+      test-results-path: 5-Tests/**/TestResults/*.trx
+      docker-secret-files: nuget_config=services/identificacao-api/.ci/NuGet.config
+      push-images: true
+      release-version: ${{ needs.parse-tag.outputs.version }}
+    secrets: inherit
+
+  # ───────────────────────────────────────────────────────────────────────────
+  # Arrecadacao API (Java 21 / Maven)
+  # ───────────────────────────────────────────────────────────────────────────
+  arrecadacao-api:
+    needs: parse-tag
+    if: needs.parse-tag.outputs.component == 'arrecadacao-api'
+    uses: ./.github/workflows/_service-build.yml
+    with:
+      service-name: arrecadacao-api
+      language: maven
+      working-directory: services/arrecadacao-api
+      dockerfile: services/arrecadacao-api/Dockerfile
+      context: services/arrecadacao-api
+      image-name: mcad-arrecadacao-api
+      test-command: >-
+        mvn -B -ntp -s .mvn/settings.xml test -pl '!arrecadacao-tests'
+      test-results-path: "**/target/surefire-reports/**"
+      docker-secret-files: maven_settings=services/arrecadacao-api/.ci/settings.xml
+      push-images: true
+      release-version: ${{ needs.parse-tag.outputs.version }}
+    secrets: inherit
+
+  # ───────────────────────────────────────────────────────────────────────────
+  # Distribuicao API (Java 21 / Maven)
+  # ───────────────────────────────────────────────────────────────────────────
+  distribuicao-api:
+    needs: parse-tag
+    if: needs.parse-tag.outputs.component == 'distribuicao-api'
+    uses: ./.github/workflows/_service-build.yml
+    with:
+      service-name: distribuicao-api
+      language: maven
+      working-directory: services/distribuicao-api
+      dockerfile: services/distribuicao-api/Dockerfile
+      context: services/distribuicao-api
+      image-name: mcad-distribuicao-api
+      test-command: >-
+        mvn -B -ntp -s .mvn/settings.xml test
+        -Dtest='!*IntegrationTest' -Dsurefire.failIfNoSpecifiedTests=false
+      test-results-path: "**/target/surefire-reports/**"
+      docker-secret-files: maven_settings=services/distribuicao-api/.ci/settings.xml
+      push-images: true
+      release-version: ${{ needs.parse-tag.outputs.version }}
+    secrets: inherit
+
+  # ───────────────────────────────────────────────────────────────────────────
+  # BFF (Node.js / Fastify)
+  # ───────────────────────────────────────────────────────────────────────────
+  bff:
+    needs: parse-tag
+    if: needs.parse-tag.outputs.component == 'bff'
+    uses: ./.github/workflows/_service-build.yml
+    with:
+      service-name: bff
+      language: node
+      working-directory: services/bff
+      dockerfile: services/bff/Dockerfile
+      context: services/bff
+      image-name: mcad-bff
+      test-command: npm test
+      push-images: true
+      release-version: ${{ needs.parse-tag.outputs.version }}
+    secrets: inherit
+
+  # ───────────────────────────────────────────────────────────────────────────
+  # Identity Sync API (Node.js / Fastify)
+  # ───────────────────────────────────────────────────────────────────────────
+  identity-sync-api:
+    needs: parse-tag
+    if: needs.parse-tag.outputs.component == 'identity-sync-api'
+    uses: ./.github/workflows/_service-build.yml
+    with:
+      service-name: identity-sync-api
+      language: node
+      working-directory: services/identity-sync-api
+      dockerfile: services/identity-sync-api/Dockerfile
+      context: services/identity-sync-api
+      image-name: mcad-identity-sync-api
+      test-command: npm test
+      push-images: true
+      release-version: ${{ needs.parse-tag.outputs.version }}
+    secrets: inherit
+
+  # ───────────────────────────────────────────────────────────────────────────
+  # Frontend (React 19 / Vite)
+  # ───────────────────────────────────────────────────────────────────────────
+  frontend:
+    needs: parse-tag
+    if: needs.parse-tag.outputs.component == 'frontend'
+    uses: ./.github/workflows/_service-build.yml
+    with:
+      service-name: frontend
+      language: node
+      working-directory: frontend
+      dockerfile: frontend/Dockerfile
+      context: frontend
+      image-name: mcad-frontend
+      test-command: npm test
+      push-images: true
+      release-version: ${{ needs.parse-tag.outputs.version }}
+    secrets: inherit
+
+  # ───────────────────────────────────────────────────────────────────────────
+  # Summary
+  # ───────────────────────────────────────────────────────────────────────────
+  release-summary:
+    name: release summary
+    runs-on: ubuntu-latest
+    needs: [parse-tag, cadastro-api, identificacao-api, arrecadacao-api, distribuicao-api, bff, identity-sync-api, frontend]
+    if: always()
+    steps:
+      - name: Aggregate result
+        run: |
+          echo "═══ Release Summary ═══"
+          echo "Component: ${{ needs.parse-tag.outputs.component }}"
+          echo "Version:   ${{ needs.parse-tag.outputs.version }}"
+          echo ""
+          echo "cadastro:        ${{ needs.cadastro-api.result }}"
+          echo "identificacao:   ${{ needs.identificacao-api.result }}"
+          echo "arrecadacao:     ${{ needs.arrecadacao-api.result }}"
+          echo "distribuicao:    ${{ needs.distribuicao-api.result }}"
+          echo "bff:             ${{ needs.bff.result }}"
+          echo "identity-sync:   ${{ needs.identity-sync-api.result }}"
+          echo "frontend:        ${{ needs.frontend.result }}"

@@ -61,6 +61,11 @@ on:
         description: "Push images to registry (false in shadow mode)"
         type: boolean
         default: false
+      release-version:
+        description: "Semver version (e.g. 0.2.0) from release-please tag. Adds :vX.Y.Z tags."
+        type: string
+        required: false
+        default: ""
     secrets:
       DOCKERHUB_USERNAME:
         required: false
@@ -210,6 +215,25 @@ jobs:
           </settings>
           EOF
 
+      - name: Prepare image tags
+        id: tags
+        run: |
+          TAGS="${{ env.DOCKERHUB_NAMESPACE }}/${{ inputs.image-name }}:sha-${{ steps.meta.outputs.sha-short }}"
+          TAGS="${TAGS}
+          ${{ env.DOCKERHUB_NAMESPACE }}/${{ inputs.image-name }}:main"
+          if [[ -n "${{ inputs.release-version }}" ]]; then
+            VERSION="${{ inputs.release-version }}"
+            MAJOR_MINOR="${VERSION%.*}"
+            TAGS="${TAGS}
+          ${{ env.DOCKERHUB_NAMESPACE }}/${{ inputs.image-name }}:${VERSION}
+          ${{ env.DOCKERHUB_NAMESPACE }}/${{ inputs.image-name }}:${MAJOR_MINOR}"
+          fi
+          {
+            echo 'tags<<EOF'
+            echo "$TAGS"
+            echo 'EOF'
+          } >> "$GITHUB_OUTPUT"
+
       - name: Build${{ inputs.push-images && ' and push' || '' }} image
         id: build
         uses: docker/build-push-action@v6
@@ -217,9 +241,7 @@ jobs:
           context: ${{ inputs.context }}
           file: ${{ inputs.dockerfile }}
           push: ${{ inputs.push-images }}
-          tags: |
-            ${{ env.DOCKERHUB_NAMESPACE }}/${{ inputs.image-name }}:sha-${{ steps.meta.outputs.sha-short }}
-            ${{ env.DOCKERHUB_NAMESPACE }}/${{ inputs.image-name }}:main
+          tags: ${{ steps.tags.outputs.tags }}
           provenance: true
           sbom: true
           cache-from: type=gha,scope=${{ inputs.service-name }}
