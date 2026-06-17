@@ -4,15 +4,19 @@ import { PageHeader } from '@components/ui/page-header';
 import { Button } from '@components/ui/button';
 import { useToast } from '@components/ui/toast';
 import { RegistrarPagamentoForm } from '../components/RegistrarPagamentoForm';
+import type { Pagamento } from '../types/pagamento';
 import styles from './PagamentoCreatePage.module.css';
 
 export function PagamentoCreatePage() {
   const navigate = useNavigate();
   const { showToast } = useToast();
 
-  function handleSuccess(id: string) {
-    showToast('Pagamento registrado com sucesso', 'success');
-    navigate(`/arrecadacao/pagamentos/${id}`);
+  function handleSuccess(pagamento: Pagamento) {
+    const message = pagamento.status === 'BOLETO_EMITIDO'
+      ? 'Boleto emitido com sucesso'
+      : 'Pagamento registrado com sucesso';
+    showToast(message, 'success');
+    navigate(`/arrecadacao/pagamentos/${pagamento.id}`);
   }
 
   return (

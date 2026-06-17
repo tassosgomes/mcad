@@ -61,6 +61,11 @@ app:
     exchange: ${DISTRIBUICAO_EVENTS_EXCHANGE:distribuicao.events}
     queue: ${DISTRIBUICAO_EVENTS_QUEUE:arrecadacao.distribuicao.processos}
     routing-key: ${DISTRIBUICAO_EVENTS_ROUTING_KEY:distribuicao.processo.*}
+  storage:
+    base-url: ${STORAGE_SERVICE_URL:https://storage.tasso.dev.br}
+    logto-issuer: ${STORAGE_LOGTO_ISSUER:https://9lcinu.logto.app/oidc}
+    client-id: ${STORAGE_LOGTO_CLIENT_ID:}
+    client-secret: ${STORAGE_LOGTO_CLIENT_SECRET:}
 
 ecad:
   authz:

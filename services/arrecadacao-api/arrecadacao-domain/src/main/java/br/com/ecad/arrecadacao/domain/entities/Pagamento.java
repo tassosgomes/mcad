@@ -1,10 +1,12 @@
 package br.com.ecad.arrecadacao.domain.entities;
 
 import br.com.ecad.arrecadacao.domain.enums.StatusPagamento;
+import br.com.ecad.arrecadacao.domain.services.BoletoFakeCalculator;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.time.YearMonth;
 import java.util.UUID;
 
@@ -59,6 +61,27 @@ public class Pagamento {
     @Column(name = "estornado_em")
     private Instant estornadoEm;
 
+    @Column(name = "boleto_nosso_numero", length = 32)
+    private String boletoNossoNumero;
+
+    @Column(name = "boleto_linha_digitavel", length = 64)
+    private String boletoLinhaDigitavel;
+
+    @Column(name = "boleto_codigo_barras", length = 44)
+    private String boletoCodigoBarras;
+
+    @Column(name = "boleto_vencimento")
+    private LocalDate boletoVencimento;
+
+    @Column(name = "boleto_storage_file_id", length = 64)
+    private String boletoStorageFileId;
+
+    @Column(name = "boleto_storage_status", length = 32)
+    private String boletoStorageStatus;
+
+    @Column(name = "boleto_emitido_em")
+    private Instant boletoEmitidoEm;
+
     // Read-only join for Specification and DTO mapping
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "licenca_id", insertable = false, updatable = false)
@@ -82,6 +105,53 @@ public class Pagamento {
         p.valorBruto = quantidadeUdas.multiply(valorUdaVigente).setScale(6, RoundingMode.HALF_UP);
         p.periodo = YearMonth.now().toString(); // YYYY-MM
         p.status = StatusPagamento.CONFIRMADO;
+        Instant now = Instant.now();
+        p.dataRegistro = now;
+        p.criadoEm = now;
+        p.atualizadoEm = now;
+        return p;
+    }
+
+    public static Pagamento emitirBoleto(UUID licencaId, BigDecimal quantidadeUdas,
+                                         BigDecimal valorUdaVigente, LocalDate vencimento) {
+        if (vencimento == null || vencimento.isBefore(LocalDate.now())) {
+            throw new IllegalArgumentException("Vencimento do boleto deve ser hoje ou uma data futura");
+        }
+        Pagamento p = criarBase(licencaId, quantidadeUdas, valorUdaVigente);
+        BoletoFakeData boletoData = BoletoFakeCalculator.generate(p.id, p.valorBruto, vencimento);
+        p.status = StatusPagamento.BOLETO_EMITIDO;
+        p.boletoVencimento = vencimento;
+        p.boletoNossoNumero = boletoData.nossoNumero();
+        p.boletoLinhaDigitavel = boletoData.linhaDigitavel();
+        p.boletoCodigoBarras = boletoData.codigoBarras();
+        p.boletoEmitidoEm = Instant.now();
+        return p;
+    }
+
+    public void registrarBoletoNoStorage(String storageFileId, String storageStatus) {
+        this.boletoStorageFileId = requireText(storageFileId, "storageFileId must not be blank");
+        this.boletoStorageStatus = requireText(storageStatus, "storageStatus must not be blank");
+        this.atualizadoEm = Instant.now();
+    }
+
+    private static Pagamento criarBase(UUID licencaId, BigDecimal quantidadeUdas,
+                                       BigDecimal valorUdaVigente) {
+        if (licencaId == null) {
+            throw new IllegalArgumentException("LicencaId e obrigatorio");
+        }
+        if (quantidadeUdas == null || quantidadeUdas.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException("QuantidadeUdas deve ser maior que zero");
+        }
+        if (valorUdaVigente == null || valorUdaVigente.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException("ValorUdaVigente deve ser maior que zero");
+        }
+        Pagamento p = new Pagamento();
+        p.id = UUID.randomUUID();
+        p.licencaId = licencaId;
+        p.quantidadeUdas = quantidadeUdas.setScale(6, RoundingMode.HALF_UP);
+        p.valorUdaNoMomento = valorUdaVigente.setScale(6, RoundingMode.HALF_UP);
+        p.valorBruto = quantidadeUdas.multiply(valorUdaVigente).setScale(6, RoundingMode.HALF_UP);
+        p.periodo = YearMonth.now().toString(); // YYYY-MM
         Instant now = Instant.now();
         p.dataRegistro = now;
         p.criadoEm = now;
@@ -150,4 +220,11 @@ public class Pagamento {
     public String getEstornadoPorSubject() { return estornadoPorSubject; }
     public String getEstornadoPorRotulo() { return estornadoPorRotulo; }
     public Instant getEstornadoEm() { return estornadoEm; }
+    public String getBoletoNossoNumero() { return boletoNossoNumero; }
+    public String getBoletoLinhaDigitavel() { return boletoLinhaDigitavel; }
+    public String getBoletoCodigoBarras() { return boletoCodigoBarras; }
+    public LocalDate getBoletoVencimento() { return boletoVencimento; }
+    public String getBoletoStorageFileId() { return boletoStorageFileId; }
+    public String getBoletoStorageStatus() { return boletoStorageStatus; }
+    public Instant getBoletoEmitidoEm() { return boletoEmitidoEm; }
 }

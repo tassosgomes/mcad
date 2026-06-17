@@ -23,6 +23,7 @@ const RUBRICA_OPTIONS = [
 ];
 
 const STATUS_OPTIONS = [
+  { value: 'BOLETO_EMITIDO' as StatusPagamento, label: 'Boleto emitido' },
   { value: 'CONFIRMADO' as StatusPagamento, label: 'Confirmado' },
   { value: 'ESTORNADO' as StatusPagamento, label: 'Estornado' },
 ];

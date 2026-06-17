@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, RefreshCcw } from 'lucide-react';
+import { ArrowLeft, Download, RefreshCcw } from 'lucide-react';
 import { PageHeader } from '@components/ui/page-header';
 import { Button } from '@components/ui/button';
 import { Loading } from '@components/ui/loading';
@@ -8,6 +8,7 @@ import { ErrorState } from '@components/ui/error-state';
 import { usePermissions } from '@shared/authz';
 import { ActorDisplay } from '../../shared/components/actor-display';
 import { usePagamento } from '../hooks/usePagamento';
+import { getBoletoDownloadUrl } from '../api/pagamentosApi';
 import { StatusBadgePagamento } from '../components/StatusBadgePagamento';
 import { EstornarPagamentoModal } from '../components/EstornarPagamentoModal';
 import { formatBRL, formatUdas } from '../../shared/utils/formatCurrency';
@@ -24,11 +25,18 @@ function formatDateTime(dateStr: string): string {
   });
 }
 
+function formatDate(dateStr: string): string {
+  const d = new Date(`${dateStr}T00:00:00`);
+  return d.toLocaleDateString('pt-BR');
+}
+
 export function PagamentoDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { can } = usePermissions();
   const [showModal, setShowModal] = useState(false);
+  const [downloadError, setDownloadError] = useState('');
+  const [isDownloading, setIsDownloading] = useState(false);
   const { data: pagamento, isLoading, error, refetch } = usePagamento(id!);
 
   if (isLoading) return <Loading />;
@@ -36,7 +44,26 @@ export function PagamentoDetailPage() {
     return <ErrorState message="Pagamento não encontrado" onRetry={refetch} />;
   }
 
-  const idTruncado = pagamento.id.slice(0, 8).toUpperCase();
+  const pagamentoAtual = pagamento;
+  const idTruncado = pagamentoAtual.id.slice(0, 8).toUpperCase();
+
+  async function handleDownloadBoleto() {
+    setDownloadError('');
+    setIsDownloading(true);
+    try {
+      const response = await getBoletoDownloadUrl(pagamentoAtual.id);
+      window.open(response.downloadUrl, '_blank', 'noopener,noreferrer');
+    } catch (err: unknown) {
+      const problem = err as { detail?: string; status?: number };
+      if (problem.status === 409) {
+        setDownloadError('Arquivo em verificação no storage. Tente novamente em alguns segundos.');
+      } else {
+        setDownloadError(problem.detail || 'Erro ao gerar link de download do boleto.');
+      }
+    } finally {
+      setIsDownloading(false);
+    }
+  }
 
   return (
     <div className={styles.page}>
@@ -86,6 +113,48 @@ export function PagamentoDetailPage() {
           </div>
         </div>
       </div>
+
+      {pagamento.boletoLinhaDigitavel && (
+        <div className={styles.card}>
+          <h2 className={styles.sectionTitle}>Boleto</h2>
+          <div className={styles.grid}>
+            <div className={styles.field}>
+              <span className={styles.fieldLabel}>Nosso Número</span>
+              <span className={`${styles.fieldValue} ${styles.mono}`}>{pagamento.boletoNossoNumero}</span>
+            </div>
+            <div className={styles.field}>
+              <span className={styles.fieldLabel}>Vencimento</span>
+              <span className={styles.fieldValue}>
+                {pagamento.boletoVencimento ? formatDate(pagamento.boletoVencimento) : '-'}
+              </span>
+            </div>
+            <div className={styles.field}>
+              <span className={styles.fieldLabel}>Storage</span>
+              <span className={`${styles.fieldSub} ${styles.mono}`}>{pagamento.boletoStorageStatus ?? '-'}</span>
+            </div>
+            <div className={`${styles.field} ${styles.fullWidth}`}>
+              <span className={styles.fieldLabel}>Linha Digitável</span>
+              <span className={`${styles.fieldValue} ${styles.mono}`}>{pagamento.boletoLinhaDigitavel}</span>
+            </div>
+            <div className={`${styles.field} ${styles.fullWidth}`}>
+              <span className={styles.fieldLabel}>Código de Barras</span>
+              <span className={`${styles.fieldSub} ${styles.mono}`}>{pagamento.boletoCodigoBarras}</span>
+            </div>
+          </div>
+          <div className={styles.boletoActions}>
+            <Button
+              variant="secondary"
+              type="button"
+              onClick={handleDownloadBoleto}
+              disabled={isDownloading || !pagamento.boletoStorageFileId}
+              id="btn-download-boleto"
+            >
+              <Download size={16} /> {isDownloading ? 'Gerando link...' : 'Baixar Boleto'}
+            </Button>
+            {downloadError && <span className={styles.downloadError}>{downloadError}</span>}
+          </div>
+        </div>
+      )}
 
       {/* Card licença expandida */}
       <div className={styles.card}>

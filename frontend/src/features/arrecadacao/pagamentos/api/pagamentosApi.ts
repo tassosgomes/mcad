@@ -3,6 +3,8 @@ import type {
   Pagamento,
   PagamentoListResponse,
   RegistrarPagamentoRequest,
+  EmitirBoletoPagamentoRequest,
+  BoletoDownloadResponse,
   EstornarPagamentoRequest,
   PagamentoFiltros,
 } from '../types/pagamento';
@@ -50,6 +52,14 @@ export function getPagamentoById(id: string): Promise<Pagamento> {
 
 export function registrarPagamento(data: RegistrarPagamentoRequest): Promise<Pagamento> {
   return apiPostArr<Pagamento>('/pagamentos', data);
+}
+
+export function emitirBoletoPagamento(data: EmitirBoletoPagamentoRequest): Promise<Pagamento> {
+  return apiPostArr<Pagamento>('/pagamentos/boletos', data);
+}
+
+export function getBoletoDownloadUrl(id: string): Promise<BoletoDownloadResponse> {
+  return apiGetArr<BoletoDownloadResponse>(`/pagamentos/${id}/boleto/download`);
 }
 
 export function estornarPagamento(id: string, data: EstornarPagamentoRequest): Promise<Pagamento> {

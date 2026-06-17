@@ -17,6 +17,12 @@ public interface SpringDataPagamentoRepository extends JpaRepository<Pagamento, 
     boolean existsConfirmadoByLicencaIdAndPeriodo(@Param("licencaId") UUID licencaId,
                                                    @Param("periodo") String periodo);
 
+    @Query("SELECT CASE WHEN COUNT(p) > 0 THEN true ELSE false END FROM Pagamento p " +
+           "WHERE p.licencaId = :licencaId AND p.periodo = :periodo " +
+           "AND p.status IN ('BOLETO_EMITIDO', 'CONFIRMADO')")
+    boolean existsAbertoByLicencaIdAndPeriodo(@Param("licencaId") UUID licencaId,
+                                               @Param("periodo") String periodo);
+
     @Query("""
         SELECT new br.com.ecad.arrecadacao.domain.aggregates.PagamentoAgregado(
             COALESCE(SUM(p.valorBruto), 0),

@@ -3,14 +3,18 @@ package br.com.ecad.arrecadacao.api.controllers;
 import br.com.ecad.arrecadacao.api.security.CurrentActorResolver;
 import br.com.ecad.arrecadacao.application.actor.ActorDisplayResolver;
 import br.com.ecad.arrecadacao.application.actor.ActorSnapshot;
+import br.com.ecad.arrecadacao.application.commands.EmitirBoletoPagamentoCommand;
 import br.com.ecad.arrecadacao.application.commands.EstornarPagamentoCommand;
 import br.com.ecad.arrecadacao.application.commands.RegistrarPagamentoCommand;
 import br.com.ecad.arrecadacao.application.cqrs.CommandDispatcher;
 import br.com.ecad.arrecadacao.application.cqrs.QueryDispatcher;
+import br.com.ecad.arrecadacao.application.dto.BoletoDownloadResponse;
+import br.com.ecad.arrecadacao.application.dto.EmitirBoletoPagamentoRequest;
 import br.com.ecad.arrecadacao.application.dto.EstornarPagamentoRequest;
 import br.com.ecad.arrecadacao.application.dto.PageResponse;
 import br.com.ecad.arrecadacao.application.dto.PagamentoResponse;
 import br.com.ecad.arrecadacao.application.dto.RegistrarPagamentoRequest;
+import br.com.ecad.arrecadacao.application.queries.BuscarBoletoDownloadQuery;
 import br.com.ecad.arrecadacao.application.queries.BuscarPagamentoPorIdQuery;
 import br.com.ecad.arrecadacao.application.queries.ListarPagamentosQuery;
 import br.com.ecad.arrecadacao.domain.enums.StatusPagamento;
@@ -75,10 +79,29 @@ public class PagamentoController {
         return ResponseEntity.status(HttpStatus.CREATED).body(commandDispatcher.dispatch(cmd));
     }
 
+    @PostMapping("/boletos")
+    @RequiresPermission("arrecadacao:default:pagamento:emitir-boleto")
+    public ResponseEntity<PagamentoResponse> emitirBoleto(
+            @Valid @RequestBody EmitirBoletoPagamentoRequest request,
+            Authentication auth) {
+        ActorSnapshot actor = resolveActorSnapshot(auth);
+        LOGGER.info("Issuing fake boleto: licencaId={}, quantidadeUdas={}, vencimento={}, user={}",
+                request.licencaId(), request.quantidadeUdas(), request.dataVencimento(), actor.label());
+        var cmd = new EmitirBoletoPagamentoCommand(
+                request.licencaId(), request.quantidadeUdas(), request.dataVencimento(), actor);
+        return ResponseEntity.status(HttpStatus.CREATED).body(commandDispatcher.dispatch(cmd));
+    }
+
     @GetMapping("/{id}")
     @RequiresPermission("arrecadacao:default:pagamento:visualizar")
     public ResponseEntity<PagamentoResponse> buscarPorId(@PathVariable("id") UUID id) {
         return ResponseEntity.ok(queryDispatcher.dispatch(new BuscarPagamentoPorIdQuery(id)));
+    }
+
+    @GetMapping("/{id}/boleto/download")
+    @RequiresPermission("arrecadacao:default:pagamento:visualizar")
+    public ResponseEntity<BoletoDownloadResponse> baixarBoleto(@PathVariable("id") UUID id) {
+        return ResponseEntity.ok(queryDispatcher.dispatch(new BuscarBoletoDownloadQuery(id)));
     }
 
     @PostMapping("/{id}/estornar")

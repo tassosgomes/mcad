@@ -48,6 +48,13 @@ function createPagamento(overrides: Partial<Pagamento>): Pagamento {
     justificativaEstorno: 'Pagamento duplicado',
     estornadoPor: 'legacy-pagamento',
     estornadoEm: '2026-05-11T12:00:00Z',
+    boletoNossoNumero: null,
+    boletoLinhaDigitavel: null,
+    boletoCodigoBarras: null,
+    boletoVencimento: null,
+    boletoStorageFileId: null,
+    boletoStorageStatus: null,
+    boletoEmitidoEm: null,
     ...overrides,
   };
 }

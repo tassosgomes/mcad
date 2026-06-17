@@ -2,6 +2,7 @@ package br.com.ecad.arrecadacao.application.dto;
 
 import br.com.ecad.arrecadacao.application.actor.ActorDisplayResponse;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.UUID;
 
 public record PagamentoResponse(
@@ -19,8 +20,55 @@ public record PagamentoResponse(
     String justificativaEstorno,
     String estornadoPor,
     ActorDisplayResponse estornadoPorAtor,
-    Instant estornadoEm
+    Instant estornadoEm,
+    String boletoNossoNumero,
+    String boletoLinhaDigitavel,
+    String boletoCodigoBarras,
+    LocalDate boletoVencimento,
+    String boletoStorageFileId,
+    String boletoStorageStatus,
+    Instant boletoEmitidoEm
 ) {
+
+    public PagamentoResponse(
+            UUID id,
+            LicencaResumoResponse licenca,
+            String quantidadeUdas,
+            String valorUdaNoMomento,
+            String valorBruto,
+            String periodo,
+            String status,
+            Instant dataRegistro,
+            Instant criadoEm,
+            Instant atualizadoEm,
+            String justificativaEstorno,
+            String estornadoPor,
+            ActorDisplayResponse estornadoPorAtor,
+            Instant estornadoEm
+    ) {
+        this(
+                id,
+                licenca,
+                quantidadeUdas,
+                valorUdaNoMomento,
+                valorBruto,
+                periodo,
+                status,
+                dataRegistro,
+                criadoEm,
+                atualizadoEm,
+                justificativaEstorno,
+                estornadoPor,
+                estornadoPorAtor,
+                estornadoEm,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null);
+    }
 
     public PagamentoResponse(
             UUID id,
@@ -51,6 +99,13 @@ public record PagamentoResponse(
                 justificativaEstorno,
                 estornadoPor,
                 null,
-                estornadoEm);
+                estornadoEm,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null);
     }
 }

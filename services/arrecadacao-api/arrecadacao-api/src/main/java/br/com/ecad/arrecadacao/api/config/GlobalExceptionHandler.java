@@ -4,6 +4,8 @@ import br.org.ecad.authz.sdk.error.AuthzServiceUnavailableException;
 import br.org.ecad.authz.sdk.error.InvalidTokenException;
 import br.org.ecad.authz.sdk.error.MissingPermissionException;
 import br.org.ecad.authz.sdk.error.SessionRevokedException;
+import br.com.ecad.arrecadacao.application.exceptions.StorageFilePendingScanException;
+import br.com.ecad.arrecadacao.application.exceptions.StorageServiceException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
@@ -129,6 +131,20 @@ public class GlobalExceptionHandler {
             HttpStatus.CONFLICT, "Conflito de dados: ja existe um registro para este periodo");
         pd.setTitle("Conflict");
         pd.setType(java.net.URI.create("https://tools.ietf.org/html/rfc7231#section-6.5.8"));
+        return pd;
+    }
+
+    @ExceptionHandler(StorageFilePendingScanException.class)
+    ProblemDetail handleStorageFilePendingScan(StorageFilePendingScanException ex) {
+        ProblemDetail pd = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, ex.getMessage());
+        pd.setTitle("Storage File Pending Scan");
+        return pd;
+    }
+
+    @ExceptionHandler(StorageServiceException.class)
+    ProblemDetail handleStorageService(StorageServiceException ex) {
+        ProblemDetail pd = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_GATEWAY, ex.getMessage());
+        pd.setTitle("Storage Service Error");
         return pd;
     }
 

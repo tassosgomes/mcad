@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.YearMonth;
 import java.util.UUID;
 
@@ -55,6 +56,47 @@ class PagamentoTest {
     void registrar_StatusInicial_DeveSerCONFIRMADO() {
         Pagamento pagamento = Pagamento.registrar(LICENCA_ID, QUANTIDADE_UDAS, VALOR_UDA);
         assertThat(pagamento.getStatus()).isEqualTo(StatusPagamento.CONFIRMADO);
+    }
+
+    @Test
+    void emitirBoleto_ComDadosValidos_DeveCriarPagamentoComBoletoEmitido() {
+        Pagamento pagamento = Pagamento.emitirBoleto(
+                LICENCA_ID,
+                QUANTIDADE_UDAS,
+                VALOR_UDA,
+                LocalDate.now().plusDays(7));
+
+        assertThat(pagamento.getStatus()).isEqualTo(StatusPagamento.BOLETO_EMITIDO);
+        assertThat(pagamento.getBoletoNossoNumero()).hasSize(12);
+        assertThat(pagamento.getBoletoCodigoBarras()).hasSize(44).containsOnlyDigits();
+        assertThat(pagamento.getBoletoLinhaDigitavel()).isNotBlank();
+        assertThat(pagamento.getBoletoEmitidoEm()).isNotNull();
+        assertThat(pagamento.getBoletoStorageFileId()).isNull();
+    }
+
+    @Test
+    void emitirBoleto_ComVencimentoPassado_DeveLancarIllegalArgumentException() {
+        assertThatThrownBy(() -> Pagamento.emitirBoleto(
+                LICENCA_ID,
+                QUANTIDADE_UDAS,
+                VALOR_UDA,
+                LocalDate.now().minusDays(1)))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Vencimento");
+    }
+
+    @Test
+    void registrarBoletoNoStorage_ComDadosValidos_DeveArmazenarMetadadosDoStorage() {
+        Pagamento pagamento = Pagamento.emitirBoleto(
+                LICENCA_ID,
+                QUANTIDADE_UDAS,
+                VALOR_UDA,
+                LocalDate.now().plusDays(7));
+
+        pagamento.registrarBoletoNoStorage("01KVFAKE", "pending_scan");
+
+        assertThat(pagamento.getBoletoStorageFileId()).isEqualTo("01KVFAKE");
+        assertThat(pagamento.getBoletoStorageStatus()).isEqualTo("pending_scan");
     }
 
     @Test

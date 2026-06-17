@@ -1,6 +1,6 @@
 import type { ActorDisplayResponse } from '../../shared/types/actor';
 
-export type StatusPagamento = 'CONFIRMADO' | 'ESTORNADO';
+export type StatusPagamento = 'BOLETO_EMITIDO' | 'CONFIRMADO' | 'ESTORNADO';
 
 export interface LicencaResumo {
   id: string;
@@ -23,6 +23,13 @@ export interface Pagamento {
   estornadoPor: string | null;
   estornadoPorAtor?: ActorDisplayResponse | null;
   estornadoEm: string | null;
+  boletoNossoNumero: string | null;
+  boletoLinhaDigitavel: string | null;
+  boletoCodigoBarras: string | null;
+  boletoVencimento: string | null;
+  boletoStorageFileId: string | null;
+  boletoStorageStatus: string | null;
+  boletoEmitidoEm: string | null;
 }
 
 export interface EstornarPagamentoRequest {
@@ -37,6 +44,15 @@ export interface PagamentoListResponse {
 export interface RegistrarPagamentoRequest {
   licencaId: string;
   quantidadeUdas: string;
+}
+
+export interface EmitirBoletoPagamentoRequest extends RegistrarPagamentoRequest {
+  dataVencimento: string;
+}
+
+export interface BoletoDownloadResponse {
+  downloadUrl: string;
+  expiresAt: string;
 }
 
 export interface PagamentoFiltros {

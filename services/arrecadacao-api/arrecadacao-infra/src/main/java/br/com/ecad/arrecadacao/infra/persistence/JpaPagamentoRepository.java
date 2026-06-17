@@ -42,6 +42,11 @@ public class JpaPagamentoRepository implements PagamentoRepository {
     }
 
     @Override
+    public boolean existsAbertoByLicencaIdAndPeriodo(UUID licencaId, String periodo) {
+        return springData.existsAbertoByLicencaIdAndPeriodo(licencaId, periodo);
+    }
+
+    @Override
     public PagamentoAgregado sumAndCountConfirmados(UUID rubricaId, String periodo) {
         return springData.sumAndCountConfirmados(rubricaId, periodo);
     }

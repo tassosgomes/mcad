@@ -14,6 +14,7 @@ public interface PagamentoRepository {
     Optional<Pagamento> findById(UUID id);
     Page<Pagamento> findAll(Specification<Pagamento> spec, Pageable pageable);
     boolean existsConfirmadoByLicencaIdAndPeriodo(UUID licencaId, String periodo);
+    boolean existsAbertoByLicencaIdAndPeriodo(UUID licencaId, String periodo);
 
     /**
      * Retorna a soma do valorBruto e a contagem de pagamentos com status CONFIRMADO

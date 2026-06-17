@@ -5,14 +5,17 @@ import { Autocomplete } from '@components/ui/autocomplete';
 import { useDebounce } from '@hooks/useDebounce';
 import { getLicencas } from '../../licencas/api/licencasApi';
 import { useQuery } from '@tanstack/react-query';
+import { usePermissions } from '@shared/authz';
 import { useUdaVigente } from '../../uda/hooks/useUdaVigente';
 import { useRegistrarPagamento } from '../hooks/useRegistrarPagamento';
+import { useEmitirBoletoPagamento } from '../hooks/useEmitirBoletoPagamento';
 import { formatBRL } from '../../shared/utils/formatCurrency';
 import type { Licenca } from '../../licencas/types/licenca';
+import type { Pagamento } from '../types/pagamento';
 import styles from './RegistrarPagamentoForm.module.css';
 
 interface RegistrarPagamentoFormProps {
-  onSuccess: (id: string) => void;
+  onSuccess: (pagamento: Pagamento) => void;
   onCancel: () => void;
 }
 
@@ -23,16 +26,27 @@ function getPeriodoAtual(): string {
   return `${year}-${month}`;
 }
 
+function getDefaultVencimento(): string {
+  const date = new Date();
+  date.setDate(date.getDate() + 7);
+  return date.toISOString().split('T')[0];
+}
+
 export function RegistrarPagamentoForm({ onSuccess, onCancel }: RegistrarPagamentoFormProps) {
+  const { can } = usePermissions();
   const [licencaId, setLicencaId] = useState('');
   const [licencaDisplay, setLicencaDisplay] = useState('');
   const [licencaBusca, setLicencaBusca] = useState('');
   const [quantidadeUdas, setQuantidadeUdas] = useState('');
+  const [dataVencimento, setDataVencimento] = useState(getDefaultVencimento());
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const licencaBuscaDebounced = useDebounce(licencaBusca, 300);
   const { data: udaVigente, isError: semUda } = useUdaVigente();
   const mutation = useRegistrarPagamento();
+  const boletoMutation = useEmitirBoletoPagamento();
+  const isSubmitting = mutation.isPending || boletoMutation.isPending;
+  const canEmitirBoleto = can('arrecadacao:default:pagamento:emitir-boleto');
 
   const { data: licencasData, isFetching: isFetchingLicencas } = useQuery({
     queryKey: ['licencas-search-pagamento', licencaBuscaDebounced],
@@ -58,12 +72,18 @@ export function RegistrarPagamentoForm({ onSuccess, onCancel }: RegistrarPagamen
     return (qty * uda).toFixed(6);
   }, [quantidadeUdas, udaVigente]);
 
-  function validate(): boolean {
+  function validate(options?: { requireVencimento?: boolean }): boolean {
     const newErrors: Record<string, string> = {};
     if (!licencaId) newErrors.licencaId = 'Selecione uma licença';
     const qty = parseFloat(quantidadeUdas);
     if (!quantidadeUdas || isNaN(qty) || qty <= 0) {
       newErrors.quantidadeUdas = 'Quantidade de UDAs deve ser maior que zero';
+    }
+    if (options?.requireVencimento) {
+      const today = new Date().toISOString().split('T')[0];
+      if (!dataVencimento || dataVencimento < today) {
+        newErrors.dataVencimento = 'Vencimento deve ser hoje ou uma data futura';
+      }
     }
     setErrors(newErrors);
     return Object.keys(newErrors).every((k) => !newErrors[k]);
@@ -75,7 +95,7 @@ export function RegistrarPagamentoForm({ onSuccess, onCancel }: RegistrarPagamen
 
     mutation.mutate({ licencaId, quantidadeUdas }, {
       onSuccess: (data) => {
-        onSuccess(data.id);
+        onSuccess(data);
       },
       onError: (err: unknown) => {
         const problem = err as { detail?: string; status?: number };
@@ -83,6 +103,24 @@ export function RegistrarPagamentoForm({ onSuccess, onCancel }: RegistrarPagamen
           setErrors({ licencaId: `Já existe pagamento confirmado para esta licença no período ${getPeriodoAtual()}` });
         } else {
           setErrors({ submit: problem.detail || 'Erro ao registrar pagamento' });
+        }
+      },
+    });
+  }
+
+  function handleEmitirBoleto() {
+    if (!validate({ requireVencimento: true })) return;
+
+    boletoMutation.mutate({ licencaId, quantidadeUdas, dataVencimento }, {
+      onSuccess: (data) => {
+        onSuccess(data);
+      },
+      onError: (err: unknown) => {
+        const problem = err as { detail?: string; status?: number };
+        if (problem.status === 409) {
+          setErrors({ licencaId: `Já existe boleto emitido ou pagamento confirmado para esta licença no período ${getPeriodoAtual()}` });
+        } else {
+          setErrors({ submit: problem.detail || 'Erro ao emitir boleto' });
         }
       },
     });
@@ -166,6 +204,22 @@ export function RegistrarPagamentoForm({ onSuccess, onCancel }: RegistrarPagamen
         </FormField>
       </div>
 
+      {canEmitirBoleto && (
+        <FormField label="Vencimento do Boleto" required error={errors.dataVencimento}>
+          <input
+            id="pagamento-boleto-vencimento"
+            className={styles.input}
+            type="date"
+            value={dataVencimento}
+            disabled={semUda}
+            onChange={(e) => {
+              setDataVencimento(e.target.value);
+              setErrors((prev) => ({ ...prev, dataVencimento: '' }));
+            }}
+          />
+        </FormField>
+      )}
+
       {previewValor && (
         <div className={styles.preview}>
           <span className={styles.previewLabel}>Valor estimado:</span>
@@ -181,10 +235,21 @@ export function RegistrarPagamentoForm({ onSuccess, onCancel }: RegistrarPagamen
       )}
 
       <div className={styles.actions}>
-        <Button variant="secondary" type="button" onClick={onCancel} disabled={mutation.isPending}>
+        <Button variant="secondary" type="button" onClick={onCancel} disabled={isSubmitting}>
           Cancelar
         </Button>
-        <Button variant="primary" type="submit" disabled={mutation.isPending || semUda}>
+        {canEmitirBoleto && (
+          <Button
+            variant="secondary"
+            type="button"
+            onClick={handleEmitirBoleto}
+            disabled={isSubmitting || semUda}
+            id="btn-emitir-boleto"
+          >
+            {boletoMutation.isPending ? 'Emitindo...' : 'Emitir Boleto'}
+          </Button>
+        )}
+        <Button variant="primary" type="submit" disabled={isSubmitting || semUda}>
           {mutation.isPending ? 'Registrando...' : 'Registrar Pagamento'}
         </Button>
       </div>

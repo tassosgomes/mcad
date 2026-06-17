@@ -119,7 +119,14 @@ public class ListarPagamentosQueryHandler
             pagamento.getJustificativaEstorno(),
             pagamento.getEstornadoPor(),
             estornadoPorAtor,
-            pagamento.getEstornadoEm()
+            pagamento.getEstornadoEm(),
+            pagamento.getBoletoNossoNumero(),
+            pagamento.getBoletoLinhaDigitavel(),
+            pagamento.getBoletoCodigoBarras(),
+            pagamento.getBoletoVencimento(),
+            pagamento.getBoletoStorageFileId(),
+            pagamento.getBoletoStorageStatus(),
+            pagamento.getBoletoEmitidoEm()
         );
     }
 

@@ -88,6 +88,11 @@ permissions:
     description: Registra um novo pagamento associado a uma licença vigente.
     resource: pagamento
     action: conciliar
+  - key: arrecadacao:default:pagamento:emitir-boleto
+    name: Emitir boleto fake
+    description: Emite um boleto fake para fins de POC e armazena o PDF no Storage Service.
+    resource: pagamento
+    action: emitir-boleto
   - key: arrecadacao:default:pagamento:estornar
     name: Estornar pagamento
     description: Estorna um pagamento previamente confirmado, com justificativa.

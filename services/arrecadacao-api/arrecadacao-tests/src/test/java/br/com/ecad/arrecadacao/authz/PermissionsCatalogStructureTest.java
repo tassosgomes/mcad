@@ -29,7 +29,7 @@ class PermissionsCatalogStructureTest {
 
     @Test
     @SuppressWarnings("unchecked")
-    void permissionsYaml_DeveDeclarar17ChavesQuatroSegmentosDoDominioArrecadacao() throws Exception {
+    void permissionsYaml_DeveDeclarar22ChavesQuatroSegmentosDoDominioArrecadacao() throws Exception {
         Yaml yaml = new Yaml();
         Map<String, Object> loaded;
         try (InputStream is = Files.newInputStream(CATALOG_PATH)) {
@@ -39,8 +39,8 @@ class PermissionsCatalogStructureTest {
         List<Map<String, Object>> permissions = (List<Map<String, Object>>) loaded.get("permissions");
 
         assertThat(permissions)
-                .as("catálogo de Arrecadação deve manter as 21 permissões 4-seg declaradas")
-                .hasSize(21)
+                .as("catálogo de Arrecadação deve manter as 22 permissões 4-seg declaradas")
+                .hasSize(22)
                 .allSatisfy(
                         p -> {
                             String key = (String) p.get("key");
