@@ -21,6 +21,7 @@
     <properties>
         <java.version>21</java.version>
         <spring-boot.version>3.3.5</spring-boot.version>
+        <springdoc.version>2.6.0</springdoc.version>
         <cloudevents.version>3.0.0</cloudevents.version>
         <audit-sdk.version>1.0.0</audit-sdk.version>
         <authz-sdk.version>0.1.0-SNAPSHOT</authz-sdk.version>

@@ -1,0 +1,1125 @@
+{
+  "components": {
+    "schemas": {
+      "AtualizarCaptacaoRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "periodo": {
+            "format": "date",
+            "type": "string"
+          },
+          "rubricaId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "usuarioMusicaId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "usuarioMusicaNome": {
+            "nullable": true,
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "AtualizarExecucaoRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "fim": {
+            "format": "time",
+            "type": "string"
+          },
+          "fonogramaId": {
+            "format": "uuid",
+            "nullable": true,
+            "type": "string"
+          },
+          "inicio": {
+            "format": "time",
+            "type": "string"
+          },
+          "obraId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "quantidade": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "tipoUtilizacaoId": {
+            "format": "uuid",
+            "nullable": true,
+            "type": "string"
+          },
+          "tituloPrograma": {
+            "nullable": true,
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "CancelarRolRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "justificativa": {
+            "nullable": true,
+            "type": "string"
+          },
+          "opcaoRecriacao": {
+            "nullable": true,
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "CriarCaptacaoRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "periodo": {
+            "format": "date",
+            "type": "string"
+          },
+          "rubricaId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "usuarioMusicaId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "usuarioMusicaNome": {
+            "nullable": true,
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "CriarExecucaoRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "fim": {
+            "format": "time",
+            "type": "string"
+          },
+          "fonogramaId": {
+            "format": "uuid",
+            "nullable": true,
+            "type": "string"
+          },
+          "inicio": {
+            "format": "time",
+            "type": "string"
+          },
+          "obraId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "quantidade": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "tipoUtilizacaoId": {
+            "format": "uuid",
+            "nullable": true,
+            "type": "string"
+          },
+          "tituloPrograma": {
+            "nullable": true,
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "ResolverLoteRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "execucaoIds": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "nullable": true,
+            "type": "array"
+          },
+          "fonogramaId": {
+            "format": "uuid",
+            "nullable": true,
+            "type": "string"
+          },
+          "obraId": {
+            "format": "uuid",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "ResolverPendenteRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "fonogramaId": {
+            "format": "uuid",
+            "nullable": true,
+            "type": "string"
+          },
+          "obraId": {
+            "format": "uuid",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      }
+    },
+    "securitySchemes": {
+      "Bearer": {
+        "bearerFormat": "JWT",
+        "description": "Token JWT obtido via Keycloak. Informe apenas o token, sem o prefixo 'Bearer'.",
+        "scheme": "bearer",
+        "type": "http"
+      }
+    }
+  },
+  "info": {
+    "description": "API REST do domínio de Identificação — captações, execuções musicais, rol e fechamento.",
+    "title": "Identificação API",
+    "version": "v1"
+  },
+  "openapi": "3.0.1",
+  "paths": {
+    "/api/v1/analistas": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Analistas"
+        ]
+      }
+    },
+    "/api/v1/captacoes": {
+      "get": {
+        "parameters": [
+          {
+            "in": "query",
+            "name": "rubricaId",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "periodoInicial",
+            "schema": {
+              "format": "date",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "periodoFinal",
+            "schema": {
+              "format": "date",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "status",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "analistaResponsavelId",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "usuarioMusicaId",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "sort",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "schema": {
+              "format": "int32",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "size",
+            "schema": {
+              "format": "int32",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Captações"
+        ]
+      },
+      "post": {
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CriarCaptacaoRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Captações"
+        ]
+      }
+    },
+    "/api/v1/captacoes/manutencao/reprocessar-responsaveis": {
+      "post": {
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Captações"
+        ]
+      }
+    },
+    "/api/v1/captacoes/{captacaoId}/cancelar": {
+      "post": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "captacaoId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CancelarRolRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Cancelamento"
+        ]
+      }
+    },
+    "/api/v1/captacoes/{captacaoId}/execucoes": {
+      "get": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "captacaoId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "captacaoId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "Status",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "Sort",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "Page",
+            "schema": {
+              "format": "int32",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "Size",
+            "schema": {
+              "format": "int32",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Execuções"
+        ]
+      },
+      "post": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "captacaoId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CriarExecucaoRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Execuções"
+        ]
+      }
+    },
+    "/api/v1/captacoes/{captacaoId}/execucoes/{id}": {
+      "delete": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "captacaoId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Execuções"
+        ]
+      },
+      "put": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "captacaoId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AtualizarExecucaoRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Execuções"
+        ]
+      }
+    },
+    "/api/v1/captacoes/{captacaoId}/fechar": {
+      "post": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "captacaoId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Fechamento do Rol"
+        ]
+      }
+    },
+    "/api/v1/captacoes/{captacaoId}/pode-cancelar": {
+      "get": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "captacaoId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Cancelamento"
+        ]
+      }
+    },
+    "/api/v1/captacoes/{captacaoId}/pre-requisitos": {
+      "get": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "captacaoId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Fechamento do Rol"
+        ]
+      }
+    },
+    "/api/v1/captacoes/{captacaoId}/uploads": {
+      "get": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "captacaoId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "required": true,
+            "schema": {
+              "format": "int32",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "size",
+            "required": true,
+            "schema": {
+              "format": "int32",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Uploads CSV"
+        ]
+      },
+      "post": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "captacaoId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "encoding": {
+                "arquivo": {
+                  "style": "form"
+                }
+              },
+              "schema": {
+                "properties": {
+                  "arquivo": {
+                    "format": "binary",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "arquivo"
+                ],
+                "type": "object"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Uploads CSV"
+        ]
+      }
+    },
+    "/api/v1/captacoes/{captacaoId}/uploads/{id}": {
+      "get": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "captacaoId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Uploads CSV"
+        ]
+      }
+    },
+    "/api/v1/captacoes/{captacaoId}/uploads/{id}/erros": {
+      "get": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "captacaoId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "required": true,
+            "schema": {
+              "format": "int32",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "size",
+            "required": true,
+            "schema": {
+              "format": "int32",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Uploads CSV"
+        ]
+      }
+    },
+    "/api/v1/captacoes/{id}": {
+      "delete": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Captações"
+        ]
+      },
+      "get": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Captações"
+        ]
+      },
+      "put": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AtualizarCaptacaoRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Captações"
+        ]
+      }
+    },
+    "/api/v1/dashboard/resumo": {
+      "get": {
+        "operationId": "GetDashboardResumo",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "summary": "Retorna resumo agregado do domínio de Identificação para a dashboard",
+        "tags": [
+          "Dashboard"
+        ]
+      }
+    },
+    "/api/v1/pendentes": {
+      "get": {
+        "parameters": [
+          {
+            "in": "query",
+            "name": "CaptacaoId",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "RubricaId",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "PeriodoInicio",
+            "schema": {
+              "format": "date",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "PeriodoFim",
+            "schema": {
+              "format": "date",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "Q",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "Sort",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "Page",
+            "schema": {
+              "default": 1,
+              "format": "int32",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "Size",
+            "schema": {
+              "default": 10,
+              "format": "int32",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Pendentes"
+        ]
+      }
+    },
+    "/api/v1/pendentes/impacto": {
+      "get": {
+        "parameters": [
+          {
+            "in": "query",
+            "name": "CaptacaoId",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "RubricaId",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "PeriodoInicio",
+            "schema": {
+              "format": "date",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "PeriodoFim",
+            "schema": {
+              "format": "date",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "Q",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "Sort",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "Page",
+            "schema": {
+              "default": 1,
+              "format": "int32",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "Size",
+            "schema": {
+              "default": 10,
+              "format": "int32",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Pendentes"
+        ]
+      }
+    },
+    "/api/v1/pendentes/resolver-lote": {
+      "post": {
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResolverLoteRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Pendentes"
+        ]
+      }
+    },
+    "/api/v1/pendentes/{id}/resolver": {
+      "post": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResolverPendenteRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Pendentes"
+        ]
+      }
+    },
+    "/api/v1/rubricas": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Rubricas"
+        ]
+      }
+    },
+    "/api/v1/tipos-utilizacao": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Tipos de Utilização"
+        ]
+      }
+    },
+    "/api/v1/usuarios-musica": {
+      "get": {
+        "parameters": [
+          {
+            "in": "query",
+            "name": "q",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cnpj",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "schema": {
+              "format": "int32",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "size",
+            "schema": {
+              "format": "int32",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Usuários de Música"
+        ]
+      }
+    }
+  },
+  "security": [
+    {
+      "Bearer": []
+    }
+  ]
+}

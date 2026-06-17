@@ -1,0 +1,492 @@
+asyncapi: 3.0.0
+info:
+  title: Arrecadacao Events
+  version: 1.0.0
+  description: |
+    Contrato de eventos assincronos do dominio de Arrecadacao (D03).
+
+    Os eventos publicados usam o envelope **CloudEvents 1.0 em modo structured**
+    (todo o envelope vai no corpo JSON, content-type `application/cloudevents+json`).
+    A **routing key e sempre igual ao `type`** do evento (forcado em
+    `OutboxEvent.criar`). Todos os eventos publicados vao para o topic exchange
+    `arrecadacao.events`.
+
+    Spec derivada do CODIGO (nao de docs/events.md). Ver notas de divergencia ao final.
+defaultContentType: application/cloudevents+json
+
+servers:
+  rabbitmq:
+    host: localhost:5672
+    protocol: amqp
+    description: RabbitMQ local (vhost mcad). Em producao o host/vhost vem de variavel de ambiente.
+    bindings:
+      amqp:
+        vhost: /mcad
+
+channels:
+  # ---------- PUBLICADOS (producer) ----------
+  pagamentoRegistrado:
+    address: arrecadacao.pagamento.registrado
+    description: Pagamento de licenca registrado.
+    bindings:
+      amqp:
+        is: routingKey
+        exchange:
+          name: arrecadacao.events
+          type: topic
+          durable: true
+          autoDelete: false
+        bindingVersion: 0.3.0
+    messages:
+      pagamentoRegistrado:
+        $ref: '#/components/messages/PagamentoRegistrado'
+
+  pagamentoEstornado:
+    address: arrecadacao.pagamento.estornado
+    description: Pagamento estornado.
+    bindings:
+      amqp:
+        is: routingKey
+        exchange:
+          name: arrecadacao.events
+          type: topic
+          durable: true
+          autoDelete: false
+        bindingVersion: 0.3.0
+    messages:
+      pagamentoEstornado:
+        $ref: '#/components/messages/PagamentoEstornado'
+
+  verbaDisponivel:
+    address: arrecadacao.verba.disponivel
+    description: Verba liquida de uma rubrica/periodo disponivel para distribuicao.
+    bindings:
+      amqp:
+        is: routingKey
+        exchange:
+          name: arrecadacao.events
+          type: topic
+          durable: true
+          autoDelete: false
+        bindingVersion: 0.3.0
+    messages:
+      verbaDisponivel:
+        $ref: '#/components/messages/VerbaDisponivel'
+
+  usuarioMusicaCriado:
+    address: arrecadacao.usuario-musica.criado
+    description: Usuario de musica (cliente) criado.
+    bindings:
+      amqp:
+        is: routingKey
+        exchange:
+          name: arrecadacao.events
+          type: topic
+          durable: true
+          autoDelete: false
+        bindingVersion: 0.3.0
+    messages:
+      usuarioMusicaCriado:
+        $ref: '#/components/messages/UsuarioMusicaCriado'
+
+  usuarioMusicaAtualizado:
+    address: arrecadacao.usuario-musica.atualizado
+    description: |
+      Usuario de musica atualizado. Tambem emitido em ativacao/inativacao
+      (o status vai no campo `status` do payload) e na replicacao de snapshot.
+    bindings:
+      amqp:
+        is: routingKey
+        exchange:
+          name: arrecadacao.events
+          type: topic
+          durable: true
+          autoDelete: false
+        bindingVersion: 0.3.0
+    messages:
+      usuarioMusicaAtualizado:
+        $ref: '#/components/messages/UsuarioMusicaAtualizado'
+
+  rubricaCriada:
+    address: arrecadacao.rubrica.criada
+    description: |
+      Rubrica criada. ATENCAO: no codigo atual este type e emitido APENAS pelo
+      seed de startup (OutboxSeedService). A criacao de rubrica via comando emite
+      `arrecadacao.rubrica.atualizada` (ver nota de divergencia).
+    bindings:
+      amqp:
+        is: routingKey
+        exchange:
+          name: arrecadacao.events
+          type: topic
+          durable: true
+          autoDelete: false
+        bindingVersion: 0.3.0
+    messages:
+      rubricaCriada:
+        $ref: '#/components/messages/RubricaCriada'
+
+  rubricaAtualizada:
+    address: arrecadacao.rubrica.atualizada
+    description: |
+      Rubrica criada/atualizada/ativada/inativada via comando. O estado vai
+      nos campos `ativo`/`exigeClassificacao` do payload.
+    bindings:
+      amqp:
+        is: routingKey
+        exchange:
+          name: arrecadacao.events
+          type: topic
+          durable: true
+          autoDelete: false
+        bindingVersion: 0.3.0
+    messages:
+      rubricaAtualizada:
+        $ref: '#/components/messages/RubricaAtualizada'
+
+  # ---------- CONSUMIDOS (consumer) ----------
+  identityUser:
+    address: identity.user.*
+    description: |
+      Eventos de usuario do Identity (consumido). Fila `arrecadacao.identity.users`
+      ligada ao exchange `identity.events`. ATENCAO: este canal NAO usa CloudEvents;
+      usa um envelope JSON proprio (eventId/eventType/occurredAt/user). Owned by Identity.
+    bindings:
+      amqp:
+        is: routingKey
+        exchange:
+          name: identity.events
+          type: topic
+          durable: true
+          autoDelete: false
+        bindingVersion: 0.3.0
+    messages:
+      identityUser:
+        $ref: '#/components/messages/IdentityUserEvent'
+
+  distribuicaoProcesso:
+    address: distribuicao.processo.*
+    description: |
+      Eventos de processo de distribuicao (consumido). Fila
+      `arrecadacao.distribuicao.processos` ligada ao exchange `distribuicao.events`.
+      Tipos esperados: distribuicao.processo.iniciado, distribuicao.processo.finalizado.
+      Envelope CloudEvents structured. Owned by Distribuicao (consumidor latente).
+    bindings:
+      amqp:
+        is: routingKey
+        exchange:
+          name: distribuicao.events
+          type: topic
+          durable: true
+          autoDelete: false
+        bindingVersion: 0.3.0
+    messages:
+      distribuicaoProcesso:
+        $ref: '#/components/messages/DistribuicaoProcessoConsumed'
+
+operations:
+  sendPagamentoRegistrado:
+    action: send
+    channel:
+      $ref: '#/channels/pagamentoRegistrado'
+    messages:
+      - $ref: '#/channels/pagamentoRegistrado/messages/pagamentoRegistrado'
+  sendPagamentoEstornado:
+    action: send
+    channel:
+      $ref: '#/channels/pagamentoEstornado'
+    messages:
+      - $ref: '#/channels/pagamentoEstornado/messages/pagamentoEstornado'
+  sendVerbaDisponivel:
+    action: send
+    channel:
+      $ref: '#/channels/verbaDisponivel'
+    messages:
+      - $ref: '#/channels/verbaDisponivel/messages/verbaDisponivel'
+  sendUsuarioMusicaCriado:
+    action: send
+    channel:
+      $ref: '#/channels/usuarioMusicaCriado'
+    messages:
+      - $ref: '#/channels/usuarioMusicaCriado/messages/usuarioMusicaCriado'
+  sendUsuarioMusicaAtualizado:
+    action: send
+    channel:
+      $ref: '#/channels/usuarioMusicaAtualizado'
+    messages:
+      - $ref: '#/channels/usuarioMusicaAtualizado/messages/usuarioMusicaAtualizado'
+  sendRubricaCriada:
+    action: send
+    channel:
+      $ref: '#/channels/rubricaCriada'
+    messages:
+      - $ref: '#/channels/rubricaCriada/messages/rubricaCriada'
+  sendRubricaAtualizada:
+    action: send
+    channel:
+      $ref: '#/channels/rubricaAtualizada'
+    messages:
+      - $ref: '#/channels/rubricaAtualizada/messages/rubricaAtualizada'
+  receiveIdentityUser:
+    action: receive
+    channel:
+      $ref: '#/channels/identityUser'
+    messages:
+      - $ref: '#/channels/identityUser/messages/identityUser'
+  receiveDistribuicaoProcesso:
+    action: receive
+    channel:
+      $ref: '#/channels/distribuicaoProcesso'
+    messages:
+      - $ref: '#/channels/distribuicaoProcesso/messages/distribuicaoProcesso'
+
+components:
+  messages:
+    PagamentoRegistrado:
+      name: PagamentoRegistrado
+      title: Pagamento registrado
+      contentType: application/cloudevents+json
+      payload:
+        allOf:
+          - $ref: '#/components/schemas/CloudEventEnvelope'
+          - type: object
+            properties:
+              type:
+                const: arrecadacao.pagamento.registrado
+              data:
+                $ref: '#/components/schemas/PagamentoRegistradoData'
+            required: [data]
+    PagamentoEstornado:
+      name: PagamentoEstornado
+      title: Pagamento estornado
+      contentType: application/cloudevents+json
+      payload:
+        allOf:
+          - $ref: '#/components/schemas/CloudEventEnvelope'
+          - type: object
+            properties:
+              type:
+                const: arrecadacao.pagamento.estornado
+              data:
+                $ref: '#/components/schemas/PagamentoEstornadoData'
+            required: [data]
+    VerbaDisponivel:
+      name: VerbaDisponivel
+      title: Verba disponivel
+      contentType: application/cloudevents+json
+      payload:
+        allOf:
+          - $ref: '#/components/schemas/CloudEventEnvelope'
+          - type: object
+            properties:
+              type:
+                const: arrecadacao.verba.disponivel
+              data:
+                $ref: '#/components/schemas/VerbaDisponivelData'
+            required: [data]
+    UsuarioMusicaCriado:
+      name: UsuarioMusicaCriado
+      title: Usuario de musica criado
+      contentType: application/cloudevents+json
+      payload:
+        allOf:
+          - $ref: '#/components/schemas/CloudEventEnvelope'
+          - type: object
+            properties:
+              type:
+                const: arrecadacao.usuario-musica.criado
+              data:
+                $ref: '#/components/schemas/UsuarioMusicaData'
+            required: [data]
+    UsuarioMusicaAtualizado:
+      name: UsuarioMusicaAtualizado
+      title: Usuario de musica atualizado
+      contentType: application/cloudevents+json
+      payload:
+        allOf:
+          - $ref: '#/components/schemas/CloudEventEnvelope'
+          - type: object
+            properties:
+              type:
+                const: arrecadacao.usuario-musica.atualizado
+              data:
+                $ref: '#/components/schemas/UsuarioMusicaData'
+            required: [data]
+    RubricaCriada:
+      name: RubricaCriada
+      title: Rubrica criada (seed)
+      contentType: application/cloudevents+json
+      payload:
+        allOf:
+          - $ref: '#/components/schemas/CloudEventEnvelope'
+          - type: object
+            properties:
+              type:
+                const: arrecadacao.rubrica.criada
+              data:
+                $ref: '#/components/schemas/RubricaCriadaData'
+            required: [data]
+    RubricaAtualizada:
+      name: RubricaAtualizada
+      title: Rubrica atualizada
+      contentType: application/cloudevents+json
+      payload:
+        allOf:
+          - $ref: '#/components/schemas/CloudEventEnvelope'
+          - type: object
+            properties:
+              type:
+                const: arrecadacao.rubrica.atualizada
+              data:
+                $ref: '#/components/schemas/RubricaAtualizadaData'
+            required: [data]
+    IdentityUserEvent:
+      name: IdentityUserEvent
+      title: Evento de usuario do Identity (envelope proprio, NAO CloudEvents)
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/IdentityUserEnvelope'
+    DistribuicaoProcessoConsumed:
+      name: DistribuicaoProcessoConsumed
+      title: Evento de processo de distribuicao (consumido)
+      contentType: application/cloudevents+json
+      payload:
+        allOf:
+          - $ref: '#/components/schemas/CloudEventEnvelope'
+          - type: object
+            properties:
+              data:
+                $ref: '#/components/schemas/DistribuicaoProcessoConsumedData'
+            required: [data]
+
+  schemas:
+    CloudEventEnvelope:
+      type: object
+      description: Envelope CloudEvents 1.0 (modo structured).
+      properties:
+        specversion:
+          type: string
+          const: "1.0"
+        id:
+          type: string
+          format: uuid
+          description: Igual ao id do outbox_event.
+        source:
+          type: string
+          const: urn:arrecadacao-api
+        type:
+          type: string
+        subject:
+          type: string
+        time:
+          type: string
+          format: date-time
+        datacontenttype:
+          type: string
+          const: application/json
+      required: [specversion, id, source, type]
+
+    PagamentoRegistradoData:
+      type: object
+      description: Valores monetarios/decimais sao serializados como string (toPlainString).
+      properties:
+        pagamentoId: { type: string, format: uuid }
+        licencaId: { type: string, format: uuid }
+        periodo: { type: string, example: "2025-01" }
+        quantidadeUdas: { type: string, description: BigDecimal como string }
+        valorUdaNoMomento: { type: string, description: BigDecimal como string }
+        valorBruto: { type: string, description: BigDecimal como string }
+        status: { type: string }
+        dataRegistro: { type: string }
+      required: [pagamentoId, licencaId, periodo, valorBruto, status]
+
+    PagamentoEstornadoData:
+      type: object
+      properties:
+        pagamentoId: { type: string, format: uuid }
+        licencaId: { type: string, format: uuid }
+        rubricaSigla: { type: string }
+        periodo: { type: string }
+        quantidadeUdas: { type: string, description: BigDecimal como string }
+        valorEstornado: { type: string, description: BigDecimal como string }
+        justificativa: { type: string }
+        estornadoPor: { type: string }
+        estornadoEm: { type: string }
+      required: [pagamentoId, licencaId, rubricaSigla, periodo, valorEstornado]
+
+    VerbaDisponivelData:
+      type: object
+      properties:
+        rubricaSigla: { type: string }
+        rubricaNome: { type: string }
+        periodo: { type: string }
+        valorBrutoTotal: { type: string, description: BigDecimal como string }
+        deducaoEcad: { type: string, description: BigDecimal como string }
+        deducaoAssociacoes: { type: string, description: BigDecimal como string }
+        verbaLiquida: { type: string, description: BigDecimal como string }
+        quantidadePagamentos: { type: integer, description: emitido como numero (nao string) }
+        status: { type: string }
+      required: [rubricaSigla, periodo, verbaLiquida, status]
+
+    UsuarioMusicaData:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        razaoSocial: { type: string }
+        nomeFantasia: { type: string }
+        cnpj: { type: string, description: CNPJ sem formatacao }
+        cnpjFormatado: { type: string }
+        status: { type: string }
+        criadoEm: { type: string }
+        atualizadoEm: { type: string }
+      required: [id, razaoSocial, cnpj, status]
+
+    RubricaCriadaData:
+      type: object
+      properties:
+        sigla: { type: string }
+        nome: { type: string }
+        exigeClassificacao: { type: boolean }
+      required: [sigla, nome, exigeClassificacao]
+
+    RubricaAtualizadaData:
+      type: object
+      properties:
+        sigla: { type: string }
+        nome: { type: string }
+        exigeClassificacao: { type: boolean }
+        ativo: { type: boolean }
+      required: [sigla, nome, exigeClassificacao, ativo]
+
+    IdentityUserEnvelope:
+      type: object
+      description: Envelope proprio do canal identity.events (NAO CloudEvents).
+      properties:
+        eventId: { type: string }
+        eventType:
+          type: string
+          enum: [identity.user.upserted, identity.user.suspended, identity.user.deleted]
+        occurredAt: { type: string, format: date-time }
+        user:
+          type: object
+          properties:
+            logtoUserId: { type: string }
+            username: { type: [string, "null"] }
+            displayName: { type: [string, "null"] }
+            email: { type: [string, "null"] }
+            avatarUrl: { type: [string, "null"] }
+            roles:
+              type: array
+              items: { type: string }
+            isSuspended: { type: boolean, default: false }
+            raw: { type: object }
+          required: [logtoUserId]
+      required: [eventId, eventType, occurredAt, user]
+
+    DistribuicaoProcessoConsumedData:
+      type: object
+      description: Campos lidos pelo consumidor a partir do data do CloudEvent.
+      properties:
+        rubricaSigla: { type: string }
+        periodo: { type: string }
+      required: [rubricaSigla, periodo]

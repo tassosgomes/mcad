@@ -1,0 +1,698 @@
+asyncapi: 3.0.0
+info:
+  title: Distribuicao Events
+  version: 1.0.0
+  description: |
+    Contrato de eventos assincronos do dominio de Distribuicao (D04).
+
+    Os eventos publicados usam o envelope **CloudEvents 1.0 em modo structured**
+    (content-type `application/cloudevents+json`). A **routing key e sempre igual
+    ao `type`** do evento (forcado em `OutboxEvent.criar`). Todos os eventos
+    publicados vao para o topic exchange `distribuicao.events`.
+
+    Diferente do Arrecadacao, os payloads do Distribuicao usam records/Map tipados:
+    valores decimais vao como **numero JSON** (BigDecimal) e timestamps como
+    **string ISO-8601** (Instant). Spec derivada do CODIGO. Ver notas ao final.
+defaultContentType: application/cloudevents+json
+
+servers:
+  rabbitmq:
+    host: localhost:5672
+    protocol: amqp
+    description: RabbitMQ local (vhost mcad). Em producao o host/vhost vem de variavel de ambiente.
+    bindings:
+      amqp:
+        vhost: /mcad
+
+channels:
+  # ---------- PUBLICADOS (producer) ----------
+  processoIniciado:
+    address: distribuicao.processo.iniciado
+    description: Processo de distribuicao criado/iniciado.
+    bindings:
+      amqp: &distExchange
+        is: routingKey
+        exchange:
+          name: distribuicao.events
+          type: topic
+          durable: true
+          autoDelete: false
+        bindingVersion: 0.3.0
+    messages:
+      processoIniciado:
+        $ref: '#/components/messages/ProcessoIniciado'
+
+  processoCalculado:
+    address: distribuicao.processo.calculado
+    description: Calculo do processo concluido (totais e valores).
+    bindings:
+      amqp: *distExchange
+    messages:
+      processoCalculado:
+        $ref: '#/components/messages/ProcessoCalculado'
+
+  creditoRetido:
+    address: distribuicao.credito.retido
+    description: Credito retido durante o calculo (um evento por credito retido).
+    bindings:
+      amqp: *distExchange
+    messages:
+      creditoRetido:
+        $ref: '#/components/messages/CreditoRetido'
+
+  processoAprovado:
+    address: distribuicao.processo.aprovado
+    description: Processo aprovado.
+    bindings:
+      amqp: *distExchange
+    messages:
+      processoAprovado:
+        $ref: '#/components/messages/ProcessoAprovado'
+
+  processoCancelado:
+    address: distribuicao.processo.cancelado
+    description: Processo cancelado (com devolucao de ajustes de estorno).
+    bindings:
+      amqp: *distExchange
+    messages:
+      processoCancelado:
+        $ref: '#/components/messages/ProcessoCancelado'
+
+  processoFinalizado:
+    address: distribuicao.processo.finalizado
+    description: Processo finalizado.
+    bindings:
+      amqp: *distExchange
+    messages:
+      processoFinalizado:
+        $ref: '#/components/messages/ProcessoFinalizado'
+
+  rolProcessado:
+    address: distribuicao.rol.processado
+    description: Rol processado dentro da finalizacao do processo.
+    bindings:
+      amqp: *distExchange
+    messages:
+      rolProcessado:
+        $ref: '#/components/messages/RolProcessado'
+
+  creditoLiberado:
+    address: distribuicao.credito.liberado
+    description: Credito retido liberado (um evento por credito liberado).
+    bindings:
+      amqp: *distExchange
+    messages:
+      creditoLiberado:
+        $ref: '#/components/messages/CreditoLiberado'
+
+  ajusteEstornoRegistrado:
+    address: distribuicao.ajuste.estorno.registrado
+    description: Ajuste de estorno registrado (pendente de aplicacao).
+    bindings:
+      amqp: *distExchange
+    messages:
+      ajusteEstornoRegistrado:
+        $ref: '#/components/messages/AjusteEstornoRegistrado'
+
+  ajusteEstornoAplicado:
+    address: distribuicao.ajuste.estorno.aplicado
+    description: Ajuste de estorno aplicado em um processo.
+    bindings:
+      amqp: *distExchange
+    messages:
+      ajusteEstornoAplicado:
+        $ref: '#/components/messages/AjusteEstornoAplicado'
+
+  # ---------- CONSUMIDOS (consumer) ----------
+  rubrica:
+    address: arrecadacao.rubrica.*
+    description: |
+      Rubrica criada/atualizada (consumido). Fila `distribuicao.rubricas` ligada a
+      `arrecadacao.events` com routing keys arrecadacao.rubrica.criada e .atualizada.
+      CloudEvents structured. Owned by Arrecadacao.
+    bindings:
+      amqp:
+        is: routingKey
+        exchange:
+          name: arrecadacao.events
+          type: topic
+          durable: true
+          autoDelete: false
+        bindingVersion: 0.3.0
+    messages:
+      rubrica:
+        $ref: '#/components/messages/RubricaConsumed'
+
+  rol:
+    address: identificacao.rol.*
+    description: |
+      Rol fechado/cancelado (consumido). Fila `distribuicao.rol` ligada a
+      `identificacao.events` com routing keys identificacao.rol.fechado e .cancelado.
+      CloudEvents structured. Owned by Identificacao.
+    bindings:
+      amqp:
+        is: routingKey
+        exchange:
+          name: identificacao.events
+          type: topic
+          durable: true
+          autoDelete: false
+        bindingVersion: 0.3.0
+    messages:
+      rol:
+        $ref: '#/components/messages/RolConsumed'
+
+  verba:
+    address: arrecadacao.verba.disponivel
+    description: |
+      Verba disponivel (consumido). Fila `distribuicao.verba` ligada a
+      `arrecadacao.events`. CloudEvents structured. Owned by Arrecadacao.
+    bindings:
+      amqp:
+        is: routingKey
+        exchange:
+          name: arrecadacao.events
+          type: topic
+          durable: true
+          autoDelete: false
+        bindingVersion: 0.3.0
+    messages:
+      verba:
+        $ref: '#/components/messages/VerbaConsumed'
+
+  pagamentoEstornado:
+    address: arrecadacao.pagamento.estornado
+    description: |
+      Pagamento estornado (consumido). Fila `distribuicao.pagamento-estornado`
+      ligada a `arrecadacao.events`. CloudEvents structured, envelope validado
+      estritamente. Owned by Arrecadacao.
+    bindings:
+      amqp:
+        is: routingKey
+        exchange:
+          name: arrecadacao.events
+          type: topic
+          durable: true
+          autoDelete: false
+        bindingVersion: 0.3.0
+    messages:
+      pagamentoEstornado:
+        $ref: '#/components/messages/PagamentoEstornadoConsumed'
+
+  identityUser:
+    address: identity.user.*
+    description: |
+      Eventos de usuario do Identity (consumido). Fila `distribuicao.identity.users`
+      ligada a `identity.events`. NAO usa CloudEvents; envelope proprio. Owned by Identity.
+    bindings:
+      amqp:
+        is: routingKey
+        exchange:
+          name: identity.events
+          type: topic
+          durable: true
+          autoDelete: false
+        bindingVersion: 0.3.0
+    messages:
+      identityUser:
+        $ref: '#/components/messages/IdentityUserEvent'
+
+operations:
+  sendProcessoIniciado:
+    action: send
+    channel: { $ref: '#/channels/processoIniciado' }
+    messages:
+      - $ref: '#/channels/processoIniciado/messages/processoIniciado'
+  sendProcessoCalculado:
+    action: send
+    channel: { $ref: '#/channels/processoCalculado' }
+    messages:
+      - $ref: '#/channels/processoCalculado/messages/processoCalculado'
+  sendCreditoRetido:
+    action: send
+    channel: { $ref: '#/channels/creditoRetido' }
+    messages:
+      - $ref: '#/channels/creditoRetido/messages/creditoRetido'
+  sendProcessoAprovado:
+    action: send
+    channel: { $ref: '#/channels/processoAprovado' }
+    messages:
+      - $ref: '#/channels/processoAprovado/messages/processoAprovado'
+  sendProcessoCancelado:
+    action: send
+    channel: { $ref: '#/channels/processoCancelado' }
+    messages:
+      - $ref: '#/channels/processoCancelado/messages/processoCancelado'
+  sendProcessoFinalizado:
+    action: send
+    channel: { $ref: '#/channels/processoFinalizado' }
+    messages:
+      - $ref: '#/channels/processoFinalizado/messages/processoFinalizado'
+  sendRolProcessado:
+    action: send
+    channel: { $ref: '#/channels/rolProcessado' }
+    messages:
+      - $ref: '#/channels/rolProcessado/messages/rolProcessado'
+  sendCreditoLiberado:
+    action: send
+    channel: { $ref: '#/channels/creditoLiberado' }
+    messages:
+      - $ref: '#/channels/creditoLiberado/messages/creditoLiberado'
+  sendAjusteEstornoRegistrado:
+    action: send
+    channel: { $ref: '#/channels/ajusteEstornoRegistrado' }
+    messages:
+      - $ref: '#/channels/ajusteEstornoRegistrado/messages/ajusteEstornoRegistrado'
+  sendAjusteEstornoAplicado:
+    action: send
+    channel: { $ref: '#/channels/ajusteEstornoAplicado' }
+    messages:
+      - $ref: '#/channels/ajusteEstornoAplicado/messages/ajusteEstornoAplicado'
+  receiveRubrica:
+    action: receive
+    channel: { $ref: '#/channels/rubrica' }
+    messages:
+      - $ref: '#/channels/rubrica/messages/rubrica'
+  receiveRol:
+    action: receive
+    channel: { $ref: '#/channels/rol' }
+    messages:
+      - $ref: '#/channels/rol/messages/rol'
+  receiveVerba:
+    action: receive
+    channel: { $ref: '#/channels/verba' }
+    messages:
+      - $ref: '#/channels/verba/messages/verba'
+  receivePagamentoEstornado:
+    action: receive
+    channel: { $ref: '#/channels/pagamentoEstornado' }
+    messages:
+      - $ref: '#/channels/pagamentoEstornado/messages/pagamentoEstornado'
+  receiveIdentityUser:
+    action: receive
+    channel: { $ref: '#/channels/identityUser' }
+    messages:
+      - $ref: '#/channels/identityUser/messages/identityUser'
+
+components:
+  messages:
+    ProcessoIniciado:
+      name: ProcessoIniciado
+      contentType: application/cloudevents+json
+      payload:
+        allOf:
+          - $ref: '#/components/schemas/CloudEventEnvelope'
+          - type: object
+            properties:
+              type: { const: distribuicao.processo.iniciado }
+              data: { $ref: '#/components/schemas/ProcessoIniciadoData' }
+            required: [data]
+    ProcessoCalculado:
+      name: ProcessoCalculado
+      contentType: application/cloudevents+json
+      payload:
+        allOf:
+          - $ref: '#/components/schemas/CloudEventEnvelope'
+          - type: object
+            properties:
+              type: { const: distribuicao.processo.calculado }
+              data: { $ref: '#/components/schemas/ProcessoCalculadoData' }
+            required: [data]
+    CreditoRetido:
+      name: CreditoRetido
+      contentType: application/cloudevents+json
+      payload:
+        allOf:
+          - $ref: '#/components/schemas/CloudEventEnvelope'
+          - type: object
+            properties:
+              type: { const: distribuicao.credito.retido }
+              data: { $ref: '#/components/schemas/CreditoRetidoData' }
+            required: [data]
+    ProcessoAprovado:
+      name: ProcessoAprovado
+      contentType: application/cloudevents+json
+      payload:
+        allOf:
+          - $ref: '#/components/schemas/CloudEventEnvelope'
+          - type: object
+            properties:
+              type: { const: distribuicao.processo.aprovado }
+              data: { $ref: '#/components/schemas/ProcessoAprovadoData' }
+            required: [data]
+    ProcessoCancelado:
+      name: ProcessoCancelado
+      contentType: application/cloudevents+json
+      payload:
+        allOf:
+          - $ref: '#/components/schemas/CloudEventEnvelope'
+          - type: object
+            properties:
+              type: { const: distribuicao.processo.cancelado }
+              data: { $ref: '#/components/schemas/ProcessoCanceladoData' }
+            required: [data]
+    ProcessoFinalizado:
+      name: ProcessoFinalizado
+      contentType: application/cloudevents+json
+      payload:
+        allOf:
+          - $ref: '#/components/schemas/CloudEventEnvelope'
+          - type: object
+            properties:
+              type: { const: distribuicao.processo.finalizado }
+              data: { $ref: '#/components/schemas/ProcessoFinalizadoData' }
+            required: [data]
+    RolProcessado:
+      name: RolProcessado
+      contentType: application/cloudevents+json
+      payload:
+        allOf:
+          - $ref: '#/components/schemas/CloudEventEnvelope'
+          - type: object
+            properties:
+              type: { const: distribuicao.rol.processado }
+              data: { $ref: '#/components/schemas/RolProcessadoData' }
+            required: [data]
+    CreditoLiberado:
+      name: CreditoLiberado
+      contentType: application/cloudevents+json
+      payload:
+        allOf:
+          - $ref: '#/components/schemas/CloudEventEnvelope'
+          - type: object
+            properties:
+              type: { const: distribuicao.credito.liberado }
+              data: { $ref: '#/components/schemas/CreditoLiberadoData' }
+            required: [data]
+    AjusteEstornoRegistrado:
+      name: AjusteEstornoRegistrado
+      contentType: application/cloudevents+json
+      payload:
+        allOf:
+          - $ref: '#/components/schemas/CloudEventEnvelope'
+          - type: object
+            properties:
+              type: { const: distribuicao.ajuste.estorno.registrado }
+              data: { $ref: '#/components/schemas/AjusteEstornoRegistradoData' }
+            required: [data]
+    AjusteEstornoAplicado:
+      name: AjusteEstornoAplicado
+      contentType: application/cloudevents+json
+      payload:
+        allOf:
+          - $ref: '#/components/schemas/CloudEventEnvelope'
+          - type: object
+            properties:
+              type: { const: distribuicao.ajuste.estorno.aplicado }
+              data: { $ref: '#/components/schemas/AjusteEstornoAplicadoData' }
+            required: [data]
+    RubricaConsumed:
+      name: RubricaConsumed
+      title: Rubrica (consumido de Arrecadacao)
+      contentType: application/cloudevents+json
+      payload:
+        allOf:
+          - $ref: '#/components/schemas/CloudEventEnvelope'
+          - type: object
+            properties:
+              data: { $ref: '#/components/schemas/RubricaConsumedData' }
+            required: [data]
+    RolConsumed:
+      name: RolConsumed
+      title: Rol (consumido de Identificacao)
+      contentType: application/cloudevents+json
+      payload:
+        allOf:
+          - $ref: '#/components/schemas/CloudEventEnvelope'
+          - type: object
+            properties:
+              data: { $ref: '#/components/schemas/RolConsumedData' }
+            required: [data]
+    VerbaConsumed:
+      name: VerbaConsumed
+      title: Verba disponivel (consumido de Arrecadacao)
+      contentType: application/cloudevents+json
+      payload:
+        allOf:
+          - $ref: '#/components/schemas/CloudEventEnvelope'
+          - type: object
+            properties:
+              data: { $ref: '#/components/schemas/VerbaConsumedData' }
+            required: [data]
+    PagamentoEstornadoConsumed:
+      name: PagamentoEstornadoConsumed
+      title: Pagamento estornado (consumido de Arrecadacao)
+      contentType: application/cloudevents+json
+      payload:
+        allOf:
+          - $ref: '#/components/schemas/CloudEventEnvelope'
+          - type: object
+            properties:
+              type: { const: arrecadacao.pagamento.estornado }
+              data: { $ref: '#/components/schemas/PagamentoEstornadoConsumedData' }
+            required: [data]
+    IdentityUserEvent:
+      name: IdentityUserEvent
+      title: Evento de usuario do Identity (envelope proprio, NAO CloudEvents)
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/IdentityUserEnvelope'
+
+  schemas:
+    CloudEventEnvelope:
+      type: object
+      description: Envelope CloudEvents 1.0 (modo structured).
+      properties:
+        specversion: { type: string, const: "1.0" }
+        id: { type: string, format: uuid }
+        source: { type: string, const: urn:distribuicao-api }
+        type: { type: string }
+        subject: { type: string }
+        time: { type: string, format: date-time }
+        datacontenttype: { type: string, const: application/json }
+      required: [specversion, id, source, type]
+
+    ProcessoIniciadoData:
+      type: object
+      properties:
+        processoId: { type: string, format: uuid }
+        rubricaSigla: { type: string }
+        periodo: { type: string }
+        status: { type: string }
+        analistaResponsavel: { type: string }
+      required: [processoId, rubricaSigla, periodo, status]
+
+    ProcessoCalculadoData:
+      type: object
+      description: Decimais como numero JSON; timestamps ISO-8601.
+      properties:
+        processoId: { type: string, format: uuid }
+        rubricaSigla: { type: string }
+        periodo: { type: string }
+        status: { type: string }
+        totalExecucoes: { type: integer }
+        totalObras: { type: integer }
+        totalCreditos: { type: integer }
+        valorTotalCalculado: { type: number }
+        totalCreditosRetidos: { type: integer }
+        valorTotalRetido: { type: number }
+        totalCreditosRetidosLiberados: { type: integer }
+        valorTotalRetidosLiberados: { type: number }
+        totalAjustesEstorno: { type: integer }
+        valorTotalAjustesEstorno: { type: number }
+        calculadoEm: { type: string, format: date-time }
+      required: [processoId, rubricaSigla, periodo, status]
+
+    CreditoRetidoData:
+      type: object
+      properties:
+        creditoId: { type: string, format: uuid }
+        processoId: { type: string, format: uuid }
+        rubricaSigla: { type: string }
+        periodo: { type: string }
+        titularId: { type: string, format: uuid }
+        titularNome: { type: string }
+        obraId: { type: string, format: uuid }
+        obraTitulo: { type: string }
+        fonogramaId: { type: [string, "null"], format: uuid }
+        categoria: { type: string }
+        subcategoriaConexa: { type: [string, "null"] }
+        valorCredito: { type: number }
+        motivoRetencao: { type: string }
+        retidoEm: { type: string, format: date-time }
+      required: [creditoId, processoId, rubricaSigla, periodo, titularId, obraId, categoria, valorCredito, motivoRetencao]
+
+    ProcessoAprovadoData:
+      type: object
+      properties:
+        processoId: { type: string, format: uuid }
+        rubricaSigla: { type: string }
+        periodo: { type: string }
+        status: { type: string }
+      required: [processoId, rubricaSigla, periodo, status]
+
+    ProcessoCanceladoData:
+      type: object
+      properties:
+        processoId: { type: string, format: uuid }
+        rubricaSigla: { type: string }
+        periodo: { type: string }
+        status: { type: string }
+        justificativa: { type: string }
+        totalAjustesEstornoDevolvidos: { type: integer }
+        valorTotalAjustesEstornoDevolvidos: { type: number }
+      required: [processoId, rubricaSigla, periodo, status]
+
+    ProcessoFinalizadoData:
+      type: object
+      properties:
+        processoId: { type: string, format: uuid }
+        rubricaSigla: { type: string }
+        periodo: { type: string }
+        status: { type: string }
+        totalCreditosRetidosLiberados: { type: integer }
+        valorTotalRetidosLiberados: { type: number }
+        totalAjustesEstorno: { type: integer }
+        valorTotalAjustesEstorno: { type: number }
+      required: [processoId, rubricaSigla, periodo, status]
+
+    RolProcessadoData:
+      type: object
+      description: captacaoId e omitido (nao serializado) quando nulo.
+      properties:
+        processoId: { type: string, format: uuid }
+        rubricaSigla: { type: string }
+        periodo: { type: string }
+        captacaoId: { type: string, format: uuid }
+      required: [processoId, rubricaSigla, periodo]
+
+    CreditoLiberadoData:
+      type: object
+      properties:
+        creditoId: { type: string, format: uuid }
+        processoOrigemId: { type: string, format: uuid }
+        processoLiberacaoId: { type: string, format: uuid }
+        rubricaSigla: { type: string }
+        periodoOrigem: { type: string }
+        periodoLiberacao: { type: string }
+        titularId: { type: string, format: uuid }
+        titularNome: { type: string }
+        obraId: { type: string, format: uuid }
+        obraTitulo: { type: string }
+        fonogramaId: { type: [string, "null"], format: uuid }
+        categoria: { type: string }
+        subcategoriaConexa: { type: [string, "null"] }
+        valorLiberado: { type: number }
+        motivoRetencaoOriginal: { type: string }
+        retidoEm: { type: string, format: date-time }
+        liberadoEm: { type: string, format: date-time }
+      required: [creditoId, processoOrigemId, processoLiberacaoId, rubricaSigla, valorLiberado]
+
+    AjusteEstornoRegistradoData:
+      type: object
+      properties:
+        ajusteId: { type: string, format: uuid }
+        pagamentoId: { type: string, format: uuid }
+        licencaId: { type: string, format: uuid }
+        rubricaSigla: { type: string }
+        periodoOrigem: { type: string }
+        processoOrigemId: { type: string, format: uuid }
+        valorEstornadoBruto: { type: number }
+        valorAjusteLiquido: { type: number }
+        status: { type: string }
+        estornadoPor: { type: string }
+        estornadoEm: { type: string, format: date-time }
+        registradoEm: { type: string, format: date-time }
+      required: [ajusteId, pagamentoId, licencaId, rubricaSigla, valorEstornadoBruto, status]
+
+    AjusteEstornoAplicadoData:
+      type: object
+      properties:
+        ajusteId: { type: string, format: uuid }
+        pagamentoId: { type: string, format: uuid }
+        licencaId: { type: string, format: uuid }
+        rubricaSigla: { type: string }
+        periodoOrigem: { type: string }
+        periodoAplicacao: { type: string }
+        processoOrigemId: { type: string, format: uuid }
+        processoAplicacaoId: { type: string, format: uuid }
+        valorEstornadoBruto: { type: number }
+        valorAjusteLiquido: { type: number }
+        valorAplicado: { type: number }
+        totalLinhas: { type: integer }
+        estornadoPor: { type: string }
+        estornadoEm: { type: string, format: date-time }
+        aplicadoEm: { type: string, format: date-time }
+      required: [ajusteId, pagamentoId, licencaId, rubricaSigla, valorAplicado, processoAplicacaoId]
+
+    RubricaConsumedData:
+      type: object
+      properties:
+        sigla: { type: string }
+        nome: { type: string }
+        exigeClassificacao: { type: boolean }
+        ativo: { type: boolean }
+      required: [sigla, nome]
+
+    RolConsumedData:
+      type: object
+      properties:
+        rubricaSigla: { type: string }
+        periodo: { type: string }
+        captacaoId: { type: [string, "null"], format: uuid }
+        totalExecucoes: { type: integer, default: 0 }
+      required: [rubricaSigla, periodo]
+
+    VerbaConsumedData:
+      type: object
+      description: |
+        DIVERGENCIA: o consumidor le `valorBruto`, mas o produtor (Arrecadacao)
+        publica `valorBrutoTotal`. Ver nota de divergencia.
+      properties:
+        rubricaSigla: { type: string }
+        periodo: { type: string }
+        valorBruto: { type: [number, "null"] }
+        deducaoEcad: { type: [number, "null"] }
+        deducaoAssociacoes: { type: [number, "null"] }
+        verbaLiquida: { type: number }
+      required: [rubricaSigla, periodo, verbaLiquida]
+
+    PagamentoEstornadoConsumedData:
+      type: object
+      description: Nomes de campo no wire (data). O consumidor mapeia periodo->periodoOrigem e valorEstornado->valorEstornadoBruto.
+      properties:
+        pagamentoId: { type: string, format: uuid }
+        licencaId: { type: string, format: uuid }
+        rubricaSigla: { type: string }
+        periodo: { type: string }
+        quantidadeUdas: { type: string }
+        valorEstornado: { type: string }
+        justificativa: { type: string }
+        estornadoPor: { type: string }
+        estornadoEm: { type: string }
+      required: [pagamentoId, licencaId, rubricaSigla, periodo, valorEstornado]
+
+    IdentityUserEnvelope:
+      type: object
+      description: Envelope proprio do canal identity.events (NAO CloudEvents).
+      properties:
+        eventId: { type: string }
+        eventType:
+          type: string
+          enum: [identity.user.upserted, identity.user.suspended, identity.user.deleted]
+        occurredAt: { type: string, format: date-time }
+        user:
+          type: object
+          properties:
+            logtoUserId: { type: string }
+            username: { type: [string, "null"] }
+            displayName: { type: [string, "null"] }
+            email: { type: [string, "null"] }
+            avatarUrl: { type: [string, "null"] }
+            roles:
+              type: array
+              items: { type: string }
+            isSuspended: { type: boolean, default: false }
+            raw: { type: object }
+          required: [logtoUserId]
+      required: [eventId, eventType, occurredAt, user]

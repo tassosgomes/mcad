@@ -1,0 +1,3031 @@
+{
+  "components": {
+    "schemas": {
+      "AbrirSolicitacaoRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "campo": {
+            "nullable": true,
+            "type": "string"
+          },
+          "justificativa": {
+            "nullable": true,
+            "type": "string"
+          },
+          "valorPretendido": {
+            "nullable": true,
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "AdicionarParticipacaoRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "categoria": {
+            "nullable": true,
+            "type": "string"
+          },
+          "titularId": {
+            "format": "uuid",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "AdicionarTitularidadeRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "categoria": {
+            "nullable": true,
+            "type": "string"
+          },
+          "percentual": {
+            "format": "double",
+            "type": "number"
+          },
+          "titularId": {
+            "format": "uuid",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "AjustarPercentualRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "percentual": {
+            "format": "double",
+            "type": "number"
+          }
+        },
+        "type": "object"
+      },
+      "AlterarDominioPublicoRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "dominioPublico": {
+            "type": "boolean"
+          }
+        },
+        "type": "object"
+      },
+      "AlterarSenhaRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "novaSenha": {
+            "nullable": true,
+            "type": "string"
+          },
+          "senhaAtual": {
+            "nullable": true,
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "AtualizarContatoRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "email": {
+            "nullable": true,
+            "type": "string"
+          },
+          "endereco": {
+            "$ref": "#/components/schemas/EnderecoDto"
+          },
+          "telefones": {
+            "items": {
+              "$ref": "#/components/schemas/TelefoneDto"
+            },
+            "nullable": true,
+            "type": "array"
+          }
+        },
+        "type": "object"
+      },
+      "AtualizarFonogramaRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "dataGravacao": {
+            "format": "date",
+            "nullable": true,
+            "type": "string"
+          },
+          "dataLancamento": {
+            "format": "date",
+            "nullable": true,
+            "type": "string"
+          },
+          "isrc": {
+            "nullable": true,
+            "type": "string"
+          },
+          "paisOrigem": {
+            "nullable": true,
+            "type": "string"
+          },
+          "urlAudio": {
+            "nullable": true,
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "AtualizarObraRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "genero": {
+            "nullable": true,
+            "type": "string"
+          },
+          "subtitulo": {
+            "nullable": true,
+            "type": "string"
+          },
+          "tipo": {
+            "nullable": true,
+            "type": "string"
+          },
+          "titulo": {
+            "nullable": true,
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "AtualizarTitularRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "associacaoId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "caeIpi": {
+            "nullable": true,
+            "type": "string"
+          },
+          "nacionalidade": {
+            "nullable": true,
+            "type": "string"
+          },
+          "nome": {
+            "nullable": true,
+            "type": "string"
+          },
+          "status": {
+            "nullable": true,
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "AutoCadastroTitularRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "caeIpi": {
+            "nullable": true,
+            "type": "string"
+          },
+          "documento": {
+            "nullable": true,
+            "type": "string"
+          },
+          "senha": {
+            "nullable": true,
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "BloquearFonogramaRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "justificativa": {
+            "nullable": true,
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "BloquearObraRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "justificativa": {
+            "nullable": true,
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "CancelarOcorrenciaRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "justificativa": {
+            "nullable": true,
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "CriarFonogramaCommand": {
+        "additionalProperties": false,
+        "properties": {
+          "dataGravacao": {
+            "format": "date",
+            "nullable": true,
+            "type": "string"
+          },
+          "dataLancamento": {
+            "format": "date",
+            "nullable": true,
+            "type": "string"
+          },
+          "isrc": {
+            "nullable": true,
+            "type": "string"
+          },
+          "obraId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "paisOrigem": {
+            "nullable": true,
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "CriarObraCommand": {
+        "additionalProperties": false,
+        "properties": {
+          "genero": {
+            "nullable": true,
+            "type": "string"
+          },
+          "subtitulo": {
+            "nullable": true,
+            "type": "string"
+          },
+          "tipo": {
+            "nullable": true,
+            "type": "string"
+          },
+          "titulo": {
+            "nullable": true,
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "CriarOcorrenciaRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "descricao": {
+            "nullable": true,
+            "type": "string"
+          },
+          "fonogramaId": {
+            "format": "uuid",
+            "nullable": true,
+            "type": "string"
+          },
+          "obraId": {
+            "format": "uuid",
+            "nullable": true,
+            "type": "string"
+          },
+          "tipo": {
+            "nullable": true,
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "CriarTitularRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "associacaoId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "caeIpi": {
+            "nullable": true,
+            "type": "string"
+          },
+          "documento": {
+            "nullable": true,
+            "type": "string"
+          },
+          "nacionalidade": {
+            "nullable": true,
+            "type": "string"
+          },
+          "nome": {
+            "nullable": true,
+            "type": "string"
+          },
+          "tipo": {
+            "nullable": true,
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "DefinirUrlAudioCommand": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "url": {
+            "nullable": true,
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "DepurarFonogramaRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "dataGravacao": {
+            "format": "date",
+            "nullable": true,
+            "type": "string"
+          },
+          "dataLancamento": {
+            "format": "date",
+            "nullable": true,
+            "type": "string"
+          },
+          "isrc": {
+            "nullable": true,
+            "type": "string"
+          },
+          "paisOrigem": {
+            "nullable": true,
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "DepurarObraRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "genero": {
+            "nullable": true,
+            "type": "string"
+          },
+          "subtitulo": {
+            "nullable": true,
+            "type": "string"
+          },
+          "tipo": {
+            "nullable": true,
+            "type": "string"
+          },
+          "titulo": {
+            "nullable": true,
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "EditarTitularidadeRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "percentual": {
+            "format": "double",
+            "type": "number"
+          }
+        },
+        "type": "object"
+      },
+      "EnderecoDto": {
+        "additionalProperties": false,
+        "properties": {
+          "bairro": {
+            "nullable": true,
+            "type": "string"
+          },
+          "cep": {
+            "nullable": true,
+            "type": "string"
+          },
+          "cidade": {
+            "nullable": true,
+            "type": "string"
+          },
+          "complemento": {
+            "nullable": true,
+            "type": "string"
+          },
+          "logradouro": {
+            "nullable": true,
+            "type": "string"
+          },
+          "numero": {
+            "nullable": true,
+            "type": "string"
+          },
+          "uf": {
+            "nullable": true,
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "LoginTitularRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "documento": {
+            "nullable": true,
+            "type": "string"
+          },
+          "senha": {
+            "nullable": true,
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "OwnershipSnapshotRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "fonogramaIds": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "nullable": true,
+            "type": "array"
+          },
+          "obraIds": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "nullable": true,
+            "type": "array"
+          }
+        },
+        "type": "object"
+      },
+      "RejeitarSolicitacaoRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "justificativaRejeicao": {
+            "nullable": true,
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "ResolverOcorrenciaRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "parecer": {
+            "nullable": true,
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "TelefoneDto": {
+        "additionalProperties": false,
+        "properties": {
+          "numero": {
+            "nullable": true,
+            "type": "string"
+          },
+          "tipo": {
+            "nullable": true,
+            "type": "string"
+          }
+        },
+        "type": "object"
+      }
+    },
+    "securitySchemes": {
+      "Bearer": {
+        "bearerFormat": "JWT",
+        "description": "Token JWT obtido via Keycloak. Informe apenas o token, sem o prefixo 'Bearer'.",
+        "scheme": "bearer",
+        "type": "http"
+      }
+    }
+  },
+  "info": {
+    "description": "API REST do domínio de Cadastro — obras, fonogramas, titulares e associações.",
+    "title": "Cadastro API",
+    "version": "v1"
+  },
+  "openapi": "3.0.1",
+  "paths": {
+    "/api/v1/associacoes": {
+      "get": {
+        "operationId": "GetAssociacoes",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "summary": "Lista todas as associações de gestão coletiva do ECAD",
+        "tags": [
+          "Associações"
+        ]
+      }
+    },
+    "/api/v1/associacoes/{id}": {
+      "get": {
+        "operationId": "GetAssociacaoById",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "summary": "Busca associação por ID",
+        "tags": [
+          "Associações"
+        ]
+      }
+    },
+    "/api/v1/busca": {
+      "get": {
+        "parameters": [
+          {
+            "in": "query",
+            "name": "Q",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "Tipo",
+            "schema": {
+              "default": "todos",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "Size",
+            "schema": {
+              "default": 20,
+              "format": "int32",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Busca"
+        ]
+      }
+    },
+    "/api/v1/dashboard/resumo": {
+      "get": {
+        "operationId": "GetDashboardResumo",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "summary": "Retorna resumo agregado do domínio de Cadastro para a dashboard",
+        "tags": [
+          "Dashboard"
+        ]
+      }
+    },
+    "/api/v1/distribuicao/ownership-snapshot": {
+      "post": {
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OwnershipSnapshotRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Distribuição"
+        ]
+      }
+    },
+    "/api/v1/fonogramas": {
+      "get": {
+        "parameters": [
+          {
+            "in": "query",
+            "name": "Page",
+            "schema": {
+              "default": 1,
+              "format": "int32",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "Size",
+            "schema": {
+              "default": 20,
+              "format": "int32",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "Sort",
+            "schema": {
+              "default": "isrc",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "Codigo",
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "Isrc",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "ObraId",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "ObraTitulo",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "Status",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "Pais",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Fonogramas"
+        ]
+      },
+      "post": {
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CriarFonogramaCommand"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Fonogramas"
+        ]
+      }
+    },
+    "/api/v1/fonogramas/{entidadeId}/anexos": {
+      "get": {
+        "operationId": "ListarAnexosFonograma",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "entidadeId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "summary": "Listar anexos de Fonograma",
+        "tags": [
+          "Anexos - Fonogramas"
+        ]
+      },
+      "post": {
+        "operationId": "UploadAnexoFonograma",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "entidadeId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "encoding": {
+                "arquivo": {
+                  "style": "form"
+                },
+                "categoria": {
+                  "style": "form"
+                }
+              },
+              "schema": {
+                "properties": {
+                  "arquivo": {
+                    "format": "binary",
+                    "type": "string"
+                  },
+                  "categoria": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "arquivo",
+                  "categoria"
+                ],
+                "type": "object"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "summary": "Upload de anexo para Fonograma (máx 100 MB)",
+        "tags": [
+          "Anexos - Fonogramas"
+        ]
+      }
+    },
+    "/api/v1/fonogramas/{entidadeId}/anexos/{anexoId}": {
+      "delete": {
+        "operationId": "RemoverAnexoFonograma",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "entidadeId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "anexoId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "summary": "Remover Anexo de Fonograma (soft delete + remove do storage)",
+        "tags": [
+          "Anexos - Fonogramas"
+        ]
+      },
+      "get": {
+        "operationId": "ObterAnexoFonograma",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "entidadeId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "anexoId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "summary": "Metadados de Anexo de Fonograma (sincroniza status de scan)",
+        "tags": [
+          "Anexos - Fonogramas"
+        ]
+      }
+    },
+    "/api/v1/fonogramas/{entidadeId}/anexos/{anexoId}/download": {
+      "get": {
+        "operationId": "DownloadAnexoFonograma",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "entidadeId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "anexoId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "summary": "Obter URL presigned de download (válida 15 min) — requer status clean",
+        "tags": [
+          "Anexos - Fonogramas"
+        ]
+      }
+    },
+    "/api/v1/fonogramas/{fonogramaId}/participacoes": {
+      "get": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "fonogramaId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Participações Conexas"
+        ]
+      },
+      "post": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "fonogramaId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdicionarParticipacaoRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Participações Conexas"
+        ]
+      }
+    },
+    "/api/v1/fonogramas/{fonogramaId}/participacoes/calcular": {
+      "post": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "fonogramaId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Participações Conexas"
+        ]
+      }
+    },
+    "/api/v1/fonogramas/{fonogramaId}/participacoes/{id}": {
+      "delete": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "fonogramaId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Participações Conexas"
+        ]
+      },
+      "put": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "fonogramaId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AjustarPercentualRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Participações Conexas"
+        ]
+      }
+    },
+    "/api/v1/fonogramas/{id}": {
+      "delete": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Fonogramas"
+        ]
+      },
+      "get": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Fonogramas"
+        ]
+      },
+      "put": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AtualizarFonogramaRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Fonogramas"
+        ]
+      }
+    },
+    "/api/v1/fonogramas/{id}/bloquear": {
+      "post": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BloquearFonogramaRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Fonogramas"
+        ]
+      }
+    },
+    "/api/v1/fonogramas/{id}/depurar": {
+      "post": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DepurarFonogramaRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Fonogramas"
+        ]
+      }
+    },
+    "/api/v1/fonogramas/{id}/desbloquear": {
+      "post": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Fonogramas"
+        ]
+      }
+    },
+    "/api/v1/fonogramas/{id}/historico-bloqueios": {
+      "get": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Fonogramas"
+        ]
+      }
+    },
+    "/api/v1/fonogramas/{id}/liberar": {
+      "post": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Fonogramas"
+        ]
+      }
+    },
+    "/api/v1/fonogramas/{id}/url-audio": {
+      "patch": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DefinirUrlAudioCommand"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Fonogramas"
+        ]
+      }
+    },
+    "/api/v1/obras": {
+      "get": {
+        "parameters": [
+          {
+            "in": "query",
+            "name": "Page",
+            "schema": {
+              "default": 1,
+              "format": "int32",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "Size",
+            "schema": {
+              "default": 20,
+              "format": "int32",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "Sort",
+            "schema": {
+              "default": "titulo",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "Codigo",
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "Titulo",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "Iswc",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "Tipo",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "Status",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "Genero",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Obras"
+        ]
+      },
+      "post": {
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CriarObraCommand"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Obras"
+        ]
+      }
+    },
+    "/api/v1/obras/{entidadeId}/anexos": {
+      "get": {
+        "operationId": "ListarAnexosObra",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "entidadeId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "summary": "Listar anexos de Obra",
+        "tags": [
+          "Anexos - Obras"
+        ]
+      },
+      "post": {
+        "operationId": "UploadAnexoObra",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "entidadeId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "encoding": {
+                "arquivo": {
+                  "style": "form"
+                },
+                "categoria": {
+                  "style": "form"
+                }
+              },
+              "schema": {
+                "properties": {
+                  "arquivo": {
+                    "format": "binary",
+                    "type": "string"
+                  },
+                  "categoria": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "arquivo",
+                  "categoria"
+                ],
+                "type": "object"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "summary": "Upload de anexo para Obra (máx 100 MB)",
+        "tags": [
+          "Anexos - Obras"
+        ]
+      }
+    },
+    "/api/v1/obras/{entidadeId}/anexos/{anexoId}": {
+      "delete": {
+        "operationId": "RemoverAnexoObra",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "entidadeId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "anexoId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "summary": "Remover Anexo de Obra (soft delete + remove do storage)",
+        "tags": [
+          "Anexos - Obras"
+        ]
+      },
+      "get": {
+        "operationId": "ObterAnexoObra",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "entidadeId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "anexoId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "summary": "Metadados de Anexo de Obra (sincroniza status de scan)",
+        "tags": [
+          "Anexos - Obras"
+        ]
+      }
+    },
+    "/api/v1/obras/{entidadeId}/anexos/{anexoId}/download": {
+      "get": {
+        "operationId": "DownloadAnexoObra",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "entidadeId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "anexoId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "summary": "Obter URL presigned de download (válida 15 min) — requer status clean",
+        "tags": [
+          "Anexos - Obras"
+        ]
+      }
+    },
+    "/api/v1/obras/{id}": {
+      "delete": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Obras"
+        ]
+      },
+      "get": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Obras"
+        ]
+      },
+      "put": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AtualizarObraRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Obras"
+        ]
+      }
+    },
+    "/api/v1/obras/{id}/bloquear": {
+      "post": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BloquearObraRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Obras"
+        ]
+      }
+    },
+    "/api/v1/obras/{id}/depurar": {
+      "post": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DepurarObraRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Obras"
+        ]
+      }
+    },
+    "/api/v1/obras/{id}/desbloquear": {
+      "post": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Obras"
+        ]
+      }
+    },
+    "/api/v1/obras/{id}/dominio-publico": {
+      "put": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AlterarDominioPublicoRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Obras"
+        ]
+      }
+    },
+    "/api/v1/obras/{id}/historico-bloqueios": {
+      "get": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Obras"
+        ]
+      }
+    },
+    "/api/v1/obras/{id}/iswc": {
+      "post": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Obras"
+        ]
+      }
+    },
+    "/api/v1/obras/{id}/liberar": {
+      "post": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Obras"
+        ]
+      }
+    },
+    "/api/v1/obras/{obraId}/fonogramas": {
+      "get": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "obraId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Fonogramas"
+        ]
+      }
+    },
+    "/api/v1/obras/{obraId}/titularidades": {
+      "get": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "obraId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Titularidades Autorais"
+        ]
+      },
+      "post": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "obraId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdicionarTitularidadeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Titularidades Autorais"
+        ]
+      }
+    },
+    "/api/v1/obras/{obraId}/titularidades/{id}": {
+      "delete": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "obraId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Titularidades Autorais"
+        ]
+      },
+      "put": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "obraId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EditarTitularidadeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Titularidades Autorais"
+        ]
+      }
+    },
+    "/api/v1/ocorrencias": {
+      "get": {
+        "operationId": "ListarOcorrencias",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "Status",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "TitularId",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "Tipo",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "Page",
+            "schema": {
+              "default": 1,
+              "format": "int32",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "Size",
+            "schema": {
+              "default": 20,
+              "format": "int32",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "summary": "Lista todas as ocorrências para triagem (filtros opcionais)",
+        "tags": [
+          "Ocorrências — Triagem"
+        ]
+      }
+    },
+    "/api/v1/ocorrencias/{id}": {
+      "get": {
+        "operationId": "ObterOcorrencia",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "summary": "Detalha uma ocorrência por Id",
+        "tags": [
+          "Ocorrências — Triagem"
+        ]
+      }
+    },
+    "/api/v1/ocorrencias/{id}/analisar": {
+      "post": {
+        "operationId": "AnalisarOcorrencia",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "summary": "Assume a análise de uma ocorrência (ABERTA → EM_ANALISE)",
+        "tags": [
+          "Ocorrências — Triagem"
+        ]
+      }
+    },
+    "/api/v1/ocorrencias/{id}/cancelar": {
+      "post": {
+        "operationId": "CancelarOcorrencia",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CancelarOcorrenciaRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "summary": "Cancela uma ocorrência com justificativa (ABERTA|EM_ANALISE → CANCELADA)",
+        "tags": [
+          "Ocorrências — Triagem"
+        ]
+      }
+    },
+    "/api/v1/ocorrencias/{id}/resolver": {
+      "post": {
+        "operationId": "ResolverOcorrencia",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResolverOcorrenciaRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "summary": "Resolve uma ocorrência (EM_ANALISE → RESOLVIDA) com parecer",
+        "tags": [
+          "Ocorrências — Triagem"
+        ]
+      }
+    },
+    "/api/v1/portal/auth/login": {
+      "post": {
+        "operationId": "LoginTitular",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginTitularRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "summary": "Autenticar titular via CPF/CNPJ + senha (emite JWT próprio)",
+        "tags": [
+          "Portal do Titular — Autenticação"
+        ]
+      }
+    },
+    "/api/v1/portal/auto-cadastro": {
+      "post": {
+        "operationId": "AutoCadastrarTitular",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AutoCadastroTitularRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "summary": "Auto-cadastro do titular no Portal (valida CPF/CNPJ + CAE/IPI)",
+        "tags": [
+          "Portal do Titular — Autenticação"
+        ]
+      }
+    },
+    "/api/v1/portal/me": {
+      "get": {
+        "operationId": "ObterMeuTitular",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "summary": "Retorna os dados básicos do titular autenticado (documento mascarado)",
+        "tags": [
+          "Portal do Titular — Dados"
+        ]
+      }
+    },
+    "/api/v1/portal/me/contato": {
+      "put": {
+        "operationId": "AtualizarMeuContato",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AtualizarContatoRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "summary": "Atualiza endereço, telefone e e-mail de contato do titular autenticado",
+        "tags": [
+          "Portal do Titular — Dados"
+        ]
+      }
+    },
+    "/api/v1/portal/me/senha": {
+      "put": {
+        "operationId": "AlterarSenhaTitular",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AlterarSenhaRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "summary": "Alterar senha do titular autenticado",
+        "tags": [
+          "Portal do Titular — Autenticação"
+        ]
+      }
+    },
+    "/api/v1/portal/meus-fonogramas": {
+      "get": {
+        "operationId": "ObterMeusFonogramas",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "page",
+            "schema": {
+              "default": 1,
+              "format": "int32",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "size",
+            "schema": {
+              "default": 20,
+              "format": "int32",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "filtro",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "sort",
+            "schema": {
+              "default": "titulo",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "summary": "Lista os fonogramas (participações conexas) do titular autenticado",
+        "tags": [
+          "Portal do Titular — Dados"
+        ]
+      }
+    },
+    "/api/v1/portal/minhas-obras": {
+      "get": {
+        "operationId": "ObterMinhasObras",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "page",
+            "schema": {
+              "default": 1,
+              "format": "int32",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "size",
+            "schema": {
+              "default": 20,
+              "format": "int32",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "filtro",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "sort",
+            "schema": {
+              "default": "titulo",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "summary": "Lista as obras (titularidades autorais) do titular autenticado",
+        "tags": [
+          "Portal do Titular — Dados"
+        ]
+      }
+    },
+    "/api/v1/portal/ocorrencias": {
+      "get": {
+        "operationId": "ListarMinhasOcorrencias",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "status",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "schema": {
+              "default": 1,
+              "format": "int32",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "size",
+            "schema": {
+              "default": 20,
+              "format": "int32",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "summary": "Lista as ocorrências do titular autenticado (com filtro opcional por status)",
+        "tags": [
+          "Portal do Titular — Dados"
+        ]
+      },
+      "post": {
+        "operationId": "CriarOcorrencia",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CriarOcorrenciaRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "summary": "Abre uma nova ocorrência (nasce ABERTA) para o titular autenticado",
+        "tags": [
+          "Portal do Titular — Dados"
+        ]
+      }
+    },
+    "/api/v1/portal/solicitacoes-alteracao": {
+      "get": {
+        "operationId": "ListarMinhasSolicitacoesAlteracao",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "status",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "schema": {
+              "default": 1,
+              "format": "int32",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "size",
+            "schema": {
+              "default": 20,
+              "format": "int32",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "summary": "Lista as solicitações de alteração do titular autenticado (com filtro opcional por status)",
+        "tags": [
+          "Portal do Titular — Dados"
+        ]
+      },
+      "post": {
+        "operationId": "AbrirSolicitacaoAlteracao",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AbrirSolicitacaoRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "summary": "Abre uma nova solicitação de alteração de dado sensível (nasce SOLICITADA)",
+        "tags": [
+          "Portal do Titular — Dados"
+        ]
+      }
+    },
+    "/api/v1/solicitacoes-alteracao": {
+      "get": {
+        "operationId": "ListarSolicitacoesAlteracao",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "Status",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "TitularId",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "Campo",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "Page",
+            "schema": {
+              "default": 1,
+              "format": "int32",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "Size",
+            "schema": {
+              "default": 20,
+              "format": "int32",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "summary": "Lista todas as solicitações de alteração para o painel do analista",
+        "tags": [
+          "Solicitações de Alteração — Analista"
+        ]
+      }
+    },
+    "/api/v1/solicitacoes-alteracao/{id}/aprovar": {
+      "post": {
+        "operationId": "AprovarSolicitacaoAlteracao",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "summary": "Aprova uma solicitação de alteração de dado sensível (aplica efeito no titular)",
+        "tags": [
+          "Solicitações de Alteração — Analista"
+        ]
+      }
+    },
+    "/api/v1/solicitacoes-alteracao/{id}/rejeitar": {
+      "post": {
+        "operationId": "RejeitarSolicitacaoAlteracao",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RejeitarSolicitacaoRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "summary": "Rejeita uma solicitação de alteração com justificativa (sem efeito no titular)",
+        "tags": [
+          "Solicitações de Alteração — Analista"
+        ]
+      }
+    },
+    "/api/v1/titulares": {
+      "get": {
+        "operationId": "ListarTitulares",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "page",
+            "schema": {
+              "default": 1,
+              "format": "int32",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "size",
+            "schema": {
+              "default": 20,
+              "format": "int32",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "sort",
+            "schema": {
+              "default": "nome",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "codigo",
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "nome",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "documento",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "associacaoId",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "status",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "summary": "Listar titulares com paginação, filtros e ordenação",
+        "tags": [
+          "Titulares"
+        ]
+      },
+      "post": {
+        "operationId": "CriarTitular",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CriarTitularRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "summary": "Criar novo titular PF ou PJ",
+        "tags": [
+          "Titulares"
+        ]
+      }
+    },
+    "/api/v1/titulares/busca": {
+      "get": {
+        "parameters": [
+          {
+            "in": "query",
+            "name": "Q",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "Limit",
+            "schema": {
+              "default": 10,
+              "format": "int32",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Autocomplete Titulares"
+        ]
+      }
+    },
+    "/api/v1/titulares/{entidadeId}/anexos": {
+      "get": {
+        "operationId": "ListarAnexosTitular",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "entidadeId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "summary": "Listar anexos de Titular",
+        "tags": [
+          "Anexos - Titulares"
+        ]
+      },
+      "post": {
+        "operationId": "UploadAnexoTitular",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "entidadeId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "encoding": {
+                "arquivo": {
+                  "style": "form"
+                },
+                "categoria": {
+                  "style": "form"
+                }
+              },
+              "schema": {
+                "properties": {
+                  "arquivo": {
+                    "format": "binary",
+                    "type": "string"
+                  },
+                  "categoria": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "arquivo",
+                  "categoria"
+                ],
+                "type": "object"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "summary": "Upload de anexo para Titular (máx 100 MB)",
+        "tags": [
+          "Anexos - Titulares"
+        ]
+      }
+    },
+    "/api/v1/titulares/{entidadeId}/anexos/{anexoId}": {
+      "delete": {
+        "operationId": "RemoverAnexoTitular",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "entidadeId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "anexoId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "summary": "Remover Anexo de Titular (soft delete + remove do storage)",
+        "tags": [
+          "Anexos - Titulares"
+        ]
+      },
+      "get": {
+        "operationId": "ObterAnexoTitular",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "entidadeId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "anexoId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "summary": "Metadados de Anexo de Titular (sincroniza status de scan)",
+        "tags": [
+          "Anexos - Titulares"
+        ]
+      }
+    },
+    "/api/v1/titulares/{entidadeId}/anexos/{anexoId}/download": {
+      "get": {
+        "operationId": "DownloadAnexoTitular",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "entidadeId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "anexoId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "summary": "Obter URL presigned de download (válida 15 min) — requer status clean",
+        "tags": [
+          "Anexos - Titulares"
+        ]
+      }
+    },
+    "/api/v1/titulares/{id}": {
+      "delete": {
+        "operationId": "ExcluirTitular",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "summary": "Excluir titular (se sem vínculos)",
+        "tags": [
+          "Titulares"
+        ]
+      },
+      "get": {
+        "operationId": "BuscarTitularPorId",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "summary": "Buscar titular por ID",
+        "tags": [
+          "Titulares"
+        ]
+      },
+      "put": {
+        "operationId": "AtualizarTitular",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AtualizarTitularRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "summary": "Atualizar dados editáveis do titular",
+        "tags": [
+          "Titulares"
+        ]
+      }
+    }
+  },
+  "security": [
+    {
+      "Bearer": []
+    }
+  ]
+}

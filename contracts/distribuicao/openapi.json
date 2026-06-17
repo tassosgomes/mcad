@@ -1,0 +1,1940 @@
+{
+  "components": {
+    "schemas": {
+      "AjusteEstornoCalculoItemResponse": {
+        "properties": {
+          "ajusteId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "justificativa": {
+            "type": "string"
+          },
+          "licencaId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "linhas": {
+            "items": {
+              "$ref": "#/components/schemas/AjusteEstornoLinhaResponse"
+            },
+            "type": "array"
+          },
+          "pagamentoId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "periodoOrigem": {
+            "type": "string"
+          },
+          "processoOrigemId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "PENDENTE_APLICACAO",
+              "PREVISTO",
+              "APLICADO",
+              "CANCELADO",
+              "IGNORADO_SEM_DISTRIBUICAO",
+              "PROCESSO_CRIADO_DESATUALIZADO",
+              "ERRO_INTEGRIDADE"
+            ],
+            "type": "string"
+          },
+          "totalLinhas": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "valorAjusteLiquido": {
+            "type": "number"
+          },
+          "valorAplicado": {
+            "type": "number"
+          },
+          "valorEstornadoBruto": {
+            "type": "number"
+          }
+        },
+        "type": "object"
+      },
+      "AjusteEstornoDetalheResponse": {
+        "properties": {
+          "aplicadoEm": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "estornadoEm": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "estornadoPor": {
+            "type": "string"
+          },
+          "eventId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "historicoAplicacao": {
+            "items": {
+              "$ref": "#/components/schemas/AjusteEstornoHistoricoResponse"
+            },
+            "type": "array"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "justificativa": {
+            "type": "string"
+          },
+          "licencaId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "linhas": {
+            "items": {
+              "$ref": "#/components/schemas/AjusteEstornoLinhaResponse"
+            },
+            "type": "array"
+          },
+          "pagamentoId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "payloadOriginal": {
+            "additionalProperties": {
+              "type": "object"
+            },
+            "type": "object"
+          },
+          "periodoOrigem": {
+            "type": "string"
+          },
+          "previstoEm": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "processoAplicacao": {
+            "$ref": "#/components/schemas/ProcessoResumoLiteResponse"
+          },
+          "processoAplicacaoId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "processoOrigem": {
+            "$ref": "#/components/schemas/ProcessoResumoLiteResponse"
+          },
+          "processoOrigemId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "recebidoEm": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "rubrica": {
+            "$ref": "#/components/schemas/RubricaResumoResponse"
+          },
+          "status": {
+            "enum": [
+              "PENDENTE_APLICACAO",
+              "PREVISTO",
+              "APLICADO",
+              "CANCELADO",
+              "IGNORADO_SEM_DISTRIBUICAO",
+              "PROCESSO_CRIADO_DESATUALIZADO",
+              "ERRO_INTEGRIDADE"
+            ],
+            "type": "string"
+          },
+          "valorAjusteLiquido": {
+            "type": "number"
+          },
+          "valorAplicado": {
+            "type": "number"
+          },
+          "valorEstornadoBruto": {
+            "type": "number"
+          }
+        },
+        "type": "object"
+      },
+      "AjusteEstornoHistoricoResponse": {
+        "properties": {
+          "observacao": {
+            "type": "string"
+          },
+          "ocorridoEm": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "processoId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "PENDENTE_APLICACAO",
+              "PREVISTO",
+              "APLICADO",
+              "CANCELADO",
+              "IGNORADO_SEM_DISTRIBUICAO",
+              "PROCESSO_CRIADO_DESATUALIZADO",
+              "ERRO_INTEGRIDADE"
+            ],
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "AjusteEstornoLinhaResponse": {
+        "properties": {
+          "ajusteId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "categoria": {
+            "enum": [
+              "AUTORAL",
+              "CONEXO"
+            ],
+            "type": "string"
+          },
+          "creditoOrigemId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "fonogramaId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "obraId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "obraTitulo": {
+            "type": "string"
+          },
+          "processoAplicacaoId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "processoOrigemId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "subcategoriaConexa": {
+            "enum": [
+              "INTERPRETE",
+              "PRODUTOR",
+              "MUSICO"
+            ],
+            "type": "string"
+          },
+          "titularId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "titularNome": {
+            "type": "string"
+          },
+          "valorAjuste": {
+            "type": "number"
+          },
+          "valorCreditoOrigem": {
+            "type": "number"
+          }
+        },
+        "type": "object"
+      },
+      "AjusteEstornoPageResponse": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/AjusteEstornoResumoResponse"
+            },
+            "type": "array"
+          },
+          "page": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "size": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "totalItems": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "totalPages": {
+            "format": "int32",
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "AjusteEstornoResumoResponse": {
+        "properties": {
+          "aplicadoEm": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "estornadoEm": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "estornadoPor": {
+            "type": "string"
+          },
+          "eventId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "justificativa": {
+            "type": "string"
+          },
+          "licencaId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "pagamentoId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "periodoOrigem": {
+            "type": "string"
+          },
+          "previstoEm": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "processoAplicacaoId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "processoOrigemId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "recebidoEm": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "rubrica": {
+            "$ref": "#/components/schemas/RubricaResumoResponse"
+          },
+          "status": {
+            "enum": [
+              "PENDENTE_APLICACAO",
+              "PREVISTO",
+              "APLICADO",
+              "CANCELADO",
+              "IGNORADO_SEM_DISTRIBUICAO",
+              "PROCESSO_CRIADO_DESATUALIZADO",
+              "ERRO_INTEGRIDADE"
+            ],
+            "type": "string"
+          },
+          "valorAjusteLiquido": {
+            "type": "number"
+          },
+          "valorAplicado": {
+            "type": "number"
+          },
+          "valorEstornadoBruto": {
+            "type": "number"
+          }
+        },
+        "type": "object"
+      },
+      "AjustesEstornoResponse": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/AjusteEstornoCalculoItemResponse"
+            },
+            "type": "array"
+          },
+          "total": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "valorTotal": {
+            "type": "number"
+          }
+        },
+        "type": "object"
+      },
+      "CalcularProcessoResponse": {
+        "properties": {
+          "calculadoEm": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "periodo": {
+            "type": "string"
+          },
+          "processoId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "rubricaSigla": {
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "CRIADO",
+              "CALCULADO",
+              "APROVADO",
+              "FINALIZADO",
+              "CANCELADO"
+            ],
+            "type": "string"
+          },
+          "totalCreditos": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "totalCreditosRetidos": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "totalCreditosRetidosLiberados": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "totalExecucoes": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "totalObras": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "totalPontos": {
+            "type": "number"
+          },
+          "valorTotalCalculado": {
+            "type": "number"
+          },
+          "valorTotalRetido": {
+            "type": "number"
+          },
+          "valorTotalRetidosLiberados": {
+            "type": "number"
+          },
+          "verbaLiquida": {
+            "type": "number"
+          }
+        },
+        "type": "object"
+      },
+      "CalculoProcessoResponse": {
+        "properties": {
+          "ajustesEstorno": {
+            "$ref": "#/components/schemas/AjustesEstornoResponse"
+          },
+          "creditos": {
+            "$ref": "#/components/schemas/CreditosPaginadosResponse"
+          },
+          "periodo": {
+            "type": "string"
+          },
+          "processoId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "resumo": {
+            "$ref": "#/components/schemas/CalculoResumoResponse"
+          },
+          "retidosLiberados": {
+            "$ref": "#/components/schemas/RetidosLiberadosResponse"
+          },
+          "rubricaSigla": {
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "CRIADO",
+              "CALCULADO",
+              "APROVADO",
+              "FINALIZADO",
+              "CANCELADO"
+            ],
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "CalculoResumoResponse": {
+        "properties": {
+          "calculadoEm": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "totalAjustesEstorno": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "totalCreditos": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "totalCreditosRetidos": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "totalCreditosRetidosLiberados": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "totalExecucoes": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "totalObras": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "totalPontos": {
+            "type": "number"
+          },
+          "valorLiquidoDemonstravel": {
+            "type": "number"
+          },
+          "valorTotalAjustesEstorno": {
+            "type": "number"
+          },
+          "valorTotalCalculado": {
+            "type": "number"
+          },
+          "valorTotalRetido": {
+            "type": "number"
+          },
+          "valorTotalRetidosLiberados": {
+            "type": "number"
+          },
+          "verbaLiquida": {
+            "type": "number"
+          }
+        },
+        "type": "object"
+      },
+      "CancelarProcessoRequest": {
+        "properties": {
+          "justificativa": {
+            "maxLength": 500,
+            "minLength": 10,
+            "type": "string"
+          }
+        },
+        "required": [
+          "justificativa"
+        ],
+        "type": "object"
+      },
+      "CreditoCalculadoItem": {
+        "properties": {
+          "categoria": {
+            "type": "string"
+          },
+          "fonogramaId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "fonogramaNome": {
+            "type": "string"
+          },
+          "obraId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "obraNome": {
+            "type": "string"
+          },
+          "percentual": {
+            "type": "string"
+          },
+          "subcategoria": {
+            "type": "string"
+          },
+          "valorCredito": {
+            "type": "string"
+          },
+          "valorObra": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "CreditoItemResponse": {
+        "properties": {
+          "categoria": {
+            "enum": [
+              "AUTORAL",
+              "CONEXO"
+            ],
+            "type": "string"
+          },
+          "criadoEm": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "fonogramaId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "liberadoEm": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "motivoRetencao": {
+            "enum": [
+              "OBRA_PENDENTE",
+              "OBRA_BLOQUEADA",
+              "TITULAR_SEM_ASSOCIACAO"
+            ],
+            "type": "string"
+          },
+          "obraId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "obraTitulo": {
+            "type": "string"
+          },
+          "percentualAplicado": {
+            "type": "number"
+          },
+          "pontosObra": {
+            "type": "number"
+          },
+          "processoLiberacaoId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "retidoEm": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "CALCULADO",
+              "RETIDO",
+              "LIBERADO"
+            ],
+            "type": "string"
+          },
+          "subcategoriaConexa": {
+            "enum": [
+              "INTERPRETE",
+              "PRODUTOR",
+              "MUSICO"
+            ],
+            "type": "string"
+          },
+          "titularId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "titularNome": {
+            "type": "string"
+          },
+          "valorCredito": {
+            "type": "number"
+          },
+          "valorObra": {
+            "type": "number"
+          }
+        },
+        "type": "object"
+      },
+      "CreditoLiberadoItem": {
+        "properties": {
+          "categoria": {
+            "type": "string"
+          },
+          "fonogramaId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "fonogramaNome": {
+            "type": "string"
+          },
+          "liberadoEm": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "motivoOriginal": {
+            "type": "string"
+          },
+          "obraId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "obraNome": {
+            "type": "string"
+          },
+          "processoOrigemId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "valorCredito": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "CreditoRetidoItem": {
+        "properties": {
+          "categoria": {
+            "type": "string"
+          },
+          "fonogramaId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "fonogramaNome": {
+            "type": "string"
+          },
+          "motivoRetencao": {
+            "type": "string"
+          },
+          "obraId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "obraNome": {
+            "type": "string"
+          },
+          "retidoEm": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "valorCredito": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "CreditosPaginadosResponse": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/CreditoItemResponse"
+            },
+            "type": "array"
+          },
+          "metadata": {
+            "$ref": "#/components/schemas/PaginationMetadata"
+          }
+        },
+        "type": "object"
+      },
+      "CriarProcessoRequest": {
+        "properties": {
+          "periodo": {
+            "pattern": "^\\d{4}-\\d{2}$",
+            "type": "string"
+          },
+          "rubricaSigla": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "periodo",
+          "rubricaSigla"
+        ],
+        "type": "object"
+      },
+      "DashboardAlerta": {
+        "properties": {
+          "mensagem": {
+            "type": "string"
+          },
+          "tipo": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "DashboardResumoResponse": {
+        "properties": {
+          "alertas": {
+            "items": {
+              "$ref": "#/components/schemas/DashboardAlerta"
+            },
+            "type": "array"
+          },
+          "creditosRetidos": {
+            "type": "number"
+          },
+          "rubricasAtivas": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "statusUltimoCiclo": {
+            "type": "string"
+          },
+          "totalRepassado": {
+            "type": "number"
+          }
+        },
+        "type": "object"
+      },
+      "DemonstrativoTitularResponse": {
+        "properties": {
+          "ajustesEstorno": {
+            "items": {
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "creditosLiberados": {
+            "items": {
+              "$ref": "#/components/schemas/CreditoLiberadoItem"
+            },
+            "type": "array"
+          },
+          "creditosPeriodo": {
+            "items": {
+              "$ref": "#/components/schemas/CreditoCalculadoItem"
+            },
+            "type": "array"
+          },
+          "creditosRetidos": {
+            "items": {
+              "$ref": "#/components/schemas/CreditoRetidoItem"
+            },
+            "type": "array"
+          },
+          "periodo": {
+            "type": "string"
+          },
+          "processoId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "resumo": {
+            "$ref": "#/components/schemas/ResumoFinanceiroResponse"
+          },
+          "rubricaSigla": {
+            "type": "string"
+          },
+          "statusProcesso": {
+            "enum": [
+              "CRIADO",
+              "CALCULADO",
+              "APROVADO",
+              "FINALIZADO",
+              "CANCELADO"
+            ],
+            "type": "string"
+          },
+          "titularId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "titularNome": {
+            "type": "string"
+          },
+          "totalAjustesEstorno": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "DisponibilidadeResponse": {
+        "properties": {
+          "periodo": {
+            "type": "string"
+          },
+          "rubricaSigla": {
+            "type": "string"
+          },
+          "totalExecucoes": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "verbaLiquida": {
+            "type": "number"
+          }
+        },
+        "type": "object"
+      },
+      "PaginationMetadata": {
+        "properties": {
+          "page": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "size": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "total": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "totalPages": {
+            "format": "int32",
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "ProcessoPageResponse": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ProcessoResponse"
+            },
+            "type": "array"
+          },
+          "totalElements": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "totalPages": {
+            "format": "int32",
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "ProcessoResponse": {
+        "properties": {
+          "analistaResponsavel": {
+            "type": "string"
+          },
+          "aprovadoEm": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "calculadoEm": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "canceladoEm": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "criadoEm": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "finalizadoEm": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "justificativaCancelamento": {
+            "type": "string"
+          },
+          "periodo": {
+            "type": "string"
+          },
+          "rubricaSigla": {
+            "type": "string"
+          },
+          "snapshotRolId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "snapshotVerbaId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "CRIADO",
+              "CALCULADO",
+              "APROVADO",
+              "FINALIZADO",
+              "CANCELADO"
+            ],
+            "type": "string"
+          },
+          "totalCreditos": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "totalCreditosRetidosLiberados": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "totalExecucoes": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "totalObras": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "totalPontos": {
+            "type": "number"
+          },
+          "valorTotalCalculado": {
+            "type": "number"
+          },
+          "valorTotalRetidosLiberados": {
+            "type": "number"
+          },
+          "verbaLiquida": {
+            "type": "number"
+          }
+        },
+        "type": "object"
+      },
+      "ProcessoResumoLiteResponse": {
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "periodo": {
+            "type": "string"
+          },
+          "rubricaSigla": {
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "CRIADO",
+              "CALCULADO",
+              "APROVADO",
+              "FINALIZADO",
+              "CANCELADO"
+            ],
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "ResumoFinanceiroResponse": {
+        "properties": {
+          "totalAReceber": {
+            "type": "string"
+          },
+          "totalAjustesEstorno": {
+            "type": "string"
+          },
+          "totalCalculado": {
+            "type": "string"
+          },
+          "totalLiberado": {
+            "type": "string"
+          },
+          "totalRetido": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "RetidoLiberadoItemResponse": {
+        "properties": {
+          "avaliadoEm": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "categoria": {
+            "enum": [
+              "AUTORAL",
+              "CONEXO"
+            ],
+            "type": "string"
+          },
+          "creditoId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "efetivadoEm": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "fonogramaId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "liberacaoId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "motivoRetencaoOriginal": {
+            "enum": [
+              "OBRA_PENDENTE",
+              "OBRA_BLOQUEADA",
+              "TITULAR_SEM_ASSOCIACAO"
+            ],
+            "type": "string"
+          },
+          "obraId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "obraTitulo": {
+            "type": "string"
+          },
+          "periodoOrigem": {
+            "type": "string"
+          },
+          "processoLiberacaoId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "processoOrigemId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "retidoEm": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "PREVISTA",
+              "EFETIVADA",
+              "CANCELADA"
+            ],
+            "type": "string"
+          },
+          "subcategoriaConexa": {
+            "enum": [
+              "INTERPRETE",
+              "PRODUTOR",
+              "MUSICO"
+            ],
+            "type": "string"
+          },
+          "titularId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "titularNome": {
+            "type": "string"
+          },
+          "valorLiberado": {
+            "type": "number"
+          }
+        },
+        "type": "object"
+      },
+      "RetidosLiberadosResponse": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/RetidoLiberadoItemResponse"
+            },
+            "type": "array"
+          },
+          "total": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "valorTotal": {
+            "type": "number"
+          }
+        },
+        "type": "object"
+      },
+      "RubricaResponse": {
+        "properties": {
+          "ativo": {
+            "type": "boolean"
+          },
+          "exigeClassificacao": {
+            "type": "boolean"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "nome": {
+            "type": "string"
+          },
+          "sigla": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "RubricaResumoResponse": {
+        "properties": {
+          "nome": {
+            "type": "string"
+          },
+          "sigla": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "TitularDemonstrativoResumoResponse": {
+        "properties": {
+          "quantidadeObras": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "titularId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "titularNome": {
+            "type": "string"
+          },
+          "totalAReceber": {
+            "type": "string"
+          },
+          "totalCalculado": {
+            "type": "string"
+          },
+          "totalLiberado": {
+            "type": "string"
+          },
+          "totalRetido": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "TitularesDemonstrativoPageResponse": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/TitularDemonstrativoResumoResponse"
+            },
+            "type": "array"
+          },
+          "metadata": {
+            "$ref": "#/components/schemas/PaginationMetadata"
+          }
+        },
+        "type": "object"
+      }
+    },
+    "securitySchemes": {
+      "bearer-jwt": {
+        "bearerFormat": "JWT",
+        "description": "Token JWT obtido via Logto. Informe apenas o token, sem o prefixo 'Bearer'.",
+        "in": "header",
+        "scheme": "bearer",
+        "type": "http"
+      }
+    }
+  },
+  "info": {
+    "description": "API REST do dominio de Distribuicao — processos de distribuicao, retencao e liberacao de creditos, ajustes e demonstrativos.",
+    "title": "Distribuicao API",
+    "version": "v1"
+  },
+  "openapi": "3.0.1",
+  "paths": {
+    "/api/v1/ajustes-estorno": {
+      "get": {
+        "operationId": "listar_2",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "rubrica",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "periodoOrigem",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "pagamentoId",
+            "required": false,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "format": "int32",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "size",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "format": "int32",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "sort",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AjusteEstornoPageResponse"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "ajuste-estorno-controller"
+        ]
+      }
+    },
+    "/api/v1/ajustes-estorno/{id}": {
+      "get": {
+        "operationId": "buscarPorId_1",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AjusteEstornoDetalheResponse"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "ajuste-estorno-controller"
+        ]
+      }
+    },
+    "/api/v1/dashboard/resumo": {
+      "get": {
+        "operationId": "resumo",
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/DashboardResumoResponse"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "dashboard-controller"
+        ]
+      }
+    },
+    "/api/v1/processos": {
+      "get": {
+        "operationId": "listar_1",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "rubrica",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "periodo",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "format": "int32",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "size",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "format": "int32",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProcessoPageResponse"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "processo-controller"
+        ]
+      },
+      "post": {
+        "operationId": "criar",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CriarProcessoRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProcessoResponse"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "processo-controller"
+        ]
+      }
+    },
+    "/api/v1/processos/disponiveis": {
+      "get": {
+        "operationId": "listarDisponiveis",
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/DisponibilidadeResponse"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "processo-controller"
+        ]
+      }
+    },
+    "/api/v1/processos/{id}": {
+      "get": {
+        "operationId": "buscarPorId",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProcessoResponse"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "processo-controller"
+        ]
+      }
+    },
+    "/api/v1/processos/{id}/aprovar": {
+      "post": {
+        "operationId": "aprovar",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProcessoResponse"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "processo-controller"
+        ]
+      }
+    },
+    "/api/v1/processos/{id}/calcular": {
+      "post": {
+        "operationId": "calcular",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Authorization",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/CalcularProcessoResponse"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "processo-calculo-controller"
+        ]
+      }
+    },
+    "/api/v1/processos/{id}/calculo": {
+      "get": {
+        "operationId": "consultar",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "format": "int32",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "size",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "format": "int32",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "categoria",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "titularId",
+            "required": false,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "obraId",
+            "required": false,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "motivoRetencao",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/CalculoProcessoResponse"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "processo-calculo-controller"
+        ]
+      }
+    },
+    "/api/v1/processos/{id}/cancelar": {
+      "post": {
+        "operationId": "cancelar",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CancelarProcessoRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProcessoResponse"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "processo-controller"
+        ]
+      }
+    },
+    "/api/v1/processos/{id}/demonstrativos": {
+      "get": {
+        "operationId": "listarTitulares",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "titularNome",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "format": "int32",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "size",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "format": "int32",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "sort",
+            "required": false,
+            "schema": {
+              "default": "nome",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/TitularesDemonstrativoPageResponse"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "demonstrativo-controller"
+        ]
+      }
+    },
+    "/api/v1/processos/{id}/demonstrativos/{titularId}": {
+      "get": {
+        "operationId": "consultarDemonstrativo",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "titularId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/DemonstrativoTitularResponse"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "demonstrativo-controller"
+        ]
+      }
+    },
+    "/api/v1/processos/{id}/finalizar": {
+      "post": {
+        "operationId": "finalizar",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProcessoResponse"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "processo-controller"
+        ]
+      }
+    },
+    "/api/v1/rubricas": {
+      "get": {
+        "operationId": "listar",
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/RubricaResponse"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "rubrica-controller"
+        ]
+      }
+    },
+    "/api/v1/rubricas/{sigla}": {
+      "get": {
+        "operationId": "buscarPorSigla",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "sigla",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/RubricaResponse"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "rubrica-controller"
+        ]
+      }
+    }
+  },
+  "security": [
+    {
+      "bearer-jwt": []
+    }
+  ],
+  "servers": [
+    {
+      "description": "Generated server url",
+      "url": "http://localhost:5004"
+    }
+  ]
+}

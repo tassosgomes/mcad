@@ -1,0 +1,203 @@
+{
+  "asyncapi": "2.4.0",
+  "channels": {
+    "identificacao.rol.cancelado": {
+      "bindings": {
+        "$ref": "#/components/channelBindings/amqp"
+      },
+      "description": "Publicado quando uma captação/rol é cancelada pelo analista responsável (opcionalmente com recriação). Downstream: Distribuição consome este evento para invalidar cálculos associados ao rol anterior.",
+      "publish": {
+        "message": {
+          "$ref": "#/components/messages/RolCancelado"
+        },
+        "operationId": "publicarRolCancelado",
+        "summary": "Rol de execuções cancelado",
+        "tags": [
+          {
+            "name": "cancelamento"
+          }
+        ]
+      }
+    },
+    "identificacao.rol.fechado": {
+      "bindings": {
+        "$ref": "#/components/channelBindings/amqp"
+      },
+      "description": "Publicado quando um Rol de Execuções é fechado pelo analista. Contém todas as execuções musicais da captação no período informado. Downstream: Distribuição consome este evento para iniciar o cálculo de créditos.",
+      "publish": {
+        "message": {
+          "$ref": "#/components/messages/RolFechado"
+        },
+        "operationId": "publicarRolFechado",
+        "summary": "Rol de execuções fechado",
+        "tags": [
+          {
+            "name": "fechamento"
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "channelBindings": {
+      "amqp": {
+        "amqp": {
+          "exchange": {
+            "autoDelete": false,
+            "durable": true,
+            "name": "identificacao.events",
+            "type": "topic",
+            "vhost": "mcad"
+          },
+          "is": "routingKey"
+        }
+      }
+    },
+    "messages": {
+      "RolCancelado": {
+        "name": "RolCancelado",
+        "payload": {
+          "$ref": "#/components/schemas/rolCanceladoPayload"
+        },
+        "summary": "Rol de execuções musicais cancelado",
+        "title": "Rol Cancelado"
+      },
+      "RolFechado": {
+        "name": "RolFechado",
+        "payload": {
+          "$ref": "#/components/schemas/rolFechadoPayload"
+        },
+        "summary": "Rol de execuções musicais fechado — pronto para distribuição de créditos",
+        "title": "Rol Fechado"
+      }
+    },
+    "schemas": {
+      "execucaoRolPayload": {
+        "additionalProperties": false,
+        "id": "execucaoRolPayload",
+        "properties": {
+          "duracaoSegundos": {
+            "format": "int32",
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "fim": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "fonogramaId": {
+            "format": "guid",
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "inicio": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "obraId": {
+            "format": "guid",
+            "type": "string"
+          },
+          "peso": {
+            "format": "decimal",
+            "type": [
+              "null",
+              "number"
+            ]
+          },
+          "quantidade": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "tipoUtilizacao": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        },
+        "type": "object"
+      },
+      "rolCanceladoPayload": {
+        "additionalProperties": false,
+        "id": "rolCanceladoPayload",
+        "properties": {
+          "analistaId": {
+            "format": "guid",
+            "type": "string"
+          },
+          "canceladoEm": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "captacaoId": {
+            "format": "guid",
+            "type": "string"
+          },
+          "justificativa": {
+            "type": "string"
+          },
+          "periodo": {
+            "type": "string"
+          },
+          "rubrica": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "rolFechadoPayload": {
+        "additionalProperties": false,
+        "id": "rolFechadoPayload",
+        "properties": {
+          "analistaId": {
+            "format": "guid",
+            "type": "string"
+          },
+          "captacaoId": {
+            "format": "guid",
+            "type": "string"
+          },
+          "execucoes": {
+            "items": {
+              "$ref": "#/components/schemas/execucaoRolPayload"
+            },
+            "type": "array"
+          },
+          "fechadoEm": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "periodo": {
+            "type": "string"
+          },
+          "rubrica": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      }
+    }
+  },
+  "defaultContentType": "application/json",
+  "info": {
+    "description": "Eventos publicados pelo domínio de **Identificação** via RabbitMQ.\n\n**Formato:** CloudEvents 1.0 (`application/cloudevents+json`)\n\n**Entrega:** at-least-once via Transactional Outbox (`identificacao.outbox_events`)\n\nOs schemas representam o campo `data` do envelope CloudEvents.",
+    "title": "Identificação API — Eventos Assíncronos",
+    "version": "1.0.0"
+  },
+  "servers": {
+    "development": {
+      "description": "RabbitMQ local — docker-compose.dev.yml (vhost: mcad)",
+      "protocol": "amqp",
+      "url": "amqp://localhost:5672"
+    }
+  }
+}

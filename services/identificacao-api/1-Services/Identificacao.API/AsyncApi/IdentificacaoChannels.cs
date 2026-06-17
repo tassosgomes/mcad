@@ -25,4 +25,18 @@ public class IdentificacaoChannels
         Title = "Rol Fechado",
         Summary = "Rol de execuções musicais fechado — pronto para distribuição de créditos")]
     public void RolFechado(RolFechadoPayload payload) { }
+
+    [Channel("identificacao.rol.cancelado",
+        Description = "Publicado quando uma captação/rol é cancelada pelo analista responsável " +
+                      "(opcionalmente com recriação). Downstream: Distribuição consome este evento " +
+                      "para invalidar cálculos associados ao rol anterior.",
+        BindingsRef = "amqp")]
+    [PublishOperation(typeof(RolCanceladoPayload), "cancelamento",
+        Summary = "Rol de execuções cancelado",
+        OperationId = "publicarRolCancelado")]
+    [Message(typeof(RolCanceladoPayload),
+        Name = "RolCancelado",
+        Title = "Rol Cancelado",
+        Summary = "Rol de execuções musicais cancelado")]
+    public void RolCancelado(RolCanceladoPayload payload) { }
 }
