@@ -1,6 +1,6 @@
 # ADR 0010 — Estratégia de Pipeline CI/CD (Shadow Pipeline + Gates de Segurança + CD via Portainer)
 
-- **Status:** Proposed
+- **Status:** Accepted
 - **Data:** 2026-06-16
 - **Autores / decision-makers:** Equipe MCAD
 - **Tags:** ci-cd, segurança, devops, release-please, renovate, portainer, docker-swarm

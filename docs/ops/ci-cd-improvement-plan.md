@@ -1,10 +1,27 @@
 # Plano de melhoria — CI/CD do mcad
 
-> Status: **Proposed** (aguardando início da Fase 1).
-> Última atualização: 2026-06-16.
+> Status: **Fase 1 implementada** — workflows advisory/shadow ativos e rodando verde.
+> Última atualização: 2026-06-17.
 > Documenta as decisões, a arquitetura-alvo, as 3 fases de execução e a
 > estratégia de migração **shadow pipeline** (zero downtime de entregas).
 > Companion ADR: [ADR 0010 — CI/CD Pipeline Strategy](../adr/0010-ci-cd-pipeline-strategy.md).
+
+---
+
+## 0. Status de implementação (tracking)
+
+| Fase | Componente | Status | Detalhe |
+|---|---|---|---|
+| 1 | `security-scan.yml` (Semgrep/Gitleaks/Hadolint/Trivy) | **DONE** | Advisory, SARIF → Security tab |
+| 1 | `commitlint.yml` + husky local | **DONE** | Advisory no CI, hook local ativo |
+| 1 | `_service-build.yml` (reusable) | **DONE** | 3 stacks, scan/sign/SBOM no push |
+| 1 | `ci-cd-v2.yml` (shadow) | **DONE** | `push-images: false`, path filtering |
+| 1 | `.github/renovate.json` | **DONE** | Config criada (instalação do app = manual) |
+| 1 | Calibração de falsos positivos | **PENDENTE** | Observar 5-10 merges, suprimir no Security tab |
+| 1 | Promoção advisory → blocking | **PENDENTE** | Após calibração, remover `continue-on-error` |
+| 1 | Cutover `ci-cd.yml` → dispatch-only | **PENDENTE** | Quando v2 estável por 2+ semanas |
+| 2 | `release-please` + tags semver | **PENDENTE** | Iniciar após cutover |
+| 3 | Migração Portainer + CD dev + DAST | **PENDENTE** | Iniciar após Fase 2 |
 
 ---
 
@@ -131,69 +148,69 @@ Isso garante que se a Stack Portainer **manual** precisar ser re-deployada duran
 ### Calendário orientativo
 
 ```
-SEMANA 1 — Adições não-intrusivas (zero risco)
-  ci-cd.yml (atual)              ← intacta, continua required check
-  + security-scan.yml            ← NOVO, paralelo, ADVISORY
-  + renovate.json + app          ← NOVO
-  + commitlint.yml               ← NOVO, advisory
-  + _service-build.yml           ← NOVO, definição reusable
+SEMANA 1 — Adições não-intrusivas (zero risco) ✅ DONE
+   ci-cd.yml (atual)              ← intacta, continua required check
+   + security-scan.yml            ← criado, paralelo, ADVISORY ✓
+   + renovate.json + app          ← config criada ✓ (app = ação manual)
+   + commitlint.yml               ← criado, advisory ✓
+   + _service-build.yml           ← criado, reusable workflow ✓
+   + ci-cd-v2.yml                 ← criado, shadow (push-images: false) ✓
 
-SEMANA 2 — Nova pipeline em shadow (roda mas não bloqueia)
-  ci-cd-v2.yml                   ← NOVO, chama reusable workflow
-                                    triggers: push/PR (igual à atual)
-                                    NÃO é required check ainda
-  → Observar 5-10 merges: v2 verde quando v1 verde?
-  → Resolver falsos positivos do Semgrep/Trivy
+SEMANA 2 — Calibração + observação (EM ANDAMENTO)
+   Observar 5-10 merges: ci-cd-v2 verde quando ci-cd (v1) verde?
+   Resolver falsos positivos do Semgrep/Trivy no Security tab
+   Instalar app Renovate (ação manual no GitHub)
 
 SEMANA 3 — Promover gates advisory → blocking
-  security-scan.yml: --exit-code 1 (bloqueante)
-  commitlint: required check
-  Branch protection: exigir security-scan + commitlint + ci-cd-v2
-  (ci-cd.yml v1 ainda roda em paralelo como rede de segurança)
+   security-scan.yml: remover continue-on-error (bloqueante)
+   commitlint: vira required check
+   Branch protection: exigir security-scan + commitlint + ci-cd-v2
+   (ci-cd.yml v1 ainda roda em paralelo como rede de segurança)
 
 SEMANA 4 — Cutover CI (commit único)
-  git mv ci-cd.yml ci-cd-legacy.yml.disabled
-  ci-cd-v2.yml vira o único CI
-  Branch protection aponta para ci-cd-v2 (renomeado ou já ci-cd)
+   git mv ci-cd.yml ci-cd-legacy.yml.disabled
+   ci-cd-v2.yml vira o único CI
+   Branch protection aponta para ci-cd-v2 (renomeado ou já ci-cd)
 
 SEMANA 5-6 — Fase 2+3 (versionamento + CD)
-  Antes de mudar tags: migrar Portainer manual → Git-based
-  Publicar duplo set de tags durante transição
-  Validar deploy automático
-  Remover :latest e Stack manual legado
+   Antes de mudar tags: migrar Portainer manual → Git-based
+   Publicar duplo set de tags durante transição
+   Validar deploy automático
+   Remover :latest e Stack manual legado
 ```
 
 ---
 
 ## 5. FASE 1 — Hardening de CI (segurança + refactor + Renovate)
 
-### Gates incluídos
+### Gates incluídos (versões finais — implementado)
 
-| Gate | Action | Alvo | Output | Inicia como |
-|---|---|---|---|---|
-| **Secret Scan** | `gitleaks/gitleaks-action@v2` | repo todo | SARIF | advisory |
-| **SAST** | `returntocorp/semgrep-action@v1` com `p/owasp p/csharp p/java p/react p/nodejs p/security-audit p/dockerfile` | todas | SARIF | advisory |
-| **Lint Dockerfile** | `hadolint/hadolint-action@v3.1.0` | 7 Dockerfiles | console | advisory |
-| **SCA manifestos** | `aquasecurity/trivy-action@master` com `trivy fs --scanners vuln --severity CRITICAL` | cada `services/*` | SARIF | advisory |
-| **Container Scan** | `trivy image --severity CRITICAL` | imagem recém-built | SARIF | advisory |
-| **SBOM** | `anchore/sbom-action@v0` (CycloneDX) | 7 imagens | artifact | advisory |
-| **Sign + Attest** | `sigstore/cosign-installer@v3` keyless + `actions/attest-build-provenance@v1` | 7 imagens | assinatura | não-bloqueante |
-| **Renovate** | app externo + `.github/renovate.json` | nuget/maven/npm/docker/actions | PRs auto | auto-merge patch/minor |
-| **commitlint** | `wagoid/commitlint-github-action` + husky local | mensagens de commit | check | advisory |
+| Gate | Action/Tool | Versão | Alvo | Output | Modo |
+|---|---|---|---|---|---|
+| **Secret Scan** | `gitleaks/gitleaks-action` | **@v3** | repo todo | annotations | advisory |
+| **SAST** | `semgrep` via `pip install` + `semgrep scan` (rulesets `p/default p/owasp-top-ten p/csharp p/java p/javascript p/react p/nodejs p/dockerfile p/sql-injection p/security-audit`) | latest | todas | SARIF | advisory |
+| **Lint Dockerfile** | `hadolint/hadolint-action` | **@v3.1.0** | 7 Dockerfiles | SARIF | advisory |
+| **SCA manifestos** | `aquasecurity/trivy-action` | **@v0.36.0** | repo todo (`trivy fs`) | SARIF | advisory |
+| **Container Scan** | `aquasecurity/trivy-action` | **@v0.36.0** | imagem recém-built (`trivy image`) | SARIF | advisory |
+| **SBOM** | `anchore/sbom-action` | **@v0** | 7 imagens (CycloneDX) | artifact | ativo no push |
+| **Sign + Attest** | `sigstore/cosign-installer@v3` (keyless) + `actions/attest-build-provenance@v1` (SLSA) | — | 7 imagens | assinatura | ativo no push |
+| **Renovate** | app externo + `.github/renovate.json` | — | nuget/maven/npm/docker/actions | PRs auto | auto-merge patch/minor |
+| **commitlint** | `wagoid/commitlint-github-action@v6` + husky@9 local | — | mensagens de commit | check | advisory |
+| **SARIF upload** | `github/codeql-action/upload-sarif` | **@v4** | — | Security tab | — |
 
-### Arquivos a criar/modificar
+### Arquivos criados (implementado)
 
-| Arquivo | Ação |
+| Arquivo | Status |
 |---|---|
-| `.github/workflows/_service-build.yml` | criar (reusable workflow com `workflow_call`) |
-| `.github/workflows/ci-cd-v2.yml` | criar (chama `_service-build` por serviço) |
-| `.github/workflows/security-scan.yml` | criar (Semgrep + Gitleaks + Hadolint + Trivy fs) |
-| `.github/workflows/commitlint.yml` | criar (validar Conventional Commits em PR) |
-| `.github/renovate.json` | criar |
-| `commitlint.config.js` (raiz) | criar (`extends: ['@commitlint/config-conventional']`) |
-| `.husky/commit-msg` | criar (hook local) |
-| `package.json` (raiz) | criar/modificar (devDeps commitlint + husky) |
-| `.github/workflows/ci-cd.yml` | **intacto nesta fase** (será desativado na semana 4) |
+| `.github/workflows/_service-build.yml` | **criado** — reusable workflow com `workflow_call`, 3 stacks |
+| `.github/workflows/ci-cd-v2.yml` | **criado** — chama `_service-build` por serviço, `push-images: false`, path filtering |
+| `.github/workflows/security-scan.yml` | **criado** — Semgrep + Gitleaks + Hadolint + Trivy fs (advisory) |
+| `.github/workflows/commitlint.yml` | **criado** — `wagoid/commitlint-github-action@v6` (advisory) |
+| `.github/renovate.json` | **criado** — auto-merge patch/minor + grupos docker/actions/nuget/maven/npm |
+| `commitlint.config.js` (raiz) | **criado** — `extends: ['@commitlint/config-conventional']` + tipo extra `security` |
+| `.husky/commit-msg` | **criado** — hook husky@9 (executável) |
+| `package.json` (raiz) | **criado** — devDeps commitlint@19 + husky@9 |
+| `.github/workflows/ci-cd.yml` | **intacto** — pipeline atual permanece 100% funcional |
 
 ### `release-please` config (referência, implementado na Fase 2)
 
@@ -214,33 +231,40 @@ SEMANA 5-6 — Fase 2+3 (versionamento + CD)
 }
 ```
 
-### Renovate config
+### Renovate config (implementado)
 
-`.github/renovate.json`:
-```jsonc
-{
-  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": ["config:recommended", ":semanticCommits", ":automergeMinor"],
-  "automergeStrategy": "squash",
-  "packageRules": [
-    { "matchUpdateTypes": ["patch", "minor"], "automerge": true, "automergeType": "pr" },
-    { "matchUpdateTypes": ["major"], "automerge": false, "labels": ["major"] },
-    { "matchDatasources": ["docker"], "groupName": "docker base images" },
-    { "matchManagers": ["github-actions"], "groupName": "github actions", "automerge": true }
-  ],
-  "vulnerabilityAlerts": { "enabled": true, "automerge": true, "labels": ["security"] }
-}
-```
+Ver [`.github/renovate.json`](../../.github/renovate.json) — resumo das regras:
+- Auto-merge patch/minor após CI verde (squash)
+- Major exige review humana
+- Grupos: docker base images, github actions, nuget, maven, npm
+- Vulnerability alerts auto-mergeados com label `security`
+- Schedule: earlyMondays
 
 ### Critérios de aceite — Fase 1
 
-- [ ] `ci-cd-v2.yml` roda em paralelo com `ci-cd.yml` em 5+ merges sem divergência
-- [ ] `security-scan.yml` publica SARIF no GitHub Security tab
-- [ ] Semgrep/Trivy/Gitleaks executam sem falsos positivos não-suprimidos
-- [ ] Renovate abre PRs e auto-mergeia patch/minor verde
-- [ ] commitlint valida Conventional Commits local + CI
+- [x] `security-scan.yml` publica SARIF no GitHub Security tab
+- [x] `ci-cd-v2.yml` roda em paralelo com `ci-cd.yml` (sem push de imagens)
+- [x] commitlint valida Conventional Commits local (husky) + CI (advisory)
+- [x] Renovate config criada (`.github/renovate.json`)
+- [ ] Renovate app instalado + abrindo PRs (ação manual)
+- [ ] `ci-cd-v2.yml` verde em 5+ merges sem divergência vs `ci-cd.yml`
+- [ ] Semgrep/Trivy/Gitleaks calibrados (falsos positivos suprimidos)
 - [ ] Gates promovidos de advisory → blocking após calibração
 - [ ] Cutover: `ci-cd.yml` → `workflow_dispatch: only`; `ci-cd-v2.yml` vira o único CI required
+
+### Ajustes durante a implementação (lições aprendidas)
+
+Problemas encontrados e resolvidos durante o deploy da Fase 1:
+
+| Problema | Causa | Solução aplicada |
+|---|---|---|
+| `id-token/attestations: none` no reusable workflow | Caller (`ci-cd-v2.yml`) não declarava as permissions que o `_service-build.yml` herda | Adicionado `permissions: id-token: write, attestations: write` no top-level do caller |
+| `Path does not exist: trivy-fs.sarif` | Scan advisory com `continue-on-error` não produzia arquivo quando não havia findings | Fallback de SARIF vazio (JSON mínimo) antes do upload |
+| `codeql-action/upload-sarif@v3` deprecation warning | v3 deprecado em dez/2026 | Atualizado para `@v4` |
+| `trivy-action@0.28.0` → `setup-trivy@v0.2.1` inexistente | Tag sem prefixo `v` + versão antiga do action dependia de setup-trivy não-publicado | Pin para `trivy-action@v0.36.0` (tag `v` obrigatória; v0.36.0 referencia setup-trivy@v0.3.x) |
+| `trivy-action@v0.68.2` não resolvido | `v0.68.2` é a versão do trivy CLI, não do action (latest do action = v0.36.0) | Corrigido para `@v0.36.0` |
+| Node.js 20 deprecated warnings (checkout/upload-artifact/gitleaks) | Actions ainda em runtime Node 20 | Bump: `checkout@v4→v6`, `upload-artifact@v4→v7`, `gitleaks-action@v2→v3` |
+| `hashFiles()` com `${{ }}` em `if:` sempre true | Expressões GitHub Actions não suportam interpolação `${{ }}` dentro de funções | Usado padrão fallback de SARIF vazio + `format()` para caminhos dinâmicos |
 
 ---
 

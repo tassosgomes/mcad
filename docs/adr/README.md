@@ -22,7 +22,7 @@ Convenções:
 | [0007](./0007-dominio-acessos-segregado.md) | Domínio Transversal `acessos` Segregado do Super-Admin de Plataforma | Accepted | 2026-05-26 |
 | [0008](./0008-bff-gateway-cross-cutting.md) | BFF como Gateway de Operações Cross-cutting | Accepted | 2026-05-26 |
 | [0009](./0009-cpf-masking-permission-aware-mapper.md) | Mascaramento Server-Side de CPF via Permission-Aware Mapper | Accepted | 2026-05-26 |
-| [0010](./0010-ci-cd-pipeline-strategy.md) | Estratégia de Pipeline CI/CD (Shadow Pipeline + Gates de Segurança + CD via Portainer) | Proposed | 2026-06-16 |
+| [0010](./0010-ci-cd-pipeline-strategy.md) | Estratégia de Pipeline CI/CD (Shadow Pipeline + Gates de Segurança + CD via Portainer) | Accepted | 2026-06-17 |
 
 ## Decisões abertas / futuras ADRs
 
