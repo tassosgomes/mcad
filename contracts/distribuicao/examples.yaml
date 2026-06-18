@@ -1,0 +1,298 @@
+# Overlay de exemplos (Microcks APIExamples) — artefato SECUNDÁRIO.
+# Mescla exemplos sobre o openapi.json (primário) sem sujar o spec gerado.
+# metadata.name/version DEVEM casar com o serviço importado (Distribuicao API : v1).
+# Importar com mainArtifact=false.
+apiVersion: mocks.microcks.io/v1alpha1
+kind: APIExamples
+metadata:
+  name: Distribuicao API
+  version: v1
+operations:
+  'GET /api/v1/processos':
+    lista-processos:
+      request:
+        headers:
+          Accept: application/json
+      response:
+        status: '200'
+        mediaType: application/json
+        body:
+          items:
+            - id: 8a1b2c3d-4e5f-4a6b-9c7d-0e1f2a3b4c5d
+              periodo: '2025-09'
+              rubricaSigla: SHOW
+              status: FINALIZADO
+              analistaResponsavel: Mariana Costa
+              criadoEm: '2025-10-01T09:15:00Z'
+              calculadoEm: '2025-10-02T14:30:00Z'
+              aprovadoEm: '2025-10-03T11:00:00Z'
+              finalizadoEm: '2025-10-05T16:45:00Z'
+              canceladoEm: null
+              justificativaCancelamento: null
+              snapshotRolId: 1f2e3d4c-5b6a-4789-8c9d-0a1b2c3d4e5f
+              snapshotVerbaId: 9e8d7c6b-5a4f-4321-9b8c-7d6e5f4a3b2c
+              totalExecucoes: 18420
+              totalObras: 1245
+              totalCreditos: 3870
+              totalCreditosRetidosLiberados: 142
+              totalPontos: 98450.75
+              valorTotalCalculado: 1284500.00
+              valorTotalRetidosLiberados: 38200.50
+              verbaLiquida: 1322700.50
+            - id: 7b2c3d4e-5f6a-4b7c-8d9e-1f2a3b4c5d6e
+              periodo: '2025-10'
+              rubricaSigla: MEC
+              status: CALCULADO
+              analistaResponsavel: Rafael Andrade
+              criadoEm: '2025-11-01T08:00:00Z'
+              calculadoEm: '2025-11-02T10:20:00Z'
+              aprovadoEm: null
+              finalizadoEm: null
+              canceladoEm: null
+              justificativaCancelamento: null
+              snapshotRolId: 2a3b4c5d-6e7f-4890-9a1b-2c3d4e5f6a7b
+              snapshotVerbaId: 8f7e6d5c-4b3a-4210-8a9b-6c5d4e3f2a1b
+              totalExecucoes: 9650
+              totalObras: 820
+              totalCreditos: 2140
+              totalCreditosRetidosLiberados: 0
+              totalPontos: 45230.00
+              valorTotalCalculado: 612300.00
+              valorTotalRetidosLiberados: 0.00
+              verbaLiquida: 612300.00
+            - id: 6c3d4e5f-6a7b-4c8d-9e0f-2a3b4c5d6e7f
+              periodo: '2025-11'
+              rubricaSigla: RTV
+              status: CRIADO
+              analistaResponsavel: null
+              criadoEm: '2025-12-01T07:45:00Z'
+              calculadoEm: null
+              aprovadoEm: null
+              finalizadoEm: null
+              canceladoEm: null
+              justificativaCancelamento: null
+              snapshotRolId: null
+              snapshotVerbaId: null
+              totalExecucoes: 0
+              totalObras: 0
+              totalCreditos: 0
+              totalCreditosRetidosLiberados: 0
+              totalPontos: 0.00
+              valorTotalCalculado: 0.00
+              valorTotalRetidosLiberados: 0.00
+              verbaLiquida: 0.00
+          totalElements: 3
+          totalPages: 1
+
+  'GET /api/v1/processos/{id}':
+    processo-show:
+      request:
+        parameters:
+          id: 8a1b2c3d-4e5f-4a6b-9c7d-0e1f2a3b4c5d
+        headers:
+          Accept: application/json
+      response:
+        status: '200'
+        mediaType: application/json
+        body:
+          id: 8a1b2c3d-4e5f-4a6b-9c7d-0e1f2a3b4c5d
+          periodo: '2025-09'
+          rubricaSigla: SHOW
+          status: FINALIZADO
+          analistaResponsavel: Mariana Costa
+          criadoEm: '2025-10-01T09:15:00Z'
+          calculadoEm: '2025-10-02T14:30:00Z'
+          aprovadoEm: '2025-10-03T11:00:00Z'
+          finalizadoEm: '2025-10-05T16:45:00Z'
+          canceladoEm: null
+          justificativaCancelamento: null
+          snapshotRolId: 1f2e3d4c-5b6a-4789-8c9d-0a1b2c3d4e5f
+          snapshotVerbaId: 9e8d7c6b-5a4f-4321-9b8c-7d6e5f4a3b2c
+          totalExecucoes: 18420
+          totalObras: 1245
+          totalCreditos: 3870
+          totalCreditosRetidosLiberados: 142
+          totalPontos: 98450.75
+          valorTotalCalculado: 1284500.00
+          valorTotalRetidosLiberados: 38200.50
+          verbaLiquida: 1322700.50
+
+  'GET /api/v1/rubricas':
+    lista-rubricas:
+      request:
+        headers:
+          Accept: application/json
+      response:
+        status: '200'
+        mediaType: application/json
+        body:
+          - id: 6d3f2a10-1c44-4f0a-9b8e-1f0a2b3c4d5e
+            sigla: SHOW
+            nome: Shows e eventos
+            exigeClassificacao: true
+            ativo: true
+          - id: 2a7c9b41-8e22-4d63-bb10-77c0e9a1d2f3
+            sigla: MEC
+            nome: Execução mecânica
+            exigeClassificacao: false
+            ativo: true
+          - id: 4b8d1e52-9f33-4c74-aa21-88d1f0b2e3c4
+            sigla: RTV
+            nome: Rádio e televisão
+            exigeClassificacao: true
+            ativo: true
+
+  'GET /api/v1/rubricas/{sigla}':
+    rubrica-show:
+      request:
+        parameters:
+          sigla: SHOW
+        headers:
+          Accept: application/json
+      response:
+        status: '200'
+        mediaType: application/json
+        body:
+          id: 6d3f2a10-1c44-4f0a-9b8e-1f0a2b3c4d5e
+          sigla: SHOW
+          nome: Shows e eventos
+          exigeClassificacao: true
+          ativo: true
+
+  'GET /api/v1/ajustes-estorno':
+    lista-ajustes-estorno:
+      request:
+        headers:
+          Accept: application/json
+      response:
+        status: '200'
+        mediaType: application/json
+        body:
+          items:
+            - id: a1c2e3d4-5f60-4718-9a2b-3c4d5e6f7081
+              eventId: b2d3f4e5-6071-4829-8b3c-4d5e6f708192
+              licencaId: c3e4f506-7182-493a-9c4d-5e6f70819203
+              pagamentoId: d4f50617-8293-4a4b-9d5e-6f7081920314
+              processoOrigemId: 8a1b2c3d-4e5f-4a6b-9c7d-0e1f2a3b4c5d
+              processoAplicacaoId: 7b2c3d4e-5f6a-4b7c-8d9e-1f2a3b4c5d6e
+              periodoOrigem: '2025-09'
+              status: APLICADO
+              justificativa: Estorno de pagamento cancelado por inadimplência do licenciado
+              estornadoPor: Mariana Costa
+              valorEstornadoBruto: 12500.00
+              valorAplicado: 12500.00
+              valorAjusteLiquido: -12500.00
+              recebidoEm: '2025-10-10T10:00:00Z'
+              previstoEm: '2025-10-11T09:00:00Z'
+              aplicadoEm: '2025-10-12T15:30:00Z'
+              estornadoEm: '2025-10-10T09:45:00Z'
+              rubrica:
+                sigla: SHOW
+                nome: Shows e eventos
+            - id: e5061728-3940-4b5c-9e6f-708192031425
+              eventId: f6172839-4051-4c6d-8f70-819203142536
+              licencaId: 07283940-5162-4d7e-9081-920314253647
+              pagamentoId: 18394051-6273-4e8f-9192-031425364758
+              processoOrigemId: 7b2c3d4e-5f6a-4b7c-8d9e-1f2a3b4c5d6e
+              processoAplicacaoId: null
+              periodoOrigem: '2025-10'
+              status: PREVISTO
+              justificativa: Ajuste de complemento por reprocessamento de execução mecânica
+              estornadoPor: Rafael Andrade
+              valorEstornadoBruto: 3200.50
+              valorAplicado: 0.00
+              valorAjusteLiquido: -3200.50
+              recebidoEm: '2025-11-05T11:20:00Z'
+              previstoEm: '2025-11-06T08:30:00Z'
+              aplicadoEm: null
+              estornadoEm: '2025-11-05T11:00:00Z'
+              rubrica:
+                sigla: MEC
+                nome: Execução mecânica
+          page: 1
+          size: 20
+          totalItems: 2
+          totalPages: 1
+
+  'GET /api/v1/ajustes-estorno/{id}':
+    ajuste-estorno-show:
+      request:
+        parameters:
+          id: a1c2e3d4-5f60-4718-9a2b-3c4d5e6f7081
+        headers:
+          Accept: application/json
+      response:
+        status: '200'
+        mediaType: application/json
+        body:
+          id: a1c2e3d4-5f60-4718-9a2b-3c4d5e6f7081
+          eventId: b2d3f4e5-6071-4829-8b3c-4d5e6f708192
+          licencaId: c3e4f506-7182-493a-9c4d-5e6f70819203
+          pagamentoId: d4f50617-8293-4a4b-9d5e-6f7081920314
+          processoOrigemId: 8a1b2c3d-4e5f-4a6b-9c7d-0e1f2a3b4c5d
+          processoAplicacaoId: 7b2c3d4e-5f6a-4b7c-8d9e-1f2a3b4c5d6e
+          periodoOrigem: '2025-09'
+          status: APLICADO
+          justificativa: Estorno de pagamento cancelado por inadimplência do licenciado
+          estornadoPor: Mariana Costa
+          valorEstornadoBruto: 12500.00
+          valorAplicado: 12500.00
+          valorAjusteLiquido: -12500.00
+          recebidoEm: '2025-10-10T10:00:00Z'
+          previstoEm: '2025-10-11T09:00:00Z'
+          aplicadoEm: '2025-10-12T15:30:00Z'
+          estornadoEm: '2025-10-10T09:45:00Z'
+          rubrica:
+            sigla: SHOW
+            nome: Shows e eventos
+          processoOrigem:
+            id: 8a1b2c3d-4e5f-4a6b-9c7d-0e1f2a3b4c5d
+            periodo: '2025-09'
+            rubricaSigla: SHOW
+            status: FINALIZADO
+          processoAplicacao:
+            id: 7b2c3d4e-5f6a-4b7c-8d9e-1f2a3b4c5d6e
+            periodo: '2025-10'
+            rubricaSigla: SHOW
+            status: CALCULADO
+          payloadOriginal:
+            origemEvento: arrecadacao.pagamento.cancelado
+            valorOriginal: 12500.00
+          historicoAplicacao:
+            - status: PREVISTO
+              processoId: 7b2c3d4e-5f6a-4b7c-8d9e-1f2a3b4c5d6e
+              observacao: Ajuste previsto no processo de outubro
+              ocorridoEm: '2025-10-11T09:00:00Z'
+            - status: APLICADO
+              processoId: 7b2c3d4e-5f6a-4b7c-8d9e-1f2a3b4c5d6e
+              observacao: Estorno aplicado e debitado dos créditos do titular
+              ocorridoEm: '2025-10-12T15:30:00Z'
+          linhas:
+            - id: 29405162-7384-4f90-8a1b-2c3d4e5f6071
+              ajusteId: a1c2e3d4-5f60-4718-9a2b-3c4d5e6f7081
+              creditoOrigemId: 3a4b5c6d-7e8f-4901-8a2b-3c4d5e6f7082
+              processoOrigemId: 8a1b2c3d-4e5f-4a6b-9c7d-0e1f2a3b4c5d
+              processoAplicacaoId: 7b2c3d4e-5f6a-4b7c-8d9e-1f2a3b4c5d6e
+              obraId: 4b5c6d7e-8f90-4012-9a3b-4c5d6e7f8093
+              obraTitulo: Samba da Madrugada
+              fonogramaId: 5c6d7e8f-9012-4123-8a4b-5d6e7f809314
+              titularId: 6d7e8f90-1234-4235-9a5b-6e7f80931425
+              titularNome: João Pereira da Silva
+              categoria: AUTORAL
+              subcategoriaConexa: null
+              valorCreditoOrigem: 7500.00
+              valorAjuste: -7500.00
+            - id: 30516273-8495-4a01-9b2c-3d4e5f607182
+              ajusteId: a1c2e3d4-5f60-4718-9a2b-3c4d5e6f7081
+              creditoOrigemId: 4b5c6d7e-8f90-4012-9b3c-4d5e6f708193
+              processoOrigemId: 8a1b2c3d-4e5f-4a6b-9c7d-0e1f2a3b4c5d
+              processoAplicacaoId: 7b2c3d4e-5f6a-4b7c-8d9e-1f2a3b4c5d6e
+              obraId: 5c6d7e8f-9012-4123-9b4c-5d6e7f809314
+              obraTitulo: Samba da Madrugada
+              fonogramaId: 6d7e8f90-1234-4235-8b5c-6e7f80931425
+              titularId: 7e8f9012-3456-4346-9b6c-7f8091425360
+              titularNome: Estúdio Conexo Produções Ltda
+              categoria: CONEXO
+              subcategoriaConexa: PRODUTOR
+              valorCreditoOrigem: 5000.00
+              valorAjuste: -5000.00

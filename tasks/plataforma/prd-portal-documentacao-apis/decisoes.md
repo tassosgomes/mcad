@@ -67,6 +67,19 @@
     sujar o spec gerado. Protótipo em `contracts/arrecadacao/examples.yaml` (GET lista + GET por
     id com dispatch) **validado em prod**: mocks respondem dados reais. `import-contracts-microcks.sh`
     auto-descobre e sobe os overlays como secundários. Expandir endpoint a endpoint conforme valor.
+  - **Mocks úteis — EXPANDIDO para os 4 serviços (2026-06-18).** Overlays criados/expandidos
+    cobrindo as famílias de recursos centrais (lista + get-by-id), 28 operações no total:
+    cadastro (titulares, obras, fonogramas, associacoes), identificacao (captacoes, rubricas,
+    tipos-utilizacao, usuarios-musica), distribuicao (processos, rubricas, ajustes-estorno),
+    arrecadacao (+ licencas, pagamentos, usuarios-musica, verbas além das rubricas). **Validado
+    ponta-a-ponta no Microcks local** (compose, Keycloak off): import OK + curl nos mocks retorna
+    dados reais com dispatch correto no get-by-id. Caveats achados: (a) os OpenAPI .NET
+    (cadastro/identificacao) declaram respostas 200 **sem schema** → corpos inferidos dos DTOs
+    reais do código; (b) envelopes de lista divergem entre serviços (cadastro `{data,pagination}`,
+    arrecadacao `{items,metadata}`, distribuicao `{items,totalElements,totalPages}`, e até
+    dentro do mesmo serviço: identificacao usa `data` em captacoes e `items` em usuarios-musica);
+    (c) nome de serviço acentuado (`Identificação API`) exige **percent-encoding** na URL do mock.
+    **Pendente:** demais endpoints conforme valor; reimport em prod (segue no merge para main).
 - **Fase 3 — drift-gate FEITO (2026-06-17).** `scripts/check-contracts-drift.sh` orquestra
   boot dos 4 serviços (infra local) + `export-contracts.sh --check` — **validado localmente**
   (exit 0, contratos em dia). Workflow `.github/workflows/contracts-drift.yml` (PR/push em
