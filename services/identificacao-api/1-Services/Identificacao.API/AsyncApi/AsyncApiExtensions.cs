@@ -19,7 +19,11 @@ public static class AsyncApiExtensions
 
             options.AsyncApi = new AsyncApiDocument
             {
-                Info = new Info("Identificação API — Eventos Assíncronos", "1.0.0")
+                // Titulo ASCII-only (sem em-dash/acentos) de proposito: o Microcks deriva
+                // o nome da exchange AMQP do mock a partir deste titulo ({titulo}-{versao}-{op});
+                // caracteres nao-ASCII produzem nome de exchange invalido e o async-minion
+                // falha o publish no broker (java.io.IOException). Ver contracts/README.md.
+                Info = new Info("Identificacao API Eventos Assincronos", "1.0.0")
                 {
                     Description =
                         "Eventos publicados pelo domínio de **Identificação** via RabbitMQ.\n\n" +

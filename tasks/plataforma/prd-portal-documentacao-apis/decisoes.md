@@ -62,6 +62,22 @@
     (sem porta publicada). **Pendente:** demais exemplos; fix Saunter inline; consumo
     cross-stack mcad↔LavinMQ.
   - **Caveat**: mocks retornam vazio sem exemplos nos specs.
+  - **Mock async .NET (fix Saunter inline) — FEITO e VALIDADO local (2026-06-18).** Os 2
+    serviços .NET (cadastro=8 eventos, identificacao=2) passam a ter mock async funcional,
+    fechando 4/4 serviços com mock async. Pós-processador `scripts/normalize-asyncapi.py`
+    (chamado pelo `export-contracts.sh`, write+check) torna o Saunter "Microcks-ready":
+    (a) **inline do binding AMQP** (Saunter emite `$ref`, que o async-minion não resolve →
+    `type null`); (b) **merge de exemplos CloudEvents** dos sidecars
+    `contracts/<svc>/async-examples.yaml` (mantém o spec gerado limpo, como o `examples.yaml`
+    do REST). **Validado ponta-a-ponta no stack async local** (kafka+lavinmq+async-minion):
+    as 10 exchanges .NET foram criadas e o evento `cadastro.titular.criado` foi publicado e
+    **consumido** com payload realista. **Gotcha decisivo:** o Microcks deriva o nome da
+    exchange AMQP do **título** do AsyncAPI; o título do Saunter tinha em-dash/acento
+    (`Cadastro API — Eventos Assíncronos`) → exchange inválida → `java.io.IOException` no
+    publish. Fix: título **ASCII-only** no `AsyncApiExtensions.cs` dos 2 serviços
+    (`Cadastro API Eventos Assincronos` / `Identificacao API Eventos Assincronos`).
+    **Pendente:** redeploy dos 2 serviços .NET em prod (para o título ASCII valer) + reimport;
+    consumo cross-stack mcad↔LavinMQ.
   - **Mocks úteis — INICIADO (2026-06-17, caminho B).** Overlay de exemplos `APIExamples`
     como artefato secundário (`contracts/<svc>/examples.yaml`), mesclado sobre o OpenAPI sem
     sujar o spec gerado. Protótipo em `contracts/arrecadacao/examples.yaml` (GET lista + GET por
