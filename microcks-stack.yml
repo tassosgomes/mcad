@@ -43,7 +43,7 @@ services:
       KC_HTTP_ENABLED: "true"
       KC_PROXY_HEADERS: xforwarded
     configs:
-      - source: microcks_realm
+      - source: microcks_realm_v2
         target: /opt/keycloak/data/import/microcks-realm.json
     networks:
       - microcks-internal
@@ -125,7 +125,9 @@ services:
       KAFKA_PROCESS_ROLES: broker,controller
       KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:19092,CONTROLLER://0.0.0.0:9093
       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:19092
-      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      # Controller fala consigo mesmo via localhost — no overlay do Swarm o nó KRaft
+      # não resolve o próprio nome de serviço (VIP) no boot. Advertised continua kafka:19092.
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@localhost:9093
       KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
@@ -174,6 +176,10 @@ services:
       - lavinmq
     environment:
       - QUARKUS_PROFILE=docker-compose
+      # Service account p/ o minion autenticar na API do Microcks (Keycloak ON em prod).
+      # Reusa o client microcks-automation (role manager). Secret vem do Env do stack.
+      - MICROCKS_SERVICEACCOUNT=${MICROCKS_SERVICEACCOUNT:-microcks-automation}
+      - MICROCKS_SERVICEACCOUNT_CREDENTIALS=${MICROCKS_AUTOMATION_SECRET}
     configs:
       - source: microcks_minion_props
         target: /deployments/config/application.properties
@@ -195,7 +201,8 @@ configs:
   #   infra/microcks/render-realm.sh
   #   ssh mcad-server "docker config create microcks_realm -" < infra/microcks/keycloak-realm/microcks-realm-prod.json
   # Para atualizar o realm: criar microcks_realm_vN e trocar o name abaixo (configs são imutáveis).
-  microcks_realm:
+  # v2 (2026-06-17): service account microcks-automation ganhou role `user` p/ o async-minion.
+  microcks_realm_v2:
     external: true
   # Config do async-minion (Fase 2b). Conteúdo = infra/microcks/config/application.properties
   # (sem segredo — LavinMQ interno com guest/guest). Criar antes do deploy:

@@ -24,7 +24,7 @@
       "enabled": true,
       "serviceAccountClientId": "microcks-automation",
       "clientRoles": {
-        "microcks-app": ["manager"]
+        "microcks-app": ["manager", "user"]
       }
     }
   ],

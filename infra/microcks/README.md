@@ -60,14 +60,25 @@ Config do minion: `config/application.properties` (bus Kafka + `supported-bindin
 - Evento real `arrecadacao.pagamento.registrado` (CloudEvents) é mockado e **consumido do
   LavinMQ** com payload realista. UI do LavinMQ em `http://localhost:25672` (guest/guest).
 
-### Deploy da Fase 2b no Swarm
+### Deploy da Fase 2b no Swarm — DEPLOYADO em prod (2026-06-17)
 Além dos passos da Fase 2a, antes de subir o stack:
 ```bash
-# Cria a config externa do minion (conteúdo sem segredo — LavinMQ interno guest/guest):
+# Config externa do minion (sem segredo — LavinMQ interno guest/guest):
 ssh mcad-server "docker config create microcks_minion_props -" < infra/microcks/config/application.properties
 ```
-Depois, atualizar o stack no Portainer (Portainer puxa as imagens novas: apache/kafka,
-cloudamqp/lavinmq, microcks-async-minion).
+O `app` recebe env `MICROCKS_AUTOMATION_SECRET` (Env do stack) e o minion injeta
+`MICROCKS_SERVICEACCOUNT=microcks-automation` + `MICROCKS_SERVICEACCOUNT_CREDENTIALS`
+(secret via env, fora do arquivo commitado). Portainer puxa apache/kafka, cloudamqp/lavinmq,
+microcks-async-minion.
+
+**Gotchas aprendidos no deploy (já aplicados no stack):**
+- **Kafka KRaft não resolve o próprio nome de serviço** no overlay do Swarm (vira VIP) no
+  boot → `KAFKA_CONTROLLER_QUORUM_VOTERS=1@localhost:9093` (advertised segue `kafka:19092`).
+- Com Keycloak ON, o **minion precisa de service account com role `user`** (não só `manager` —
+  roles do Microcks não são hierárquicas). O realm foi atualizado (`microcks_realm_v2`):
+  `service-account-microcks-automation` → `microcks-app: [manager, user]`. Como o Keycloak
+  roda `start-dev` (H2, reimporta a cada restart), atualizar o realm = nova config Swarm
+  `microcks_realm_vN` + trocar o `source` no stack.
 
 ### Convenção de nome da exchange (IMPORTANTE p/ consumir mock)
 O Microcks **ignora o `exchange.name` do spec** e cria a exchange como

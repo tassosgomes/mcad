@@ -48,6 +48,19 @@
     (c) Java (arrecadacao/distribuicao) têm binding inline ok mas faltam `examples:` de
     mensagem. **Pendente:** deploy em prod (Portainer); cobertura dos demais eventos; fix
     Saunter inline; consumo cross-stack mcad↔LavinMQ.
+  - **Fase 2b — DEPLOYADA em produção (2026-06-17).** Stack `mcad-microcks` (Id=32)
+    ganhou `kafka` + `lavinmq` + `async-minion`. Validado ponta-a-ponta em prod: mock
+    `arrecadacao.pagamento.registrado` publicado no LavinMQ e **consumido** (via container
+    curl efêmero na rede `mcad-microcks_microcks-internal`). Gotchas do deploy no Swarm:
+    (a) **Kafka KRaft não resolve o próprio nome de serviço** no overlay (VIP) no boot →
+    `KAFKA_CONTROLLER_QUORUM_VOTERS=1@localhost:9093` (advertised segue `kafka:19092`);
+    (b) com Keycloak ON, o **minion precisa de service account** — reusado o client
+    `microcks-automation`, mas ele só tinha role `manager` e o endpoint do minion exige
+    **`user`** (roles do Microcks não são hierárquicas) → adicionado `user` ao SA no realm
+    (config Swarm `microcks_realm_v2`); secret do SA injetado via env
+    `MICROCKS_SERVICEACCOUNT_CREDENTIALS` (não no arquivo commitado). LavinMQ interno
+    (sem porta publicada). **Pendente:** demais exemplos; fix Saunter inline; consumo
+    cross-stack mcad↔LavinMQ.
   - **Caveat**: mocks retornam vazio sem exemplos nos specs.
   - **Mocks úteis — INICIADO (2026-06-17, caminho B).** Overlay de exemplos `APIExamples`
     como artefato secundário (`contracts/<svc>/examples.yaml`), mesclado sobre o OpenAPI sem
