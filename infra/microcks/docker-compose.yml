@@ -1,0 +1,151 @@
+# Microcks — protótipo LOCAL (Fase 2a portal + REST; Fase 2b async mock via LavinMQ).
+# Baseado no docker-compose oficial do microcks (install/docker-compose), pinado em 1.14.0.
+#
+# Subir:   docker compose -f infra/microcks/docker-compose.yml up -d
+# UI:      http://localhost:18081   (login admin / microcks123)
+# Keycloak http://localhost:18080
+# LavinMQ: http://localhost:25672   (mgmt UI; alvo AMQP dos mocks)
+#
+# Portas escolhidas (18080/18081/25672) para não colidir com a infra mcad já de pé.
+services:
+  mongo:
+    image: mongo:4.4.29
+    container_name: mcad-microcks-db
+    restart: unless-stopped
+    volumes:
+      - microcks_mongo_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongo", "--eval", "db.adminCommand('ping')"]
+      interval: 30s
+      timeout: 2s
+      retries: 3
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.0.0
+    container_name: mcad-microcks-sso
+    restart: unless-stopped
+    ports:
+      - "18080:8080"
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+    volumes:
+      - "./keycloak-realm/microcks-realm-sample.json:/opt/keycloak/data/import/microcks-realm.json:ro"
+    command: ["start-dev", "--hostname=http://localhost:18080", "--import-realm", "--health-enabled=true"]
+    healthcheck:
+      test: ["CMD", "sh", "-c", "echo -e 'GET /health/live HTTP/1.1\r\nHost: localhost\r\n\r\n' > /dev/tcp/localhost/9000"]
+      start_period: 15s
+      interval: 10s
+      timeout: 2s
+      retries: 5
+
+  postman:
+    image: quay.io/microcks/microcks-postman-runtime:0.7.2
+    container_name: mcad-microcks-postman
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      start_period: 5s
+      interval: 20s
+      timeout: 3s
+      retries: 3
+
+  app:
+    image: quay.io/microcks/microcks:1.14.0
+    container_name: mcad-microcks
+    restart: unless-stopped
+    depends_on:
+      - mongo
+      - keycloak
+      - postman
+    ports:
+      - "18081:8080"
+      - "19090:9090"
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+      - SPRING_DATA_MONGODB_URI=mongodb://mongo:27017
+      - SPRING_DATA_MONGODB_DATABASE=microcks
+      - POSTMAN_RUNNER_URL=http://postman:3000
+      - TEST_CALLBACK_URL=http://app:8080
+      - SERVICES_UPDATE_INTERVAL=0 0 0/2 * * *
+      # Protótipo local: Keycloak desabilitado (upload aberto). No Swarm fica habilitado.
+      - KEYCLOAK_ENABLED=false
+      # Async (Fase 2b): bus Kafka + minion
+      - ASYNC_MINION_URL=http://async-minion:8081
+      - KAFKA_BOOTSTRAP_SERVER=kafka:19092
+    volumes:
+      - "./config:/deployments/config"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/api/health"]
+      start_period: 40s
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  # ── Fase 2b (async mock) ──────────────────────────────────────────────────
+  # Bus interno Kafka (KRaft single-node, sem Zookeeper) — webapp <-> minion.
+  kafka:
+    image: apache/kafka:3.8.0
+    container_name: mcad-microcks-kafka
+    restart: unless-stopped
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:19092,CONTROLLER://0.0.0.0:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:19092
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@localhost:9093
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:19092 >/dev/null 2>&1 || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 20s
+
+  # LavinMQ — alvo AMQP 0.9.1 dos mocks (drop-in RabbitMQ, leve).
+  lavinmq:
+    image: cloudamqp/lavinmq:2.8.1
+    container_name: mcad-microcks-lavinmq
+    restart: unless-stopped
+    ports:
+      - "25672:15672"   # management UI
+      - "25673:5672"    # AMQP (consumidores de mock apontam aqui)
+    volumes:
+      - microcks_lavinmq_data:/var/lib/lavinmq
+    healthcheck:
+      test: ["CMD-SHELL", "lavinmqctl status >/dev/null 2>&1 || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  async-minion:
+    image: quay.io/microcks/microcks-async-minion:1.14.0
+    container_name: mcad-microcks-async-minion
+    restart: on-failure
+    depends_on:
+      - app
+      - kafka
+      - lavinmq
+    ports:
+      - "18181:8081"
+    environment:
+      - QUARKUS_PROFILE=docker-compose
+    volumes:
+      - "./config:/deployments/config"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8081/q/health/ready"]
+      start_period: 20s
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+volumes:
+  microcks_mongo_data:
+  microcks_lavinmq_data:

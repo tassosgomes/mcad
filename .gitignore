@@ -75,3 +75,7 @@ datadump-mb
 mapas.json
 scripts/musicbrainz-importer/mapas.json
 scripts/arrecadacao-generator/mapas.json
+
+# Microcks (Fase 2) — artefatos com secrets (não versionar)
+infra/microcks/.env.microcks
+infra/microcks/keycloak-realm/microcks-realm-prod.json

@@ -1,0 +1,95 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# contracts-drift.yml — drift-gate dos contratos de API.
+#
+# Garante que os specs versionados em contracts/ (OpenAPI + AsyncAPI) refletem o
+# que o código gera. Sobe os 4 serviços contra Postgres+RabbitMQ locais, gera os
+# specs e compara com os arquivos commitados (scripts/check-contracts-drift.sh).
+#
+# Falha se houver drift → o autor roda scripts/export-contracts.sh e commita.
+#
+# NÃO é required check ainda (calibrar primeiro, como o pipeline shadow v2).
+# ─────────────────────────────────────────────────────────────────────────────
+name: Contracts drift
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'services/**'
+      - 'contracts/**'
+      - 'scripts/export-contracts.sh'
+      - 'scripts/check-contracts-drift.sh'
+      - '.github/workflows/contracts-drift.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'services/**'
+      - 'contracts/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: read
+
+concurrency:
+  group: contracts-drift-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  drift:
+    name: contracts drift-gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: services/cadastro-api/global.json
+
+      # Auth do Maven para o GitHub Packages (audit-sdk / authz-sdk).
+      # Mesmos server-ids do parent pom dos serviços Java.
+      - name: Maven settings (GitHub Packages)
+        run: |
+          mkdir -p ~/.m2
+          cat > ~/.m2/settings.xml <<EOF
+          <?xml version="1.0" encoding="UTF-8"?>
+          <settings xmlns="http://maven.apache.org/SETTINGS/1.0.0">
+            <servers>
+              <server>
+                <id>github-ecad-auditoria</id>
+                <username>${{ github.actor }}</username>
+                <password>${{ secrets.GH_PACKAGES_READ_TOKEN || github.token }}</password>
+              </server>
+              <server>
+                <id>github-ecad-authz</id>
+                <username>${{ github.actor }}</username>
+                <password>${{ secrets.GH_PACKAGES_READ_TOKEN || github.token }}</password>
+              </server>
+            </servers>
+          </settings>
+          EOF
+
+      - name: Subir infra local (Postgres + RabbitMQ)
+        run: |
+          docker compose -f docker-compose.dev.yml up -d mcad-postgres mcad-rabbitmq
+          echo "Aguardando healthy…"
+          for i in $(seq 1 30); do
+            bad=$(docker ps --filter "name=mcad-postgres" --filter "name=mcad-rabbitmq" --format '{{.Status}}' | grep -ciE 'starting|unhealthy' || true)
+            [ "$bad" = "0" ] && break
+            sleep 4
+          done
+          docker ps --filter "name=mcad-postgres" --filter "name=mcad-rabbitmq" --format '{{.Names}}: {{.Status}}'
+
+      - name: Drift-gate
+        env:
+          OIDC_AUTHORITY: https://9lcinu.logto.app/oidc
+        run: scripts/check-contracts-drift.sh

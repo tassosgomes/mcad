@@ -1,0 +1,9 @@
+{
+  "services/cadastro-api": "0.1.0",
+  "services/identificacao-api": "0.1.0",
+  "services/arrecadacao-api": "0.1.0",
+  "services/distribuicao-api": "0.1.0",
+  "services/bff": "0.1.0",
+  "services/identity-sync-api": "0.1.0",
+  "frontend": "0.1.0"
+}

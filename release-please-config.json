@@ -1,0 +1,44 @@
+{
+  "$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json",
+  "bootstrap-sha": "bb1f51c5606579b06a57c156503de75ab068300d",
+  "separate-pull-requests": true,
+  "tag-separator": "-",
+  "include-component-in-tag": true,
+  "packages": {
+    "services/cadastro-api": {
+      "component": "cadastro-api",
+      "release-type": "dotnet",
+      "skip-version-file": true
+    },
+    "services/identificacao-api": {
+      "component": "identificacao-api",
+      "release-type": "dotnet",
+      "skip-version-file": true
+    },
+    "services/arrecadacao-api": {
+      "component": "arrecadacao-api",
+      "release-type": "maven",
+      "skip-version-file": true
+    },
+    "services/distribuicao-api": {
+      "component": "distribuicao-api",
+      "release-type": "maven",
+      "skip-version-file": true
+    },
+    "services/bff": {
+      "component": "bff",
+      "release-type": "node",
+      "skip-version-file": true
+    },
+    "services/identity-sync-api": {
+      "component": "identity-sync-api",
+      "release-type": "node",
+      "skip-version-file": true
+    },
+    "frontend": {
+      "component": "frontend",
+      "release-type": "node",
+      "skip-version-file": true
+    }
+  }
+}

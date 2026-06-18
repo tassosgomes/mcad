@@ -1,0 +1,31 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# release-please.yml — Release PR management (Fase 2)
+#
+# Runs on every push to main. Maintains a Release PR per service (component).
+# When a Release PR is merged, release-please creates a tag like
+# "cadastro-api-v0.2.0" which triggers release.yml (image build+push with
+# semver tag).
+#
+# Requires Conventional Commits (feat:, fix:, etc.) — enforced by
+# commitlint.yml (advisory in Phase 1, blocking after cutover).
+# ─────────────────────────────────────────────────────────────────────────────
+name: release-please
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write   # create tags, releases, commits
+  pull-requests: write  # create/maintain Release PRs
+
+jobs:
+  release-please:
+    name: Manage release PRs
+    runs-on: ubuntu-latest
+    steps:
+      - uses: googleapis/release-please-action@v4
+        with:
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
+          target-branch: main

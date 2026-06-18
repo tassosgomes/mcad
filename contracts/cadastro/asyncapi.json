@@ -1,0 +1,401 @@
+{
+  "asyncapi": "2.4.0",
+  "channels": {
+    "cadastro.fonograma.bloqueado": {
+      "bindings": {
+        "$ref": "#/components/channelBindings/amqp"
+      },
+      "description": "Publicado quando um fonograma é bloqueado com justificativa.",
+      "publish": {
+        "message": {
+          "$ref": "#/components/messages/FonogramaBloqueado"
+        },
+        "operationId": "publicarFonogramaBloqueado",
+        "summary": "Fonograma bloqueado com justificativa",
+        "tags": [
+          {
+            "name": "fonogramas"
+          }
+        ]
+      }
+    },
+    "cadastro.fonograma.depurado": {
+      "bindings": {
+        "$ref": "#/components/channelBindings/amqp"
+      },
+      "description": "Publicado após depuração de fonograma duplicado. Novo fonograma canônico criado em substituição.",
+      "publish": {
+        "message": {
+          "$ref": "#/components/messages/FonogramaDepurado"
+        },
+        "operationId": "publicarFonogramaDepurado",
+        "summary": "Fonograma duplicado depurado",
+        "tags": [
+          {
+            "name": "fonogramas"
+          }
+        ]
+      }
+    },
+    "cadastro.fonograma.liberado": {
+      "bindings": {
+        "$ref": "#/components/channelBindings/amqp"
+      },
+      "description": "Publicado quando um fonograma tem seu status alterado para LIBERADO, ficando disponível para identificação e distribuição.",
+      "publish": {
+        "message": {
+          "$ref": "#/components/messages/FonogramaLiberado"
+        },
+        "operationId": "publicarFonogramaLiberado",
+        "summary": "Fonograma liberado para uso",
+        "tags": [
+          {
+            "name": "fonogramas"
+          }
+        ]
+      }
+    },
+    "cadastro.obra.bloqueada": {
+      "bindings": {
+        "$ref": "#/components/channelBindings/amqp"
+      },
+      "description": "Publicado quando uma obra é bloqueada por irregularidade ou pendência, impedindo seu uso até nova liberação.",
+      "publish": {
+        "message": {
+          "$ref": "#/components/messages/ObraBloqueada"
+        },
+        "operationId": "publicarObraBloqueada",
+        "summary": "Obra bloqueada com justificativa",
+        "tags": [
+          {
+            "name": "obras"
+          }
+        ]
+      }
+    },
+    "cadastro.obra.depurada": {
+      "bindings": {
+        "$ref": "#/components/channelBindings/amqp"
+      },
+      "description": "Publicado após depuração de obra duplicada. A obra original é depurada e uma nova obra canônica é criada.",
+      "publish": {
+        "message": {
+          "$ref": "#/components/messages/ObraDepurada"
+        },
+        "operationId": "publicarObraDepurada",
+        "summary": "Obra duplicada depurada",
+        "tags": [
+          {
+            "name": "obras"
+          }
+        ]
+      }
+    },
+    "cadastro.obra.dominio-publico": {
+      "bindings": {
+        "$ref": "#/components/channelBindings/amqp"
+      },
+      "description": "Publicado quando o flag de domínio público de uma obra é alterado.",
+      "publish": {
+        "message": {
+          "$ref": "#/components/messages/ObraDominioPublico"
+        },
+        "operationId": "publicarObraDominioPublico",
+        "summary": "Flag de domínio público alterado",
+        "tags": [
+          {
+            "name": "obras"
+          }
+        ]
+      }
+    },
+    "cadastro.obra.liberada": {
+      "bindings": {
+        "$ref": "#/components/channelBindings/amqp"
+      },
+      "description": "Publicado quando uma obra musical tem seu status alterado para LIBERADA, tornando-a disponível para uso por outros domínios.",
+      "publish": {
+        "message": {
+          "$ref": "#/components/messages/ObraLiberada"
+        },
+        "operationId": "publicarObraLiberada",
+        "summary": "Obra liberada para uso",
+        "tags": [
+          {
+            "name": "obras"
+          }
+        ]
+      }
+    },
+    "cadastro.titular.criado": {
+      "bindings": {
+        "$ref": "#/components/channelBindings/amqp"
+      },
+      "description": "Publicado quando um novo titular de direitos (PF ou PJ) é criado. Permite que outros domínios mantenham cópia local.",
+      "publish": {
+        "message": {
+          "$ref": "#/components/messages/TitularCriado"
+        },
+        "operationId": "publicarTitularCriado",
+        "summary": "Novo titular de direitos cadastrado",
+        "tags": [
+          {
+            "name": "titulares"
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "channelBindings": {
+      "amqp": {
+        "amqp": {
+          "exchange": {
+            "autoDelete": false,
+            "durable": true,
+            "name": "cadastro.events",
+            "type": "topic",
+            "vhost": "mcad"
+          },
+          "is": "routingKey"
+        }
+      }
+    },
+    "messages": {
+      "FonogramaBloqueado": {
+        "name": "FonogramaBloqueado",
+        "payload": {
+          "$ref": "#/components/schemas/fonogramaBloqueadoPayload"
+        },
+        "summary": "Fonograma bloqueado — uso suspenso até nova liberação",
+        "title": "Fonograma Bloqueado"
+      },
+      "FonogramaDepurado": {
+        "name": "FonogramaDepurado",
+        "payload": {
+          "$ref": "#/components/schemas/fonogramaDepuradoPayload"
+        },
+        "summary": "Fonograma duplicado depurado — novo fonograma canônico criado",
+        "title": "Fonograma Depurado"
+      },
+      "FonogramaLiberado": {
+        "name": "FonogramaLiberado",
+        "payload": {
+          "$ref": "#/components/schemas/fonogramaLiberadoPayload"
+        },
+        "summary": "Fonograma liberado para identificação e distribuição",
+        "title": "Fonograma Liberado"
+      },
+      "ObraBloqueada": {
+        "name": "ObraBloqueada",
+        "payload": {
+          "$ref": "#/components/schemas/obraBloqueadaPayload"
+        },
+        "summary": "Uma obra musical foi bloqueada — uso suspenso até nova liberação",
+        "title": "Obra Bloqueada"
+      },
+      "ObraDepurada": {
+        "name": "ObraDepurada",
+        "payload": {
+          "$ref": "#/components/schemas/obraDepuradaPayload"
+        },
+        "summary": "Obra duplicada depurada — nova obra canônica criada",
+        "title": "Obra Depurada"
+      },
+      "ObraDominioPublico": {
+        "name": "ObraDominioPublico",
+        "payload": {
+          "$ref": "#/components/schemas/obraDominioPublicoPayload"
+        },
+        "summary": "Flag de domínio público de uma obra foi alterado",
+        "title": "Obra Domínio Público Alterado"
+      },
+      "ObraLiberada": {
+        "name": "ObraLiberada",
+        "payload": {
+          "$ref": "#/components/schemas/obraLiberadaPayload"
+        },
+        "summary": "Uma obra musical foi liberada para uso por outros domínios",
+        "title": "Obra Liberada"
+      },
+      "TitularCriado": {
+        "name": "TitularCriado",
+        "payload": {
+          "$ref": "#/components/schemas/titularCriadoPayload"
+        },
+        "summary": "Novo titular de direitos cadastrado no sistema",
+        "title": "Titular Criado"
+      }
+    },
+    "schemas": {
+      "fonogramaBloqueadoPayload": {
+        "additionalProperties": false,
+        "id": "fonogramaBloqueadoPayload",
+        "properties": {
+          "fonogramaId": {
+            "format": "guid",
+            "type": "string"
+          },
+          "isrc": {
+            "type": "string"
+          },
+          "justificativa": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "fonogramaDepuradoPayload": {
+        "additionalProperties": false,
+        "id": "fonogramaDepuradoPayload",
+        "properties": {
+          "fonogramaId": {
+            "format": "guid",
+            "type": "string"
+          },
+          "isrcOriginal": {
+            "type": "string"
+          },
+          "novoFonogramaId": {
+            "format": "guid",
+            "type": "string"
+          },
+          "obraId": {
+            "format": "guid",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "fonogramaLiberadoPayload": {
+        "additionalProperties": false,
+        "id": "fonogramaLiberadoPayload",
+        "properties": {
+          "fonogramaId": {
+            "format": "guid",
+            "type": "string"
+          },
+          "isrc": {
+            "type": "string"
+          },
+          "obraId": {
+            "format": "guid",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "obraBloqueadaPayload": {
+        "additionalProperties": false,
+        "id": "obraBloqueadaPayload",
+        "properties": {
+          "justificativa": {
+            "type": "string"
+          },
+          "obraId": {
+            "format": "guid",
+            "type": "string"
+          },
+          "titulo": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "obraDepuradaPayload": {
+        "additionalProperties": false,
+        "id": "obraDepuradaPayload",
+        "properties": {
+          "iswcOriginal": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "novaObraId": {
+            "format": "guid",
+            "type": "string"
+          },
+          "obraId": {
+            "format": "guid",
+            "type": "string"
+          },
+          "titulo": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "obraDominioPublicoPayload": {
+        "additionalProperties": false,
+        "id": "obraDominioPublicoPayload",
+        "properties": {
+          "dominioPublico": {
+            "type": "boolean"
+          },
+          "obraId": {
+            "format": "guid",
+            "type": "string"
+          },
+          "titulo": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "obraLiberadaPayload": {
+        "additionalProperties": false,
+        "id": "obraLiberadaPayload",
+        "properties": {
+          "iswc": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "obraId": {
+            "format": "guid",
+            "type": "string"
+          },
+          "titulo": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "titularCriadoPayload": {
+        "additionalProperties": false,
+        "id": "titularCriadoPayload",
+        "properties": {
+          "documento": {
+            "type": "string"
+          },
+          "nome": {
+            "type": "string"
+          },
+          "tipo": {
+            "type": "string"
+          },
+          "titularId": {
+            "format": "guid",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      }
+    }
+  },
+  "defaultContentType": "application/json",
+  "info": {
+    "description": "Eventos publicados pelo domínio de **Cadastro** via RabbitMQ.\n\n**Formato:** CloudEvents 1.0 (`application/cloudevents+json`)\n\n**Entrega:** at-least-once via Transactional Outbox (`cadastro.outbox_events`)\n\nOs schemas representam o campo `data` do envelope CloudEvents.",
+    "title": "Cadastro API — Eventos Assíncronos",
+    "version": "1.0.0"
+  },
+  "servers": {
+    "development": {
+      "description": "RabbitMQ local — docker-compose.dev.yml (vhost: mcad)",
+      "protocol": "amqp",
+      "url": "amqp://localhost:5672"
+    }
+  }
+}

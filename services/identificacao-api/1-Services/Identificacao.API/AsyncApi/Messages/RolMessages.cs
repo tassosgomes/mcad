@@ -10,6 +10,16 @@ public record RolFechadoPayload(
     Guid AnalistaId,
     IEnumerable<ExecucaoRolPayload> Execucoes);
 
+/// <summary>Campo `data` do evento identificacao.rol.cancelado</summary>
+/// <param name="Periodo">Período de identificação no formato YYYY-MM</param>
+public record RolCanceladoPayload(
+    Guid CaptacaoId,
+    string Rubrica,
+    string Periodo,
+    DateTime CanceladoEm,
+    Guid AnalistaId,
+    string Justificativa);
+
 /// <summary>Execução musical individual dentro do rol fechado</summary>
 /// <param name="Inicio">Horário de início da execução (HH:mm)</param>
 /// <param name="Fim">Horário de fim da execução (HH:mm)</param>
