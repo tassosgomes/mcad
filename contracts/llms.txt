@@ -1,0 +1,63 @@
+# mcad — Contratos de API (índice para IA / assistentes de código)
+
+> Mapa rápido da superfície de API do mcad (mini-ECAD, gestão de direitos autorais
+> musicais, domínio em português-BR). 4 microsserviços DDD, cada um com OpenAPI (REST)
+> e AsyncAPI (eventos) versionados aqui em `contracts/`, mantidos em sincronia com o
+> código pelo drift-gate de CI. Leia este arquivo para se orientar; abra o
+> `contracts/<svc>/openapi.json` ou `asyncapi.*` para o detalhe de schema.
+>
+> Portal navegável + mocks: https://mcad-docs.tasso.dev.br (Microcks).
+> Catálogo de eventos em prosa: `docs/events.md`. Topologia: `docs/architecture/`.
+
+## Convenções transversais
+
+- **Paths REST:** `/api/v1/{recurso}` (plural, português, kebab-case).
+- **Eventos:** envelope **CloudEvents 1.0 structured** (`application/cloudevents+json`,
+  metadados no corpo JSON; o `data` casa com `components/schemas/*Payload`). Nomes no
+  padrão `{dominio}.{entidade}.{acao}`. Entrega at-least-once via **Outbox Pattern**.
+- **Broker:** RabbitMQ, vhost `mcad`, 1 topic exchange por domínio (`<dominio>.events`).
+- **Exemplos:** `contracts/<svc>/examples.yaml` (respostas REST) e
+  `contracts/<svc>/async-examples.yaml` (payloads CloudEvents) alimentam os mocks.
+- **Caveat de schema:** os OpenAPI .NET (cadastro, identificacao) hoje **não declaram
+  schema de resposta** (respostas `200: OK` sem corpo tipado); o shape real está nos
+  DTOs do código e nos `examples.yaml`. Os Java declaram schema (content-type `*/*`).
+
+## Serviços
+
+### Cadastro — .NET 8 Minimal API — porta 5001
+- Contratos: `contracts/cadastro/openapi.json`, `contracts/cadastro/asyncapi.json`
+- REST (famílias): associacoes, busca, dashboard, distribuicao, fonogramas, obras,
+  ocorrencias, portal, solicitacoes-alteracao, titulares
+- Eventos **produzidos**: cadastro.titular.criado; cadastro.obra.liberada;
+  cadastro.obra.bloqueada; cadastro.obra.dominio-publico; cadastro.obra.depurada;
+  cadastro.fonograma.liberado; cadastro.fonograma.bloqueado; cadastro.fonograma.depurado
+
+### Identificação — .NET 8 Minimal API — porta 5100
+- Contratos: `contracts/identificacao/openapi.json`, `contracts/identificacao/asyncapi.json`
+- REST (famílias): analistas, captacoes, dashboard, pendentes, rubricas,
+  tipos-utilizacao, usuarios-musica
+- Eventos **produzidos**: identificacao.rol.fechado; identificacao.rol.cancelado
+
+### Arrecadação — Java Spring Boot 3.3 — porta 5003
+- Contratos: `contracts/arrecadacao/openapi.json`, `contracts/arrecadacao/asyncapi.yaml`
+- REST (famílias): dashboard, licencas, pagamentos, rubricas, uda, usuarios-musica, verbas
+- Eventos **produzidos**: arrecadacao.pagamento.registrado; arrecadacao.pagamento.estornado;
+  arrecadacao.verba.disponivel; arrecadacao.usuario-musica.criado;
+  arrecadacao.usuario-musica.atualizado; arrecadacao.rubrica.criada; arrecadacao.rubrica.atualizada
+- Eventos **consumidos**: distribuicao.processo.*; identity.user.*
+
+### Distribuição — Java Spring Boot 3.3 — porta 5004
+- Contratos: `contracts/distribuicao/openapi.json`, `contracts/distribuicao/asyncapi.yaml`
+- REST (famílias): ajustes-estorno, dashboard, processos, rubricas
+- Eventos **produzidos**: distribuicao.processo.iniciado; distribuicao.processo.calculado;
+  distribuicao.processo.aprovado; distribuicao.processo.finalizado; distribuicao.processo.cancelado;
+  distribuicao.credito.liberado; distribuicao.credito.retido; distribuicao.rol.processado;
+  distribuicao.ajuste.estorno.registrado; distribuicao.ajuste.estorno.aplicado
+- Eventos **consumidos**: arrecadacao.pagamento.estornado; arrecadacao.rubrica.*;
+  arrecadacao.verba.disponivel; identificacao.rol.*; identity.user.*
+
+## Como gerar/atualizar (não editar os specs à mão)
+
+Os specs são **gerados** do código (Swashbuckle/Saunter no .NET, springdoc + AsyncAPI
+handwritten no Java). Regenerar: `scripts/export-contracts.sh` (serviços de pé localmente);
+o CI roda `--check` para barrar drift. Detalhes em `contracts/README.md`.

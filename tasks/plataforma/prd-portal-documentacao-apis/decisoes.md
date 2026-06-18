@@ -109,6 +109,22 @@
   reimporta no Microcks de prod via `scripts/import-contracts-microcks.sh` (client
   `microcks-automation`). Requer secret de repo `MICROCKS_AUTOMATION_SECRET` (= valor de
   `infra/microcks/.env.microcks`). Fecha o ciclo CI→portal.
+- **Contract testing — DESCARTADO (2026-06-18).** Investigado a fundo: o runner
+  OPEN_API_SCHEMA do Microcks exige que o OpenAPI tenha **schema de resposta** com
+  content-type `application/json`. Hoje **nenhum** serviço atende: os .NET
+  (cadastro/identificacao) não declaram schema de resposta (Swashbuckle sem `Produces<T>()`,
+  respostas `200: OK`), e os Java declaram schema mas com content-type `*/*` (springdoc sem
+  `produces`) → runner erra `messagePathPointer does not represent an existing JSON Pointer`.
+  Habilitar exigiria refactor das declarações de resposta nos 4 serviços (grande no .NET),
+  e nada disso melhora a **documentação** — que é o objetivo real. O **drift-gate** já cobre
+  a única faceta relevante p/ doc (specs == código, nunca desatualizam). Decisão do usuário:
+  não investir; foco do projeto é documentação (inclusive consumo por IA), não gate de runtime.
+- **Índice para IA — FEITO (2026-06-18).** `contracts/llms.txt`: mapa enxuto e legível por
+  assistentes de código (Claude/Cursor/Copilot) da superfície de API — 4 serviços com
+  tech/porta, arquivos de contrato, famílias de recurso REST e eventos **produzidos/consumidos**
+  (separados via `send`/`receive` no AsyncAPI Java), convenções (CloudEvents, Outbox, broker) e
+  caveats. Derivado dos próprios contratos; aponta para os specs e o portal. Esforço baixo,
+  aproveita o que já existe — o portal Microcks já atende o usuário humano.
 
 > Nota: o `restful-api`/`service-communication` seguem como docs; o Microcks cobre a
 > navegação interativa dos contratos. Se um dia quiserem lineage produtor/consumidor e grafo
