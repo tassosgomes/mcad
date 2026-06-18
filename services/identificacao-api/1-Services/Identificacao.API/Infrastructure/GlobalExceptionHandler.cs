@@ -39,6 +39,15 @@ public class GlobalExceptionHandler : IExceptionHandler
                 problemDetails.Detail = domainEx.Message;
                 break;
 
+            case PreRequisitosException preReqEx:
+                _logger.LogInformation(exception, "Pre-requisites not met.");
+                problemDetails.Status = StatusCodes.Status422UnprocessableEntity;
+                problemDetails.Title = "Unprocessable Entity";
+                problemDetails.Detail = preReqEx.Message;
+                problemDetails.Extensions["code"] = preReqEx.Code;
+                problemDetails.Extensions["itens"] = preReqEx.Itens;
+                break;
+
             case NotFoundException notFoundEx:
                 _logger.LogInformation(exception, "Resource not found.");
                 problemDetails.Status = StatusCodes.Status404NotFound;
