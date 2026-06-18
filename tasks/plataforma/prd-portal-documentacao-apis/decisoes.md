@@ -62,11 +62,40 @@
     (sem porta publicada). **Pendente:** demais exemplos; fix Saunter inline; consumo
     cross-stack mcad↔LavinMQ.
   - **Caveat**: mocks retornam vazio sem exemplos nos specs.
+  - **Mock async .NET (fix Saunter inline) — FEITO e VALIDADO local (2026-06-18).** Os 2
+    serviços .NET (cadastro=8 eventos, identificacao=2) passam a ter mock async funcional,
+    fechando 4/4 serviços com mock async. Pós-processador `scripts/normalize-asyncapi.py`
+    (chamado pelo `export-contracts.sh`, write+check) torna o Saunter "Microcks-ready":
+    (a) **inline do binding AMQP** (Saunter emite `$ref`, que o async-minion não resolve →
+    `type null`); (b) **merge de exemplos CloudEvents** dos sidecars
+    `contracts/<svc>/async-examples.yaml` (mantém o spec gerado limpo, como o `examples.yaml`
+    do REST). **Validado ponta-a-ponta no stack async local** (kafka+lavinmq+async-minion):
+    as 10 exchanges .NET foram criadas e o evento `cadastro.titular.criado` foi publicado e
+    **consumido** com payload realista. **Gotcha decisivo:** o Microcks deriva o nome da
+    exchange AMQP do **título** do AsyncAPI; o título do Saunter tinha em-dash/acento
+    (`Cadastro API — Eventos Assíncronos`) → exchange inválida → `java.io.IOException` no
+    publish. Fix: título **ASCII-only** no `AsyncApiExtensions.cs` dos 2 serviços
+    (`Cadastro API Eventos Assincronos` / `Identificacao API Eventos Assincronos`).
+    **Pendente:** redeploy dos 2 serviços .NET em prod (para o título ASCII valer) + reimport;
+    consumo cross-stack mcad↔LavinMQ.
   - **Mocks úteis — INICIADO (2026-06-17, caminho B).** Overlay de exemplos `APIExamples`
     como artefato secundário (`contracts/<svc>/examples.yaml`), mesclado sobre o OpenAPI sem
     sujar o spec gerado. Protótipo em `contracts/arrecadacao/examples.yaml` (GET lista + GET por
     id com dispatch) **validado em prod**: mocks respondem dados reais. `import-contracts-microcks.sh`
     auto-descobre e sobe os overlays como secundários. Expandir endpoint a endpoint conforme valor.
+  - **Mocks úteis — EXPANDIDO para os 4 serviços (2026-06-18).** Overlays criados/expandidos
+    cobrindo as famílias de recursos centrais (lista + get-by-id), 28 operações no total:
+    cadastro (titulares, obras, fonogramas, associacoes), identificacao (captacoes, rubricas,
+    tipos-utilizacao, usuarios-musica), distribuicao (processos, rubricas, ajustes-estorno),
+    arrecadacao (+ licencas, pagamentos, usuarios-musica, verbas além das rubricas). **Validado
+    ponta-a-ponta no Microcks local** (compose, Keycloak off): import OK + curl nos mocks retorna
+    dados reais com dispatch correto no get-by-id. Caveats achados: (a) os OpenAPI .NET
+    (cadastro/identificacao) declaram respostas 200 **sem schema** → corpos inferidos dos DTOs
+    reais do código; (b) envelopes de lista divergem entre serviços (cadastro `{data,pagination}`,
+    arrecadacao `{items,metadata}`, distribuicao `{items,totalElements,totalPages}`, e até
+    dentro do mesmo serviço: identificacao usa `data` em captacoes e `items` em usuarios-musica);
+    (c) nome de serviço acentuado (`Identificação API`) exige **percent-encoding** na URL do mock.
+    **Pendente:** demais endpoints conforme valor; reimport em prod (segue no merge para main).
 - **Fase 3 — drift-gate FEITO (2026-06-17).** `scripts/check-contracts-drift.sh` orquestra
   boot dos 4 serviços (infra local) + `export-contracts.sh --check` — **validado localmente**
   (exit 0, contratos em dia). Workflow `.github/workflows/contracts-drift.yml` (PR/push em
@@ -80,6 +109,22 @@
   reimporta no Microcks de prod via `scripts/import-contracts-microcks.sh` (client
   `microcks-automation`). Requer secret de repo `MICROCKS_AUTOMATION_SECRET` (= valor de
   `infra/microcks/.env.microcks`). Fecha o ciclo CI→portal.
+- **Contract testing — DESCARTADO (2026-06-18).** Investigado a fundo: o runner
+  OPEN_API_SCHEMA do Microcks exige que o OpenAPI tenha **schema de resposta** com
+  content-type `application/json`. Hoje **nenhum** serviço atende: os .NET
+  (cadastro/identificacao) não declaram schema de resposta (Swashbuckle sem `Produces<T>()`,
+  respostas `200: OK`), e os Java declaram schema mas com content-type `*/*` (springdoc sem
+  `produces`) → runner erra `messagePathPointer does not represent an existing JSON Pointer`.
+  Habilitar exigiria refactor das declarações de resposta nos 4 serviços (grande no .NET),
+  e nada disso melhora a **documentação** — que é o objetivo real. O **drift-gate** já cobre
+  a única faceta relevante p/ doc (specs == código, nunca desatualizam). Decisão do usuário:
+  não investir; foco do projeto é documentação (inclusive consumo por IA), não gate de runtime.
+- **Índice para IA — FEITO (2026-06-18).** `contracts/llms.txt`: mapa enxuto e legível por
+  assistentes de código (Claude/Cursor/Copilot) da superfície de API — 4 serviços com
+  tech/porta, arquivos de contrato, famílias de recurso REST e eventos **produzidos/consumidos**
+  (separados via `send`/`receive` no AsyncAPI Java), convenções (CloudEvents, Outbox, broker) e
+  caveats. Derivado dos próprios contratos; aponta para os specs e o portal. Esforço baixo,
+  aproveita o que já existe — o portal Microcks já atende o usuário humano.
 
 > Nota: o `restful-api`/`service-communication` seguem como docs; o Microcks cobre a
 > navegação interativa dos contratos. Se um dia quiserem lineage produtor/consumidor e grafo

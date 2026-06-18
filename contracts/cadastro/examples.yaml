@@ -1,0 +1,309 @@
+# Overlay de exemplos (Microcks APIExamples) — artefato SECUNDÁRIO.
+# Mescla exemplos sobre o openapi.json (primário) sem sujar o spec gerado.
+# metadata.name/version DEVEM casar com o serviço importado (Cadastro API : v1).
+# Importar com mainArtifact=false.
+#
+# Formas detectadas nos DTOs da cadastro-api (o openapi.json declara apenas 200: OK, sem schema):
+#   - titulares / obras / fonogramas (lista): envelope { data: [...], pagination: { page, size, total, totalPages } }
+#   - associacoes (lista): ARRAY NU (sem paginação) [ {...}, ... ]
+apiVersion: mocks.microcks.io/v1alpha1
+kind: APIExamples
+metadata:
+  name: Cadastro API
+  version: v1
+operations:
+  'GET /api/v1/titulares':
+    lista-titulares:
+      request:
+        headers:
+          Accept: application/json
+      response:
+        status: '200'
+        mediaType: application/json
+        body:
+          data:
+            - id: 9b1f4c2a-3d5e-4a6b-8c7d-0e1f2a3b4c5d
+              codigo: 100245
+              nome: Chico Buarque de Hollanda
+              tipo: PF
+              documento: '147.258.369-04'
+              documentoFormatado: '147.258.369-04'
+              nacionalidade: Brasileira
+              caeIpi: '00052310475'
+              associacao:
+                id: c4e5f6a7-8192-4a33-b445-566778899abc
+                codigo: 10
+                sigla: UBC
+                nome: União Brasileira de Compositores
+              status: ATIVO
+              criadoEm: '2023-02-14T09:30:00Z'
+              atualizadoEm: '2024-11-03T16:45:12Z'
+            - id: a2c3d4e5-6f70-4811-9223-34455667788a
+              codigo: 100311
+              nome: Caetano Emanuel Viana Telles Veloso
+              tipo: PF
+              documento: '963.852.741-22'
+              documentoFormatado: '963.852.741-22'
+              nacionalidade: Brasileira
+              caeIpi: '00061204488'
+              associacao:
+                id: d5f6a7b8-9203-4b44-c556-6778899aabbd
+                codigo: 20
+                sigla: ABRAMUS
+                nome: Associação Brasileira de Música e Artes
+              status: ATIVO
+              criadoEm: '2023-03-22T11:10:05Z'
+              atualizadoEm: '2024-09-18T08:22:40Z'
+            - id: b3d4e5f6-7081-4922-a334-455667788abb
+              codigo: 200874
+              nome: Som Livre Edições Musicais Ltda
+              tipo: PJ
+              documento: '33.014.556/0001-96'
+              documentoFormatado: '33.014.556/0001-96'
+              nacionalidade: Brasileira
+              caeIpi: '00078451299'
+              associacao:
+                id: e6a7b8c9-0314-4c55-d667-78899aabbcce
+                codigo: 30
+                sigla: SICAM
+                nome: Sociedade Independente de Compositores e Autores Musicais
+              status: ATIVO
+              criadoEm: '2022-08-01T14:00:00Z'
+              atualizadoEm: '2024-06-29T10:05:33Z'
+          pagination:
+            page: 1
+            size: 20
+            total: 3
+            totalPages: 1
+
+  'GET /api/v1/titulares/{id}':
+    titular-show:
+      request:
+        parameters:
+          id: 9b1f4c2a-3d5e-4a6b-8c7d-0e1f2a3b4c5d
+        headers:
+          Accept: application/json
+      response:
+        status: '200'
+        mediaType: application/json
+        body:
+          id: 9b1f4c2a-3d5e-4a6b-8c7d-0e1f2a3b4c5d
+          codigo: 100245
+          nome: Chico Buarque de Hollanda
+          tipo: PF
+          documento: '147.258.369-04'
+          documentoFormatado: '147.258.369-04'
+          nacionalidade: Brasileira
+          caeIpi: '00052310475'
+          associacao:
+            id: c4e5f6a7-8192-4a33-b445-566778899abc
+            codigo: 10
+            sigla: UBC
+            nome: União Brasileira de Compositores
+          status: ATIVO
+          criadoEm: '2023-02-14T09:30:00Z'
+          atualizadoEm: '2024-11-03T16:45:12Z'
+
+  'GET /api/v1/obras':
+    lista-obras:
+      request:
+        headers:
+          Accept: application/json
+      response:
+        status: '200'
+        mediaType: application/json
+        body:
+          data:
+            - id: f1a2b3c4-d5e6-4f70-8a91-b2c3d4e5f601
+              codigo: 500120
+              titulo: Construção
+              subtitulo: null
+              tipo: MUSICAL
+              genero: MPB
+              iswc: 'T-034.524.680-1'
+              status: LIBERADO
+              dominioPublico: false
+              obraDepuradaParaId: null
+              criadoEm: '2023-04-10T13:20:00Z'
+              atualizadoEm: '2024-10-12T09:15:00Z'
+              bloqueioJustificativa: null
+            - id: f2a2b3c4-d5e6-4f70-8a91-b2c3d4e5f602
+              codigo: 500233
+              titulo: Sampa
+              subtitulo: null
+              tipo: MUSICAL
+              genero: MPB
+              iswc: 'T-101.402.288-7'
+              status: LIBERADO
+              dominioPublico: false
+              obraDepuradaParaId: null
+              criadoEm: '2023-05-02T10:00:00Z'
+              atualizadoEm: '2024-07-21T17:42:10Z'
+              bloqueioJustificativa: null
+            - id: f3a2b3c4-d5e6-4f70-8a91-b2c3d4e5f603
+              codigo: 500419
+              titulo: Águas de Março
+              subtitulo: null
+              tipo: MUSICAL
+              genero: Bossa Nova
+              iswc: 'T-010.314.892-3'
+              status: LIBERADO
+              dominioPublico: false
+              obraDepuradaParaId: null
+              criadoEm: '2023-06-18T08:45:00Z'
+              atualizadoEm: '2024-08-30T12:00:00Z'
+              bloqueioJustificativa: null
+          pagination:
+            page: 1
+            size: 20
+            total: 3
+            totalPages: 1
+
+  'GET /api/v1/obras/{id}':
+    obra-show:
+      request:
+        parameters:
+          id: f1a2b3c4-d5e6-4f70-8a91-b2c3d4e5f601
+        headers:
+          Accept: application/json
+      response:
+        status: '200'
+        mediaType: application/json
+        body:
+          id: f1a2b3c4-d5e6-4f70-8a91-b2c3d4e5f601
+          codigo: 500120
+          titulo: Construção
+          subtitulo: null
+          tipo: MUSICAL
+          genero: MPB
+          iswc: 'T-034.524.680-1'
+          status: LIBERADO
+          dominioPublico: false
+          obraDepuradaParaId: null
+          criadoEm: '2023-04-10T13:20:00Z'
+          atualizadoEm: '2024-10-12T09:15:00Z'
+          bloqueioJustificativa: null
+
+  'GET /api/v1/fonogramas':
+    lista-fonogramas:
+      request:
+        headers:
+          Accept: application/json
+      response:
+        status: '200'
+        mediaType: application/json
+        body:
+          data:
+            - id: 0a1b2c3d-4e5f-4061-8273-849506172839
+              codigo: 700531
+              isrc: BRBMG2300001
+              isrcFormatado: BR-BMG-23-00001
+              obra:
+                id: f1a2b3c4-d5e6-4f70-8a91-b2c3d4e5f601
+                codigo: 500120
+                titulo: Construção
+                status: LIBERADO
+              paisOrigem: BR
+              dataGravacao: '1971-02-15'
+              dataLancamento: '1971-09-01'
+              status: LIBERADO
+              fonogramaDepuradoParaId: null
+              criadoEm: '2023-04-11T09:00:00Z'
+              atualizadoEm: '2024-10-12T09:20:00Z'
+              urlAudio: https://audio.ecad.example/fonogramas/700531.mp3
+              bloqueioJustificativa: null
+            - id: 0b1b2c3d-4e5f-4061-8273-84950617283a
+              codigo: 700612
+              isrc: BRPHO7800042
+              isrcFormatado: BR-PHO-78-00042
+              obra:
+                id: f2a2b3c4-d5e6-4f70-8a91-b2c3d4e5f602
+                codigo: 500233
+                titulo: Sampa
+                status: LIBERADO
+              paisOrigem: BR
+              dataGravacao: '1978-05-20'
+              dataLancamento: '1978-10-10'
+              status: PENDENTE_VALIDACAO
+              fonogramaDepuradoParaId: null
+              criadoEm: '2023-05-03T11:30:00Z'
+              atualizadoEm: '2024-07-21T17:45:00Z'
+              urlAudio: null
+              bloqueioJustificativa: null
+          pagination:
+            page: 1
+            size: 20
+            total: 2
+            totalPages: 1
+
+  'GET /api/v1/fonogramas/{id}':
+    fonograma-show:
+      request:
+        parameters:
+          id: 0a1b2c3d-4e5f-4061-8273-849506172839
+        headers:
+          Accept: application/json
+      response:
+        status: '200'
+        mediaType: application/json
+        body:
+          id: 0a1b2c3d-4e5f-4061-8273-849506172839
+          codigo: 700531
+          isrc: BRBMG2300001
+          isrcFormatado: BR-BMG-23-00001
+          obra:
+            id: f1a2b3c4-d5e6-4f70-8a91-b2c3d4e5f601
+            codigo: 500120
+            titulo: Construção
+            status: LIBERADO
+          paisOrigem: BR
+          dataGravacao: '1971-02-15'
+          dataLancamento: '1971-09-01'
+          status: LIBERADO
+          fonogramaDepuradoParaId: null
+          criadoEm: '2023-04-11T09:00:00Z'
+          atualizadoEm: '2024-10-12T09:20:00Z'
+          urlAudio: https://audio.ecad.example/fonogramas/700531.mp3
+          bloqueioJustificativa: null
+
+  'GET /api/v1/associacoes':
+    lista-associacoes:
+      request:
+        headers:
+          Accept: application/json
+      response:
+        status: '200'
+        mediaType: application/json
+        body:
+          - id: c4e5f6a7-8192-4a33-b445-566778899abc
+            codigo: 10
+            sigla: UBC
+            nome: União Brasileira de Compositores
+            cnpj: '33.649.575/0001-99'
+          - id: d5f6a7b8-9203-4b44-c556-6778899aabbd
+            codigo: 20
+            sigla: ABRAMUS
+            nome: Associação Brasileira de Música e Artes
+            cnpj: '52.118.816/0001-08'
+          - id: e6a7b8c9-0314-4c55-d667-78899aabbcce
+            codigo: 30
+            sigla: SICAM
+            nome: Sociedade Independente de Compositores e Autores Musicais
+            cnpj: '62.638.460/0001-04'
+
+  'GET /api/v1/associacoes/{id}':
+    associacao-show:
+      request:
+        parameters:
+          id: c4e5f6a7-8192-4a33-b445-566778899abc
+        headers:
+          Accept: application/json
+      response:
+        status: '200'
+        mediaType: application/json
+        body:
+          id: c4e5f6a7-8192-4a33-b445-566778899abc
+          codigo: 10
+          sigla: UBC
+          nome: União Brasileira de Compositores
+          cnpj: '33.649.575/0001-99'

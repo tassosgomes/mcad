@@ -3,7 +3,16 @@
   "channels": {
     "cadastro.fonograma.bloqueado": {
       "bindings": {
-        "$ref": "#/components/channelBindings/amqp"
+        "amqp": {
+          "exchange": {
+            "autoDelete": false,
+            "durable": true,
+            "name": "cadastro.events",
+            "type": "topic",
+            "vhost": "mcad"
+          },
+          "is": "routingKey"
+        }
       },
       "description": "Publicado quando um fonograma é bloqueado com justificativa.",
       "publish": {
@@ -21,7 +30,16 @@
     },
     "cadastro.fonograma.depurado": {
       "bindings": {
-        "$ref": "#/components/channelBindings/amqp"
+        "amqp": {
+          "exchange": {
+            "autoDelete": false,
+            "durable": true,
+            "name": "cadastro.events",
+            "type": "topic",
+            "vhost": "mcad"
+          },
+          "is": "routingKey"
+        }
       },
       "description": "Publicado após depuração de fonograma duplicado. Novo fonograma canônico criado em substituição.",
       "publish": {
@@ -39,7 +57,16 @@
     },
     "cadastro.fonograma.liberado": {
       "bindings": {
-        "$ref": "#/components/channelBindings/amqp"
+        "amqp": {
+          "exchange": {
+            "autoDelete": false,
+            "durable": true,
+            "name": "cadastro.events",
+            "type": "topic",
+            "vhost": "mcad"
+          },
+          "is": "routingKey"
+        }
       },
       "description": "Publicado quando um fonograma tem seu status alterado para LIBERADO, ficando disponível para identificação e distribuição.",
       "publish": {
@@ -57,7 +84,16 @@
     },
     "cadastro.obra.bloqueada": {
       "bindings": {
-        "$ref": "#/components/channelBindings/amqp"
+        "amqp": {
+          "exchange": {
+            "autoDelete": false,
+            "durable": true,
+            "name": "cadastro.events",
+            "type": "topic",
+            "vhost": "mcad"
+          },
+          "is": "routingKey"
+        }
       },
       "description": "Publicado quando uma obra é bloqueada por irregularidade ou pendência, impedindo seu uso até nova liberação.",
       "publish": {
@@ -75,7 +111,16 @@
     },
     "cadastro.obra.depurada": {
       "bindings": {
-        "$ref": "#/components/channelBindings/amqp"
+        "amqp": {
+          "exchange": {
+            "autoDelete": false,
+            "durable": true,
+            "name": "cadastro.events",
+            "type": "topic",
+            "vhost": "mcad"
+          },
+          "is": "routingKey"
+        }
       },
       "description": "Publicado após depuração de obra duplicada. A obra original é depurada e uma nova obra canônica é criada.",
       "publish": {
@@ -93,7 +138,16 @@
     },
     "cadastro.obra.dominio-publico": {
       "bindings": {
-        "$ref": "#/components/channelBindings/amqp"
+        "amqp": {
+          "exchange": {
+            "autoDelete": false,
+            "durable": true,
+            "name": "cadastro.events",
+            "type": "topic",
+            "vhost": "mcad"
+          },
+          "is": "routingKey"
+        }
       },
       "description": "Publicado quando o flag de domínio público de uma obra é alterado.",
       "publish": {
@@ -111,7 +165,16 @@
     },
     "cadastro.obra.liberada": {
       "bindings": {
-        "$ref": "#/components/channelBindings/amqp"
+        "amqp": {
+          "exchange": {
+            "autoDelete": false,
+            "durable": true,
+            "name": "cadastro.events",
+            "type": "topic",
+            "vhost": "mcad"
+          },
+          "is": "routingKey"
+        }
       },
       "description": "Publicado quando uma obra musical tem seu status alterado para LIBERADA, tornando-a disponível para uso por outros domínios.",
       "publish": {
@@ -129,7 +192,16 @@
     },
     "cadastro.titular.criado": {
       "bindings": {
-        "$ref": "#/components/channelBindings/amqp"
+        "amqp": {
+          "exchange": {
+            "autoDelete": false,
+            "durable": true,
+            "name": "cadastro.events",
+            "type": "topic",
+            "vhost": "mcad"
+          },
+          "is": "routingKey"
+        }
       },
       "description": "Publicado quando um novo titular de direitos (PF ou PJ) é criado. Permite que outros domínios mantenham cópia local.",
       "publish": {
@@ -163,6 +235,27 @@
     },
     "messages": {
       "FonogramaBloqueado": {
+        "contentType": "application/cloudevents+json",
+        "examples": [
+          {
+            "name": "FonogramaBloqueado",
+            "payload": {
+              "data": {
+                "fonogramaId": "1b2c3d4e-5f60-4172-8384-95061728394a",
+                "isrc": "BR-ABC-26-00002",
+                "justificativa": "Fonograma em duplicidade aguardando depuração."
+              },
+              "datacontenttype": "application/json",
+              "id": "c0a80101-0006-4a2b-8c3d-000000000006",
+              "source": "urn:cadastro-api",
+              "specversion": "1.0",
+              "subject": "fonograma/1b2c3d4e-5f60-4172-8384-95061728394a",
+              "time": "2026-01-20T08:15:00Z",
+              "type": "cadastro.fonograma.bloqueado"
+            },
+            "summary": "Fonograma bloqueado (exemplo de mock)"
+          }
+        ],
         "name": "FonogramaBloqueado",
         "payload": {
           "$ref": "#/components/schemas/fonogramaBloqueadoPayload"
@@ -171,6 +264,28 @@
         "title": "Fonograma Bloqueado"
       },
       "FonogramaDepurado": {
+        "contentType": "application/cloudevents+json",
+        "examples": [
+          {
+            "name": "FonogramaDepurado",
+            "payload": {
+              "data": {
+                "fonogramaId": "2c3d4e5f-6071-4283-9495-061728394a5b",
+                "isrcOriginal": "BR-ABC-26-00003",
+                "novoFonogramaId": "3d4e5f60-7182-4394-a5b6-1728394a5b6c",
+                "obraId": "f1a2b3c4-d5e6-4f70-8a91-b2c3d4e5f601"
+              },
+              "datacontenttype": "application/json",
+              "id": "c0a80101-0007-4a2b-8c3d-000000000007",
+              "source": "urn:cadastro-api",
+              "specversion": "1.0",
+              "subject": "fonograma/2c3d4e5f-6071-4283-9495-061728394a5b",
+              "time": "2026-01-21T13:50:00Z",
+              "type": "cadastro.fonograma.depurado"
+            },
+            "summary": "Fonograma duplicado depurado — novo canônico (exemplo de mock)"
+          }
+        ],
         "name": "FonogramaDepurado",
         "payload": {
           "$ref": "#/components/schemas/fonogramaDepuradoPayload"
@@ -179,6 +294,27 @@
         "title": "Fonograma Depurado"
       },
       "FonogramaLiberado": {
+        "contentType": "application/cloudevents+json",
+        "examples": [
+          {
+            "name": "FonogramaLiberado",
+            "payload": {
+              "data": {
+                "fonogramaId": "0a1b2c3d-4e5f-4061-8273-849506172839",
+                "isrc": "BR-ABC-26-00001",
+                "obraId": "f1a2b3c4-d5e6-4f70-8a91-b2c3d4e5f601"
+              },
+              "datacontenttype": "application/json",
+              "id": "c0a80101-0005-4a2b-8c3d-000000000005",
+              "source": "urn:cadastro-api",
+              "specversion": "1.0",
+              "subject": "fonograma/0a1b2c3d-4e5f-4061-8273-849506172839",
+              "time": "2026-01-19T11:20:00Z",
+              "type": "cadastro.fonograma.liberado"
+            },
+            "summary": "Fonograma liberado para identificação/distribuição (exemplo de mock)"
+          }
+        ],
         "name": "FonogramaLiberado",
         "payload": {
           "$ref": "#/components/schemas/fonogramaLiberadoPayload"
@@ -187,6 +323,27 @@
         "title": "Fonograma Liberado"
       },
       "ObraBloqueada": {
+        "contentType": "application/cloudevents+json",
+        "examples": [
+          {
+            "name": "ObraBloqueada",
+            "payload": {
+              "data": {
+                "justificativa": "Disputa de titularidade em análise pela associação.",
+                "obraId": "a2b3c4d5-e6f7-4081-9b2c-3d4e5f607182",
+                "titulo": "Sampa"
+              },
+              "datacontenttype": "application/json",
+              "id": "c0a80101-0002-4a2b-8c3d-000000000002",
+              "source": "urn:cadastro-api",
+              "specversion": "1.0",
+              "subject": "obra/a2b3c4d5-e6f7-4081-9b2c-3d4e5f607182",
+              "time": "2026-01-16T14:05:00Z",
+              "type": "cadastro.obra.bloqueada"
+            },
+            "summary": "Obra musical bloqueada (exemplo de mock)"
+          }
+        ],
         "name": "ObraBloqueada",
         "payload": {
           "$ref": "#/components/schemas/obraBloqueadaPayload"
@@ -195,6 +352,28 @@
         "title": "Obra Bloqueada"
       },
       "ObraDepurada": {
+        "contentType": "application/cloudevents+json",
+        "examples": [
+          {
+            "name": "ObraDepurada",
+            "payload": {
+              "data": {
+                "iswcOriginal": "T-034.999.123-7",
+                "novaObraId": "d5e6f708-192a-43b4-8e5f-60718293a4b5",
+                "obraId": "c4d5e6f7-0819-42a3-9d4e-5f6071829304",
+                "titulo": "Águas de Março"
+              },
+              "datacontenttype": "application/json",
+              "id": "c0a80101-0004-4a2b-8c3d-000000000004",
+              "source": "urn:cadastro-api",
+              "specversion": "1.0",
+              "subject": "obra/c4d5e6f7-0819-42a3-9d4e-5f6071829304",
+              "time": "2026-01-18T16:42:00Z",
+              "type": "cadastro.obra.depurada"
+            },
+            "summary": "Obra duplicada depurada — nova obra canônica (exemplo de mock)"
+          }
+        ],
         "name": "ObraDepurada",
         "payload": {
           "$ref": "#/components/schemas/obraDepuradaPayload"
@@ -203,6 +382,27 @@
         "title": "Obra Depurada"
       },
       "ObraDominioPublico": {
+        "contentType": "application/cloudevents+json",
+        "examples": [
+          {
+            "name": "ObraDominioPublico",
+            "payload": {
+              "data": {
+                "dominioPublico": true,
+                "obraId": "b3c4d5e6-f708-4192-8c3d-4e5f60718293",
+                "titulo": "Asa Branca"
+              },
+              "datacontenttype": "application/json",
+              "id": "c0a80101-0003-4a2b-8c3d-000000000003",
+              "source": "urn:cadastro-api",
+              "specversion": "1.0",
+              "subject": "obra/b3c4d5e6-f708-4192-8c3d-4e5f60718293",
+              "time": "2026-01-17T09:00:00Z",
+              "type": "cadastro.obra.dominio-publico"
+            },
+            "summary": "Flag de domínio público de obra alterado (exemplo de mock)"
+          }
+        ],
         "name": "ObraDominioPublico",
         "payload": {
           "$ref": "#/components/schemas/obraDominioPublicoPayload"
@@ -211,6 +411,27 @@
         "title": "Obra Domínio Público Alterado"
       },
       "ObraLiberada": {
+        "contentType": "application/cloudevents+json",
+        "examples": [
+          {
+            "name": "ObraLiberada",
+            "payload": {
+              "data": {
+                "iswc": "T-034.524.680-1",
+                "obraId": "f1a2b3c4-d5e6-4f70-8a91-b2c3d4e5f601",
+                "titulo": "Construção"
+              },
+              "datacontenttype": "application/json",
+              "id": "c0a80101-0001-4a2b-8c3d-000000000001",
+              "source": "urn:cadastro-api",
+              "specversion": "1.0",
+              "subject": "obra/f1a2b3c4-d5e6-4f70-8a91-b2c3d4e5f601",
+              "time": "2026-01-15T10:30:00Z",
+              "type": "cadastro.obra.liberada"
+            },
+            "summary": "Obra musical liberada para uso (exemplo de mock)"
+          }
+        ],
         "name": "ObraLiberada",
         "payload": {
           "$ref": "#/components/schemas/obraLiberadaPayload"
@@ -219,6 +440,28 @@
         "title": "Obra Liberada"
       },
       "TitularCriado": {
+        "contentType": "application/cloudevents+json",
+        "examples": [
+          {
+            "name": "TitularCriado",
+            "payload": {
+              "data": {
+                "documento": "12345678901",
+                "nome": "Chico Buarque de Hollanda",
+                "tipo": "PF",
+                "titularId": "9b1f4c2a-3d5e-4a6b-8c7d-0e1f2a3b4c5d"
+              },
+              "datacontenttype": "application/json",
+              "id": "c0a80101-0008-4a2b-8c3d-000000000008",
+              "source": "urn:cadastro-api",
+              "specversion": "1.0",
+              "subject": "titular/9b1f4c2a-3d5e-4a6b-8c7d-0e1f2a3b4c5d",
+              "time": "2026-01-22T10:00:00Z",
+              "type": "cadastro.titular.criado"
+            },
+            "summary": "Novo titular de direitos cadastrado (exemplo de mock)"
+          }
+        ],
         "name": "TitularCriado",
         "payload": {
           "$ref": "#/components/schemas/titularCriadoPayload"
@@ -388,7 +631,7 @@
   "defaultContentType": "application/json",
   "info": {
     "description": "Eventos publicados pelo domínio de **Cadastro** via RabbitMQ.\n\n**Formato:** CloudEvents 1.0 (`application/cloudevents+json`)\n\n**Entrega:** at-least-once via Transactional Outbox (`cadastro.outbox_events`)\n\nOs schemas representam o campo `data` do envelope CloudEvents.",
-    "title": "Cadastro API — Eventos Assíncronos",
+    "title": "Cadastro API Eventos Assincronos",
     "version": "1.0.0"
   },
   "servers": {

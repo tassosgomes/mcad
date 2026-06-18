@@ -40,6 +40,18 @@ normalize() {
   python3 -c 'import json,sys; json.dump(json.load(sys.stdin), sys.stdout, indent=2, ensure_ascii=False, sort_keys=True); print()'
 }
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# AsyncAPI gerado pelo Saunter (.NET) precisa de pos-processamento para o Microcks:
+# inline do binding AMQP (Saunter emite $ref, que o async-minion nao resolve) e
+# merge de exemplos CloudEvents do sidecar contracts/<svc>/async-examples.yaml.
+# Tambem normaliza (sort_keys). Os AsyncAPI Java sao handwritten e nao passam aqui.
+normalize_asyncapi() {  # $1 = sidecar (pode nao existir)
+  local sidecar="$1"
+  [[ -f "$sidecar" ]] || sidecar=""
+  python3 "$SCRIPT_DIR/normalize-asyncapi.py" "$sidecar"
+}
+
 fail=0
 for entry in "${SPECS[@]}"; do
   IFS='|' read -r svc url rel <<< "$entry"
@@ -54,8 +66,15 @@ for entry in "${SPECS[@]}"; do
     continue
   fi
 
-  if ! normalize < "$tmp.raw" > "$tmp" 2>/dev/null; then
-    echo "ERRO: $svc — resposta de $url nao e JSON valido" >&2
+  # AsyncAPI dos servicos .NET passa pelo pos-processador (inline binding + exemplos).
+  if [[ "$rel" == */asyncapi.json ]]; then
+    proc=(normalize_asyncapi "$CONTRACTS_DIR/$svc/async-examples.yaml")
+  else
+    proc=(normalize)
+  fi
+
+  if ! "${proc[@]}" < "$tmp.raw" > "$tmp" 2>/dev/null; then
+    echo "ERRO: $svc — resposta de $url nao e JSON valido (ou falha no pos-processamento)" >&2
     rm -f "$tmp" "$tmp.raw"
     fail=1
     continue

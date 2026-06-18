@@ -55,6 +55,18 @@ jobs:
         with:
           global-json-file: services/cadastro-api/global.json
 
+      # NuGet auth para o GitHub Packages (Ecad.Audit.* / Ecad.Authz.*).
+      # Os serviços .NET sobem via `dotnet run` (restore implícito, sem --configfile),
+      # então registramos o source no config de USUÁRIO, descoberto automaticamente.
+      # Mesmo token/feed do padrão de ci-cd.yml (feed por owner).
+      - name: NuGet source (GitHub Packages)
+        run: |
+          dotnet nuget add source "https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json" \
+            --name github \
+            --username "${{ github.actor }}" \
+            --password "${{ secrets.GH_PACKAGES_READ_TOKEN || github.token }}" \
+            --store-password-in-clear-text
+
       # Auth do Maven para o GitHub Packages (audit-sdk / authz-sdk).
       # Mesmos server-ids do parent pom dos serviços Java.
       - name: Maven settings (GitHub Packages)

@@ -15,7 +15,15 @@ contracts/
 
 - **`openapi.json`** (todos os 4) — **GERADO** a partir do código (springdoc nos Java,
   Swashbuckle nos .NET). Não editar à mão; regenerar com `scripts/export-contracts.sh`.
-- **`asyncapi.json`** (cadastro, identificacao) — **GERADO** pelo Saunter (AsyncAPI 2.x).
+- **`asyncapi.json`** (cadastro, identificacao) — **GERADO** pelo Saunter (AsyncAPI 2.x) e
+  **pós-processado** por `scripts/normalize-asyncapi.py` (chamado pelo `export-contracts.sh`)
+  para ficar "Microcks-ready": (a) **inline do binding AMQP** — o Saunter emite o binding como
+  `$ref`, que o async-minion do Microcks não resolve (erra `type null`); (b) **merge de exemplos
+  CloudEvents** a partir do sidecar `async-examples.yaml`.
+  > ⚠️ **Título ASCII-only:** o Microcks deriva o nome da exchange AMQP do mock do **título** do
+  > AsyncAPI (`{título}-{versão}-{operação}`). Em-dash/acentos geram nome inválido e o publish
+  > falha no broker (`java.io.IOException`). Por isso o `Info` do Saunter (em
+  > `AsyncApiExtensions.cs` dos serviços .NET) usa título sem acentos.
 - **`asyncapi.yaml`** (arrecadacao, distribuicao) — **HANDWRITTEN** (AsyncAPI 3.0), pois os
   serviços Java não têm gerador de AsyncAPI. Mantido manualmente a partir do código de
   eventos. O `export-contracts.sh` **não** toca nestes arquivos.
@@ -28,6 +36,11 @@ versionado para (a) alimentar os portais e (b) o CI detectar **drift**.
   sem sujar o spec gerado). É o que faz os **mocks do Microcks responderem com dados reais**.
   Escrito à mão; `metadata.name`/`version` devem casar com o serviço (ex.: `Arrecadacao API`/`v1`).
   O `scripts/import-contracts-microcks.sh` sobe automaticamente qualquer `contracts/*/examples.yaml`.
+- **`async-examples.yaml`** (cadastro, identificacao) — sidecar de **exemplos CloudEvents** dos
+  eventos, mesclado sobre o `asyncapi.json` gerado por `scripts/normalize-asyncapi.py` no export.
+  Mantém o spec gerado limpo (o payload realista vive aqui, como o `examples.yaml` do REST) e é o
+  que faz o **mock async** publicar mensagens com dados reais. Chave = nome da mensagem
+  (`components/messages/<Nome>`). Os serviços Java embutem os exemplos direto no `asyncapi.yaml`.
 
 ## Regenerar os contratos
 
