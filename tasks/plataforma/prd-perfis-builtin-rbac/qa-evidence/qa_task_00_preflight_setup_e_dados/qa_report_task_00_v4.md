@@ -137,7 +137,7 @@ Caminhos sugeridos (escolher um):
 
 1. **Acionar arrecadacao-api para fechar Rol e disponibilizar Verba** em pelo menos 2 rubricas/periodos. Validar consumo pelos listeners `RubricaEventHandler`, `SnapshotRolEventHandler` (ou equivalente) em distribuicao-api antes de re-executar qa_task_00_v5.
 2. **Seed direto via SQL** no schema `distribuicao`: inserir registros em `rubricas`, `snapshot_rol`, `snapshot_verba` para 2 combinacoes (rubricaSigla, periodo). Permite desbloquear QA sem depender da cadeia Arrecadacao->RabbitMQ->Distribuicao.
-3. **Expor build-info** em `/actuator/info` (Spring Boot Maven plugin) e habilitar `management.endpoints.web.exposure.include=health,info,mappings` (ao menos em dev/QA) para futuras verificacoes.
+3. **Expor build-info** em `/actuator/info` (Spring Boot Maven plugin) e habilitar endpoints de diagnóstico (ao menos em dev/QA) para futuras verificacoes.
 
 Apos aplicado um dos caminhos acima, **qa_task_00_v5** focara apenas em: listar disponibilidades, criar 2 processos via UI, calcular, aprovar 1 como gerente, verificar aba historico.
 

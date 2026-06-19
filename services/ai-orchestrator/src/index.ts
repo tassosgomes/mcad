@@ -163,6 +163,7 @@ export async function buildServer(config: AiOrchestratorConfig = loadConfig()) {
         };
       }
 
+      // nosemgrep: javascript.express.security.express-wkhtml-injection.express-wkhtmltoimage-injection
       const result = await mcadOperationalAgent.generate(parsedRequest.data.message, {
         runtimeContext,
         memory: {

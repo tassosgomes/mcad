@@ -79,3 +79,12 @@ scripts/arrecadacao-generator/mapas.json
 # Microcks (Fase 2) — artefatos com secrets (não versionar)
 infra/microcks/.env.microcks
 infra/microcks/keycloak-realm/microcks-realm-prod.json
+
+# QA evidence — arquivos que podem conter tokens/credenciais
+**/qa-evidence/**/token.txt
+**/qa-evidence/**/*token*.txt
+**/qa-evidence/**/*token*.json
+**/qa-evidence/**/network_token_response.txt
+**/qa-evidence/**/storageState.json
+**/qa-evidence/**/cookies.json
+**/qa-evidence/**/browser_storage.json

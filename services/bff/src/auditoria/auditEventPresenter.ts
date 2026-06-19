@@ -21,7 +21,10 @@ function stringAtPath(value: unknown, path: string[]): string | undefined {
     if (!isRecord(current)) {
       return undefined;
     }
-    current = current[segment];
+    if (segment === '__proto__' || segment === 'constructor' || segment === 'prototype') {
+      return undefined;
+    }
+    current = (current as Record<string, unknown>)[segment];
   }
 
   return typeof current === 'string' && current.trim() ? current.trim() : undefined;

@@ -43,8 +43,9 @@ jobs:
     steps:
       - name: Parse tag name
         id: parse
+        env:
+          TAG: ${{ github.ref_name }}
         run: |
-          TAG="${{ github.ref_name }}"
           # tag format: "component-vX.Y.Z" (tag-separator: "-")
           VERSION="${TAG##*-v}"
           COMPONENT="${TAG%-v*}"

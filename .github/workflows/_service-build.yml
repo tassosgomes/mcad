@@ -217,16 +217,21 @@ jobs:
 
       - name: Prepare image tags
         id: tags
+        env:
+          NAMESPACE: ${{ env.DOCKERHUB_NAMESPACE }}
+          IMAGE_NAME: ${{ inputs.image-name }}
+          SHA_SHORT: ${{ steps.meta.outputs.sha-short }}
+          RELEASE_VERSION: ${{ inputs.release-version }}
         run: |
-          TAGS="${{ env.DOCKERHUB_NAMESPACE }}/${{ inputs.image-name }}:sha-${{ steps.meta.outputs.sha-short }}"
+          TAGS="${NAMESPACE}/${IMAGE_NAME}:sha-${SHA_SHORT}"
           TAGS="${TAGS}
-          ${{ env.DOCKERHUB_NAMESPACE }}/${{ inputs.image-name }}:main"
-          if [[ -n "${{ inputs.release-version }}" ]]; then
-            VERSION="${{ inputs.release-version }}"
+          ${NAMESPACE}/${IMAGE_NAME}:main"
+          if [[ -n "${RELEASE_VERSION}" ]]; then
+            VERSION="${RELEASE_VERSION}"
             MAJOR_MINOR="${VERSION%.*}"
             TAGS="${TAGS}
-          ${{ env.DOCKERHUB_NAMESPACE }}/${{ inputs.image-name }}:${VERSION}
-          ${{ env.DOCKERHUB_NAMESPACE }}/${{ inputs.image-name }}:${MAJOR_MINOR}"
+          ${NAMESPACE}/${IMAGE_NAME}:${VERSION}
+          ${NAMESPACE}/${IMAGE_NAME}:${MAJOR_MINOR}"
           fi
           {
             echo 'tags<<EOF'
