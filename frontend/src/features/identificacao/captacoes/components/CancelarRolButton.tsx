@@ -24,7 +24,7 @@ export function CancelarRolButton({ captacao }: CancelarRolButtonProps) {
 
   const podeCancelar = validacao?.podeCancelar ?? true;
   const isDisabled = isLoading || !podeCancelar;
-  const tooltip = (!isLoading && !validacao?.podeCancelar) ? validacao?.motivoBloqueio || 'Bloqueado para cancelamento' : 'Cancelar Rol (ação crítica)';
+  const tooltip = (!isLoading && !validacao?.podeCancelar) ? validacao?.motivo || 'Bloqueado para cancelamento' : 'Cancelar Rol (ação crítica)';
 
   return (
     <>

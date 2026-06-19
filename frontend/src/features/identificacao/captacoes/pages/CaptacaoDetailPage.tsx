@@ -8,6 +8,7 @@ import { Button } from '@components/ui/button';
 import { useToast } from '@components/ui/toast';
 import { useAuth } from '@shared/auth';
 import { usePermissions } from '@shared/authz';
+import { analistaIdFromSubject } from '@shared/analista-id';
 import { useDocumentTitle } from '@hooks/useDocumentTitle';
 import styles from './CaptacaoDetailPage.module.css';
 
@@ -46,8 +47,8 @@ export function CaptacaoDetailPage() {
   if (error || !captacao) return <ErrorState onRetry={() => refetch()} />;
 
   const isFechada = captacao.status?.toUpperCase() === 'FECHADA';
-  const currentUserId = user?.profile.sub;
-  const isOwner = captacao.analistaResponsavel.id === currentUserId;
+  const currentUserId = user?.profile.sub ? analistaIdFromSubject(user.profile.sub) : undefined;
+  const isOwner = currentUserId ? captacao.analistaResponsavel.id === currentUserId : false;
   const canWrite = can('identificacao:default:captacao:editar');
   const canEdit = canWrite && isOwner && !isFechada && captacao.status !== 'CANCELADA';
   const canUploadCsv = can('identificacao:default:upload:importar');

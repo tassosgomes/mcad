@@ -14,7 +14,11 @@ public record CaptacaoResponse(
     string Status,
     AnalistaResumoResponse AnalistaResponsavel,
     DateTime CriadoEm,
-    DateTime AtualizadoEm
+    DateTime AtualizadoEm,
+    bool DistribuicaoProcessada = false,
+    DateTime? DistribuicaoProcessadaEm = null,
+    string? JustificativaCancelamento = null,
+    DateTime? CanceladoEm = null
 );
 
 public record CaptacaoDetalheResponse(
@@ -27,5 +31,9 @@ public record CaptacaoDetalheResponse(
     AnalistaResumoResponse AnalistaResponsavel,
     ResumoExecucoesResponse ResumoExecucoes,
     DateTime CriadoEm,
-    DateTime AtualizadoEm
+    DateTime AtualizadoEm,
+    bool DistribuicaoProcessada = false,
+    DateTime? DistribuicaoProcessadaEm = null,
+    string? JustificativaCancelamento = null,
+    DateTime? CanceladoEm = null
 );

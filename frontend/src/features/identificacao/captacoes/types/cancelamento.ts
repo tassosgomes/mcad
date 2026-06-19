@@ -6,20 +6,20 @@ export interface CancelarRolRequest {
 }
 
 export interface CancelamentoResponse {
-  captacaoId: string;
+  captacaoCanceladaId: string;
   status: string;
   justificativa: string;
-  canceladoEm: string; // ISO 8601
+  canceladoEm: string;
   opcaoRecriacao: string;
   novaCaptacaoId?: string;
   execucoesCopiadas?: number;
-  sucesso: boolean;
+  eventoPublicado: boolean;
 }
 
 export interface PodeCancelarResponse {
   captacaoId: string;
   podeCancelar: boolean;
-  motivoBloqueio?: string;
+  motivo?: string;
   distribuicaoProcessada: boolean;
-  distribuicaoProcessadaEm?: string; // ISO 8601
+  distribuicaoProcessadaEm?: string;
 }

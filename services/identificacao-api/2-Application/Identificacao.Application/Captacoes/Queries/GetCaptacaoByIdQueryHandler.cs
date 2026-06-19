@@ -46,7 +46,11 @@ public class GetCaptacaoByIdQueryHandler : IQueryHandler<GetCaptacaoByIdQuery, C
             new AnalistaResumoResponse(captacao.AnalistaResponsavelId, captacao.AnalistaResponsavelNome),
             resumo,
             captacao.CriadoEm,
-            captacao.AtualizadoEm
+            captacao.AtualizadoEm,
+            captacao.DistribuicaoProcessada,
+            captacao.DistribuicaoProcessadaEm,
+            captacao.JustificativaCancelamento,
+            captacao.CanceladoEm
         );
     }
 }

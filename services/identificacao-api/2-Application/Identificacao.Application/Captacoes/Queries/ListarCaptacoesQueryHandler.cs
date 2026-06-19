@@ -30,7 +30,11 @@ public class ListarCaptacoesQueryHandler : IQueryHandler<ListarCaptacoesQuery, C
             c.Status.ToString(),
             new AnalistaResumoResponse(c.AnalistaResponsavelId, c.AnalistaResponsavelNome),
             c.CriadoEm,
-            c.AtualizadoEm
+            c.AtualizadoEm,
+            c.DistribuicaoProcessada,
+            c.DistribuicaoProcessadaEm,
+            c.JustificativaCancelamento,
+            c.CanceladoEm
         ));
 
         return new CaptacaoListResponse(

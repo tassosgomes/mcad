@@ -9,6 +9,7 @@ import { Pagination } from '@components/ui/pagination';
 import { useToast } from '@components/ui/toast';
 import { useAuth } from '@shared/auth';
 import { usePermissions } from '@shared/authz';
+import { analistaIdFromSubject } from '@shared/analista-id';
 import { useDocumentTitle } from '@hooks/useDocumentTitle';
 
 import type { Captacao, CaptacaoFiltros } from '../types/captacao';
@@ -25,7 +26,7 @@ export function CaptacoesPage() {
   const { user } = useAuth();
   const { can } = usePermissions();
   const canWrite = can('identificacao:default:captacao:criar');
-  const userId = user?.profile.sub;
+  const userId = user?.profile.sub ? analistaIdFromSubject(user.profile.sub) : undefined;
 
   const [filtros, setFiltros] = useState<CaptacaoFiltros>({
     page: 1,
