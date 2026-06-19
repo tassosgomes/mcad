@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Modal } from '@shared/components/ui/modal/Modal';
+import { isValidIsrc } from '@features/cadastro/fonogramas/utils/isrcValidator';
 import { useCreateFonogramaPendente } from '../hooks/useCreateFonogramaPendente';
 import { ObraFonogramaSelecionado } from '../types/execucao';
 import styles from './CriarFonogramaPendenteModal.module.css';
@@ -26,8 +27,14 @@ export function CriarFonogramaPendenteModal({
     e.preventDefault();
     setError('');
 
+    const trimmedIsrc = isrc.trim().replace(/-/g, '').toUpperCase();
+    if (!isValidIsrc(trimmedIsrc)) {
+      setError('Informe um ISRC válido com 12 caracteres.');
+      return;
+    }
+
     mutate(
-      { obraId: obraVinculada.id, isrc: isrc.trim() || null },
+      { obraId: obraVinculada.id, isrc: trimmedIsrc },
       {
         onSuccess: (data) => {
           onCreated({
@@ -59,7 +66,7 @@ export function CriarFonogramaPendenteModal({
         </div>
 
         <div className={styles.field}>
-          <label className={styles.label}>ISRC (Opcional)</label>
+          <label className={styles.label}>ISRC</label>
           <input
             type="text"
             className={styles.input}
@@ -67,6 +74,7 @@ export function CriarFonogramaPendenteModal({
             onChange={(e) => setIsrc(e.target.value)}
             disabled={isPending}
             placeholder="BR-XXX-00-00000"
+            required
             autoFocus
           />
         </div>

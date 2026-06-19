@@ -117,13 +117,15 @@ Esta feature adiciona à tela de detalhe da captação (F01) uma seção de exec
 |---|---|---|---|
 | 1 | Não encontrou obra | Analista clica "Criar obra pendente" | Modal/inline form com campos mínimos: título, tipo de obra. Chama Cadastro API (POST /obras). Obra criada com status PENDENTE |
 | 2 | Obra pendente criada | Analista confirma | Campo de busca preenchido com a nova obra. Execução terá status PENDENTE |
-| 3 | Encontrou obra mas não encontrou fonograma | Analista clica "Criar fonograma pendente" | Modal/inline form com campos: ISRC (opcional). Obra já selecionada (vinculação automática). Chama Cadastro API (POST /fonogramas) |
+| 3 | Encontrou obra mas não encontrou fonograma | Analista clica "Criar fonograma pendente" | Modal/inline form com campos: ISRC (obrigatório). Obra já selecionada (vinculação automática). Chama Cadastro API (POST /fonogramas) |
 | 4 | Não encontrou obra nem fonograma | Analista cria obra pendente (cenário 1), depois cria fonograma pendente vinculado a ela (cenário 3) | Ambos criados no Cadastro com status PENDENTE. Execução terá status PENDENTE |
 | 5 | Fonograma pendente criado | Analista confirma | Fonograma sempre vinculado a uma obra (nunca "solto"). Execução terá status PENDENTE |
 
 **Regras aplicáveis:** RN-02 (execução com obra/fonograma pendente fica PENDENTE). Fonograma não existe sem obra — vínculo obrigatório.
 
 **Nota:** A criação inline é restrita a registros com status PENDENTE. Edição completa dos dados cadastrais deve ser feita no módulo de Cadastro.
+
+**Decisão 2026-06-19:** O Cadastro é o dono da verdade para fonogramas. Como o Cadastro exige ISRC para criar fonograma, o fluxo de Identificação deve solicitar ISRC ao usuário ao criar fonograma pendente inline. A premissa anterior de ISRC opcional para fonograma pendente fica substituída por ISRC obrigatório.
 
 **Prioridade:** Must Have
 

@@ -1,6 +1,8 @@
 using System.Net;
+using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using AwesomeAssertions;
+using Cadastro.API.Authorization;
 using Cadastro.API.Endpoints;
 using Cadastro.Application.Fonogramas.Commands;
 using Cadastro.Application.Fonogramas.Responses;
@@ -16,13 +18,30 @@ public class FonogramaEndpointsTests : IClassFixture<CadastroApiFactory>
 
     public FonogramaEndpointsTests(CadastroApiFactory factory)
     {
-        _client = factory.CreateClient();
+        _client = factory.CreateAuthenticatedClientWithPermissions(
+            "analista.teste",
+            "analista-cadastro",
+            RequiredPermissions);
+        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", "test-token");
     }
+
+    private static readonly string[] RequiredPermissions =
+    [
+        CadastroPermissions.ObraCriar,
+        CadastroPermissions.FonogramaCriar,
+        CadastroPermissions.FonogramaListar,
+        CadastroPermissions.FonogramaVisualizar,
+        CadastroPermissions.FonogramaEditar,
+        CadastroPermissions.FonogramaExcluir
+    ];
 
     private async Task<Guid> SeedObraAsync()
     {
         var request = new CriarObraCommand($"Obra {Guid.NewGuid()}", null, "MUSICAL", "Rock");
         var response = await _client.PostAsJsonAsync("/api/v1/obras", request);
+        var contentStr = await response.Content.ReadAsStringAsync();
+        response.StatusCode.Should().Be(HttpStatusCode.Created, contentStr);
+
         var obra = await response.Content.ReadFromJsonAsync<ObraResponse>();
         return obra!.Id;
     }
@@ -52,6 +71,91 @@ public class FonogramaEndpointsTests : IClassFixture<CadastroApiFactory>
         fonograma!.Isrc.Should().Be(isrc);
         fonograma.Obra.Should().NotBeNull();
         fonograma.Status.Should().Be("PENDENTE_VALIDACAO");
+    }
+
+    [Fact]
+    public async Task Post_CriarFonogramaPendente_ComPayloadValido_DeveRetornar201EPendenteValidacao()
+    {
+        var obraId = await SeedObraAsync();
+        var isrc = GerarIsrc();
+
+        var response = await _client.PostAsJsonAsync("/api/v1/fonogramas/pendentes", new
+        {
+            obraId,
+            isrc
+        });
+
+        response.StatusCode.Should().Be(HttpStatusCode.Created);
+        response.Headers.Location.Should().NotBeNull();
+
+        var fonograma = await response.Content.ReadFromJsonAsync<FonogramaResponse>();
+        fonograma.Should().NotBeNull();
+        fonograma!.Isrc.Should().Be(isrc);
+        fonograma.Obra.Id.Should().Be(obraId);
+        fonograma.PaisOrigem.Should().Be("BR");
+        fonograma.Status.Should().Be("PENDENTE_VALIDACAO");
+        response.Headers.Location!.ToString().Should().Be($"/api/v1/fonogramas/{fonograma.Id}");
+    }
+
+    [Fact]
+    public async Task Post_CriarFonogramaPendente_SemIsrc_DeveRetornar400()
+    {
+        var obraId = await SeedObraAsync();
+
+        var response = await _client.PostAsJsonAsync("/api/v1/fonogramas/pendentes", new
+        {
+            obraId
+        });
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        var contentStr = await response.Content.ReadAsStringAsync();
+        contentStr.Should().Contain("ISRC é obrigatório");
+    }
+
+    [Fact]
+    public async Task Post_CriarFonogramaPendente_ComIsrcInvalido_DeveRetornar400()
+    {
+        var obraId = await SeedObraAsync();
+
+        var response = await _client.PostAsJsonAsync("/api/v1/fonogramas/pendentes", new
+        {
+            obraId,
+            isrc = "123456789012"
+        });
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        var contentStr = await response.Content.ReadAsStringAsync();
+        contentStr.Should().Contain("ISRC deve seguir formato");
+    }
+
+    [Fact]
+    public async Task Post_CriarFonogramaPendente_ComIsrcDuplicado_DeveRetornar409()
+    {
+        var obraId = await SeedObraAsync();
+        var isrc = GerarIsrc();
+        await _client.PostAsJsonAsync("/api/v1/fonogramas", new CriarFonogramaCommand(isrc, obraId, "BR", null, null));
+
+        var response = await _client.PostAsJsonAsync("/api/v1/fonogramas/pendentes", new
+        {
+            obraId,
+            isrc
+        });
+
+        response.StatusCode.Should().Be(HttpStatusCode.Conflict);
+        var contentStr = await response.Content.ReadAsStringAsync();
+        contentStr.Should().Contain("Já existe um fonograma com o ISRC");
+    }
+
+    [Fact]
+    public async Task Post_CriarFonogramaPendente_ComObraInexistente_DeveRetornar404()
+    {
+        var response = await _client.PostAsJsonAsync("/api/v1/fonogramas/pendentes", new
+        {
+            obraId = Guid.NewGuid(),
+            isrc = GerarIsrc()
+        });
+
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 
     [Fact]

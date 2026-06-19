@@ -30,10 +30,12 @@ A maior parte do código de F02 e F04 foi construída. Os bloqueadores são endp
   Campos: `titulo` (obrigatório), `tipoObra` (enum, obrigatório). Status: `PENDENTE`.  
   **Implementado:** endpoint dedicado no Cadastro API, contrato principal com `tipoObra`, alias temporário `tipo` para compatibilidade, e select do frontend equiparado aos tipos oficiais (`MUSICAL`, `LITEROMUSICAL`, `VERSAO`, `POT_POURRI`).
 
-- [ ] **[CADASTRO-2] Endpoint POST /api/v1/fonogramas/pendentes no cadastro-api**  
+- [x] **[CADASTRO-2] Endpoint POST /api/v1/fonogramas/pendentes no cadastro-api** ✅ concluído 2026-06-19  
   `CriarFonogramaPendenteModal.tsx` chama este endpoint que não existe → 404.  
   **Criar:** endpoint em `FonogramaEndpoints.cs` + `CriarFonogramaPendenteCommand` + handler.  
-  Campos: `isrc` (opcional), `obraId` (obrigatório). Status: `PENDENTE`. Validar que obra existe.
+  Campos: `isrc` (obrigatório), `obraId` (obrigatório). Status cadastral inicial: `PENDENTE_VALIDACAO`. Validar que obra existe.
+  **Decisão 2026-06-19:** Cadastro é o dono da verdade de fonograma. Como o Cadastro exige ISRC para fonograma, Identificação deve se conformar e solicitar ISRC ao usuário no fluxo inline.
+  **Implementado:** endpoint dedicado no Cadastro API, command/handler com validação de ISRC obrigatório, duplicidade e obra existente, modal de Identificação exigindo ISRC e testes unitários do fluxo.
 
 - [ ] **[AUTH-2] Permissão cadastro:default:obra:listar na role identificacao.default.analista**  
   `BuscaCadastroAutocomplete.tsx` chama `GET /api/v1/busca` no cadastro-api, que requer `cadastro:default:obra:listar`. Role `identificacao.default.analista` não inclui essa permissão → 403 em toda busca.  

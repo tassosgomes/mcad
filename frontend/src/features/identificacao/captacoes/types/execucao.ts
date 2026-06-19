@@ -90,7 +90,7 @@ export interface CriarObraPendenteResponse {
 
 export interface CriarFonogramaPendenteRequest {
   obraId: string;
-  isrc?: string | null;
+  isrc: string;
 }
 
 export interface CriarFonogramaPendenteResponse {

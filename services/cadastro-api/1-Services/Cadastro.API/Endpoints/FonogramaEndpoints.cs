@@ -26,6 +26,22 @@ public static class FonogramaEndpoints
         })
         .RequireCadastroPermission(CadastroPermissions.FonogramaCriar);
 
+        group.MapPost("/pendentes", async ([FromBody] CriarFonogramaPendenteRequest? request, IDispatcher dispatcher, CancellationToken ct) =>
+        {
+            if (request is null)
+            {
+                throw new Cadastro.Application.Common.Exceptions.ValidationException(new Dictionary<string, string[]>
+                {
+                    ["body"] = ["Body é obrigatório."]
+                });
+            }
+
+            var command = new CriarFonogramaPendenteCommand(request.Isrc ?? string.Empty, request.ObraId);
+            var result = await dispatcher.SendAsync(command, ct);
+            return Results.Created($"/api/v1/fonogramas/{result.Id}", result);
+        })
+        .RequireCadastroPermission(CadastroPermissions.FonogramaCriar);
+
         group.MapGet("/{id:guid}", async (Guid id, IDispatcher dispatcher, CancellationToken ct) =>
         {
             var result = await dispatcher.QueryAsync(new GetFonogramaByIdQuery(id), ct);
@@ -116,5 +132,6 @@ public static class FonogramaEndpoints
 }
 
 public record AtualizarFonogramaRequest(string Isrc, string PaisOrigem, DateOnly? DataGravacao, DateOnly? DataLancamento, string? UrlAudio = null);
+public record CriarFonogramaPendenteRequest(string? Isrc, Guid ObraId);
 public record DepurarFonogramaRequest(string Isrc, string PaisOrigem, DateOnly? DataGravacao, DateOnly? DataLancamento);
 public record BloquearFonogramaRequest(string Justificativa);
