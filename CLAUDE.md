@@ -109,6 +109,44 @@ cd services/load-test
 
 Copy `.env.example` to `.env` and fill in credentials. Key variables: database host/credentials per service, `RABBITMQ_URL`, `OIDC_AUTHORITY`, `AUTH_ENABLED` (toggle auth on/off), `MINIO_ENDPOINT`.
 
+## Contract Gate — OBRIGATÓRIO após mudanças de API
+
+O CI verifica drift entre os contratos gerados pelos serviços e os arquivos em `contracts/`. Se houver diferença, o build falha com `DRIFT detectado`.
+
+**Sempre que alterar qualquer um dos itens abaixo, execute o procedimento de exportação antes de commitar:**
+
+### O que dispara a atualização de contratos
+
+| Serviço | Gatilhos |
+|---|---|
+| cadastro, identificacao (.NET) | Rotas em `1-Services/` (Program.cs, endpoint files); DTOs de request/response em `2-Application/`; novos parâmetros de path/query |
+| arrecadacao, distribuicao (Java) | Anotações `@GetMapping`/`@PostMapping`/etc. em controllers; classes de request/response body; códigos HTTP de resposta |
+
+### Procedimento
+
+```bash
+# 1. Sobe todos os serviços (requer infra local rodando)
+./dev.sh start
+
+# 2. Exporta e grava os contratos atualizados
+scripts/export-contracts.sh
+
+# 3. Para os serviços
+./dev.sh stop
+
+# 4. Inclui os contratos atualizados no commit
+git add contracts/
+```
+
+O arquivo `contracts/<servico>/openapi.json` é **gerado** (não edite manualmente). Os `asyncapi.yaml` dos serviços Java são handwritten e não são tocados pelo script.
+
+### Verificação rápida (sem escrever)
+
+```bash
+# Checa drift sem alterar arquivos — mesma verificação do CI
+./dev.sh start && scripts/export-contracts.sh --check && ./dev.sh stop
+```
+
 ## Conventions
 
 - Domain language (entity names, field names, API paths) is in **Portuguese**. Code structure, variable names in application/infra layers follow language conventions (C# PascalCase, Java camelCase).
