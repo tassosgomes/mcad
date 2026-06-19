@@ -209,7 +209,7 @@ async function requestJson(page, token, target, endpoint) {
 async function evaluateRoute(page, target) {
   await page.goto(`${BASE_URL}/autorizacao/atribuicoes`, { waitUntil: 'domcontentloaded', timeout: 60000 });
   await page.waitForLoadState('networkidle', { timeout: 20000 }).catch(() => {});
-  const screenshot = path.join(SCREENSHOTS_DIR, `${target.ct.toLowerCase()}_${target.hint.replace(/[^a-z0-9]+/gi, '_')}_ui.png`);
+  const screenshot = path.join(SCREENSHOTS_DIR, `${target.ct.toLowerCase().replace(/[^a-z0-9]+/gi, '_')}_${target.hint.replace(/[^a-z0-9]+/gi, '_')}_ui.png`);
   await page.screenshot({ path: screenshot, fullPage: true });
   const text = await page.locator('body').innerText({ timeout: 10000 }).catch(() => '');
   const denied = /permiss[aã]o negada|acesso negado|sem permiss[aã]o|403|not authorized|unauthorized/i.test(text);
@@ -266,7 +266,7 @@ async function runTarget(browser, target, cred) {
   } catch (err) {
     result.status = 'FAIL';
     result.failure = err instanceof Error ? err.stack || err.message : String(err);
-    const failShot = path.join(SCREENSHOTS_DIR, `${target.ct.toLowerCase()}_${target.hint.replace(/[^a-z0-9]+/gi, '_')}_fail.png`);
+    const failShot = path.join(SCREENSHOTS_DIR, `${target.ct.toLowerCase().replace(/[^a-z0-9]+/gi, '_')}_${target.hint.replace(/[^a-z0-9]+/gi, '_')}_fail.png`);
     await page.screenshot({ path: failShot, fullPage: true }).catch(() => {});
     result.failureScreenshot = failShot;
   } finally {
@@ -274,7 +274,7 @@ async function runTarget(browser, target, cred) {
     await context.close().catch(() => {});
     const videos = fs.readdirSync(VIDEOS_DIR)
       .filter((file) => file.endsWith('.webm'))
-      .map((file) => path.join(VIDEOS_DIR, file))
+      .map((file) => path.join(VIDEOS_DIR, file)) // nosemgrep: javascript.lang.security.audit.path-traversal.path-join-resolve-traversal.path-join-resolve-traversal
       .sort((a, b) => fs.statSync(b).mtimeMs - fs.statSync(a).mtimeMs);
     result.video = videos[0] ?? null;
   }

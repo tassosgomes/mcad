@@ -21,7 +21,9 @@ function stringAtPath(value: unknown, path: string[]): string | undefined {
     if (!isRecord(current)) {
       return undefined;
     }
-    current = current[segment];
+    // nosemgrep: javascript.lang.security.audit.prototype-pollution.prototype-pollution-loop.prototype-pollution-loop
+    // read-only traversal — `current` é variável local, nenhum objeto é modificado
+    current = (current as Record<string, unknown>)[segment];
   }
 
   return typeof current === 'string' && current.trim() ? current.trim() : undefined;

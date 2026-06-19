@@ -256,6 +256,20 @@
         },
         "type": "object"
       },
+      "CriarFonogramaPendenteRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "isrc": {
+            "nullable": true,
+            "type": "string"
+          },
+          "obraId": {
+            "format": "uuid",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
       "CriarObraCommand": {
         "additionalProperties": false,
         "properties": {
@@ -268,6 +282,24 @@
             "type": "string"
           },
           "tipo": {
+            "nullable": true,
+            "type": "string"
+          },
+          "titulo": {
+            "nullable": true,
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "CriarObraPendenteRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "tipo": {
+            "nullable": true,
+            "type": "string"
+          },
+          "tipoObra": {
             "nullable": true,
             "type": "string"
           },
@@ -730,6 +762,27 @@
             }
           },
           "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Fonogramas"
+        ]
+      }
+    },
+    "/api/v1/fonogramas/pendentes": {
+      "post": {
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CriarFonogramaPendenteRequest"
+              }
+            }
+          }
         },
         "responses": {
           "200": {
@@ -1402,6 +1455,27 @@
             }
           },
           "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Obras"
+        ]
+      }
+    },
+    "/api/v1/obras/pendentes": {
+      "post": {
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CriarObraPendenteRequest"
+              }
+            }
+          }
         },
         "responses": {
           "200": {

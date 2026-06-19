@@ -21,7 +21,19 @@ Four domains, each a separate microservice with its own PostgreSQL schema:
 
 **Frontend**: `frontend/` — React 19 + Vite + TypeScript + TanStack Query + React Router 7. Port 5173.
 
-**Infrastructure**: PostgreSQL 16, RabbitMQ 3.13 (AMQP events via Outbox Pattern), Keycloak 24 (OIDC/JWT), MinIO (object storage).
+**Infrastructure (remota por padrão — nada de stateful roda no PC)**: o fluxo local é **híbrido** — só os processos de aplicação (APIs + BFF + AI + frontend) rodam no host; toda a infra com estado é remota. Veja `docs/local-development.md`.
+
+| Dependência | Onde roda | Como o dev local acessa |
+|---|---|---|
+| PostgreSQL 16 (banco `mcad`, schema-per-service, usuários `*_svc`) | servidor (stack `mcad-data`) | **VPN Tailscale** direto em `vmi3283566:5432` (`MCAD_DB_MODE=direct`) ou túnel SSH `localhost:15432` (`ssh-tunnel`) |
+| RabbitMQ (eventos AMQP via Outbox Pattern) | **CloudAMQP** (`kebnekaise.lmq.cloudamqp.com`, vhost próprio) — serviço externo | `RABBITMQ_URL` no `.env.local` |
+| Logto (OIDC/JWT — autenticação) | cloud `9lcinu.logto.app` | `OIDC_AUTHORITY` |
+| ecad-authz (autorização fina; tem Redis/Postgres próprios) | `https://mcad-authz.tasso.dev.br` | `AUTHZ_BASE_URL` |
+| Auditoria API | `https://api-audit.tasso.dev.br` | `AUDITORIA_API_BASE_URL` |
+| Storage/MinIO (uploads + ClamAV) | `https://storage.tasso.dev.br` / `https://minio-api.tasso.dev.br` | `STORAGE_SERVICE_URL` |
+| ISWC API | `https://iswc.tasso.dev.br` | `ISWC_BASE_URL` |
+
+Não há Mongo nem Redis para a aplicação. `docker-compose.dev.yml` existe só como **fallback opcional** (`MCAD_DB_MODE=local-compose`) para subir Postgres/RabbitMQ locais quando se quer isolamento.
 
 ### .NET service structure (Cadastro, Identificacao)
 
@@ -49,18 +61,32 @@ Maven multi-module: `arrecadacao-api`, `arrecadacao-application`, `arrecadacao-d
 
 ## Development Commands
 
-### Full stack
+### Full stack (fluxo híbrido — ver `docs/local-development.md`)
 
 ```bash
-./dev.sh start     # Start all services (logs in .tmp/logs/)
-./dev.sh stop      # Stop all services
+./dev.sh up                 # Sobe a stack de app local (APIs + ai + bff + frontend)
+./dev.sh up cadastro-api    # Sobe um serviço isolado (demais APIs apontam p/ o dev remoto)
+./dev.sh down               # Para tudo
+./dev.sh status             # Status dos processos
+./dev.sh logs bff           # Tail do log de um serviço (.tmp/logs/)
 ```
 
-### Infrastructure (local)
+`up`/`down` rodam cada serviço como processo do host (não em container) e, quando alguma
+API com banco sobe, o `dev.sh` abre automaticamente o túnel SSH do Postgres
+(`localhost:15432 -> shared-postgres:5432`). `start`/`stop` são aliases de `up`/`down`.
+
+Pré-requisitos no PC: Node 20+, .NET SDK 8, JDK 21, Maven 3.9+, e o alias SSH `mcad-server`
+configurado. Instale dependências Node uma vez: `npm ci` em `frontend/`, `services/bff/`,
+`services/ai-orchestrator/` e `services/identity-sync-api/`.
+
+### Infraestrutura local opcional (fallback)
+
+Por padrão a infra é remota (tabela acima). Só use o compose se quiser Postgres/RabbitMQ
+isolados no PC:
 
 ```bash
-docker compose -f docker-compose.dev.yml up -d    # PostgreSQL, RabbitMQ, Keycloak, MinIO
-./scripts/provision-keycloak.sh                     # Setup realm, client, roles, users (idempotent)
+docker compose -f docker-compose.dev.yml up -d mcad-postgres mcad-rabbitmq
+MCAD_DB_MODE=local-compose ./dev.sh up app
 ```
 
 ### Cadastro API (.NET)
@@ -107,7 +133,45 @@ cd services/load-test
 
 ## Environment
 
-Copy `.env.example` to `.env` and fill in credentials. Key variables: database host/credentials per service, `RABBITMQ_URL`, `OIDC_AUTHORITY`, `AUTH_ENABLED` (toggle auth on/off), `MINIO_ENDPOINT`.
+Copie `.env.dev.example` para `.env.local` (não versionado) e preencha apenas os segredos necessários. O `dev.sh` carrega `.env` e depois `.env.local` (este sobrescreve). Variáveis-chave: usuários/senhas de banco por serviço (`*_DB_USER`/`*_DB_PASSWORD`), `RABBITMQ_URL` (CloudAMQP), `OIDC_AUTHORITY` (Logto), `AUTH_ENABLED` (liga/desliga auth), `AUTHZ_BASE_URL`, `STORAGE_SERVICE_URL`. Para deploy no Swarm, a referência é `.env.swarm.example`.
+
+## Contract Gate — OBRIGATÓRIO após mudanças de API
+
+O CI verifica drift entre os contratos gerados pelos serviços e os arquivos em `contracts/`. Se houver diferença, o build falha com `DRIFT detectado`.
+
+**Sempre que alterar qualquer um dos itens abaixo, execute o procedimento de exportação antes de commitar:**
+
+### O que dispara a atualização de contratos
+
+| Serviço | Gatilhos |
+|---|---|
+| cadastro, identificacao (.NET) | Rotas em `1-Services/` (Program.cs, endpoint files); DTOs de request/response em `2-Application/`; novos parâmetros de path/query |
+| arrecadacao, distribuicao (Java) | Anotações `@GetMapping`/`@PostMapping`/etc. em controllers; classes de request/response body; códigos HTTP de resposta |
+
+### Procedimento
+
+```bash
+# 1. Sobe todos os serviços (requer infra local rodando)
+./dev.sh start
+
+# 2. Exporta e grava os contratos atualizados
+scripts/export-contracts.sh
+
+# 3. Para os serviços
+./dev.sh stop
+
+# 4. Inclui os contratos atualizados no commit
+git add contracts/
+```
+
+O arquivo `contracts/<servico>/openapi.json` é **gerado** (não edite manualmente). Os `asyncapi.yaml` dos serviços Java são handwritten e não são tocados pelo script.
+
+### Verificação rápida (sem escrever)
+
+```bash
+# Checa drift sem alterar arquivos — mesma verificação do CI
+./dev.sh start && scripts/export-contracts.sh --check && ./dev.sh stop
+```
 
 ## Conventions
 

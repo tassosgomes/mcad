@@ -294,7 +294,7 @@ test('ai proxy rewrites chat route and forwards auth and mcad headers', async (t
     assert.equal(receivedHeaders['x-mcad-authz-version'], '42');
     assert.equal(typeof receivedHeaders['x-mcad-runtime-auth-timestamp'], 'string');
     assert.equal(typeof receivedHeaders['x-mcad-runtime-auth-signature'], 'string');
-    const expectedSignature = createHmac('sha256', 'test-runtime-secret')
+    const expectedSignature = createHmac('sha256', 'test-runtime-secret') // nosemgrep: javascript.lang.security.audit.hardcoded-hmac-key.hardcoded-hmac-key
       .update(JSON.stringify({
         requestId: receivedHeaders['x-mcad-request-id'],
         userId: 'usr-123',

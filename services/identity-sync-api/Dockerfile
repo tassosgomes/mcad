@@ -18,5 +18,11 @@ ENV NODE_ENV=production
 COPY --from=build /app/package*.json ./
 COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/dist ./dist
+COPY docker/entrypoint.sh /app/entrypoint.sh
+RUN chmod 0755 /app/entrypoint.sh
+RUN addgroup -g 1001 -S nodejs && adduser -S nodejs -u 1001 -G nodejs
+RUN chown -R nodejs:nodejs /app
+USER nodejs
 EXPOSE 5300
+ENTRYPOINT ["/app/entrypoint.sh"]
 CMD ["npm", "start"]
