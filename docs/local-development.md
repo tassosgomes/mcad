@@ -5,7 +5,7 @@ Este projeto usa um modo local/hibrido por padrao:
 - Logto: cloud/dev
 - RabbitMQ: cloud/dev
 - Redis: cloud/dev, normalmente por tras do `ecad-authz`
-- Postgres: via tunel SSH para o servidor de desenvolvimento, ou direto/local se configurado
+- Postgres: conexao direta via VPN Tailscale (recomendado) ou tunel SSH como fallback
 - APIs e frontends: locais somente quando escolhidos no `dev.sh`
 
 ## Pre-requisitos
@@ -14,7 +14,8 @@ Este projeto usa um modo local/hibrido por padrao:
 - .NET SDK 8
 - JDK 21
 - Maven 3.9+
-- `ssh` com o alias `mcad-pg` configurado conforme `docs/ops/server-access-recovery.md`
+- Acesso ao banco: **VPN Tailscale ativa** (host `vmi3283566` alcancavel) **ou** o
+  alias SSH `mcad-server`/`mcad-pg` conforme `docs/ops/server-access-recovery.md`
 
 Instale dependencias uma vez:
 
@@ -36,9 +37,22 @@ cp .env.dev.example .env.local
 Preencha apenas os segredos necessarios. O `dev.sh` carrega primeiro `.env` e depois
 `.env.local`, entao `.env.local` pode sobrescrever qualquer valor.
 
-### Banco via SSH
+### Banco via Tailscale (recomendado)
 
-O modo padrao e:
+Com a VPN Tailscale ativa, o Postgres do servidor e alcancado direto, sem tunel:
+
+```env
+MCAD_DB_MODE=direct
+MCAD_DB_DIRECT_HOST=vmi3283566
+MCAD_DB_DIRECT_PORT=5432
+MCAD_DEV_DB_NAME=mcad
+```
+
+O `dev.sh` propaga esse host/porta para todos os servicos
+(`CADASTRO_DB_HOST`, `IDENTIFICACAO_DB_HOST`, `ARRECADACAO_DB_HOST`, `DB_HOST`).
+Basta informar os usuarios/senhas por servico (`*_DB_USER`/`*_DB_PASSWORD`) no `.env.local`.
+
+### Banco via tunel SSH (fallback sem VPN)
 
 ```env
 MCAD_DB_MODE=ssh-tunnel
@@ -49,25 +63,14 @@ MCAD_DB_LOCAL_PORT=
 MCAD_DEV_DB_NAME=mcad
 ```
 
-O alias `mcad-server` esperado esta documentado em `docs/ops/server-access-recovery.md`.
-O `dev.sh` monta o `LocalForward` automaticamente. Se `MCAD_DB_LOCAL_PORT`
-ficar vazio, o script escolhe a primeira porta livre entre `15432` e `15442`.
+O alias `mcad-server` esta documentado em `docs/ops/server-access-recovery.md`. O
+`dev.sh` monta o `LocalForward` automaticamente; se `MCAD_DB_LOCAL_PORT` ficar vazio,
+escolhe a primeira porta livre entre `15432` e `15442`. Tambem e possivel usar o alias
+`mcad-pg` do runbook (`MCAD_DB_SSH_ALIAS=mcad-pg`, `MCAD_DB_LOCAL_PORT=15432`).
 
-Tambem e possivel usar diretamente o alias `mcad-pg` do runbook:
-
-```env
-MCAD_DB_SSH_HOST=
-MCAD_DB_SSH_ALIAS=mcad-pg
-MCAD_DB_LOCAL_PORT=15432
-```
-
-Quando alguma API com banco sobe, o script inicia o tunel e aponta as variaveis
-`*_DB_HOST` para `127.0.0.1:<porta-do-tunel>`.
-
-Modos alternativos:
+### Banco local (isolado)
 
 ```env
-MCAD_DB_MODE=direct
 MCAD_DB_MODE=local-compose
 ```
 

@@ -76,6 +76,12 @@ mapas.json
 scripts/musicbrainz-importer/mapas.json
 scripts/arrecadacao-generator/mapas.json
 
+# Artefatos de ferramentas (scans, grafos, críticas) — não versionar
+*.sarif
+.impeccable/
+graphify-out/
+CpfGen.cs
+
 # Microcks (Fase 2) — artefatos com secrets (não versionar)
 infra/microcks/.env.microcks
 infra/microcks/keycloak-realm/microcks-realm-prod.json

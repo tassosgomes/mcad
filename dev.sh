@@ -376,9 +376,32 @@ configure_db_env() {
       export DB_SCHEMA_DISTRIBUICAO="${DB_SCHEMA_DISTRIBUICAO:-distribuicao}"
       ;;
     direct)
-      export DB_HOST="${DB_HOST:-${AIVEN_DB_HOST:-${CADASTRO_DB_HOST:-localhost}}}"
-      export DB_PORT="${DB_PORT:-${AIVEN_DB_PORT:-${CADASTRO_DB_PORT:-5432}}}"
-      export DB_NAME="${DB_NAME:-${AIVEN_DB_NAME:-${CADASTRO_DB_NAME:-mcad}}}"
+      # Conexao direta ao Postgres, sem tunel SSH (ex.: VPN Tailscale).
+      # MCAD_DB_DIRECT_HOST define o host unico e e propagado para todos os
+      # servicos; default aponta para o host Tailscale do servidor.
+      local db_host="${MCAD_DB_DIRECT_HOST:-vmi3283566}"
+      local db_port="${MCAD_DB_DIRECT_PORT:-5432}"
+      local db_name="${MCAD_DEV_DB_NAME:-mcad}"
+
+      export CADASTRO_DB_HOST="${CADASTRO_DB_HOST:-$db_host}"
+      export CADASTRO_DB_PORT="${CADASTRO_DB_PORT:-$db_port}"
+      export CADASTRO_DB_NAME="${CADASTRO_DB_NAME:-$db_name}"
+      export CADASTRO_DB_SCHEMA="${CADASTRO_DB_SCHEMA:-cadastro}"
+
+      export IDENTIFICACAO_DB_HOST="${IDENTIFICACAO_DB_HOST:-$db_host}"
+      export IDENTIFICACAO_DB_PORT="${IDENTIFICACAO_DB_PORT:-$db_port}"
+      export IDENTIFICACAO_DB_NAME="${IDENTIFICACAO_DB_NAME:-$db_name}"
+      export IDENTIFICACAO_DB_SCHEMA="${IDENTIFICACAO_DB_SCHEMA:-identificacao}"
+
+      export ARRECADACAO_DB_HOST="${ARRECADACAO_DB_HOST:-$db_host}"
+      export ARRECADACAO_DB_PORT="${ARRECADACAO_DB_PORT:-$db_port}"
+      export ARRECADACAO_DB_NAME="${ARRECADACAO_DB_NAME:-$db_name}"
+      export ARRECADACAO_DB_SCHEMA="${ARRECADACAO_DB_SCHEMA:-arrecadacao}"
+
+      export DB_HOST="${DB_HOST:-$db_host}"
+      export DB_PORT="${DB_PORT:-$db_port}"
+      export DB_NAME="${DB_NAME:-$db_name}"
+      export DB_SCHEMA_DISTRIBUICAO="${DB_SCHEMA_DISTRIBUICAO:-distribuicao}"
       ;;
     local-compose)
       export CADASTRO_DB_HOST="${CADASTRO_DB_HOST:-localhost}"
@@ -520,6 +543,19 @@ prepare_frontend_runtime_env() {
   } >"$runtime_file"
 }
 
+# Resolve as credenciais do Storage Logto especificas do servico a partir das
+# variaveis com prefixo (ex.: CADASTRO_STORAGE_LOGTO_CLIENT_ID) e exporta nos
+# nomes nao-prefixados que cada servico le. Cada processo captura seu valor no
+# fork, entao a sobrescrita entre servicos nao causa vazamento cruzado.
+resolve_storage_logto_env() {
+  local prefix="$1"
+  local id_var="${prefix}_STORAGE_LOGTO_CLIENT_ID"
+  local secret_var="${prefix}_STORAGE_LOGTO_CLIENT_SECRET"
+
+  export STORAGE_LOGTO_CLIENT_ID="${!id_var:-${STORAGE_LOGTO_CLIENT_ID:-}}"
+  export STORAGE_LOGTO_CLIENT_SECRET="${!secret_var:-${STORAGE_LOGTO_CLIENT_SECRET:-}}"
+}
+
 start_service() {
   local service="$1"
 
@@ -528,12 +564,15 @@ start_service() {
       start_db_tunnel
       ;;
     cadastro-api)
+      resolve_storage_logto_env CADASTRO
       start_process cadastro-api "$ROOT_DIR/services/cadastro-api/1-Services/Cadastro.API" dotnet run --launch-profile http
       ;;
     identificacao-api)
+      resolve_storage_logto_env IDENTIFICACAO
       start_process identificacao-api "$ROOT_DIR/services/identificacao-api/1-Services/Identificacao.API" dotnet run --launch-profile http
       ;;
     arrecadacao-api)
+      resolve_storage_logto_env ARRECADACAO
       start_process arrecadacao-api "$ROOT_DIR/services/arrecadacao-api" mvn -pl arrecadacao-api spring-boot:run -Dspring-boot.run.profiles=dev
       ;;
     distribuicao-api)

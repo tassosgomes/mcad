@@ -1,4 +1,0 @@
-[2m2026-04-04T21:38:22.060611Z[0m [31mERROR[0m [2mcodex_core::codex[0m[2m:[0m failed to load skill /home/tsgomes/.agents/skills/mermaid/SKILL.md: invalid description: exceeds maximum length of 1024 characters
-[2m2026-04-04T21:38:22.060701Z[0m [31mERROR[0m [2mcodex_core::codex[0m[2m:[0m failed to load skill /home/tsgomes/.agents/skills/common/c4-diagram-creator/SKILL.md: invalid YAML: mapping values are not allowed in this context at line 2 column 293
-[2m2026-04-04T21:38:22.060708Z[0m [31mERROR[0m [2mcodex_core::codex[0m[2m:[0m failed to load skill /home/tsgomes/.agents/skills/common/mermaid-creator/SKILL.md: invalid YAML: mapping values are not allowed in this context at line 2 column 183
-[2m2026-04-04T21:38:22.060711Z[0m [31mERROR[0m [2mcodex_core::codex[0m[2m:[0m failed to load skill /home/tsgomes/.agents/skills/csharp/dotnet-testing/SKILL.md: missing YAML frontmatter delimited by ---
