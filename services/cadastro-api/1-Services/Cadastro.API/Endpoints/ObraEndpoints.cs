@@ -26,6 +26,23 @@ public static class ObraEndpoints
         })
         .RequireCadastroPermission(CadastroPermissions.ObraCriar);
 
+        group.MapPost("/pendentes", async ([FromBody] CriarObraPendenteRequest? request, IDispatcher dispatcher, CancellationToken ct) =>
+        {
+            if (request is null)
+            {
+                throw new Cadastro.Application.Common.Exceptions.ValidationException(new Dictionary<string, string[]>
+                {
+                    ["body"] = ["Body é obrigatório."]
+                });
+            }
+
+            var tipoObra = request.TipoObra ?? request.Tipo;
+            var command = new CriarObraPendenteCommand(request.Titulo ?? string.Empty, tipoObra ?? string.Empty);
+            var result = await dispatcher.SendAsync(command, ct);
+            return Results.Created($"/api/v1/obras/{result.Id}", result);
+        })
+        .RequireCadastroPermission(CadastroPermissions.ObraCriar);
+
         group.MapGet("/{id:guid}", async (Guid id, IDispatcher dispatcher, CancellationToken ct) =>
         {
             var result = await dispatcher.QueryAsync(new GetObraByIdQuery(id), ct);
@@ -114,6 +131,7 @@ public static class ObraEndpoints
 }
 
 public record AtualizarObraRequest(string Titulo, string? Subtitulo, string Tipo, string? Genero);
+public record CriarObraPendenteRequest(string? Titulo, string? TipoObra, string? Tipo);
 public record DepurarObraRequest(string Titulo, string Tipo, string? Subtitulo, string? Genero);
 public record AlterarDominioPublicoRequest(bool DominioPublico);
 public record BloquearObraRequest(string Justificativa);

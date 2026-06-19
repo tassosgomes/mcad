@@ -1,8 +1,15 @@
 import { useState } from 'react';
 import { Modal } from '@shared/components/ui/modal/Modal';
 import { useCreateObraPendente } from '../hooks/useCreateObraPendente';
-import { ObraFonogramaSelecionado } from '../types/execucao';
+import { ObraFonogramaSelecionado, TipoObraCadastro } from '../types/execucao';
 import styles from './CriarObraPendenteModal.module.css';
+
+const TIPOS_OBRA: Array<{ value: TipoObraCadastro; label: string }> = [
+  { value: 'MUSICAL', label: 'Musical' },
+  { value: 'LITEROMUSICAL', label: 'Literomusical' },
+  { value: 'VERSAO', label: 'Versão' },
+  { value: 'POT_POURRI', label: 'Pot-pourri' },
+];
 
 interface CriarObraPendenteModalProps {
   isOpen: boolean;
@@ -18,7 +25,7 @@ export function CriarObraPendenteModal({
   initialTitulo = '',
 }: CriarObraPendenteModalProps) {
   const [titulo, setTitulo] = useState(initialTitulo);
-  const [tipo, setTipo] = useState('MUSICAL');
+  const [tipoObra, setTipoObra] = useState<TipoObraCadastro>('MUSICAL');
   const [error, setError] = useState('');
 
   const { mutate, isPending } = useCreateObraPendente();
@@ -32,7 +39,7 @@ export function CriarObraPendenteModal({
     setError('');
 
     mutate(
-      { titulo, tipo },
+      { titulo, tipoObra },
       {
         onSuccess: (data) => {
           onCreated({
@@ -68,14 +75,15 @@ export function CriarObraPendenteModal({
           <label className={styles.label}>Tipo de Obra *</label>
           <select
             className={styles.select}
-            value={tipo}
-            onChange={(e) => setTipo(e.target.value)}
+            value={tipoObra}
+            onChange={(e) => setTipoObra(e.target.value as TipoObraCadastro)}
             disabled={isPending}
           >
-            <option value="MUSICAL">Musical</option>
-            <option value="DRAMATICO_MUSICAL">Dramático-Musical</option>
-            <option value="LITERARIA">Literária</option>
-            <option value="AUDIOVISUAL">Audiovisual</option>
+            {TIPOS_OBRA.map((tipo) => (
+              <option key={tipo.value} value={tipo.value}>
+                {tipo.label}
+              </option>
+            ))}
           </select>
         </div>
 

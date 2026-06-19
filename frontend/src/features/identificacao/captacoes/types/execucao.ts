@@ -76,9 +76,11 @@ export interface ObraFonogramaSelecionado {
 }
 
 // Interfaces criacao pendente (requisitos de outras tasks)
+export type TipoObraCadastro = 'MUSICAL' | 'LITEROMUSICAL' | 'VERSAO' | 'POT_POURRI';
+
 export interface CriarObraPendenteRequest {
   titulo: string;
-  tipo: string;
+  tipoObra: TipoObraCadastro;
 }
 
 export interface CriarObraPendenteResponse {

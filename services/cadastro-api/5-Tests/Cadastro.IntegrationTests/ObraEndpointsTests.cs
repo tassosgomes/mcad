@@ -1,5 +1,7 @@
 using System.Net;
+using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using Cadastro.API.Authorization;
 using AwesomeAssertions;
 using Cadastro.API.Endpoints;
 using Cadastro.Application.Obras.Commands;
@@ -36,7 +38,26 @@ public class ObraEndpointsTests : IClassFixture<CadastroApiFactory>
                 services.AddScoped<IIswcService>(_ => _mockIswcService.Object);
             });
         });
+        _client.DefaultRequestHeaders.Remove(TestAuthHandler.PermissionsHeader);
+        _client.DefaultRequestHeaders.Add(TestAuthHandler.PermissionsHeader, string.Join(',', RequiredPermissions));
+        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", "test-token");
     }
+
+    private static readonly string[] RequiredPermissions =
+    [
+        CadastroPermissions.AssociacaoListar,
+        CadastroPermissions.ObraCriar,
+        CadastroPermissions.ObraVisualizar,
+        CadastroPermissions.ObraEditar,
+        CadastroPermissions.ObraExcluir,
+        CadastroPermissions.ObraGerarIswc,
+        CadastroPermissions.ObraDepurar,
+        CadastroPermissions.ObraDominioPublico,
+        CadastroPermissions.StatusBloquearObra,
+        CadastroPermissions.TitularCriar,
+        CadastroPermissions.TitularidadeAdicionar,
+        CadastroPermissions.TitularidadeListar
+    ];
 
     private static string GerarCpfValido()
     {
@@ -78,6 +99,76 @@ public class ObraEndpointsTests : IClassFixture<CadastroApiFactory>
         problem.Should().NotBeNull();
         problem!.Title.Should().Be("Validation Error");
         problem.Detail.Should().Contain("Título");
+    }
+
+    [Fact]
+    public async Task Post_CriarObraPendente_ComPayloadValido_DeveRetornar201EPendente()
+    {
+        var response = await _client.PostAsJsonAsync("/api/v1/obras/pendentes", new
+        {
+            titulo = "Obra Pendente Inline",
+            tipoObra = "LITEROMUSICAL"
+        });
+
+        response.StatusCode.Should().Be(HttpStatusCode.Created);
+
+        var obra = await response.Content.ReadFromJsonAsync<ObraResponse>();
+        obra.Should().NotBeNull();
+        obra!.Titulo.Should().Be("Obra Pendente Inline");
+        obra.Tipo.Should().Be("LITEROMUSICAL");
+        obra.Status.Should().Be("PENDENTE");
+        response.Headers.Location.Should().NotBeNull();
+        response.Headers.Location!.ToString().Should().Be($"/api/v1/obras/{obra.Id}");
+    }
+
+    [Fact]
+    public async Task Post_CriarObraPendente_ComTipoAlias_DeveRetornar201()
+    {
+        var response = await _client.PostAsJsonAsync("/api/v1/obras/pendentes", new
+        {
+            titulo = "Obra Pendente Alias",
+            tipo = "POT_POURRI"
+        });
+
+        response.StatusCode.Should().Be(HttpStatusCode.Created);
+
+        var obra = await response.Content.ReadFromJsonAsync<ObraResponse>();
+        obra.Should().NotBeNull();
+        obra!.Tipo.Should().Be("POT_POURRI");
+        obra.Status.Should().Be("PENDENTE");
+    }
+
+    [Fact]
+    public async Task Post_CriarObraPendente_SemTitulo_DeveRetornar400()
+    {
+        var response = await _client.PostAsJsonAsync("/api/v1/obras/pendentes", new
+        {
+            tipoObra = "MUSICAL"
+        });
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+
+        var problem = await response.Content.ReadFromJsonAsync<ProblemDetails>();
+        problem.Should().NotBeNull();
+        problem!.Title.Should().Be("Validation Error");
+        problem.Detail.Should().Contain("Título");
+    }
+
+    [Fact]
+    public async Task Post_CriarObraPendente_ComTipoInvalido_DeveRetornar400()
+    {
+        var response = await _client.PostAsJsonAsync("/api/v1/obras/pendentes", new
+        {
+            titulo = "Obra Tipo Invalido",
+            tipoObra = "AUDIOVISUAL"
+        });
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+
+        var problem = await response.Content.ReadFromJsonAsync<ProblemDetails>();
+        problem.Should().NotBeNull();
+        problem!.Title.Should().Be("Validation Error");
+        problem.Detail.Should().Contain("Tipo inválido");
     }
 
     [Fact]

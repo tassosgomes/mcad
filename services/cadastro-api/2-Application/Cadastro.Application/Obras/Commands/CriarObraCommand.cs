@@ -11,6 +11,21 @@ namespace Cadastro.Application.Obras.Commands;
 
 public record CriarObraCommand(string Titulo, string? Subtitulo, string Tipo, string? Genero) : ICommand<ObraResponse>;
 
+internal static class TipoObraParser
+{
+    public static bool TryParse(string? value, out TipoObra tipo)
+    {
+        tipo = default;
+        return !string.IsNullOrWhiteSpace(value)
+            && Enum.TryParse<TipoObra>(value.Replace("_", ""), true, out tipo);
+    }
+
+    public static TipoObra Parse(string value)
+    {
+        return Enum.Parse<TipoObra>(value.Replace("_", ""), true);
+    }
+}
+
 public class CriarObraCommandValidator : AbstractValidator<CriarObraCommand>
 {
     public CriarObraCommandValidator()
@@ -24,7 +39,7 @@ public class CriarObraCommandValidator : AbstractValidator<CriarObraCommand>
             .Cascade(CascadeMode.Stop)
             .NotEmpty()
             .WithMessage("Tipo é obrigatório.")
-            .Must(t => !string.IsNullOrWhiteSpace(t) && Enum.TryParse<TipoObra>(t.Replace("_", ""), true, out _))
+            .Must(t => TipoObraParser.TryParse(t, out _))
             .WithMessage("Tipo inválido. Valores aceitos: MUSICAL, LITEROMUSICAL, VERSAO, POT_POURRI");
         RuleFor(x => x.Genero).MaximumLength(100);
     }
@@ -43,7 +58,7 @@ public class CriarObraCommandHandler : ICommandHandler<CriarObraCommand, ObraRes
 
     public async Task<ObraResponse> HandleAsync(CriarObraCommand request, CancellationToken cancellationToken)
     {
-        var tipo = Enum.Parse<TipoObra>(request.Tipo.Replace("_", ""), true);
+        var tipo = TipoObraParser.Parse(request.Tipo);
         var obra = ObraMusical.Criar(request.Titulo, tipo, request.Subtitulo, request.Genero);
 
         await _repository.AddAsync(obra, cancellationToken);
