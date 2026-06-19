@@ -2,7 +2,8 @@ import fs from 'fs';
 
 // --- CONFIGURAÇÕES ---
 const CADASTRO_API_URL = process.env.CADASTRO_API_URL || 'https://mcad-cadastro.tasso.dev.br/api/v1';
-const JWT_TOKEN = process.env.JWT_TOKEN || 'eyJhbGciOiJFUzM4NCIsInR5cCI6ImF0K2p3dCIsImtpZCI6IkE1YzFzdHNpZnJid3QxRS0zNzcyQ1V0aC14QkxCcmxRSDdCVWlVZU84TDgifQ.eyJqdGkiOiJIa2NKaHIwZTRETWVjTmtfWDFIdUIiLCJzdWIiOiJjb202bjZkaWRlN24iLCJpYXQiOjE3ODA3ODYzNTYsImV4cCI6MTc4MDc4OTk1Niwic2NvcGUiOiIiLCJjbGllbnRfaWQiOiJiMG84dzE4c3lydjk1Z2QybzNrZWUiLCJpc3MiOiJodHRwczovLzlsY2ludS5sb2d0by5hcHAvb2lkYyIsImF1ZCI6Imh0dHBzOi8vYXBpLm1jYWQubG9jYWwifQ.w4R1vwQ9kEghvkfaQkkf1wLN9e6ZQUUemSqe9G2lYKyzukp-aUIiTBdxcMJ5gkfFfMkyo5gJUB_aVD7HATq0TZXfxyc8fkXoezkUe6jNcUotQw7S_4rH1ArZNCVZtb66';
+const JWT_TOKEN = process.env.JWT_TOKEN;
+if (!JWT_TOKEN) { console.error('[ERRO] JWT_TOKEN env var é obrigatória. Export JWT_TOKEN=<token> antes de rodar.'); process.exit(1); }
 const MB_USER_AGENT = 'MCAD-Test-Importer/1.0 ( tsgomes@example.com )';
 
 const authHeaders = {
@@ -12,15 +13,15 @@ const authHeaders = {
 
 let mapas = { titulares: {}, obras: {}, fonogramas: {}, state: { script03_obras_processadas: [] } };
 
-if (fs.existsSync('mapas.json')) {
-    mapas = { ...mapas, ...JSON.parse(fs.readFileSync('mapas.json', 'utf8')) };
+if (fs.existsSync(new URL('mapas.json', import.meta.url))) {
+    mapas = { ...mapas, ...JSON.parse(fs.readFileSync(new URL('mapas.json', import.meta.url), 'utf8')) };
     mapas.fonogramas = mapas.fonogramas || {};
     mapas.state = mapas.state || {};
     mapas.state.script03_obras_processadas = mapas.state.script03_obras_processadas || [];
 }
 
 function salvarMapas() {
-    fs.writeFileSync('mapas.json', JSON.stringify(mapas, null, 2));
+    fs.writeFileSync(new URL('mapas.json', import.meta.url), JSON.stringify(mapas, null, 2));
 }
 
 const sleep = ms => new Promise(r => setTimeout(r, ms));
@@ -94,8 +95,8 @@ async function criarTitularNoECAD(artist, associacoesIds) {
 }
 
 async function main() {
-    if (fs.existsSync('mapas.json')) {
-        mapas = JSON.parse(fs.readFileSync('mapas.json', 'utf8'));
+    if (fs.existsSync(new URL('mapas.json', import.meta.url))) {
+        mapas = JSON.parse(fs.readFileSync(new URL('mapas.json', import.meta.url), 'utf8'));
         mapas.fonogramas = mapas.fonogramas || {};
         mapas.state = mapas.state || {};
         mapas.state.script03_obras_processadas = mapas.state.script03_obras_processadas || [];

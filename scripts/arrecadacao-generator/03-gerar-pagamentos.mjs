@@ -1,7 +1,8 @@
 import fs from 'fs';
 
 const ARRECADACAO_API_URL = process.env.ARRECADACAO_API_URL || 'https://mcad-arrecadacao.tasso.dev.br/api/v1';
-const JWT_TOKEN = process.env.JWT_TOKEN || 'SEU_TOKEN_AQUI';
+const JWT_TOKEN = process.env.JWT_TOKEN;
+if (!JWT_TOKEN) { console.error('[ERRO] JWT_TOKEN env var é obrigatória. Export JWT_TOKEN=<token> antes de rodar.'); process.exit(1); }
 
 const authHeaders = {
   'Content-Type': 'application/json',
@@ -10,13 +11,13 @@ const authHeaders = {
 
 let mapas = { licencas: [], pagamentos: [] };
 
-if (fs.existsSync('mapas.json')) {
-    mapas = { ...mapas, ...JSON.parse(fs.readFileSync('mapas.json', 'utf8')) };
+if (fs.existsSync(new URL('mapas.json', import.meta.url))) {
+    mapas = { ...mapas, ...JSON.parse(fs.readFileSync(new URL('mapas.json', import.meta.url), 'utf8')) };
     mapas.pagamentos = mapas.pagamentos || [];
 }
 
 function salvarMapas() {
-    fs.writeFileSync('mapas.json', JSON.stringify(mapas, null, 2));
+    fs.writeFileSync(new URL('mapas.json', import.meta.url), JSON.stringify(mapas, null, 2));
 }
 
 async function main() {

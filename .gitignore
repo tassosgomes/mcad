@@ -94,3 +94,8 @@ infra/microcks/keycloak-realm/microcks-realm-prod.json
 **/qa-evidence/**/storageState.json
 **/qa-evidence/**/cookies.json
 **/qa-evidence/**/browser_storage.json
+# Artefatos de traces Playwright (contêm capturas de rede com tokens)
+**/.playwright-artifacts-*/
+**/traces/*.network
+**/traces/*.trace
+**/traces/resources/

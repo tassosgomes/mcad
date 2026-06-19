@@ -2,9 +2,10 @@ import fs from 'fs';
 
 // --- CONFIGURAÇÕES ---
 const CADASTRO_API_URL = process.env.CADASTRO_API_URL || 'https://mcad-cadastro.tasso.dev.br/api/v1';
-const JWT_TOKEN = process.env.JWT_TOKEN || 'eyJhbGciOiJFUzM4NCIsInR5cCI6ImF0K2p3dCIsImtpZCI6IkE1YzFzdHNpZnJid3QxRS0zNzcyQ1V0aC14QkxCcmxRSDdCVWlVZU84TDgifQ.eyJqdGkiOiI1dDd5UWRXeXVXbU5TWnlfNkprOFkiLCJzdWIiOiJqcHVvZWU4ZjdycTMiLCJpYXQiOjE3ODA3ODUxNTYsImV4cCI6MTc4MDc4ODc1Niwic2NvcGUiOiIiLCJjbGllbnRfaWQiOiJiMG84dzE4c3lydjk1Z2QybzNrZWUiLCJpc3MiOiJodHRwczovLzlsY2ludS5sb2d0by5hcHAvb2lkYyIsImF1ZCI6Imh0dHBzOi8vYXBpLm1jYWQubG9jYWwifQ.U-I1hYwhZsyxz-N2SQA6CVMq4Jyk7T4tOPsAOpKBt3Ayu6FpwpEjE3bDlNhRZLYteagvvUa4vgbzWW3AiiMwwslzSD153SiJPunvRzO1niTPSEsoEa02Bg1zdQ28lXL_';
+const JWT_TOKEN = process.env.JWT_TOKEN;
+if (!JWT_TOKEN) { console.error('[ERRO] JWT_TOKEN env var é obrigatória. Export JWT_TOKEN=<token> antes de rodar.'); process.exit(1); }
 const MB_USER_AGENT = 'MCAD-Test-Importer/1.0 ( tsgomes@example.com )';
-const MAX_OBRAS_PARA_IMPORTAR = 10;
+const MAX_OBRAS_PARA_IMPORTAR = 1000;
 
 const authHeaders = {
   'Content-Type': 'application/json',
@@ -14,13 +15,13 @@ const authHeaders = {
 // Estrutura inicial com Checkpoint (state)
 let mapas = { titulares: {}, obras: {}, fonogramas: {}, state: { script01_offset: 0 } };
 
-if (fs.existsSync('mapas.json')) {
-    mapas = { ...mapas, ...JSON.parse(fs.readFileSync('mapas.json', 'utf8')) };
+if (fs.existsSync(new URL('mapas.json', import.meta.url))) {
+    mapas = { ...mapas, ...JSON.parse(fs.readFileSync(new URL('mapas.json', import.meta.url), 'utf8')) };
     mapas.state = mapas.state || { script01_offset: 0 };
 }
 
 function salvarMapas() {
-    fs.writeFileSync('mapas.json', JSON.stringify(mapas, null, 2));
+    fs.writeFileSync(new URL('mapas.json', import.meta.url), JSON.stringify(mapas, null, 2));
 }
 
 // --- UTILS ---
@@ -76,8 +77,35 @@ async function fetchAssociacoes() {
   return data.map(a => a.id);
 }
 
+async function buscarTitularExistente(nomeTitular) {
+    const encodedNome = encodeURIComponent(nomeTitular);
+    const url = `${CADASTRO_API_URL}/titulares?nome=${encodedNome}`;
+    console.log(url);
+    console.log(`[ECAD API] Buscando titular por nome: ${nomeTitular}`);
+    const res = await fetch(url, { headers: authHeaders });
+    if (!res.ok) {
+        console.warn(`[AVISO] Falha ao buscar titular por nome (${nomeTitular}):`, await res.text());
+        return null;
+    }
+    const data = await res.json();
+    if (data.items && data.items.length > 0) {
+        console.log(`  [OK] Titular existente encontrado: ${data.items[0].nome} (ID: ${data.items[0].id})`);
+        return data.items[0].id;
+    }
+    return null;
+}
+
 async function criarTitularNoECAD(artist, associacoesIds) {
     if (mapas.titulares[artist.id]) return mapas.titulares[artist.id];
+
+    // Tentar encontrar titular existente pelo nome
+    const titularExistenteId = await buscarTitularExistente(artist.name);
+    if (titularExistenteId) {
+        mapas.titulares[artist.id] = titularExistenteId;
+        salvarMapas();
+        console.log(`  [OK] Usando titular existente para ${artist.name}`);
+        return titularExistenteId;
+    }
 
     const tipoTitular = Math.random() > 0.5 ? "PF" : "PJ";
     const documento = tipoTitular === "PF" ? gerarCpf() : gerarCnpj();

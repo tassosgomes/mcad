@@ -2,7 +2,8 @@ import fs from 'fs';
 import { faker } from '@faker-js/faker';
 
 const ARRECADACAO_API_URL = process.env.ARRECADACAO_API_URL || 'https://mcad-arrecadacao.tasso.dev.br/api/v1';
-const JWT_TOKEN = process.env.JWT_TOKEN || 'eyJhbGciOiJFUzM4NCIsInR5cCI6ImF0K2p3dCIsImtpZCI6IkE1YzFzdHNpZnJid3QxRS0zNzcyQ1V0aC14QkxCcmxRSDdCVWlVZU84TDgifQ.eyJqdGkiOiJ1eDlpcEhJVVN3cnFrUEowUzdOT2oiLCJzdWIiOiJxamoyNDZpaGU5enkiLCJpYXQiOjE3ODA4MDIzODUsImV4cCI6MTc4MDgwNTk4NSwic2NvcGUiOiIiLCJjbGllbnRfaWQiOiJiMG84dzE4c3lydjk1Z2QybzNrZWUiLCJpc3MiOiJodHRwczovLzlsY2ludS5sb2d0by5hcHAvb2lkYyIsImF1ZCI6Imh0dHBzOi8vYXBpLm1jYWQubG9jYWwifQ.LknKF-6SKIpw7J2rfYB3YC4bsBo_06nLqLFiufw-BoeF7FR8EpuWHiaNLSpVzXSN59oKMQobX6KJem2gfmddx6-HYVfe7PqfHfPvKqMZHWsaI_pZdtm7PiDoRkpFPRIN';
+const JWT_TOKEN = process.env.JWT_TOKEN;
+if (!JWT_TOKEN) { console.error('[ERRO] JWT_TOKEN env var é obrigatória. Export JWT_TOKEN=<token> antes de rodar.'); process.exit(1); }
 
 const authHeaders = {
   'Content-Type': 'application/json',

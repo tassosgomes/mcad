@@ -211,13 +211,13 @@
 
 ```bash
 # Verificar versões atualmente em produção
-sshpass -p "$LINUX_PASS" ssh root@161.97.71.19 \
+ssh root@161.97.71.19 \
   'for s in mcad-frontend mcad-cadastro-api mcad-identificacao-api mcad-arrecadacao-api mcad-distribuicao-api; do
      printf "%-30s %s\n" "$s" "$(docker service inspect mecad_$s --format "{{.Spec.TaskTemplate.ContainerSpec.Image}}")"
    done'
 
 # Logs limpos do Identificacao (deve estar sem Collection was modified e FormatException)
-sshpass -p "$LINUX_PASS" ssh root@161.97.71.19 \
+ssh root@161.97.71.19 \
   'docker service logs --tail 200 --since 5m mecad_mcad-identificacao-api 2>&1 | grep -iE "exception|error" || echo "sem erros"'
 
 # Verificar runtime-env.js (deve incluir AUDITORIA_API_BASE_URL real)
@@ -230,7 +230,7 @@ curl -H "Authorization: Bearer <token>" https://mcad-arrecadacao.tasso.dev.br/ap
 curl -s https://api-audit.tasso.dev.br/actuator/health
 
 # Conferir audit_outbox da arrecadação (eventos publicados para a fila)
-sshpass -p "$LINUX_PASS" ssh root@161.97.71.19 \
+ssh root@161.97.71.19 \
   "docker exec \$(docker ps -q --filter name=mecad_mcad-postgres | head -1) \
    psql -U gestauto -d mcad -c \"SELECT status, count(*), max(created_at_utc) FROM arrecadacao.audit_outbox GROUP BY status;\""
 ```
