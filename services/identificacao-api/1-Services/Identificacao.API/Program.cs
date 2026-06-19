@@ -102,11 +102,29 @@ builder.Services.AddHostedService<Identificacao.Infra.Events.ArrecadacaoUsuarioM
 // HttpClient para Cadastro
 var cadastroBaseUrl = Environment.GetEnvironmentVariable("CADASTRO_API_BASE_URL")
     ?? "http://localhost:5001/api/v1";
+
+builder.Services.Configure<CadastroOptions>(opts =>
+{
+    opts.LogToIssuer  = Environment.GetEnvironmentVariable("CADASTRO_LOGTO_ISSUER") ?? "https://9lcinu.logto.app/oidc";
+    opts.ClientId     = Environment.GetEnvironmentVariable("CADASTRO_LOGTO_CLIENT_ID") ?? string.Empty;
+    opts.ClientSecret = Environment.GetEnvironmentVariable("CADASTRO_LOGTO_CLIENT_SECRET") ?? string.Empty;
+    opts.Resource     = Environment.GetEnvironmentVariable("CADASTRO_LOGTO_RESOURCE") ?? string.Empty;
+    opts.Scope        = Environment.GetEnvironmentVariable("CADASTRO_LOGTO_SCOPE") ?? string.Empty;
+});
+builder.Services.AddHttpClient<CadastroM2MTokenService>(client =>
+{
+    client.Timeout = TimeSpan.FromSeconds(10);
+});
+builder.Services.AddSingleton<CadastroM2MTokenService>();
+builder.Services.AddTransient<CadastroAuthHandler>();
+
 builder.Services.AddHttpClient<ICadastroHttpClient, CadastroHttpClient>(client =>
 {
     client.BaseAddress = new Uri(cadastroBaseUrl);
     client.Timeout = TimeSpan.FromSeconds(10);
-}).AddTransientHttpErrorPolicy(p => p.RetryAsync(2));
+})
+.AddHttpMessageHandler<CadastroAuthHandler>()
+.AddTransientHttpErrorPolicy(p => p.RetryAsync(2));
 
 // ─── Storage Service (proxy para upload/download com antivirus) ────────
 var storageBaseUrl = Environment.GetEnvironmentVariable("STORAGE_SERVICE_URL") ?? "https://storage.tasso.dev.br/";

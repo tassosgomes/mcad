@@ -62,7 +62,7 @@ export interface ResultadoBusca {
   codigoIdentificador: string | null; // ISWC ou ISRC
   autoresOuInterpretes: string;
   status: string;
-  obraId: string; // no caso de fonograma, o id da obra vinculada
+  obraId: string | null; // null para obras (o id da obra é `id`); id da obra vinculada para fonogramas
 }
 
 export interface BuscaCadastroResponse {
