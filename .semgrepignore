@@ -1,0 +1,24 @@
+# Arquivos e diretórios fora do escopo de análise de produção.
+# Semgrep não analisa código de POC, scripts de seed/utilitário,
+# scripts de QA, evidências e skills de terceiros.
+
+# POC — experimentos, não chegam em produção
+poc/
+
+# Scripts utilitários / seed de dados — não são código de aplicação
+scripts/
+
+# Scripts de preflight e QA do frontend — executados localmente
+frontend/qa-preflight/
+
+# Evidências de QA — artefatos gerados por testes
+docs/architecture/qa-evidence/
+tasks/**/qa-evidence/
+
+# Skills de terceiros instaladas no projeto
+.github/skills/
+.agents/skills/
+.claude/skills/
+
+# Documentação operacional — não é código
+docs/
