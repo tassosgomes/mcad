@@ -1,6 +1,7 @@
 using FluentAssertions;
 using Identificacao.Domain.Entities;
 using Identificacao.Domain.Enums;
+using Identificacao.Domain.Filters;
 using Identificacao.IntegrationTests.Fixtures;
 using Identificacao.Infra.Repositories;
 using Microsoft.EntityFrameworkCore;
@@ -229,16 +230,14 @@ public class CaptacaoRepositoryTests
         await using var ctxRead = _fixture.CreateDbContext();
         var repo = new CaptacaoRepository(ctxRead);
 
-        var filtro = new CaptacaoFiltro
-        {
-            RubricaId = rubricaA.Id,
-            PeriodoInicial = new DateOnly(2026, 1, 1),
-            PeriodoFinal = new DateOnly(2026, 2, 28),
-            AnalistaResponsavelId = analistaAlvo,
-            Sort = "periodo",
-            Page = 1,
-            Size = 10,
-        };
+        var filtro = new ListarCaptacoesFiltro(
+            RubricaId: rubricaA.Id,
+            PeriodoInicio: new DateOnly(2026, 1, 1),
+            PeriodoFim: new DateOnly(2026, 2, 28),
+            AnalistaResponsavelId: analistaAlvo,
+            Sort: "periodo",
+            Page: 1,
+            Size: 10);
 
         var (items, total) = await repo.ListarAsync(filtro, default);
 
@@ -266,7 +265,7 @@ public class CaptacaoRepositoryTests
         await using var ctxRead = _fixture.CreateDbContext();
         var repo = new CaptacaoRepository(ctxRead);
 
-        var filtro = new CaptacaoFiltro { Sort = "rubrica", Page = 1, Size = 10 };
+        var filtro = new ListarCaptacoesFiltro(Sort: "rubrica", Page: 1, Size: 10);
         var (items, _) = await repo.ListarAsync(filtro, default);
 
         items.Select(c => c.Rubrica!.Nome).Should().Equal("Alfa", "Zebra");
@@ -292,7 +291,7 @@ public class CaptacaoRepositoryTests
         var repo = new CaptacaoRepository(ctxRead);
 
         var (items, total) = await repo.ListarAsync(
-            new CaptacaoFiltro { Sort = "periodo", Page = 2, Size = 5 }, default);
+            new ListarCaptacoesFiltro(Sort: "periodo", Page: 2, Size: 5), default);
 
         total.Should().Be(15);
         items.Should().HaveCount(5);
@@ -319,7 +318,7 @@ public class CaptacaoRepositoryTests
         var repo = new CaptacaoRepository(ctxRead);
 
         var (items, total) = await repo.ListarAsync(
-            new CaptacaoFiltro { Status = "Cancelada", Sort = "periodo", Page = 1, Size = 10 }, default);
+            new ListarCaptacoesFiltro(Status: "Cancelada", Sort: "periodo", Page: 1, Size: 10), default);
 
         total.Should().Be(1);
         items.Single().Id.Should().Be(fechadaCancelada.Id);

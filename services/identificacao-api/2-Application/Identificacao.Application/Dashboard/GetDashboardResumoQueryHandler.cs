@@ -1,4 +1,5 @@
 using Identificacao.Application.Common;
+using Identificacao.Domain.Filters;
 using Identificacao.Domain.Interfaces;
 
 namespace Identificacao.Application.Dashboard;
@@ -32,7 +33,7 @@ public class GetDashboardResumoQueryHandler
     {
         // Buscar captações ativas (status = "ATIVA")
         var captacoesResult = await _captacaoRepository.ListarAsync(
-            new { Status = "ATIVA", Page = 1, Size = 1 } as dynamic,
+            new ListarCaptacoesFiltro(Status: "ATIVA", Page: 1, Size: 1),
             cancellationToken);
         var captacoesAtivas = captacoesResult.Total;
 
@@ -52,7 +53,7 @@ public class GetDashboardResumoQueryHandler
         // Calcular taxa de match: para cada captação ativa, somar execuções totais e identificadas
         // Aqui fazemos uma estimativa usando os totais gerais das captações ativas
         var captacoesParaCalculo = await _captacaoRepository.ListarAsync(
-            new { Status = "ATIVA", Page = 1, Size = 100 } as dynamic,
+            new ListarCaptacoesFiltro(Status: "ATIVA", Page: 1, Size: 100),
             cancellationToken);
 
         long totalExecucoes = 0;

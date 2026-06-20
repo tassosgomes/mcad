@@ -211,7 +211,7 @@
           },
           {
             "in": "query",
-            "name": "periodoInicial",
+            "name": "periodoInicio",
             "schema": {
               "format": "date",
               "type": "string"
@@ -219,7 +219,7 @@
           },
           {
             "in": "query",
-            "name": "periodoFinal",
+            "name": "periodoFim",
             "schema": {
               "format": "date",
               "type": "string"

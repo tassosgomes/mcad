@@ -1,6 +1,7 @@
 using Identificacao.Application.Common;
 using Identificacao.Application.Captacoes.Responses;
 using Identificacao.Application.Rubricas.Responses;
+using Identificacao.Domain.Filters;
 using Identificacao.Domain.Interfaces;
 
 using Identificacao.Application.Common.Responses;
@@ -18,7 +19,18 @@ public class ListarCaptacoesQueryHandler : IQueryHandler<ListarCaptacoesQuery, C
 
     public async Task<CaptacaoListResponse> HandleAsync(ListarCaptacoesQuery query, CancellationToken cancellationToken)
     {
-        var result = await _repository.ListarAsync(query, cancellationToken);
+        var filtro = new ListarCaptacoesFiltro(
+            query.RubricaId,
+            query.PeriodoInicio,
+            query.PeriodoFim,
+            query.Status,
+            query.AnalistaResponsavelId,
+            query.UsuarioMusicaId,
+            query.Sort,
+            query.Page,
+            query.Size);
+
+        var result = await _repository.ListarAsync(filtro, cancellationToken);
         var totalPages = (int)Math.Ceiling((double)result.Total / (query.Size ?? 10));
 
         var items = result.Items.Select(c => new CaptacaoResponse(

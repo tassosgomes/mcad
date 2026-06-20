@@ -1,9 +1,6 @@
-using Identificacao.Application.Common;
-using Identificacao.Application.Captacoes.Responses;
+namespace Identificacao.Domain.Filters;
 
-namespace Identificacao.Application.Captacoes.Queries;
-
-public record ListarCaptacoesQuery(
+public record ListarCaptacoesFiltro(
     Guid? RubricaId = null,
     DateOnly? PeriodoInicio = null,
     DateOnly? PeriodoFim = null,
@@ -12,5 +9,4 @@ public record ListarCaptacoesQuery(
     Guid? UsuarioMusicaId = null,
     string? Sort = null,
     int? Page = 1,
-    int? Size = 10
-) : IQuery<CaptacaoListResponse>;
+    int? Size = 10);

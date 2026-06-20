@@ -133,6 +133,38 @@ VALUES ({LogtoUserId1}, 'ana.silva', 'Ana Silva', 'ana@mcad.local', jsonb_build_
             c => c.Id == captacao.Id, "sem filtro, captação deve aparecer");
     }
 
+    [Fact]
+    public async Task ListarCaptacoes_ComPeriodoInicioEFim_FiltraIntervaloInclusivo()
+    {
+        await ResetAsync();
+
+        var rubricaId = Guid.Parse(RubricaRADIO);
+        var analistaId = AnalistaId1;
+
+        await using (var ctx = CreateDbContext())
+        {
+            ctx.Captacoes.AddRange(
+                Captacao.Criar(rubricaId, new DateOnly(2026, 6, 17), Guid.NewGuid(), "Música A", analistaId, "Ana Silva"),
+                Captacao.Criar(rubricaId, new DateOnly(2026, 6, 18), Guid.NewGuid(), "Música B", analistaId, "Ana Silva"),
+                Captacao.Criar(rubricaId, new DateOnly(2026, 6, 19), Guid.NewGuid(), "Música C", analistaId, "Ana Silva"));
+
+            await ctx.SaveChangesAsync();
+        }
+
+        var client = _factory.CreateAuthenticatedClient(roles: ["identificacao.analista"]);
+
+        var response = await client.GetAsync(
+            "/api/v1/captacoes?periodoInicio=2026-06-17&periodoFim=2026-06-18&sort=-periodo&page=1&size=10");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var listResponse = await response.Content.ReadFromJsonAsync<CaptacaoListResponse>();
+        listResponse.Should().NotBeNull();
+        listResponse!.Data.Should().HaveCount(2);
+        listResponse.Data.Select(c => c.Periodo).Should().Equal("2026-06-18", "2026-06-17");
+        listResponse.Data.Should().NotContain(c => c.Periodo == "2026-06-19");
+    }
+
     // ── 7.5: Backfill (F3) ─────────────────────────────────────────────────
 
     [Fact]

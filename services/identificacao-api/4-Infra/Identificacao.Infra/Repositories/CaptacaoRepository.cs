@@ -1,5 +1,6 @@
 using Identificacao.Domain.Entities;
 using Identificacao.Domain.Enums;
+using Identificacao.Domain.Filters;
 using Identificacao.Domain.Interfaces;
 using Identificacao.Infra.Data;
 using Microsoft.EntityFrameworkCore;
@@ -22,32 +23,28 @@ public class CaptacaoRepository : ICaptacaoRepository
             .FirstOrDefaultAsync(c => c.Id == id, ct);
     }
 
-    public async Task<(IEnumerable<Captacao> Items, int Total)> ListarAsync(dynamic filtro, CancellationToken ct)
+    public async Task<(IEnumerable<Captacao> Items, int Total)> ListarAsync(ListarCaptacoesFiltro filtro, CancellationToken ct)
     {
         var query = _context.Captacoes.AsNoTracking().Include(c => c.Rubrica).AsQueryable();
 
         if (filtro.RubricaId != null)
         {
-            var rubricaId = (Guid)filtro.RubricaId;
-            query = query.Where(c => c.RubricaId == rubricaId);
+            query = query.Where(c => c.RubricaId == filtro.RubricaId.Value);
         }
 
-        if (filtro.PeriodoInicial != null)
+        if (filtro.PeriodoInicio != null)
         {
-            var pIni = (DateOnly)filtro.PeriodoInicial;
-            query = query.Where(c => c.Periodo >= pIni);
+            query = query.Where(c => c.Periodo >= filtro.PeriodoInicio.Value);
         }
 
-        if (filtro.PeriodoFinal != null)
+        if (filtro.PeriodoFim != null)
         {
-            var pFim = (DateOnly)filtro.PeriodoFinal;
-            query = query.Where(c => c.Periodo <= pFim);
+            query = query.Where(c => c.Periodo <= filtro.PeriodoFim.Value);
         }
 
         if (filtro.Status != null)
         {
-            var statusStr = (string)filtro.Status;
-            if (Enum.TryParse<StatusCaptacao>(statusStr, true, out var status))
+            if (Enum.TryParse<StatusCaptacao>(filtro.Status, true, out var status))
             {
                 query = query.Where(c => c.Status == status);
             }
@@ -55,17 +52,15 @@ public class CaptacaoRepository : ICaptacaoRepository
 
         if (filtro.AnalistaResponsavelId != null)
         {
-            var analistaId = (Guid)filtro.AnalistaResponsavelId;
-            query = query.Where(c => c.AnalistaResponsavelId == analistaId);
+            query = query.Where(c => c.AnalistaResponsavelId == filtro.AnalistaResponsavelId.Value);
         }
 
         if (filtro.UsuarioMusicaId != null)
         {
-            var usuarioMusicaId = (Guid)filtro.UsuarioMusicaId;
-            query = query.Where(c => c.UsuarioMusicaId == usuarioMusicaId);
+            query = query.Where(c => c.UsuarioMusicaId == filtro.UsuarioMusicaId.Value);
         }
 
-        var sort = ((string)filtro.Sort) ?? "-periodo";
+        var sort = filtro.Sort ?? "-periodo";
 
         query = sort switch
         {

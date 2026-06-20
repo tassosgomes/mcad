@@ -19,8 +19,8 @@ public static class CaptacaoEndpoints
 
         group.MapGet("/", async (
             [FromQuery] Guid? rubricaId,
-            [FromQuery] DateOnly? periodoInicial,
-            [FromQuery] DateOnly? periodoFinal,
+            [FromQuery] DateOnly? periodoInicio,
+            [FromQuery] DateOnly? periodoFim,
             [FromQuery] string? status,
             [FromQuery] Guid? analistaResponsavelId,
             [FromQuery] Guid? usuarioMusicaId,
@@ -31,7 +31,7 @@ public static class CaptacaoEndpoints
             CancellationToken ct) =>
         {
             var query = new ListarCaptacoesQuery(
-                rubricaId, periodoInicial, periodoFinal, status, analistaResponsavelId, usuarioMusicaId, sort, page ?? 1, size ?? 10);
+                rubricaId, periodoInicio, periodoFim, status, analistaResponsavelId, usuarioMusicaId, sort, page ?? 1, size ?? 10);
 
             var result = await dispatcher.QueryAsync(query, ct);
             return Results.Ok(result);
