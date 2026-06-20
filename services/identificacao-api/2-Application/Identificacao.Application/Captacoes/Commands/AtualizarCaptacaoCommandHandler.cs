@@ -43,7 +43,9 @@ public class AtualizarCaptacaoCommandHandler : ICommandHandler<AtualizarCaptacao
         }
 
         if (await _captacaoRepo.ExisteAtivaParaRubricaPeriodoAsync(cmd.RubricaId, cmd.Periodo, captacao.Id, ct))
-            throw new ConflictException($"Já existe uma captação ativa para {rubrica.Nome} em {cmd.Periodo}");
+            throw new ConflictException(
+                $"Já existe uma captação ativa para {rubrica.Nome} em {cmd.Periodo}",
+                "CAPTACAO_DUPLICADA");
 
         var before = IdentificacaoAuditMappers.Map(captacao);
         captacao.Atualizar(cmd.RubricaId, cmd.Periodo, cmd.UsuarioMusicaId, cmd.UsuarioMusicaNome);

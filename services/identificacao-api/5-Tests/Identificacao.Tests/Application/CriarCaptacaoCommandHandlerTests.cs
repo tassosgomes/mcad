@@ -58,7 +58,8 @@ public class CriarCaptacaoCommandHandlerTests
 
         var act = () => _handler.HandleAsync(cmd, CancellationToken.None);
 
-        await act.Should().ThrowAsync<ConflictException>();
+        var exception = await act.Should().ThrowAsync<ConflictException>();
+        exception.Which.ErrorCode.Should().Be("CAPTACAO_DUPLICADA");
     }
 
     [Fact]

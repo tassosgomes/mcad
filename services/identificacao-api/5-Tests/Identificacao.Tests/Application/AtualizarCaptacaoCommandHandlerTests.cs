@@ -150,6 +150,8 @@ public class AtualizarCaptacaoCommandHandlerTests
 
         var act = () => _handler.HandleAsync(cmd, CancellationToken.None);
 
-        await act.Should().ThrowAsync<ConflictException>().WithMessage("*Já existe uma captação ativa*");
+        var exception = await act.Should().ThrowAsync<ConflictException>()
+            .WithMessage("*Já existe uma captação ativa*");
+        exception.Which.ErrorCode.Should().Be("CAPTACAO_DUPLICADA");
     }
 }

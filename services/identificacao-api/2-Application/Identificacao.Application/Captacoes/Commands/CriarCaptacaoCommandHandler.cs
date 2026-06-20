@@ -34,7 +34,9 @@ public class CriarCaptacaoCommandHandler : ICommandHandler<CriarCaptacaoCommand,
             ?? throw new NotFoundException("Rubrica não encontrada.");
 
         if (await _captacaoRepo.ExisteAtivaParaRubricaPeriodoAsync(cmd.RubricaId, cmd.Periodo, null, ct))
-            throw new ConflictException($"Já existe uma captação ativa para {rubrica.Nome} em {cmd.Periodo}");
+            throw new ConflictException(
+                $"Já existe uma captação ativa para {rubrica.Nome} em {cmd.Periodo}",
+                "CAPTACAO_DUPLICADA");
 
         var usuario = await _usuarioRepo.BuscarPorSubjectAsync(cmd.AnalistaSubject, ct);
         var nome = usuario?.NomeExibicao ?? cmd.AnalistaNomeClaim ?? "Desconhecido";
