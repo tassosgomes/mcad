@@ -1,9 +1,9 @@
 # API Contract — F01: Gestão de Captações
 
 > **Gerado a partir de:** `tasks/prd-gestao-captacoes/prd.md`
-> **Data:** 2026-04-02
+> **Data:** 2026-06-20
 > **Status:** Rascunho
-> **Versão do contrato:** 1.0.0
+> **Versão do contrato:** 1.0.1
 
 ---
 
@@ -20,6 +20,7 @@
 | Sorting | Prefixo `-` para DESC | Consistência com API do Cadastro |
 | Verbo de atualização | PUT (atualização completa) | Mesmo padrão do Cadastro |
 | Roles Keycloak | `analista-identificacao` (write), `consultor-identificacao` (read) | Separação por domínio |
+| Usuário de música | `usuarioMusicaId` + `usuarioMusicaNome` | Referência ao usuário de música da Arrecadação com snapshot do nome |
 
 ---
 
@@ -130,7 +131,8 @@
         "exigeClassificacao": true
       },
       "periodo": "2026-01-15",
-      "usuarioDeMusica": "TV Globo - Rede Nacional",
+      "usuarioMusicaId": "d4e5f6a7-1111-2222-3333-444444444444",
+      "usuarioMusicaNome": "TV Globo - Rede Nacional",
       "status": "ABERTA",
       "analistaResponsavel": {
         "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
@@ -162,9 +164,12 @@
 {
   "rubricaId": "b1a2c3d4-0001-0000-0000-000000000002",
   "periodo": "2026-01-15",
-  "usuarioDeMusica": "TV Globo - Rede Nacional"
+  "usuarioMusicaId": "d4e5f6a7-1111-2222-3333-444444444444",
+  "usuarioMusicaNome": "TV Globo - Rede Nacional"
 }
 ```
+
+> Payloads legados com `usuarioDeMusica` texto livre não são mais aceitos. A API deve responder `400 Bad Request` quando `usuarioMusicaId` ou `usuarioMusicaNome` estiverem ausentes.
 
 #### Response 201
 
@@ -178,7 +183,8 @@
     "exigeClassificacao": true
   },
   "periodo": "2026-01-15",
-  "usuarioDeMusica": "TV Globo - Rede Nacional",
+  "usuarioMusicaId": "d4e5f6a7-1111-2222-3333-444444444444",
+  "usuarioMusicaNome": "TV Globo - Rede Nacional",
   "status": "ABERTA",
   "analistaResponsavel": {
     "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
@@ -222,7 +228,8 @@
     "exigeClassificacao": true
   },
   "periodo": "2026-01-15",
-  "usuarioDeMusica": "TV Globo - Rede Nacional",
+  "usuarioMusicaId": "d4e5f6a7-1111-2222-3333-444444444444",
+  "usuarioMusicaNome": "TV Globo - Rede Nacional",
   "status": "ABERTA",
   "analistaResponsavel": {
     "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
@@ -253,7 +260,8 @@
 {
   "rubricaId": "b1a2c3d4-0001-0000-0000-000000000002",
   "periodo": "2026-01-16",
-  "usuarioDeMusica": "TV Globo - Filial SP"
+  "usuarioMusicaId": "d4e5f6a7-1111-2222-3333-444444444444",
+  "usuarioMusicaNome": "TV Globo - Filial SP"
 }
 ```
 
@@ -309,7 +317,8 @@ Mesmo schema de `POST` (retorna a captação atualizada).
 | `id` | UUID | Sim | Nao | Identificador único |
 | `rubrica` | Rubrica | Sim | Nao | Rubrica associada (objeto expandido) |
 | `periodo` | date | Sim | Nao | Data da captação (`YYYY-MM-DD`) |
-| `usuarioDeMusica` | string | Sim | Nao | Fonte das execuções (texto livre, máx 255 chars) |
+| `usuarioMusicaId` | UUID | Sim | Nao | Identificador do usuário de música na Arrecadação |
+| `usuarioMusicaNome` | string | Sim | Nao | Snapshot do nome/razão social do usuário de música (máx 200 chars) |
 | `status` | enum | Sim | Nao | `ABERTA`, `FECHADA`, `CANCELADA` |
 | `analistaResponsavel` | AnalistaResumo | Sim | Nao | Analista dono da captação |
 | `criadoEm` | datetime | Sim | Nao | Data de criação (ISO 8601) |
