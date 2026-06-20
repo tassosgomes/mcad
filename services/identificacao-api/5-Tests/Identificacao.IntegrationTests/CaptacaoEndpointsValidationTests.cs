@@ -30,7 +30,26 @@ public class CaptacaoEndpointsValidationTests : IClassFixture<IdentificacaoApiFa
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
         problem.Should().NotBeNull();
+        problem!.Code.Should().Be("VALIDATION_ERROR");
         problem!.Errors.Should().ContainKey("UsuarioMusicaId");
+        problem.Errors.Should().ContainKey("UsuarioMusicaNome");
+    }
+
+    [Fact]
+    public async Task PostCaptacoes_ComBodyVazio_RetornaBadRequestComErrosDeValidacao()
+    {
+        var client = _factory.CreateAuthenticatedClient(roles: ["identificacao.analista"]);
+        var payload = new { };
+
+        var response = await client.PostAsJsonAsync("/api/v1/captacoes", payload);
+        var problem = await response.Content.ReadFromJsonAsync<ValidationProblemResponse>();
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        problem.Should().NotBeNull();
+        problem!.Code.Should().Be("VALIDATION_ERROR");
+        problem.Errors.Should().ContainKey("RubricaId");
+        problem.Errors.Should().ContainKey("Periodo");
+        problem.Errors.Should().ContainKey("UsuarioMusicaId");
         problem.Errors.Should().ContainKey("UsuarioMusicaNome");
     }
 
@@ -38,5 +57,6 @@ public class CaptacaoEndpointsValidationTests : IClassFixture<IdentificacaoApiFa
         string Title,
         int Status,
         string Detail,
+        string Code,
         Dictionary<string, string[]> Errors);
 }

@@ -75,6 +75,7 @@ public class GlobalExceptionHandler : IExceptionHandler
                 problemDetails.Status = StatusCodes.Status400BadRequest;
                 problemDetails.Title = "Bad Request";
                 problemDetails.Detail = "One or more validation errors occurred.";
+                problemDetails.Extensions["code"] = "VALIDATION_ERROR";
                 problemDetails.Extensions["errors"] = validationEx.Errors
                     .GroupBy(e => e.PropertyName, e => e.ErrorMessage)
                     .ToDictionary(g => g.Key, g => g.ToArray());
