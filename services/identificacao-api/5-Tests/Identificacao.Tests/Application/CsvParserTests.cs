@@ -90,6 +90,22 @@ public class CsvParserTests
     }
 
     [Fact]
+    public void Parse_NaoAudiovisualSemTipoUtilizacao_AceitaLinha()
+    {
+        // RF-09 #2: rubrica não-audiovisual (Rádio) aceita tipo_utilizacao/titulo_programa vazios
+        var parser = CreateParser();
+        var csv = "isrc;iswc;inicio;fim;tipo_utilizacao;titulo_programa\n" +
+                  "BRUM71500001;;08:15:00;08:18:30;;";
+
+        using var reader = CreateReader(csv);
+        var result = parser.Parse(reader, false); // false = não exige classificação
+
+        result.IsErroGlobal.Should().BeFalse();
+        result.Erros.Should().BeEmpty();
+        result.LinhasAgrupadas.Should().ContainSingle();
+    }
+
+    [Fact]
     public void Parse_TipoUtilizacaoDesconhecido_ErroPorLinha()
     {
         var parser = CreateParser();

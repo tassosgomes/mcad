@@ -70,8 +70,8 @@ public class CsvProcessorWorker : BackgroundService
                 return;
             }
 
-            // ExigeClassificacao => Rubrica = TV Aberta
-            bool exigeClassificacao = captacao.Rubrica?.Nome?.Contains("TV Aberta", StringComparison.OrdinalIgnoreCase) ?? false;
+            // ExigeClassificacao => rubrica audiovisual (TV Aberta, TV Fechada, Cinema, VOD — RN-12)
+            bool exigeClassificacao = captacao.Rubrica?.ExigeClassificacao ?? false;
 
             // Verificar status do scan antes de baixar
             StorageFileResult metadata;
