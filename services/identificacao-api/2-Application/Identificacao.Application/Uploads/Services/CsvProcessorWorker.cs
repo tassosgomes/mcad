@@ -140,13 +140,16 @@ public class CsvProcessorWorker : BackgroundService
             {
                 var query = !string.IsNullOrEmpty(linha.Isrc) ? linha.Isrc : linha.Iswc;
                 var tp = !string.IsNullOrEmpty(linha.Isrc) ? "fonograma" : "obra";
-                var buscaResp = await cadastroClient.BuscarAsync(query!, tp, 1, ct);
 
-                var resultadoCadastro = buscaResp.Resultados.FirstOrDefault();
-                if (resultadoCadastro == null)
+                ResultadoBuscaDto? resultadoCadastro = null;
+                try
                 {
-                    listErrosUpload.Add(ErroUpload.Criar(upload.Id, 0, tp == "fonograma" ? "isrc" : "iswc", $"Identificador não encontrado no Cadastro: {query}"));
-                    continue;
+                    var buscaResp = await cadastroClient.BuscarAsync(query!, tp, 1, ct);
+                    resultadoCadastro = buscaResp.Resultados.FirstOrDefault();
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Falha ao consultar o Cadastro para {Tipo} {Query}; execução sera criada como PENDENTE (RF-06)", tp, query);
                 }
 
                 Guid? tipoId = null;
@@ -154,6 +157,34 @@ public class CsvProcessorWorker : BackgroundService
                 {
                     var tipoMatch = tipos.FirstOrDefault(t => t.Sigla.Equals(linha.TipoUtilizacao, StringComparison.OrdinalIgnoreCase));
                     tipoId = tipoMatch?.Id;
+                }
+
+                if (resultadoCadastro == null)
+                {
+                    var execPendente = Execucao.Criar(
+                        captacaoId: upload.CaptacaoId,
+                        obraId: Guid.Empty,
+                        fonogramaId: null,
+                        obraTitulo: query!,
+                        fonogramaIsrc: tp == "fonograma" ? query : null,
+                        obraIswc: tp == "obra" ? query : null,
+                        interpretes: "",
+                        inicio: linha.Inicio,
+                        fim: linha.Fim,
+                        quantidade: linha.Quantidade,
+                        tipoUtilizacaoId: tipoId,
+                        tituloPrograma: linha.TituloPrograma,
+                        status: StatusExecucao.Pendente
+                    );
+
+                    await execRepo.AddAsync(execPendente, ct);
+                    execucoesAdicionadas++;
+
+                    if (execucoesAdicionadas % 100 == 0)
+                    {
+                        await execRepo.SaveChangesAsync(ct);
+                    }
+                    continue;
                 }
 
                 var exec = Execucao.Criar(
