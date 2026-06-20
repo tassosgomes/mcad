@@ -1,11 +1,13 @@
 package br.com.ecad.arrecadacao.api.config;
 
+import br.org.ecad.authz.sdk.error.AuthzExceptionHandler;
 import br.org.ecad.authz.sdk.error.AuthzServiceUnavailableException;
 import br.org.ecad.authz.sdk.error.InvalidTokenException;
 import br.org.ecad.authz.sdk.error.MissingPermissionException;
 import br.org.ecad.authz.sdk.error.SessionRevokedException;
 import br.com.ecad.arrecadacao.application.exceptions.StorageFilePendingScanException;
 import br.com.ecad.arrecadacao.application.exceptions.StorageServiceException;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
@@ -17,20 +19,23 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 @SuppressWarnings("null")
 public class GlobalExceptionHandler {
 
+    // O corpo dos erros de autorização (code/correlationId/requiredPermission) é construído
+    // centralmente pelo AuthzExceptionHandler do authz-spring-boot-starter. Os handlers abaixo
+    // apenas delegam para ele — necessário porque a ordem entre os @RestControllerAdvice do
+    // serviço e do SDK é indeterminada e o catch-all Exception.class deste advice venceria,
+    // deixando a exceção sem tratamento. ObjectProvider torna a injeção opcional: quando
+    // ecad.authz.enabled=false o bean não existe, mas o aspect também não lança as exceções.
+    private final ObjectProvider<AuthzExceptionHandler> authzExceptionHandler;
+
+    GlobalExceptionHandler(ObjectProvider<AuthzExceptionHandler> authzExceptionHandler) {
+        this.authzExceptionHandler = authzExceptionHandler;
+    }
+
     @ExceptionHandler(Exception.class)
     ProblemDetail handleUnexpectedException(Exception exception) {
         // Let Spring Security handle its own exceptions (AccessDeniedException, etc.)
         if (exception instanceof org.springframework.security.access.AccessDeniedException accessDenied) {
             throw accessDenied;
-        }
-        // Repassa exceções do `authz-spring-boot-starter` para o AuthzExceptionHandler do SDK.
-        // Necessário porque ambos advices podem reivindicar Exception.class via inheritance e
-        // a ordem entre eles é indeterminada — repassar explicitamente garante 401/403/503.
-        if (exception instanceof InvalidTokenException
-                || exception instanceof MissingPermissionException
-                || exception instanceof SessionRevokedException
-                || exception instanceof AuthzServiceUnavailableException) {
-            throw (RuntimeException) exception;
         }
         ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(
             HttpStatus.INTERNAL_SERVER_ERROR,
@@ -42,30 +47,22 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(InvalidTokenException.class)
     ResponseEntity<ProblemDetail> handleAuthzInvalidToken(InvalidTokenException ex) {
-        ProblemDetail pd = ProblemDetail.forStatusAndDetail(HttpStatus.UNAUTHORIZED, ex.getMessage());
-        pd.setTitle("Unauthorized");
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(pd);
+        return authzExceptionHandler.getObject().onInvalidToken(ex);
     }
 
     @ExceptionHandler(MissingPermissionException.class)
     ResponseEntity<ProblemDetail> handleAuthzMissingPermission(MissingPermissionException ex) {
-        ProblemDetail pd = ProblemDetail.forStatusAndDetail(HttpStatus.FORBIDDEN, ex.getMessage());
-        pd.setTitle("Forbidden");
-        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(pd);
+        return authzExceptionHandler.getObject().onMissingPermission(ex);
     }
 
     @ExceptionHandler(SessionRevokedException.class)
     ResponseEntity<ProblemDetail> handleAuthzSessionRevoked(SessionRevokedException ex) {
-        ProblemDetail pd = ProblemDetail.forStatusAndDetail(HttpStatus.UNAUTHORIZED, ex.getMessage());
-        pd.setTitle("Session Revoked");
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(pd);
+        return authzExceptionHandler.getObject().onSessionRevoked(ex);
     }
 
     @ExceptionHandler(AuthzServiceUnavailableException.class)
     ResponseEntity<ProblemDetail> handleAuthzServiceUnavailable(AuthzServiceUnavailableException ex) {
-        ProblemDetail pd = ProblemDetail.forStatusAndDetail(HttpStatus.SERVICE_UNAVAILABLE, ex.getMessage());
-        pd.setTitle("AuthZ Service Unavailable");
-        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(pd);
+        return authzExceptionHandler.getObject().onServiceUnavailable(ex);
     }
 
     @ExceptionHandler(org.springframework.security.access.AccessDeniedException.class)
