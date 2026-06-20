@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http.Json;
 using System.Reflection;
+using System.Text.Json;
 using AwesomeAssertions;
 using Ecad.Authz.Sdk;
 using Identificacao.API.Authorization;
@@ -116,6 +117,14 @@ public class AuthEndpointsTests : IClassFixture<IdentificacaoApiFactory>
         var response = await client.PostAsJsonAsync("/api/v1/captacoes", payload);
 
         response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+
+        // O corpo do 403 deve revelar a permissão faltante (ProblemDetails RFC 9457 do SDK).
+        using var problem = await response.Content.ReadFromJsonAsync<JsonDocument>();
+        problem.Should().NotBeNull();
+        var root = problem!.RootElement;
+        root.GetProperty("code").GetString().Should().Be("AUTHZ_MISSING_PERMISSION");
+        root.GetProperty("requiredPermission").GetString()
+            .Should().Be("identificacao:default:captacao:criar");
     }
 
     [Fact]

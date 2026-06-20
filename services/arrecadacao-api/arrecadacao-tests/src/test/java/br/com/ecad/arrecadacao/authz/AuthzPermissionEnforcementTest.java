@@ -145,7 +145,15 @@ class AuthzPermissionEnforcementTest {
                                                         j ->
                                                                 j.subject("user-sem-permissao")
                                                                         .claim("sid", "sess-1"))))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isForbidden())
+                .andExpect(
+                        org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath(
+                                        "$.code")
+                                .value("AUTHZ_MISSING_PERMISSION"))
+                .andExpect(
+                        org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath(
+                                        "$.requiredPermission")
+                                .value("arrecadacao:default:cobranca:listar"));
     }
 
     @Test
