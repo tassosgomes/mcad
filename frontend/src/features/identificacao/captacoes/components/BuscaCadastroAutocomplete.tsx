@@ -43,8 +43,10 @@ export function BuscaCadastroAutocomplete({
   }, [termo]);
 
   const handleSelect = (item: ResultadoBusca) => {
+    const obraId = item.tipo === 'fonograma' ? item.obraId : item.id;
+    if (!obraId) return;
     onChange({
-      obraId: item.tipo === 'fonograma' ? item.obraId : item.id,
+      obraId,
       fonogramaId: item.tipo === 'fonograma' ? item.id : null,
       titulo: item.titulo,
     });
