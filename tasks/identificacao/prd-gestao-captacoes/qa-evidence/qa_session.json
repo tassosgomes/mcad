@@ -1,0 +1,123 @@
+{
+  "session": {
+    "created_at": "2026-06-20T00:40:18Z",
+    "prd_path": "tasks/identificacao/prd-gestao-captacoes/prd.md",
+    "techspec_path": "tasks/identificacao/prd-gestao-captacoes/techspec.md",
+    "techspec_frontend_path": "tasks/identificacao/prd-gestao-captacoes/techspec-frontend.md",
+    "api_contract_path": "tasks/identificacao/prd-gestao-captacoes/api-contract.md",
+    "orchestrator_version": "1.0"
+  },
+  "scope": {
+    "user_stories_in_scope": [
+      { "task_id": "qa_task_01", "slug": "criar_captacao", "rf": "RF-01", "description": "Criar Captação (status ABERTA, unicidade RN-01, validação campos)" },
+      { "task_id": "qa_task_02", "slug": "listar_captacoes", "rf": "RF-02", "description": "Listar Captações (filtros rubrica/período/status/responsável, paginação, sort)" },
+      { "task_id": "qa_task_03", "slug": "visualizar_detalhe_captacao", "rf": "RF-03", "description": "Visualizar Detalhes (resumoExecucoes, exigeClassificacao, 404)" },
+      { "task_id": "qa_task_04", "slug": "editar_captacao_aberta", "rf": "RF-04", "description": "Editar Captação ABERTA (RN-08 propriedade, RN-01, rubrica bloqueada, status)" },
+      { "task_id": "qa_task_05", "slug": "excluir_captacao_aberta", "rf": "RF-05", "description": "Excluir Captação ABERTA (RN-08 propriedade, confirmação, FECHADA bloqueada)" }
+    ],
+    "excluded": [
+      { "id": "F02", "reason": "Registro manual de execuções — fora do escopo do PRD F01" },
+      { "id": "F03", "reason": "Registro de execuções via CSV — fora do escopo do PRD F01" },
+      { "id": "F04", "reason": "Identificação de execuções — fora do escopo do PRD F01" },
+      { "id": "F05", "reason": "Fechamento do Rol — fora do escopo do PRD F01" },
+      { "id": "F06", "reason": "Cancelamento e recriação — fora do escopo do PRD F01" }
+    ]
+  },
+  "environment": {
+    "frontend_base_url": "https://mcad.tasso.dev.br",
+    "api_base_url": "https://mcad-identificacao.tasso.dev.br/api/v1",
+    "auth": {
+      "enabled": true,
+      "type": "oidc",
+      "authority": "https://9lcinu.logto.app/oidc",
+      "token_acquisition": "extract-from-browser-session",
+      "notes": "Token JWT extraído da sessão autenticada do navegador (Playwright) após login via UI e reutilizado nas chamadas cURL da API",
+      "credentials_env": {
+        "user_a_username": "QA_USER_A_USERNAME",
+        "user_a_password": "QA_USER_A_PASSWORD",
+        "user_b_username": "QA_USER_B_USERNAME",
+        "user_b_password": "QA_USER_B_PASSWORD"
+      },
+      "users": {
+        "user_a": {
+          "username": "analista_identificacao",
+          "profile_hint": "Analista de Identificação (write)",
+          "purpose": "Criador/owner — testa criação, edição e exclusão como dono"
+        },
+        "user_b": {
+          "username": "ilee",
+          "profile_hint": "A determinar em runtime (analista ou consultor)",
+          "purpose": "Segundo usuário — testa RN-08 propriedade (não-dono) e, se consultor, regra view-only"
+        }
+      }
+    }
+  },
+  "database": {
+    "enabled": false,
+    "reason": "Persistência validada via API (GET após POST/PUT/DELETE), conforme decisão do solicitante"
+  },
+  "report": {
+    "formats": ["markdown"],
+    "output_dir": "tasks/identificacao/prd-gestao-captacoes/qa-evidence"
+  },
+  "execution": {
+    "tasks": [
+      {
+        "id": "qa_task_01",
+        "slug": "criar_captacao",
+        "rf": "RF-01",
+        "description": "Criar Captação",
+        "type": ["ui", "api"],
+        "depends_on": [],
+        "can_run_parallel_with": [],
+        "users": ["user_a"]
+      },
+      {
+        "id": "qa_task_02",
+        "slug": "listar_captacoes",
+        "rf": "RF-02",
+        "description": "Listar Captações",
+        "type": ["ui", "api"],
+        "depends_on": ["qa_task_01"],
+        "can_run_parallel_with": ["qa_task_03"],
+        "users": ["user_a"]
+      },
+      {
+        "id": "qa_task_03",
+        "slug": "visualizar_detalhe_captacao",
+        "rf": "RF-03",
+        "description": "Visualizar Detalhes de Captação",
+        "type": ["ui", "api"],
+        "depends_on": ["qa_task_01"],
+        "can_run_parallel_with": ["qa_task_02"],
+        "users": ["user_a"]
+      },
+      {
+        "id": "qa_task_04",
+        "slug": "editar_captacao_aberta",
+        "rf": "RF-04",
+        "description": "Editar Captação ABERTA",
+        "type": ["ui", "api"],
+        "depends_on": ["qa_task_01"],
+        "can_run_parallel_with": ["qa_task_05"],
+        "users": ["user_a", "user_b"]
+      },
+      {
+        "id": "qa_task_05",
+        "slug": "excluir_captacao_aberta",
+        "rf": "RF-05",
+        "description": "Excluir Captação ABERTA",
+        "type": ["ui", "api"],
+        "depends_on": ["qa_task_01"],
+        "can_run_parallel_with": ["qa_task_04"],
+        "users": ["user_a", "user_b"]
+      }
+    ],
+    "phases": [
+      { "phase": 1, "mode": "sequential", "tasks": ["qa_task_01"] },
+      { "phase": 2, "mode": "parallel", "tasks": ["qa_task_02", "qa_task_03"] },
+      { "phase": 3, "mode": "parallel", "tasks": ["qa_task_04", "qa_task_05"] }
+    ],
+    "test_data_strategy": "Cada task cria seu próprio dado de teste (captação) no início, executa os casos e remove o dado criado ao final (cleanup) para não poluir o ambiente deployado"
+  }
+}
