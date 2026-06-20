@@ -92,12 +92,12 @@ public class CsvParser
         if (exigeClassificacao)
         {
             if (string.IsNullOrEmpty(tipoUtil))
-                erros.Add(new ErroUploadDto(numLinha, "tipo_utilizacao", "Obrigatório para a rubrica TV Aberta"));
+                erros.Add(new ErroUploadDto(numLinha, "tipo_utilizacao", "Obrigatório para rubricas audiovisuais (TA, TE, PE, BK)"));
             else if (!TiposValidos.Contains(tipoUtil))
                 erros.Add(new ErroUploadDto(numLinha, "tipo_utilizacao", $"Valor inválido '{tipoUtil}'. Valores aceitos: TA, TE, PE, BK"));
 
             if (string.IsNullOrEmpty(titulo))
-                erros.Add(new ErroUploadDto(numLinha, "titulo_programa", "Obrigatório para a rubrica TV Aberta"));
+                erros.Add(new ErroUploadDto(numLinha, "titulo_programa", "Obrigatório para rubricas audiovisuais"));
         }
 
         return erros;
