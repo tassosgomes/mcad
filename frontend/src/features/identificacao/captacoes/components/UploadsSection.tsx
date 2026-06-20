@@ -29,8 +29,8 @@ export function UploadsSection({ captacaoId, captacaoAberta, isOwner, canUpload 
 
   // Auto clear uploadAtivoId if the newest fetches show it's done or if it's no longer Processando
   useEffect(() => {
-    if (uploadAtivoId && uploadsList?.items) {
-      const activeUpload = uploadsList.items.find(u => u.id === uploadAtivoId);
+    if (uploadAtivoId && uploadsList?.data) {
+      const activeUpload = uploadsList.data.find(u => u.id === uploadAtivoId);
       if (activeUpload && activeUpload.status !== 'Processando') {
         setUploadAtivoId(null);
       }
@@ -39,8 +39,8 @@ export function UploadsSection({ captacaoId, captacaoAberta, isOwner, canUpload 
 
   // Se tem algum upload na base que está PROCESSANDO (caso a pessoa de f5)
   useEffect(() => {
-    if (!uploadAtivoId && uploadsList?.items) {
-      const processing = uploadsList.items.find(u => u.status === 'Processando');
+    if (!uploadAtivoId && uploadsList?.data) {
+      const processing = uploadsList.data.find(u => u.status === 'Processando');
       if (processing) {
         setUploadAtivoId(processing.id);
       }
@@ -90,18 +90,18 @@ export function UploadsSection({ captacaoId, captacaoAberta, isOwner, canUpload 
       {!isLoading && !isError && uploadsList && (
         <>
           <UploadsTable 
-            uploads={uploadsList.items} 
+            uploads={uploadsList.data} 
             onExpandErrors={handleExpandErrors}
             errosExpandidoId={uploadErrosAberto?.id ?? null}
           />
-          {uploadsList.total > size && (
+          {uploadsList.pagination.total > size && (
             <div className={styles.pagination}>
               <Pagination
                 pagination={{
                   page,
                   size,
-                  total: uploadsList.total,
-                  totalPages: Math.ceil(uploadsList.total / size) 
+                  total: uploadsList.pagination.total,
+                  totalPages: Math.ceil(uploadsList.pagination.total / size) 
                 }}
                 onPageChange={setPage}
               />

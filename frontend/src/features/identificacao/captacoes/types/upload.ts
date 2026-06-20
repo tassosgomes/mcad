@@ -1,3 +1,5 @@
+import type { PaginationData } from '@/shared/components/ui/pagination/Pagination';
+
 export type StatusUpload = 'Processando' | 'Concluido' | 'ConcluidoComErros' | 'Erro';
 
 export interface Upload {
@@ -14,18 +16,17 @@ export interface Upload {
 }
 
 export interface ErroUpload {
-  id: string;
-  linha: number | null;
+  linha: number;
   coluna: string;
   mensagem: string;
 }
 
 export interface UploadListResponse {
-  items: Upload[];
-  total: number;
+  data: Upload[];
+  pagination: PaginationData;
 }
 
 export interface ErroUploadListResponse {
-  items: ErroUpload[];
-  total: number;
+  data: ErroUpload[];
+  pagination: PaginationData;
 }

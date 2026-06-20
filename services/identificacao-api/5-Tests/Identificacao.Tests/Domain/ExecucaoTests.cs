@@ -176,4 +176,68 @@ public class ExecucaoTests
 
         act.Should().Throw<ArgumentNullException>().And.ParamName.Should().Be("obraTitulo");
     }
+
+    // ───────────── RF-06: ISRC/ISWC nao encontrado no Cadastro -> PENDENTE ─────────────
+
+    [Fact]
+    public void Criar_IdentificadorDesconhecido_RetornaExecucaoPendenteComPlaceholder()
+    {
+        // Arrange — mesmo caminho usado pelo CsvProcessorWorker quando o Cadastro
+        // nao encontra o ISRC/ISWC (ou esta indisponivel).
+        var captacaoId = Guid.NewGuid();
+        const string isrcDesconhecido = "BRXYZ0000000";
+
+        // Act
+        var execucao = Execucao.Criar(
+            captacaoId: captacaoId,
+            obraId: Guid.Empty,
+            fonogramaId: null,
+            obraTitulo: isrcDesconhecido,
+            fonogramaIsrc: isrcDesconhecido,
+            obraIswc: null,
+            interpretes: "",
+            inicio: new TimeOnly(14, 30, 0),
+            fim: new TimeOnly(14, 33, 45),
+            quantidade: 1,
+            tipoUtilizacaoId: null,
+            tituloPrograma: null,
+            status: StatusExecucao.Pendente);
+
+        // Assert
+        execucao.Status.Should().Be(StatusExecucao.Pendente);
+        execucao.ObraId.Should().Be(Guid.Empty);
+        execucao.ObraTitulo.Should().Be(isrcDesconhecido);
+        execucao.FonogramaIsrc.Should().Be(isrcDesconhecido);
+        execucao.Interpretes.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void Resolver_PendenteCriadaSemCadastro_TransicionaParaIdentificada()
+    {
+        // Arrange — execucao PENDENTE criada a partir de ISRC desconhecido no upload
+        var execucao = Execucao.Criar(
+            captacaoId: Guid.NewGuid(),
+            obraId: Guid.Empty,
+            fonogramaId: null,
+            obraTitulo: "BRXYZ0000000",
+            fonogramaIsrc: "BRXYZ0000000",
+            obraIswc: null,
+            interpretes: "",
+            inicio: new TimeOnly(14, 30, 0),
+            fim: new TimeOnly(14, 33, 45),
+            quantidade: 1,
+            tipoUtilizacaoId: null,
+            tituloPrograma: null,
+            status: StatusExecucao.Pendente);
+
+        var obraIdResolvida = Guid.NewGuid();
+
+        // Act
+        execucao.Resolver(obraIdResolvida, null, "Obra Resolvida", "BRXYZ0000000", null, "Artista");
+
+        // Assert
+        execucao.Status.Should().Be(StatusExecucao.Identificada);
+        execucao.ObraId.Should().Be(obraIdResolvida);
+        execucao.ObraTitulo.Should().Be("Obra Resolvida");
+    }
 }

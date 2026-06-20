@@ -48,14 +48,14 @@ export function ErrosUploadPanel({ upload, onClose }: ErrosUploadPanelProps) {
                   </tr>
                 </thead>
                 <tbody>
-                  {errosList.items.map((erro) => (
-                    <tr key={erro.id}>
-                      <td>{erro.linha === 0 || erro.linha === null ? '-' : erro.linha}</td>
+                  {errosList.data.map((erro, index) => (
+                    <tr key={`${erro.linha}-${erro.coluna}-${index}`}>
+                      <td>{erro.linha === 0 ? '-' : erro.linha}</td>
                       <td>{erro.coluna || '-'}</td>
                       <td>{erro.mensagem}</td>
                     </tr>
                   ))}
-                  {errosList.items.length === 0 && (
+                  {errosList.data.length === 0 && (
                     <tr>
                       <td colSpan={3} className={styles.center}>Nenhum detalhe de erro disponível.</td>
                     </tr>
@@ -64,14 +64,14 @@ export function ErrosUploadPanel({ upload, onClose }: ErrosUploadPanelProps) {
               </table>
             </div>
             
-            {errosList.total > size && (
+            {errosList.pagination.total > size && (
               <div className={styles.paginationWrapper}>
                 <Pagination
                   pagination={{
                     page,
                     size,
-                    total: errosList.total,
-                    totalPages: Math.ceil(errosList.total / size)
+                    total: errosList.pagination.total,
+                    totalPages: Math.ceil(errosList.pagination.total / size)
                   }}
                   onPageChange={setPage}
                 />

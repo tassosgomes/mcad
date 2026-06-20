@@ -37,14 +37,14 @@ public static class UploadEndpoints
 
         group.MapGet("/", async (
             Guid captacaoId,
-            int page, int size,
+            int? page, int? size,
             IDispatcher dispatcher,
             CancellationToken ct) =>
         {
-            page = page > 0 ? page : 1;
-            size = size > 0 ? size : 10;
+            var p = page is > 0 ? page.Value : 1;
+            var s = size is > 0 ? size.Value : 10;
             var result = await dispatcher.QueryAsync(
-                new ListarUploadsQuery(captacaoId, page, size), ct);
+                new ListarUploadsQuery(captacaoId, p, s), ct);
             return Results.Ok(result);
         })
         .RequireIdentificacaoPermission(IdentificacaoPermissions.UploadListar);
@@ -62,15 +62,14 @@ public static class UploadEndpoints
 
         group.MapGet("/{id:guid}/erros", async (
             Guid captacaoId, Guid id,
-            int page, int size,
+            int? page, int? size,
             IDispatcher dispatcher,
             CancellationToken ct) =>
         {
-            page = page > 0 ? page : 1;
-            size = size > 0 ? size : 10;
+            var p = page is > 0 ? page.Value : 1;
+            var s = size is > 0 ? size.Value : 50;
             var result = await dispatcher.QueryAsync(
-                // Note: The query requires UploadId. The id from path is UploadId!
-                new ListarErrosUploadQuery(id, page, size), ct);
+                new ListarErrosUploadQuery(id, p, s), ct);
             return Results.Ok(result);
         })
         .RequireIdentificacaoPermission(IdentificacaoPermissions.UploadVisualizarErros);
