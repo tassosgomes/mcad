@@ -71,7 +71,7 @@ public class AtualizarCaptacaoCommandHandlerTests
     }
 
     [Fact]
-    public async Task Handle_OutroAnalista_LancaDomainException()
+    public async Task Handle_OutroAnalista_LancaForbiddenException()
     {
         var analistaOriginal = Guid.NewGuid();
         var outroAnalista = Guid.NewGuid();
@@ -83,7 +83,8 @@ public class AtualizarCaptacaoCommandHandlerTests
 
         var act = () => _handler.HandleAsync(cmd, CancellationToken.None);
 
-        await act.Should().ThrowAsync<DomainException>();
+        await act.Should().ThrowAsync<ForbiddenException>()
+            .WithMessage("Apenas o analista responsável pode modificar esta captação.");
     }
 
     [Fact]

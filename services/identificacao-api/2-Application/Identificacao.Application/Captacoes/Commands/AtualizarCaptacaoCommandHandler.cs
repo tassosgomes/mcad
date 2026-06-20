@@ -28,6 +28,9 @@ public class AtualizarCaptacaoCommandHandler : ICommandHandler<AtualizarCaptacao
         var captacao = await _captacaoRepo.GetByIdAsync(cmd.Id, ct)
             ?? throw new NotFoundException("Captação não encontrada.");
 
+        if (captacao.AnalistaResponsavelId != cmd.AnalistaId)
+            throw new ForbiddenException("Apenas o analista responsável pode modificar esta captação.");
+
         captacao.ValidarPropriedade(cmd.AnalistaId);
         captacao.ValidarAberta();
 
