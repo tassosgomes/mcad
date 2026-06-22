@@ -26,7 +26,6 @@ public class ExcluirCaptacaoCommandHandler : ICommandHandler<ExcluirCaptacaoComm
         if (captacao.AnalistaResponsavelId != cmd.AnalistaId)
             throw new ForbiddenException("Apenas o analista responsável pode modificar esta captação.");
 
-        captacao.ValidarPropriedade(cmd.AnalistaId);
         captacao.ValidarAberta();
 
         var before = IdentificacaoAuditMappers.Map(captacao);

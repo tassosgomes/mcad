@@ -102,7 +102,8 @@ public class FecharRolCommandHandlerTests
         var cmd = new FecharRolCommand(captacao.Id, Guid.NewGuid()); // Diferente
         var act = () => _handler.HandleAsync(cmd, CancellationToken.None);
 
-        await act.Should().ThrowAsync<DomainException>(); // ValidarPropriedade throws DomainException
+        await act.Should().ThrowAsync<ForbiddenException>()
+            .WithMessage("Apenas o analista responsável pode fechar esta captação.");
     }
 
     [Fact]

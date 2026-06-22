@@ -31,7 +31,6 @@ public class AtualizarCaptacaoCommandHandler : ICommandHandler<AtualizarCaptacao
         if (captacao.AnalistaResponsavelId != cmd.AnalistaId)
             throw new ForbiddenException("Apenas o analista responsável pode modificar esta captação.");
 
-        captacao.ValidarPropriedade(cmd.AnalistaId);
         captacao.ValidarAberta();
 
         var rubricaEnum = await _rubricaRepo.GetAllAsync(ct);
@@ -42,7 +41,7 @@ public class AtualizarCaptacaoCommandHandler : ICommandHandler<AtualizarCaptacao
         {
             var totalExecucoes = await _captacaoRepo.ContarExecucoesAsync(captacao.Id, ct);
             if (totalExecucoes > 0)
-                throw new ConflictException("Não é possível alterar a rubrica de uma captação que já possui execuções");
+                throw new ConflictException("Não é possível alterar a rubrica de uma captação que já possui execuções", "RUBRICA_BLOQUEADA");
         }
 
         if (await _captacaoRepo.ExisteAtivaParaRubricaPeriodoAsync(cmd.RubricaId, cmd.Periodo, captacao.Id, ct))

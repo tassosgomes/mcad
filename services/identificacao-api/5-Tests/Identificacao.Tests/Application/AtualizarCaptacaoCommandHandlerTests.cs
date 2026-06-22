@@ -106,7 +106,8 @@ public class AtualizarCaptacaoCommandHandlerTests
 
         var act = () => _handler.HandleAsync(cmd, CancellationToken.None);
 
-        await act.Should().ThrowAsync<ConflictException>().WithMessage("*não é possível alterar a rubrica*");
+        var exception = await act.Should().ThrowAsync<ConflictException>().WithMessage("*não é possível alterar a rubrica*");
+        exception.Which.ErrorCode.Should().Be("RUBRICA_BLOQUEADA");
     }
 
     [Fact]

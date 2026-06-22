@@ -43,8 +43,10 @@ public class CriarUploadCommandHandler : ICommandHandler<CriarUploadCommand, Upl
         var captacao = await _captacaoRepo.GetByIdAsync(cmd.CaptacaoId, ct)
             ?? throw new NotFoundException("Captação não encontrada.");
             
+        if (captacao.AnalistaResponsavelId != cmd.AnalistaId)
+            throw new ForbiddenException("Apenas o analista responsável pode modificar esta captação.");
+
         captacao.ValidarAberta();
-        captacao.ValidarPropriedade(cmd.AnalistaId);
 
         var storageResult = await _storageService.UploadAsync(cmd.ArquivoStream, "text/csv", cmd.NomeArquivo, ct);
 

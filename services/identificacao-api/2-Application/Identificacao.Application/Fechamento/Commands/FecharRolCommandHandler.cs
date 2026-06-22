@@ -37,8 +37,10 @@ public class FecharRolCommandHandler : ICommandHandler<FecharRolCommand, Fechame
         var captacao = await _captacaoRepo.GetByIdAsync(cmd.CaptacaoId, ct)
             ?? throw new NotFoundException($"Captação {cmd.CaptacaoId} não encontrada.");
 
+        if (captacao.AnalistaResponsavelId != cmd.AnalistaId)
+            throw new ForbiddenException("Apenas o analista responsável pode fechar esta captação.");
+
         captacao.ValidarAberta();
-        captacao.ValidarPropriedade(cmd.AnalistaId);
 
         var preRequisitos = await _preRequisitosHandler.HandleAsync(
             new ValidarPreRequisitosQuery(cmd.CaptacaoId), ct);

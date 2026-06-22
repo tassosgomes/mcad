@@ -105,7 +105,7 @@ public class CriarUploadCommandHandlerTests
         var stream = CreateStream("teste");
         var cmd = new CriarUploadCommand(captacao.Id, "arq.csv", stream, Guid.NewGuid());
 
-        await Assert.ThrowsAsync<DomainException>(() => handler.HandleAsync(cmd, default));
+        await Assert.ThrowsAsync<ForbiddenException>(() => handler.HandleAsync(cmd, default));
     }
 
     [Fact]
