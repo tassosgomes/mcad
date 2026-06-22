@@ -1,0 +1,95 @@
+- generic [ref=e2]:
+  - generic [ref=e5]:
+    - banner [ref=e6]:
+      - generic [ref=e7]:
+        - button "Menu" [ref=e8] [cursor=pointer]:
+          - img [ref=e9]
+        - link "mini-ECAD Sistema de Gestão de Direitos Autorais" [ref=e10] [cursor=pointer]:
+          - /url: /
+          - heading "mini-ECAD" [level=1] [ref=e11]
+          - generic [ref=e12]: Sistema de Gestão de Direitos Autorais
+      - generic [ref=e13]:
+        - generic [ref=e14]: Analista Identificacao
+        - generic [ref=e15]: identificacao.default.analista
+        - button "Sair" [ref=e16] [cursor=pointer]:
+          - img [ref=e17]
+    - complementary [ref=e20]:
+      - navigation [ref=e21]:
+        - link "Início" [ref=e22] [cursor=pointer]:
+          - /url: /
+          - generic [ref=e23]:
+            - img [ref=e24]
+            - generic [ref=e27]: Início
+        - generic [ref=e28]:
+          - button "Identificação" [ref=e29] [cursor=pointer]:
+            - generic [ref=e30]:
+              - img [ref=e31]
+              - generic [ref=e34]: Identificação
+            - img [ref=e35]
+          - generic [ref=e37]:
+            - link "Captações" [ref=e38] [cursor=pointer]:
+              - /url: /identificacao/captacoes
+            - link "Pendentes" [ref=e39] [cursor=pointer]:
+              - /url: /identificacao/pendentes
+        - generic [ref=e40]:
+          - button "Autorização" [ref=e41] [cursor=pointer]:
+            - generic [ref=e42]:
+              - img [ref=e43]
+              - generic [ref=e46]: Autorização
+            - img [ref=e47]
+          - generic [ref=e49]:
+            - link "Permissões" [ref=e50] [cursor=pointer]:
+              - /url: /autorizacao/permissoes
+            - link "Papéis & Acessos" [ref=e51] [cursor=pointer]:
+              - /url: /autorizacao/papeis
+    - main [ref=e52]:
+      - generic [ref=e139]:
+        - generic [ref=e140]:
+          - heading "Rádio AM/FM — 01/06/2026" [level=1] [ref=e142]
+          - generic [ref=e145]: Aberta
+        - generic [ref=e146]:
+          - generic [ref=e147]:
+            - generic [ref=e148]: Execuções Totais
+            - generic [ref=e149]: "0"
+          - generic [ref=e150]:
+            - generic [ref=e151]: Identificadas
+            - generic [ref=e152]: "0"
+          - generic [ref=e153]:
+            - generic [ref=e154]: Pendentes
+            - generic [ref=e155]: "0"
+        - generic [ref=e157]:
+          - generic [ref=e158]:
+            - generic [ref=e159]:
+              - generic [ref=e161]: Rubrica
+              - combobox [ref=e163] [cursor=pointer]:
+                - option "Selecione uma rubrica..."
+                - option "Rádio AM/FM" [selected]
+                - option "TV Aberta ⚡ (Classificação obrigatória)"
+                - option "TV Fechada ⚡ (Classificação obrigatória)"
+                - option "Cinema ⚡ (Classificação obrigatória)"
+                - option "Streaming Vídeo (VOD) ⚡ (Classificação obrigatória)"
+                - option "Streaming Áudio"
+                - option "Show"
+            - generic [ref=e164]:
+              - generic [ref=e166]: Período
+              - textbox [ref=e167]: 2026-06-01
+            - generic [ref=e169]:
+              - generic [ref=e171]: Usuário de Música
+              - 'textbox "Ex: Rádio Globo SP, TV Globo, Netflix BR" [ref=e173]': JB FM
+          - generic [ref=e174]:
+            - button "Cancelar" [ref=e175] [cursor=pointer]
+            - button "Salvar Alterações" [ref=e176] [cursor=pointer]
+        - generic [ref=e177]:
+          - generic [ref=e178]:
+            - heading "Execuções" [level=2] [ref=e179]
+            - combobox [ref=e182]:
+              - option "Todos os status" [selected]
+              - option "Identificada"
+              - option "Pendente"
+          - paragraph [ref=e191]: Nenhuma execução registrada nesta captação.
+        - generic [ref=e184]:
+          - generic [ref=e186]:
+            - heading "Arquivos de Execução" [level=3] [ref=e187]
+            - paragraph [ref=e188]: Importe ou verifique o histórico de uploads CSV de execuções (obras e fonogramas).
+          - paragraph [ref=e193]: Nenhum envio de CSV encontrado.
+  - generic "Notificações"

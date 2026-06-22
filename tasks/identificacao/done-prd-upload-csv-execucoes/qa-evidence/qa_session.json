@@ -1,0 +1,103 @@
+{
+  "session": {
+    "created_at": "2026-06-15T00:00:00Z",
+    "prd_path": "tasks/identificacao/done-prd-upload-csv-execucoes/prd.md",
+    "techspec_path": "tasks/identificacao/done-prd-upload-csv-execucoes/techspec.md",
+    "techspec_frontend_path": "tasks/identificacao/done-prd-upload-csv-execucoes/techspec-frontend.md",
+    "api_contract_path": "tasks/identificacao/done-prd-upload-csv-execucoes/api-contract.md",
+    "orchestrator_version": "1.0"
+  },
+  "scope": {
+    "user_stories_in_scope": [
+      { "task_id": "qa_task_01", "slug": "auth_e_captacao", "description": "Auth + Navegação até Captação — autenticar via Keycloak, localizar captação ABERTA do analista, validar seção Uploads" },
+      { "task_id": "qa_task_02", "slug": "upload_csv_valido", "description": "Upload CSV válido + Processamento (RF-01, RF-02, RF-07) — upload de CSV válido sem erros, status PROCESSANDO → CONCLUIDO, execuções criadas" },
+      { "task_id": "qa_task_03", "slug": "validacao_erros_csv", "description": "Validação linha a linha + Relatório de erros (RF-03, RF-08) — CSV com erros, CONCLUIDO_COM_ERROS, relatório paginado" },
+      { "task_id": "qa_task_04", "slug": "agrupamento_duplicatas", "description": "Agrupamento + Duplicatas divergentes (RF-04, RF-05) — linhas idênticas agrupadas, ISRC com horários divergentes" },
+      { "task_id": "qa_task_05", "slug": "identificacao_automatica", "description": "Identificação via Cadastro (RF-06) — ISRCs válidos → IDENTIFICADA, ISRCs inexistentes → PENDENTE" },
+      { "task_id": "qa_task_06", "slug": "campos_condicionais_rubrica", "description": "Campos condicionais por rubrica (RF-09) — TV Aberta exige tipo_utilizacao, Rádio AM/FM aceita vazio" }
+    ],
+    "excluded": [
+      { "id": "consultor-identificacao", "reason": "Usuário solicitou não testar perfil consultor" },
+      { "id": "database-validation", "reason": "Usuário solicitou apenas UI + API, sem validação de banco" }
+    ]
+  },
+  "environment": {
+    "frontend_base_url": "https://mcad.tasso.dev.br",
+    "api_base_url": "https://mcad-identificacao.tasso.dev.br/api/v1",
+    "auth": {
+      "enabled": true,
+      "type": "bearer",
+      "token_endpoint": "https://mcad.tasso.dev.br/realms/mcad/protocol/openid-connect/token",
+      "oidc_issuer": "https://mcad.tasso.dev.br/realms/mcad",
+      "client_id": "mcad-frontend",
+      "credentials_env": {
+        "username_var": "QA_USERNAME",
+        "password_var": "QA_PASSWORD"
+      }
+    }
+  },
+  "database": {
+    "enabled": false,
+    "type": "none"
+  },
+  "report": {
+    "formats": ["markdown"],
+    "output_dir": "tasks/identificacao/done-prd-upload-csv-execucoes/qa-evidence"
+  },
+  "execution": {
+    "tasks": [
+      {
+        "id": "qa_task_01",
+        "slug": "auth_e_captacao",
+        "description": "Auth + Navegação até Captação",
+        "type": ["ui", "api"],
+        "depends_on": [],
+        "can_run_parallel_with": []
+      },
+      {
+        "id": "qa_task_02",
+        "slug": "upload_csv_valido",
+        "description": "Upload CSV válido + Processamento",
+        "type": ["ui", "api"],
+        "depends_on": ["qa_task_01"],
+        "can_run_parallel_with": ["qa_task_03", "qa_task_04", "qa_task_05", "qa_task_06"]
+      },
+      {
+        "id": "qa_task_03",
+        "slug": "validacao_erros_csv",
+        "description": "Validação linha a linha + Relatório de erros",
+        "type": ["ui", "api"],
+        "depends_on": ["qa_task_01"],
+        "can_run_parallel_with": ["qa_task_02", "qa_task_04", "qa_task_05", "qa_task_06"]
+      },
+      {
+        "id": "qa_task_04",
+        "slug": "agrupamento_duplicatas",
+        "description": "Agrupamento + Duplicatas divergentes",
+        "type": ["ui", "api"],
+        "depends_on": ["qa_task_01"],
+        "can_run_parallel_with": ["qa_task_02", "qa_task_03", "qa_task_05", "qa_task_06"]
+      },
+      {
+        "id": "qa_task_05",
+        "slug": "identificacao_automatica",
+        "description": "Identificação via Cadastro",
+        "type": ["ui", "api"],
+        "depends_on": ["qa_task_01"],
+        "can_run_parallel_with": ["qa_task_02", "qa_task_03", "qa_task_04", "qa_task_06"]
+      },
+      {
+        "id": "qa_task_06",
+        "slug": "campos_condicionais_rubrica",
+        "description": "Campos condicionais por rubrica",
+        "type": ["api"],
+        "depends_on": ["qa_task_01"],
+        "can_run_parallel_with": ["qa_task_02", "qa_task_03", "qa_task_04", "qa_task_05"]
+      }
+    ],
+    "phases": [
+      { "phase": 1, "mode": "sequential", "tasks": ["qa_task_01"] },
+      { "phase": 2, "mode": "parallel", "tasks": ["qa_task_02", "qa_task_03", "qa_task_04", "qa_task_05", "qa_task_06"] }
+    ]
+  }
+}
