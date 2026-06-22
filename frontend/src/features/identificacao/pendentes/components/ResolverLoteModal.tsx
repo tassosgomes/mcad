@@ -44,7 +44,7 @@ export function ResolverLoteModal({ isOpen, onClose, impactoItem }: ResolverLote
       setExecucoes(fetches);
       
       // Auto-seleciona todas as abertas
-      const abertas = fetches.filter(e => e.captacaoStatus === 'ABERTA').map(e => e.id);
+      const abertas = fetches.filter(e => e.captacaoStatus?.toUpperCase() === 'ABERTA').map(e => e.id);
       setSelecionadasIds(abertas);
     } catch (e) {
       console.error('Failed to load execucoes for lote', e);
@@ -130,7 +130,7 @@ export function ResolverLoteModal({ isOpen, onClose, impactoItem }: ResolverLote
                 ) : (
                   <div className={styles.checkboxList}>
                     {execucoes.map(exec => {
-                      const disabled = exec.captacaoStatus !== 'ABERTA';
+                      const disabled = exec.captacaoStatus?.toUpperCase() !== 'ABERTA';
                       return (
                         <label 
                           key={exec.id} 

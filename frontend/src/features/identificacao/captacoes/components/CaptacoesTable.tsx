@@ -100,7 +100,7 @@ export function CaptacoesTable({
             const canDelete =
               canWrite &&
               captacao.analistaResponsavel.id === currentUserId &&
-              captacao.status === 'ABERTA';
+              captacao.status?.toUpperCase() === 'ABERTA';
 
             return (
               <tr key={captacao.id} className={styles.row}>

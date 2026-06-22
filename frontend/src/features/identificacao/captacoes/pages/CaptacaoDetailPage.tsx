@@ -50,7 +50,7 @@ export function CaptacaoDetailPage() {
   const currentUserId = user?.profile.sub ? analistaIdFromSubject(user.profile.sub) : undefined;
   const isOwner = currentUserId ? captacao.analistaResponsavel.id === currentUserId : false;
   const canWrite = can('identificacao:default:captacao:editar');
-  const canEdit = canWrite && isOwner && !isFechada && captacao.status !== 'CANCELADA';
+  const canEdit = canWrite && isOwner && !isFechada && captacao.status?.toUpperCase() !== 'CANCELADA';
   const canUploadCsv = can('identificacao:default:upload:importar');
   const canDelete = canEdit && captacao.status?.toUpperCase() === 'ABERTA';
 

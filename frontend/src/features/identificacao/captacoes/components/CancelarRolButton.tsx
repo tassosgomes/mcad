@@ -16,7 +16,7 @@ export function CancelarRolButton({ captacao }: CancelarRolButtonProps) {
 
   // Consideramos que pode cancelar enquanto carrega para não dar "flash" de botão desabilitado.
   // Depois do load, verificamos o data.
-  const isFechada = captacao.status === 'FECHADA';
+  const isFechada = captacao.status?.toUpperCase() === 'FECHADA';
   
   // Se não estiver fechada, o botão nem deveria ser renderizado, 
   // mas garantimos que fique oculto caso injetado erroneamente.
