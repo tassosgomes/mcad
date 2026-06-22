@@ -6,7 +6,7 @@ export function usePodeCancelar(captacaoId: string, status?: StatusCaptacao) {
   return useQuery({
     queryKey: ['captacoes', captacaoId, 'pode-cancelar'],
     queryFn: () => podeCancelarRol(captacaoId),
-    enabled: !!captacaoId && status === 'FECHADA',
+    enabled: !!captacaoId && status?.toUpperCase() === 'FECHADA',
     staleTime: 0, 
   });
 }

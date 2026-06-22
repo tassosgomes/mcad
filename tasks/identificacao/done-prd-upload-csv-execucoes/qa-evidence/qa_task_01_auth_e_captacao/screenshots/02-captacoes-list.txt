@@ -1,0 +1,131 @@
+- generic [ref=e2]:
+  - generic [ref=e5]:
+    - banner [ref=e6]:
+      - generic [ref=e7]:
+        - button "Menu" [ref=e8] [cursor=pointer]:
+          - img [ref=e9]
+        - link "mini-ECAD Sistema de Gestão de Direitos Autorais" [ref=e10] [cursor=pointer]:
+          - /url: /
+          - heading "mini-ECAD" [level=1] [ref=e11]
+          - generic [ref=e12]: Sistema de Gestão de Direitos Autorais
+      - generic [ref=e13]:
+        - generic [ref=e14]: Analista Identificacao
+        - generic [ref=e15]: identificacao.default.analista
+        - button "Sair" [ref=e16] [cursor=pointer]:
+          - img [ref=e17]
+    - complementary [ref=e20]:
+      - navigation [ref=e21]:
+        - link "Início" [ref=e22] [cursor=pointer]:
+          - /url: /
+          - generic [ref=e23]:
+            - img [ref=e24]
+            - generic [ref=e27]: Início
+        - generic [ref=e28]:
+          - button "Identificação" [ref=e29] [cursor=pointer]:
+            - generic [ref=e30]:
+              - img [ref=e31]
+              - generic [ref=e34]: Identificação
+            - img [ref=e35]
+          - generic [ref=e37]:
+            - link "Captações" [ref=e38] [cursor=pointer]:
+              - /url: /identificacao/captacoes
+            - link "Pendentes" [ref=e39] [cursor=pointer]:
+              - /url: /identificacao/pendentes
+        - generic [ref=e40]:
+          - button "Autorização" [ref=e41] [cursor=pointer]:
+            - generic [ref=e42]:
+              - img [ref=e43]
+              - generic [ref=e46]: Autorização
+            - img [ref=e47]
+          - generic [ref=e49]:
+            - link "Permissões" [ref=e50] [cursor=pointer]:
+              - /url: /autorizacao/permissoes
+            - link "Papéis & Acessos" [ref=e51] [cursor=pointer]:
+              - /url: /autorizacao/papeis
+    - main [ref=e52]:
+      - generic [ref=e53]:
+        - generic [ref=e54]:
+          - generic [ref=e55]:
+            - heading "Captações" [level=1] [ref=e56]
+            - paragraph [ref=e57]: Gestão, registro e controle de verbas arrecadadas por rubrica e período.
+          - button "Nova Captação" [ref=e59] [cursor=pointer]:
+            - img [ref=e60]
+            - text: Nova Captação
+        - generic [ref=e63]:
+          - generic [ref=e64]:
+            - generic [ref=e66]: Rubrica
+            - combobox [ref=e68] [cursor=pointer]:
+              - option "Todas" [selected]
+              - option "Rádio AM/FM"
+              - option "TV Aberta"
+              - option "TV Fechada"
+              - option "Cinema"
+              - option "Streaming Vídeo (VOD)"
+              - option "Streaming Áudio"
+              - option "Show"
+          - generic [ref=e69]:
+            - generic [ref=e70]:
+              - generic [ref=e72]: Período Início
+              - textbox [ref=e73]
+            - generic [ref=e74]:
+              - generic [ref=e76]: Período Fim
+              - textbox [ref=e77]
+          - generic [ref=e78]:
+            - generic [ref=e80]: Status
+            - combobox [ref=e82] [cursor=pointer]:
+              - option "Todos" [selected]
+              - option "Aberta"
+              - option "Fechada"
+              - option "Cancelada"
+          - generic [ref=e83]:
+            - generic [ref=e85]: Responsável (ID)
+            - textbox "Filtrar por UUID..." [ref=e87]
+        - table [ref=e89]:
+          - rowgroup [ref=e90]:
+            - row "Rubrica Período ↓ Usuário de Música Status Responsável Ações" [ref=e91]:
+              - columnheader "Rubrica" [ref=e92] [cursor=pointer]
+              - columnheader "Período ↓" [ref=e93] [cursor=pointer]
+              - columnheader "Usuário de Música" [ref=e94]
+              - columnheader "Status" [ref=e95]
+              - columnheader "Responsável" [ref=e96]
+              - columnheader "Ações" [ref=e97]
+          - rowgroup [ref=e98]:
+            - row "Rádio AM/FM 01/06/2026 JB FM Aberta Desconhecido" [ref=e99]:
+              - cell "Rádio AM/FM" [ref=e100]:
+                - generic [ref=e101]: Rádio AM/FM
+              - cell "01/06/2026" [ref=e102]
+              - cell "JB FM" [ref=e103]:
+                - generic "JB FM" [ref=e104]
+              - cell "Aberta" [ref=e105]:
+                - generic [ref=e106]: Aberta
+              - cell "Desconhecido" [ref=e107]
+              - cell [ref=e108]:
+                - button "Ver detalhes" [ref=e109] [cursor=pointer]:
+                  - img [ref=e110]
+            - row "Rádio AM/FM 01/05/2026 QA Validacao Captacao Radio Aberta Desconhecido" [ref=e113]:
+              - cell "Rádio AM/FM" [ref=e114]:
+                - generic [ref=e115]: Rádio AM/FM
+              - cell "01/05/2026" [ref=e116]
+              - cell "QA Validacao Captacao Radio" [ref=e117]:
+                - generic "QA Validacao Captacao Radio" [ref=e118]
+              - cell "Aberta" [ref=e119]:
+                - generic [ref=e120]: Aberta
+              - cell "Desconhecido" [ref=e121]
+              - cell [ref=e122]:
+                - button "Ver detalhes" [ref=e123] [cursor=pointer]:
+                  - img [ref=e124]
+        - generic [ref=e127]:
+          - generic [ref=e128]:
+            - text: Mostrando
+            - strong [ref=e129]: 1–2
+            - text: de
+            - strong [ref=e130]: "2"
+          - generic [ref=e131]:
+            - button "Página anterior" [disabled] [ref=e132]:
+              - img [ref=e133]
+              - text: Anterior
+            - generic [ref=e135]: 1 / 1
+            - button "Próxima página" [disabled] [ref=e136]:
+              - text: Próximo
+              - img [ref=e137]
+  - generic "Notificações"

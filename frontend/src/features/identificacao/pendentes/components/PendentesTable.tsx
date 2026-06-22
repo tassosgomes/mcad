@@ -76,7 +76,7 @@ export function PendentesTable({ data, sort, onSortChange, onResolve }: Pendente
                     {pendente.captacaoRubrica} — {formatDate(pendente.captacaoPeriodo)}
                   </Link>
                   <span className={styles.subtitle}>Resp: {pendente.captacaoAnalistaResponsavel}</span>
-                  {pendente.captacaoStatus !== 'ABERTA' && (
+                  {pendente.captacaoStatus?.toUpperCase() !== 'ABERTA' && (
                     <Badge variant="warning">{pendente.captacaoStatus}</Badge>
                   )}
                 </div>
@@ -108,8 +108,8 @@ export function PendentesTable({ data, sort, onSortChange, onResolve }: Pendente
                 <Button 
                   size="sm" 
                   onClick={() => onResolve(pendente)}
-                  disabled={pendente.captacaoStatus !== 'ABERTA'}
-                  title={pendente.captacaoStatus !== 'ABERTA' ? 'Captação não está ABERTA' : 'Resolver individualmente'}
+                  disabled={pendente.captacaoStatus?.toUpperCase() !== 'ABERTA'}
+                  title={pendente.captacaoStatus?.toUpperCase() !== 'ABERTA' ? 'Captação não está ABERTA' : 'Resolver individualmente'}
                 >
                   Resolver
                 </Button>
