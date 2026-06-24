@@ -2,8 +2,8 @@ import assert from 'node:assert/strict';
 import { type AddressInfo } from 'node:net';
 import { createServer, type IncomingHttpHeaders, type IncomingMessage, type ServerResponse } from 'node:http';
 import { test } from 'node:test';
-import { buildServer } from '../server.js';
-import type { BffConfig } from '../config.js';
+import { buildServer } from '../app/buildServer.js';
+import type { BffConfig } from '../config/config.js';
 
 interface CapturedRequest {
   method: string;

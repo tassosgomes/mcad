@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import {
   classifyScreenAuditRequest,
   resolveAuditOperationByIdOrAlias,
-} from './screenAuditClassifier.js';
+} from '../shared/audit/screenAuditClassifier.js';
 
 test('unknown GET without explicit catalog entry resolves as default BRONZE', () => {
   const classification = classifyScreenAuditRequest({

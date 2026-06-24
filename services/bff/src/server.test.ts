@@ -3,9 +3,9 @@ import { createHmac } from 'node:crypto';
 import { type AddressInfo } from 'node:net';
 import { createServer, type IncomingHttpHeaders } from 'node:http';
 import { test } from 'node:test';
-import { buildServer } from './server.js';
-import type { BffConfig } from './config.js';
-import { createMeCache } from './meCache.js';
+import { buildServer } from './app/buildServer.js';
+import type { BffConfig } from './config/config.js';
+import { createMeCache } from './shared/auth/meCache.js';
 
 function buildFakeJwt(claims: Record<string, unknown>): string {
   const header = Buffer.from(JSON.stringify({ alg: 'none', typ: 'JWT' })).toString('base64url');

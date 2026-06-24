@@ -6,7 +6,7 @@ import {
   auditCatalogCoverageBacklog,
   findDuplicateRouteMethodRules,
   screenAuditCatalog,
-} from './screenAuditCatalog.js';
+} from '../shared/audit/screenAuditCatalog.js';
 
 const mandatoryGoldScreens = [
   { id: 'cadastro.titulares.lista', alias: 'CADASTRO_TITULARES' },

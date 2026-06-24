@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import type { FastifyRequest } from 'fastify';
-import { buildScreenAccessEvent } from './screenAccessEventBuilder.js';
-import { classifyScreenAuditRequest } from './screenAuditClassifier.js';
-import { calculateSnapshotContentHash } from './snapshotHash.js';
+import { buildScreenAccessEvent } from '../shared/audit/screenAccessEventBuilder.js';
+import { classifyScreenAuditRequest } from '../shared/audit/screenAuditClassifier.js';
+import { calculateSnapshotContentHash } from '../shared/audit/snapshotHash.js';
 
 function requestStub(overrides: Partial<Pick<FastifyRequest, 'headers' | 'id' | 'ip' | 'method' | 'url'>> = {}) {
   return {

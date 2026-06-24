@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { AuditMetricsRegistry } from './auditMetrics.js';
+import { AuditMetricsRegistry } from '../shared/audit/auditMetrics.js';
 
 test('AuditMetricsRegistry renders required audit metrics in Prometheus format', () => {
   const metrics = new AuditMetricsRegistry();

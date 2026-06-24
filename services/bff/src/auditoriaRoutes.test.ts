@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import type { BffConfig } from './config.js';
-import { buildServer } from './server.js';
-import { AUDITORIA_PERMISSIONS } from './auditoria/auditoriaPermissions.js';
+import type { BffConfig } from './config/config.js';
+import { buildServer } from './app/buildServer.js';
+import { AUDITORIA_PERMISSIONS } from './modules/auditoria/auditoria.permissions.js';
 
 const BASE_CONFIG: BffConfig = {
   host: '127.0.0.1',

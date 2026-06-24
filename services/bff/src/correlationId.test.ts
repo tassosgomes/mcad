@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { toUuidCorrelationId } from './correlationId.js';
+import { toUuidCorrelationId } from './shared/http/correlationId.js';
 
 test('toUuidCorrelationId preserves a valid UUID v4', () => {
   const valid = '550e8400-e29b-41d4-a716-446655440000';

@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import type { BffConfig } from './config.js';
-import { buildServer } from './server.js';
-import { deriveScopedDomains } from './acessosRoutes.js';
-import { createMeCache } from './meCache.js';
+import type { BffConfig } from './config/config.js';
+import { buildServer } from './app/buildServer.js';
+import { deriveScopedDomains } from './modules/acessos/acessos.permissions.js';
+import { createMeCache } from './shared/auth/meCache.js';
 
 const BASE_CONFIG: BffConfig = {
   host: '127.0.0.1',

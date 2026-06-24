@@ -1,5 +1,5 @@
-import { loadConfig } from './config.js';
-import { buildServer } from './server.js';
+import { loadConfig } from './config/config.js';
+import { buildServer } from './app/buildServer.js';
 
 const config = loadConfig();
 const server = await buildServer(config);

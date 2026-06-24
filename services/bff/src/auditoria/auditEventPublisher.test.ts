@@ -6,9 +6,9 @@ import {
   auditEventPublisherInternals,
   publishAuditEvent,
   type AuditEventFetch,
-} from './auditEventPublisher.js';
-import { buildScreenAccessEvent } from './screenAccessEventBuilder.js';
-import { classifyScreenAuditRequest } from './screenAuditClassifier.js';
+} from '../shared/audit/auditEventPublisher.js';
+import { buildScreenAccessEvent } from '../shared/audit/screenAccessEventBuilder.js';
+import { classifyScreenAuditRequest } from '../shared/audit/screenAuditClassifier.js';
 
 function buildEvent() {
   const classification = classifyScreenAuditRequest({

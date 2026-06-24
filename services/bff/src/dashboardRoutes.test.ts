@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import type { BffConfig } from './config.js';
-import { buildServer } from './server.js';
+import type { BffConfig } from './config/config.js';
+import { buildServer } from './app/buildServer.js';
 
 const TEST_CONFIG: BffConfig = {
   host: '127.0.0.1',
