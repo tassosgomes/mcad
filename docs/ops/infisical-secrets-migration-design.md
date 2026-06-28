@@ -13,8 +13,8 @@
 |---|---|---|
 | 0 — Setup Infisical | ✅ **Concluída** | Projeto `mcad-platform` + 7 pastas (env `dev`); **34 segredos** semeados; Machine Identity read-only (`INFISICAL_RO_ID/SECRET` no `.env`) validada. |
 | 1 — Agent em dry-run | ✅ **Concluída** | Stack `infisical-agent` rodando no `mcad-server` (1 réplica manager); materializa os **34 docker secrets** versionados (`label=mcad.infisical.managed=true`) **sem repointar serviços** (`APPLY=0`). |
-| 2 — Refactor `*_FILE` | ✅ **Concluída** (2026-06-28) | Entrypoints `_FILE` nos **6 serviços do mecad** + **authz**; **postgres do mecad** via wrapper de entrypoint; **`docker-stack.yml` do mecad e do authz** fiados p/ `_FILE` + `secrets:` com indireção durável; **mapa `CONSUMERS`** preenchido (mecad + authz). Redis do authz deferido (opcional, sem serviço na stack). Próximo: **cutover** (Fase 3, §11). |
-| 3 — Cutover | 🔄 **Iniciada** | **`auditoria` cut over + tornado durável** no VPS 30 (2026-06-27, ver notas abaixo). Demais stacks pendentes. |
+| 2 — Refactor `*_FILE` | ✅ **Concluída** (2026-06-28) | Entrypoints `_FILE` nos serviços; **Dockerfiles .NET/Java agora cabeiam o entrypoint** (gap corrigido — ver §12); cobertura de segredos fechada; `materialize-secrets.sh` `CONSUMERS` preenchido. ⚠️ A fiação de stack YAML foi feita contra o repo, mas o cutover usa os composes **deployados no Portainer** (topologia `shared-postgres`, ≠ repo) — ver §12. |
+| 3 — Cutover | 🔄 **Iniciada / mecad BLOQUEADO em build** | `auditoria` cut over + durável no VPS 30 (2026-06-27). **mecad/authz: cutover bloqueado** — as imagens de prod não têm o entrypoint `_FILE` (Dockerfile não cabeado); exige **rebuild+push** antes. Detalhes/validação em §12. |
 | 4 — Limpeza | 🔄 **Iniciada** | **`auditoria` concluída** (2026-06-27): env Portainer durável + estático/órfãos removidos. Demais stacks: remover env plano, podar órfãos, aposentar `vault`. |
 
 **Feito na Fase 2:** cada serviço do `mecad` ganhou `services/<svc>/docker/entrypoint.sh` (padrão `load_secret_file VAR` espelhando o `audit-service`) + ajuste no Dockerfile (`COPY`+`chmod`+`ENTRYPOINT`). Sem mudança de código de app. Decisão de RabbitMQ: **só a senha é segredo** (URL composta em runtime; `identificacao` compõe `RABBITMQ_URL` no entrypoint pois publisher/consumers só leem a URL).
@@ -342,3 +342,30 @@ Mesma mecânica (exige redeploy — spec ainda não tem `*_FILE`). 2 serviços, 
 
 - **Redis deferido:** `ECAD_AUTHZ_REDIS_PASSWORD` segue como env (`:-` opcional; não há serviço redis na stack). O entrypoint já tolera `ECAD_AUTHZ_REDIS_PASSWORD_FILE` quando for ativado.
 - **Verificar:** o `RABBITMQ_PASSWORD` compartilhado pressupõe que authz usa o **mesmo** CloudAMQP que o mecad (authz usa `RABBITMQ_USERNAME`/vhost próprios). Confirmar no Portainer antes do cutover; se for conta/credencial distinta, criar um secret `authz_rabbitmq_password` em `/authz` e apontar `RABBITMQ_PASSWORD_SECRET` para ele.
+
+## 12. Levantamento de prod no VPS 30 + correção do gap de Dockerfile (2026-06-28)
+
+Ao iniciar a Fase 3, a inspeção do ambiente **vivo** (VPS 30 / `mcad-new` / `vmi3396155`, leader) revelou divergências em relação ao que o repo descrevia. O `vmi3283566` antigo está com tudo `0/0` (blue desativado).
+
+### 12.1 Topologia real de prod (≠ repo)
+- O banco é um **Postgres compartilhado** — stack **`mcad-data`** (serviço `postgres`, aliases de rede `shared-postgres`/`mcad-postgres`/`mcad-authz-postgres`/`iswc-db`). As stacks `mecad` e `mcad-authz` **não têm** serviço postgres próprio.
+- Logo o **wrapper `postgres-entrypoint.sh`** (criado p/ a topologia embarcada do repo) **não se aplica a prod**: o `mcad-data` não tem senhas de role no env (roles criadas em init/migração separado), só `POSTGRES_PASSWORD` (superusuário). Cutover do postgres = só `POSTGRES_PASSWORD_FILE` na stack `mcad-data` (id 19).
+- Composes deployados vivem **no Portainer** (fonte da verdade) e driftaram do repo. IDs: **`mecad`=18, `mcad-authz`=17, `mcad-data`=19**. O cutover edita ESSES composes (via `PUT /api/stacks/{id}`), não o `docker-stack.yml` do repo.
+
+### 12.2 Validação de valores (não-destrutiva, via hash)
+Comparando `sha256(valor vivo)[:8]` com o sufixo `_<hash8>` dos secrets materializados: **todos os 17 segredos reais batem** — o cutover é *value-safe* (troca o mecanismo, mantém a credencial). Confirmado também:
+- **RabbitMQ é compartilhado** por todos os serviços (mesma senha) — a divergência `brhqehoy`/authz era só defaults mortos.
+- **`MINIO_SECRET_KEY` (identificacao) está MORTO** — não usam mais minio (migraram p/ storage-service); não materializado; **remover do spec, não migrar**.
+- **`LOGTO_M2M_CLIENT_SECRET` do identity-sync = `authz_logto_m2m_client_secret`** (mesmo app M2M do authz; compartilhado).
+- Storage-logto são **literais hardcoded** no compose do Portainer (1 por domínio) — exatamente o que a migração elimina; todos batem com `mecad_<dominio>_storage_logto_client_secret`.
+
+### 12.3 Gap de Dockerfile (corrigido) — porque o cutover estava bloqueado
+As imagens de prod **não tinham o entrypoint `_FILE`**: `cadastro:88`→`dotnet ...`, `arrecadacao/distribuicao:131`→`java -jar` direto, `authz:sha-78ce737`→`docker-entrypoint.sh` antigo. Só os **Node** (bff, identity-sync) tinham. Causa: os `services/<svc>/docker/entrypoint.sh` existiam e estavam commitados, **mas os Dockerfiles .NET/Java nunca foram alterados** p/ copiá-los/usá-los como ENTRYPOINT. Por isso `cadastro:131` (tentado e revertido p/ `:88`) também não resolvia — ele quebrou por **outra** causa, sem relação com secrets.
+
+**Corrigido (2026-06-28):** os 4 Dockerfiles (.NET cadastro/identificacao com contexto = raiz do repo; Java arrecadacao/distribuicao com contexto = dir do serviço) passaram a `COPY --chmod=0755 <entrypoint.sh> /app/entrypoint.sh` + `ENTRYPOINT ["/app/entrypoint.sh"]` (preservando `JAVA_OPTS`). Cobertura de segredos fechada: `+CADASTRO_LOGTO_CLIENT_SECRET` (identificacao), `+LOGTO_WEBHOOK_SYNC_KEY` (identity-sync).
+
+### 12.4 Sequência correta da Fase 3 (revisada)
+1. ✅ Dockerfiles cabeados + cobertura fechada (2026-06-28).
+2. **Build + push** das imagens .NET/Java (e rebuild do identity-sync p/ pegar o webhook key; bff já ok). Tags novas.
+3. **Cutover por stack**, editando o compose **deployado** (Portainer `PUT`): trocar plaintext/literais por `*_FILE` + `secrets:` (indireção `${X_SECRET}` no Env da stack), apontando p/ as versões materializadas. Ordem sugerida: `mcad-data` (só `POSTGRES_PASSWORD`) → identity-sync/bff (imagens prontas) → demais conforme rebuild → authz. Rollback nativo via `update_config: failure_action: rollback` (`start-first`).
+4. Remover `MINIO_SECRET_KEY` (morto) do compose do identificacao.

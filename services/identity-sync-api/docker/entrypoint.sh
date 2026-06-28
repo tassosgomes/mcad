@@ -19,5 +19,6 @@ load_secret_file() {
 load_secret_file RABBITMQ_PASSWORD
 load_secret_file LOGTO_M2M_CLIENT_SECRET
 load_secret_file IDENTITY_SYNC_ADMIN_TOKEN
+load_secret_file LOGTO_WEBHOOK_SYNC_KEY
 
 exec "$@"

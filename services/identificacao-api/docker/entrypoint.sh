@@ -22,6 +22,7 @@ load_secret_file() {
 load_secret_file IDENTIFICACAO_DB_PASSWORD
 load_secret_file RABBITMQ_PASSWORD
 load_secret_file STORAGE_LOGTO_CLIENT_SECRET
+load_secret_file CADASTRO_LOGTO_CLIENT_SECRET
 
 if [ -z "${RABBITMQ_URL:-}" ] && [ -n "${RABBITMQ_PASSWORD:-}" ]; then
   export RABBITMQ_URL="amqp://${RABBITMQ_USER:-mcad}:${RABBITMQ_PASSWORD}@${RABBITMQ_HOST:?RABBITMQ_HOST required}:${RABBITMQ_PORT:-5672}/${RABBITMQ_VHOST:-mcad}"

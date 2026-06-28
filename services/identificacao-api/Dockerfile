@@ -27,8 +27,10 @@ ENV ASPNETCORE_URLS=http://+:5100 \
     ASPNETCORE_FORWARDEDHEADERS_ENABLED=true
 
 COPY --from=build /app/publish .
+# Entrypoint que carrega segredos via padrão *_FILE (/run/secrets) antes de iniciar a app.
+COPY --chmod=0755 services/identificacao-api/docker/entrypoint.sh /app/entrypoint.sh
 
 EXPOSE 5100
 
 USER app
-ENTRYPOINT ["dotnet", "Identificacao.API.dll"]
+ENTRYPOINT ["/app/entrypoint.sh"]

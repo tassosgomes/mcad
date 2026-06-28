@@ -28,8 +28,10 @@ ENV ASPNETCORE_URLS=http://+:5001 \
     ASPNETCORE_FORWARDEDHEADERS_ENABLED=true
 
 COPY --from=build /app/publish .
+# Entrypoint que carrega segredos via padrão *_FILE (/run/secrets) antes de iniciar a app.
+COPY --chmod=0755 services/cadastro-api/docker/entrypoint.sh /app/entrypoint.sh
 
 EXPOSE 5001
 
 USER app
-ENTRYPOINT ["dotnet", "Cadastro.API.dll"]
+ENTRYPOINT ["/app/entrypoint.sh"]

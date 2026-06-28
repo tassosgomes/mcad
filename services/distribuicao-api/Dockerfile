@@ -27,8 +27,10 @@ ENV JAVA_OPTS="" \
     SERVER_PORT=5004
 
 COPY --from=build /workspace/distribuicao-api/target/distribuicao-api-*-exec.jar app.jar
+# Entrypoint que carrega segredos via padrão *_FILE (/run/secrets) antes de iniciar a app.
+COPY --chmod=0755 docker/entrypoint.sh /app/entrypoint.sh
 
 EXPOSE 5004
 
 USER app
-ENTRYPOINT ["sh", "-c", "exec java $JAVA_OPTS -jar /app/app.jar \"$@\"", "--"]
+ENTRYPOINT ["/app/entrypoint.sh"]
