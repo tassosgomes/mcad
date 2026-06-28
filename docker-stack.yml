@@ -1,14 +1,20 @@
 services:
   mcad-postgres:
     image: postgres:16-alpine
+    # Wrapper que carrega as senhas de role via *_FILE antes do entrypoint oficial (os scripts
+    # de init leem via `\getenv`, do ambiente). CMD da imagem ("postgres") é preservado e
+    # repassado. Ver infra/infisical/postgres-entrypoint.sh.
+    entrypoint: ["/usr/local/bin/mcad-postgres-entrypoint.sh"]
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-gestauto}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+      POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password
       POSTGRES_DB: ${POSTGRES_DB:-mcad}
-      CADASTRO_DB_PASSWORD: ${CADASTRO_DB_PASSWORD:?CADASTRO_DB_PASSWORD is required}
-      IDENTIFICACAO_DB_PASSWORD: ${IDENTIFICACAO_DB_PASSWORD:?IDENTIFICACAO_DB_PASSWORD is required}
-      ARRECADACAO_DB_PASSWORD: ${ARRECADACAO_DB_PASSWORD:?ARRECADACAO_DB_PASSWORD is required}
-      DB_PASSWORD_DISTRIBUICAO: ${DB_PASSWORD_DISTRIBUICAO:?DB_PASSWORD_DISTRIBUICAO is required}
+      # Senhas de role: usadas só no init de volume vazio; carregadas via *_FILE pelo wrapper.
+      # Inertes no banco existente (init não re-roda). Mantidas para disaster-recovery.
+      CADASTRO_DB_PASSWORD_FILE: /run/secrets/mecad_cadastro_db_password
+      IDENTIFICACAO_DB_PASSWORD_FILE: /run/secrets/mecad_identificacao_db_password
+      ARRECADACAO_DB_PASSWORD_FILE: /run/secrets/mecad_arrecadacao_db_password
+      DB_PASSWORD_DISTRIBUICAO_FILE: /run/secrets/mecad_db_password_distribuicao
     volumes:
       - mcad_pg_data:/var/lib/postgresql/data
     configs:
@@ -20,6 +26,15 @@ services:
         target: /docker-entrypoint-initdb.d/02-setup-arrecadacao-schema.sql
       - source: postgres_03_setup_distribuicao
         target: /docker-entrypoint-initdb.d/03-setup-distribuicao-schema.sql
+      - source: mcad_postgres_entrypoint
+        target: /usr/local/bin/mcad-postgres-entrypoint.sh
+        mode: 0755
+    secrets:
+      - postgres_password
+      - mecad_cadastro_db_password
+      - mecad_identificacao_db_password
+      - mecad_arrecadacao_db_password
+      - mecad_db_password_distribuicao
     networks:
       - mcad-internal
     healthcheck:
@@ -53,14 +68,14 @@ services:
       CADASTRO_DB_NAME: ${POSTGRES_DB:-mcad}
       CADASTRO_DB_SCHEMA: cadastro
       CADASTRO_DB_USER: cadastro_svc
-      CADASTRO_DB_PASSWORD: ${CADASTRO_DB_PASSWORD:?CADASTRO_DB_PASSWORD is required}
+      CADASTRO_DB_PASSWORD_FILE: /run/secrets/mecad_cadastro_db_password
       CADASTRO_DB_SSL_MODE: Disable
       RABBITMQ_HOST: kebnekaise.lmq.cloudamqp.com
       RABBITMQ_PORT: 5672
       RABBITMQ_USER: ${RABBITMQ_USER:-mcad}
-      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:?RABBITMQ_PASSWORD is required}
+      RABBITMQ_PASSWORD_FILE: /run/secrets/rabbitmq_password
       RABBITMQ_VHOST: ${RABBITMQ_VHOST:-mcad}
-      RABBITMQ_URL: amqp://${RABBITMQ_USER:-mcad}:${RABBITMQ_PASSWORD:?RABBITMQ_PASSWORD is required}@kebnekaise.lmq.cloudamqp.com:5672/${RABBITMQ_VHOST:-mcad}
+      # RABBITMQ_URL composta pela app a partir dos campos quando ausente (ver entrypoint).
       OIDC_AUTHORITY: ${OIDC_AUTHORITY:-}
       OIDC_AUDIENCE: ${OIDC_AUDIENCE:-mcad-frontend}
       AUTH_ENABLED: ${AUTH_ENABLED:-false}
@@ -70,6 +85,9 @@ services:
       EcadAuthz__CacheTtlSeconds: ${AUTHZ_CACHE_TTL_SECONDS:-60}
       ISWC_BASE_URL: ${ISWC_BASE_URL:-https://iswc.tasso.dev.br/}
       CORS_ALLOWED_ORIGINS: https://mcad.tasso.dev.br
+    secrets:
+      - mecad_cadastro_db_password
+      - rabbitmq_password
     networks:
       - mcad-internal
       - mcad-observability-net
@@ -108,19 +126,19 @@ services:
       IDENTIFICACAO_DB_NAME: ${POSTGRES_DB:-mcad}
       IDENTIFICACAO_DB_SCHEMA: identificacao
       IDENTIFICACAO_DB_USER: identificacao_svc
-      IDENTIFICACAO_DB_PASSWORD: ${IDENTIFICACAO_DB_PASSWORD:?IDENTIFICACAO_DB_PASSWORD is required}
+      IDENTIFICACAO_DB_PASSWORD_FILE: /run/secrets/mecad_identificacao_db_password
       IDENTIFICACAO_DB_SSL_MODE: Disable
       CADASTRO_API_BASE_URL: http://mcad-cadastro-api:5001/api/v1
       STORAGE_SERVICE_URL: ${STORAGE_SERVICE_URL:-https://storage.tasso.dev.br}
       STORAGE_LOGTO_ISSUER: ${STORAGE_LOGTO_ISSUER:-https://9lcinu.logto.app/oidc}
       STORAGE_LOGTO_CLIENT_ID: ${STORAGE_LOGTO_CLIENT_ID:?STORAGE_LOGTO_CLIENT_ID is required}
-      STORAGE_LOGTO_CLIENT_SECRET: ${STORAGE_LOGTO_CLIENT_SECRET:?STORAGE_LOGTO_CLIENT_SECRET is required}
+      STORAGE_LOGTO_CLIENT_SECRET_FILE: /run/secrets/mecad_identificacao_storage_logto_client_secret
       RABBITMQ_HOST: kebnekaise.lmq.cloudamqp.com
       RABBITMQ_PORT: 5672
       RABBITMQ_USER: ${RABBITMQ_USER:-mcad}
-      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:?RABBITMQ_PASSWORD is required}
+      RABBITMQ_PASSWORD_FILE: /run/secrets/rabbitmq_password
       RABBITMQ_VHOST: ${RABBITMQ_VHOST:-mcad}
-      RABBITMQ_URL: amqp://${RABBITMQ_USER:-mcad}:${RABBITMQ_PASSWORD:?RABBITMQ_PASSWORD is required}@kebnekaise.lmq.cloudamqp.com:5672/${RABBITMQ_VHOST:-mcad}
+      # RABBITMQ_URL composta pelo entrypoint a partir dos campos (publishers leem a URL).
       OIDC_AUTHORITY: ${OIDC_AUTHORITY:-}
       OIDC_AUDIENCE: ${OIDC_AUDIENCE:-mcad-frontend}
       AUTH_ENABLED: ${AUTH_ENABLED:-false}
@@ -129,6 +147,10 @@ services:
       EcadAuthz__TimeoutSeconds: ${AUTHZ_TIMEOUT_SECONDS:-3}
       EcadAuthz__CacheTtlSeconds: ${AUTHZ_CACHE_TTL_SECONDS:-60}
       CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-https://mcad.tasso.dev.br}
+    secrets:
+      - mecad_identificacao_db_password
+      - mecad_identificacao_storage_logto_client_secret
+      - rabbitmq_password
     networks:
       - mcad-internal
       - mcad-observability-net
@@ -166,16 +188,19 @@ services:
       ARRECADACAO_DB_NAME: ${POSTGRES_DB:-mcad}
       ARRECADACAO_DB_SCHEMA: arrecadacao
       ARRECADACAO_DB_USER: arrecadacao_svc
-      ARRECADACAO_DB_PASSWORD: ${ARRECADACAO_DB_PASSWORD:?ARRECADACAO_DB_PASSWORD is required}
+      ARRECADACAO_DB_PASSWORD_FILE: /run/secrets/mecad_arrecadacao_db_password
       ARRECADACAO_DB_SSL_MODE: disable
       RABBITMQ_HOST: kebnekaise.lmq.cloudamqp.com
       RABBITMQ_PORT: 5672
       RABBITMQ_USER: ${RABBITMQ_USER:-brhqehoy}
-      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:?RABBITMQ_PASSWORD is required}
+      RABBITMQ_PASSWORD_FILE: /run/secrets/rabbitmq_password
       RABBITMQ_VHOST: ${RABBITMQ_VHOST:-brhqehoy}
       OIDC_AUTHORITY: ${OIDC_AUTHORITY:-}
       AUTH_ENABLED: ${AUTH_ENABLED:-false}
       ARRECADACAO_CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-https://mcad.tasso.dev.br}
+    secrets:
+      - mecad_arrecadacao_db_password
+      - rabbitmq_password
     networks:
       - mcad-internal
       - mcad-observability-net
@@ -213,15 +238,18 @@ services:
       DB_NAME: ${POSTGRES_DB:-mcad}
       DB_SCHEMA_DISTRIBUICAO: distribuicao
       DB_USER_DISTRIBUICAO: distribuicao_app
-      DB_PASSWORD_DISTRIBUICAO: ${DB_PASSWORD_DISTRIBUICAO:?DB_PASSWORD_DISTRIBUICAO is required}
+      DB_PASSWORD_DISTRIBUICAO_FILE: /run/secrets/mecad_db_password_distribuicao
       RABBITMQ_HOST: kebnekaise.lmq.cloudamqp.com
       RABBITMQ_PORT: 5672
       RABBITMQ_USER: ${RABBITMQ_USER:-mcad}
-      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:?RABBITMQ_PASSWORD is required}
+      RABBITMQ_PASSWORD_FILE: /run/secrets/rabbitmq_password
       RABBITMQ_VHOST: ${RABBITMQ_VHOST:-mcad}
       OIDC_AUTHORITY: ${OIDC_AUTHORITY:-}
       AUTH_ENABLED: ${AUTH_ENABLED:-false}
       DISTRIBUICAO_CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-https://mcad.tasso.dev.br}
+    secrets:
+      - mecad_db_password_distribuicao
+      - rabbitmq_password
     networks:
       - mcad-internal
       - mcad-observability-net
@@ -338,14 +366,17 @@ services:
       OTEL_RESOURCE_ATTRIBUTES: service.namespace=mcad,deployment.environment=prod,service.version=${IDENTITY_SYNC_API_VERSION:-0.1.0}
       OTEL_TRACES_SAMPLER: ${OTEL_TRACES_SAMPLER:-parentbased_traceidratio}
       OTEL_TRACES_SAMPLER_ARG: ${OTEL_TRACES_SAMPLER_ARG:-0.1}
-      LOGTO_WEBHOOK_SYNC_KEY: ${LOGTO_WEBHOOK_SYNC_KEY:?LOGTO_WEBHOOK_SYNC_KEY is required}
+      LOGTO_WEBHOOK_SYNC_KEY_FILE: /run/secrets/mecad_logto_webhook_sync_key
       RABBITMQ_HOST: kebnekaise.lmq.cloudamqp.com
       RABBITMQ_PORT: 5672
       RABBITMQ_USER: ${RABBITMQ_USER:-mcad}
-      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:?RABBITMQ_PASSWORD is required}
+      RABBITMQ_PASSWORD_FILE: /run/secrets/rabbitmq_password
       RABBITMQ_VHOST: ${RABBITMQ_VHOST:-mcad}
-      RABBITMQ_URL: amqp://${RABBITMQ_USER:-mcad}:${RABBITMQ_PASSWORD:?RABBITMQ_PASSWORD is required}@kebnekaise.lmq.cloudamqp.com:5672/${RABBITMQ_VHOST:-mcad}
+      # RABBITMQ_URL composta pela app a partir dos campos quando ausente (ver entrypoint).
       IDENTITY_EVENTS_EXCHANGE: ${IDENTITY_EVENTS_EXCHANGE:-identity.events}
+    secrets:
+      - mecad_logto_webhook_sync_key
+      - rabbitmq_password
     networks:
       - mcad-internal
       - mcad-observability-net
@@ -395,3 +426,40 @@ configs:
   postgres_03_setup_distribuicao:
     external: true
     name: postgres_03_setup_distribuicao
+  # Wrapper de entrypoint do postgres (carrega senhas de role via *_FILE no init).
+  # Criar no servidor: docker config create mcad_postgres_entrypoint infra/infisical/postgres-entrypoint.sh
+  mcad_postgres_entrypoint:
+    external: true
+    name: mcad_postgres_entrypoint
+
+# Segredos materializados pelo Infisical Agent (docker secrets versionados <nome>_<hash8>).
+# A indireção `name: ${X_SECRET:-<nome-lógico>}` torna o cutover DURÁVEL: no Portainer, setar
+# o env da stack X_SECRET=<nome-versionado> aponta a declaração para a versão atual; sem o env,
+# cai no nome lógico (placeholder — não existe até o cutover criar a versão). O caminho primário
+# de cutover é imperativo (materialize-secrets.sh APPLY=1 via mapa CONSUMERS); esta seção é a
+# camada de durabilidade/rollback. Ver docs/ops/infisical-secrets-migration-design.md §3/§5.
+secrets:
+  postgres_password:
+    external: true
+    name: ${POSTGRES_PASSWORD_SECRET:-postgres_password}
+  rabbitmq_password:
+    external: true
+    name: ${RABBITMQ_PASSWORD_SECRET:-rabbitmq_password}
+  mecad_cadastro_db_password:
+    external: true
+    name: ${CADASTRO_DB_PASSWORD_SECRET:-mecad_cadastro_db_password}
+  mecad_identificacao_db_password:
+    external: true
+    name: ${IDENTIFICACAO_DB_PASSWORD_SECRET:-mecad_identificacao_db_password}
+  mecad_arrecadacao_db_password:
+    external: true
+    name: ${ARRECADACAO_DB_PASSWORD_SECRET:-mecad_arrecadacao_db_password}
+  mecad_db_password_distribuicao:
+    external: true
+    name: ${DISTRIBUICAO_DB_PASSWORD_SECRET:-mecad_db_password_distribuicao}
+  mecad_identificacao_storage_logto_client_secret:
+    external: true
+    name: ${IDENTIFICACAO_STORAGE_LOGTO_CLIENT_SECRET_SECRET:-mecad_identificacao_storage_logto_client_secret}
+  mecad_logto_webhook_sync_key:
+    external: true
+    name: ${LOGTO_WEBHOOK_SYNC_KEY_SECRET:-mecad_logto_webhook_sync_key}

@@ -1,0 +1,80 @@
+# Infisical Agent — mcad (env dev)
+# Autentica via Universal Auth (Machine Identity read-only) e renderiza, por pasta do
+# projeto, um arquivo key=value em /render. A materialização (env file -> docker secrets) é
+# feita pelo loop do entrypoint (agent-entrypoint.sh), não pelo execute do agent — este só
+# dispara on-change e não roda no render inicial.
+#
+# Slug do projeto: mcad-platform-hx-dc · env: dev · expandSecretReferences resolve ${...}.
+infisical:
+  address: "https://app.infisical.com"
+
+auth:
+  type: "universal-auth"
+  config:
+    client-id: "/run/secrets/infisical_ro_id"
+    client-secret: "/run/secrets/infisical_ro_secret"
+
+templates:
+  - template-content: |
+      {{- with listSecretsByProjectSlug "mcad-platform-hx-dc" "dev" "/" `{"recursive": false, "expandSecretReferences": true}` }}
+      {{- range . }}
+      {{ .Key }}={{ .Value }}
+      {{- end }}{{- end }}
+    destination-path: /render/shared.env
+    config: { polling-interval: "5m" }
+
+  - template-content: |
+      {{- with listSecretsByProjectSlug "mcad-platform-hx-dc" "dev" "/mecad" `{"recursive": false, "expandSecretReferences": true}` }}
+      {{- range . }}
+      {{ .Key }}={{ .Value }}
+      {{- end }}{{- end }}
+    destination-path: /render/mecad.env
+    config: { polling-interval: "5m" }
+
+  - template-content: |
+      {{- with listSecretsByProjectSlug "mcad-platform-hx-dc" "dev" "/authz" `{"recursive": false, "expandSecretReferences": true}` }}
+      {{- range . }}
+      {{ .Key }}={{ .Value }}
+      {{- end }}{{- end }}
+    destination-path: /render/authz.env
+    config: { polling-interval: "5m" }
+
+  - template-content: |
+      {{- with listSecretsByProjectSlug "mcad-platform-hx-dc" "dev" "/auditoria" `{"recursive": false, "expandSecretReferences": true}` }}
+      {{- range . }}
+      {{ .Key }}={{ .Value }}
+      {{- end }}{{- end }}
+    destination-path: /render/auditoria.env
+    config: { polling-interval: "5m" }
+
+  - template-content: |
+      {{- with listSecretsByProjectSlug "mcad-platform-hx-dc" "dev" "/storage" `{"recursive": false, "expandSecretReferences": true}` }}
+      {{- range . }}
+      {{ .Key }}={{ .Value }}
+      {{- end }}{{- end }}
+    destination-path: /render/storage.env
+    config: { polling-interval: "5m" }
+
+  - template-content: |
+      {{- with listSecretsByProjectSlug "mcad-platform-hx-dc" "dev" "/observability" `{"recursive": false, "expandSecretReferences": true}` }}
+      {{- range . }}
+      {{ .Key }}={{ .Value }}
+      {{- end }}{{- end }}
+    destination-path: /render/observability.env
+    config: { polling-interval: "5m" }
+
+  - template-content: |
+      {{- with listSecretsByProjectSlug "mcad-platform-hx-dc" "dev" "/iswc" `{"recursive": false, "expandSecretReferences": true}` }}
+      {{- range . }}
+      {{ .Key }}={{ .Value }}
+      {{- end }}{{- end }}
+    destination-path: /render/iswc.env
+    config: { polling-interval: "5m" }
+
+  - template-content: |
+      {{- with listSecretsByProjectSlug "mcad-platform-hx-dc" "dev" "/pg-backup" `{"recursive": false, "expandSecretReferences": true}` }}
+      {{- range . }}
+      {{ .Key }}={{ .Value }}
+      {{- end }}{{- end }}
+    destination-path: /render/pg-backup.env
+    config: { polling-interval: "5m" }

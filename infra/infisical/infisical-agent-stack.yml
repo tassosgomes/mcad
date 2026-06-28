@@ -1,0 +1,51 @@
+# Stack do Infisical Agent (env dev). Roda 1 réplica no nó manager, monta o docker.sock
+# para materializar docker secrets e renova o token da Machine Identity automaticamente.
+#
+# Pré-requisitos (criar uma vez, fora desta stack):
+#   docker config create infisical_agent_config       infra/infisical/agent-config.yaml
+#   printf '%s' "$INFISICAL_RO_ID"     | docker secret create infisical_ro_id -
+#   printf '%s' "$INFISICAL_RO_SECRET" | docker secret create infisical_ro_secret -
+#   docker build -t mcad-infisical-agent:latest infra/infisical
+#
+# O materialize-secrets.sh já vem embutido na imagem (ver Dockerfile).
+services:
+  infisical-agent:
+    image: ${INFISICAL_AGENT_IMAGE:-mcad-infisical-agent:latest}
+    # O entrypoint sobe o agent + loop de materialização (ver Dockerfile/agent-entrypoint.sh).
+    # Fase 1 = dry-run (cria secrets, não repointa serviços). Fase 3 = APPLY=1 / PRUNE=1.
+    environment:
+      APPLY: ${INFISICAL_AGENT_APPLY:-0}
+      PRUNE: ${INFISICAL_AGENT_PRUNE:-0}
+      MATERIALIZE_INTERVAL: ${MATERIALIZE_INTERVAL:-60}
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - render:/render
+    configs:
+      - source: infisical_agent_config
+        target: /etc/infisical/agent-config.yaml
+    secrets:
+      - infisical_ro_id
+      - infisical_ro_secret
+    deploy:
+      replicas: 1
+      placement:
+        constraints: [node.role == manager]
+      restart_policy:
+        condition: on-failure
+        delay: 10s
+      resources:
+        limits: { cpus: "0.50", memory: 256M }
+
+volumes:
+  render: {}
+
+configs:
+  infisical_agent_config:
+    external: true
+    name: ${INFISICAL_AGENT_CONFIG:-infisical_agent_config}
+
+secrets:
+  infisical_ro_id:
+    external: true
+  infisical_ro_secret:
+    external: true
