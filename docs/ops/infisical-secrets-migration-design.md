@@ -366,6 +366,6 @@ As imagens de prod **não tinham o entrypoint `_FILE`**: `cadastro:88`→`dotnet
 
 ### 12.4 Sequência correta da Fase 3 (revisada)
 1. ✅ Dockerfiles cabeados + cobertura fechada (2026-06-28).
-2. **Build + push** das imagens .NET/Java (e rebuild do identity-sync p/ pegar o webhook key; bff já ok). Tags novas.
+2. ✅ **Build + push** das imagens via CI/CD (push p/ `main`, run 28329723986) → tag **`:133`** (`github.run_number`). Todas com `_FILE` (verificado em `cadastro:133`). Imagens retrocompatíveis (no-op sem `*_FILE`). **mcad** pronto; **authz** (repo `ecad-authz`) ainda precisa de push p/ main p/ rebuildar.
 3. **Cutover por stack**, editando o compose **deployado** (Portainer `PUT`): trocar plaintext/literais por `*_FILE` + `secrets:` (indireção `${X_SECRET}` no Env da stack), apontando p/ as versões materializadas. Ordem sugerida: `mcad-data` (só `POSTGRES_PASSWORD`) → identity-sync/bff (imagens prontas) → demais conforme rebuild → authz. Rollback nativo via `update_config: failure_action: rollback` (`start-first`).
 4. Remover `MINIO_SECRET_KEY` (morto) do compose do identificacao.
