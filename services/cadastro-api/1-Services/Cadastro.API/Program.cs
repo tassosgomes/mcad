@@ -95,6 +95,7 @@ builder.Services.AddScoped<IAnexoRepository, AnexoRepository>();
 builder.Services.AddScoped<ICredencialTitularRepository, CredencialTitularRepository>();
 builder.Services.AddScoped<IOcorrenciaRepository, OcorrenciaRepository>();
 builder.Services.AddScoped<ISolicitacaoAlteracaoRepository, SolicitacaoAlteracaoRepository>();
+builder.Services.AddScoped<ICadastroUnitOfWork, CadastroUnitOfWork>();
 
 // ─── HttpClient + Polly ────────────────────────────────────────────────
 var iswcBaseUrl = Environment.GetEnvironmentVariable("ISWC_BASE_URL") ?? "https://iswc.tasso.dev.br/";

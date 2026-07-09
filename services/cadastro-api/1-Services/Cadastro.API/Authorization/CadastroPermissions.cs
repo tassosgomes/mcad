@@ -62,6 +62,8 @@ public static class CadastroPermissions
     public const string OcorrenciaResolver = "cadastro:default:ocorrencia:resolver";
     public const string OcorrenciaCancelar = "cadastro:default:ocorrencia:cancelar";
 
+    public const string RepertorioCriar = "cadastro:default:repertorio:criar";
+
     public const string SolicitacaoAlteracaoListar = "cadastro:default:solicitacao-alteracao:listar";
     public const string SolicitacaoAlteracaoAprovar = "cadastro:default:solicitacao-alteracao:aprovar";
     public const string SolicitacaoAlteracaoRejeitar = "cadastro:default:solicitacao-alteracao:rejeitar";
