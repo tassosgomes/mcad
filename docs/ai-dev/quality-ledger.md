@@ -1689,3 +1689,33 @@ Task de documentação. 3 arquivos alterados (+5/-1 linhas):
 - `vision.md`: +1 entrada v1.11 no changelog
 
 Todas as alterações seguem exatamente o especificado na task. Sem código modificado.
+
+---
+
+## Task 3.0 — RegistrarRepertorioCommandHandler | 2026-07-09 | APROVADA
+
+**Artefatos:** `RegistrarRepertorioCommandHandler.cs` (447 linhas), `RegistrarRepertorioCommandHandlerTests.cs` (691 linhas, 17 testes)
+
+| Verificação | Resultado |
+|---|---|
+| `dotnet build Cadastro.sln` | 0 errors |
+| `dotnet test --filter RegistrarRepertorioCommandHandlerTests` | 17 passed, 0 failed |
+| Single SaveChangesAsync no caminho de confirmação | ✅ |
+| Sem handlers CRUD legados despachados | ✅ |
+| ISWC antes da transação | ✅ |
+| RepertorioIswcIndisponivelException sem persistência | ✅ |
+| Rollback em falha (inclusive 2º Fonograma) | ✅ |
+| RN-01 (100% autoral), RN-03/RN-09, RN-11, RN-07 | ✅ |
+| RN-04/RN-12/RN-13/RN-15 (CalculadoraConexos) | ✅ |
+| Com ISWC: Obra LIBERADA, Fonogramas URL liberados | ✅ |
+| Pendente: Obra PENDENTE, Fonogramas PENDENTE_DOCUMENTACAO | ✅ |
+| Auditoria e outbox (sem evento repertorio.*) | ✅ |
+| CancellationToken em toda cadeia async | ✅ |
+| Sem CPF/CNPJ/CAE-IPI em logs | ✅ |
+| 7 subtarefas (3.1–3.7) verificadas | ✅ |
+| Conformidade: dotnet-architecture, dotnet-code-quality, dotnet-testing | ✅ |
+
+**Observações:**
+- Verificação de ISWC duplicado ocorre dentro da transação (rollback seguro, mas idealmente pré-transação). Não bloqueante.
+- Soma autoral verificada em dois pontos (validador + handler) — redundância defensiva aceitável.
+- Titularidades adicionadas via `Update(obra)` por tracking de navegação EF; verificar em teste de integração.
