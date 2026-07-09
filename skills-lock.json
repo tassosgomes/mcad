@@ -6,6 +6,24 @@
       "sourceType": "github",
       "computedHash": "e24e3c4cab4b5a07bc1d1801db14868f3a1cd184f7f28f5dd2c4a2b234bf2f2d"
     },
+    "flow-qa-orchestrator": {
+      "source": "tassosgomes/my-skills",
+      "sourceType": "github",
+      "skillPath": "skills/flow-qa-orchestrator/SKILL.md",
+      "computedHash": "8f93f0306ad16ea118dc473a9b74b03a237e60a4892a14d7418076fbeec5a527"
+    },
+    "flow-qa-report-builder": {
+      "source": "tassosgomes/my-skills",
+      "sourceType": "github",
+      "skillPath": "skills/flow-qa-report-builder/SKILL.md",
+      "computedHash": "c0e0ff6ec1a81666096c99c6cbddd6911fdab361d1595b9bcb49cd40b85340fc"
+    },
+    "flow-qa-task-runner": {
+      "source": "tassosgomes/my-skills",
+      "sourceType": "github",
+      "skillPath": "skills/flow-qa-task-runner/SKILL.md",
+      "computedHash": "8f4cccb2e6701c523004dfe8622e8e06fd44d0788547329bc3de1f780b1af427"
+    },
     "playwright-generate-test": {
       "source": "github/awesome-copilot",
       "sourceType": "github",

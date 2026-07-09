@@ -159,10 +159,19 @@ def unique(values):
 
 
 def build_frontend_redirect_uris() -> tuple[list[str], list[str]]:
-    redirect_uris = ["http://localhost:5173/callback"]
+    redirect_uris = [
+        "http://localhost:5173/callback",
+        "http://localhost:5173/silent-callback",
+    ]
     configured_redirect_uri = os.environ.get("OIDC_REDIRECT_URI")
     if configured_redirect_uri:
         redirect_uris.append(configured_redirect_uri)
+        parsed = urllib.parse.urlparse(configured_redirect_uri)
+        if parsed.scheme and parsed.netloc:
+            silent_callback_uri = parsed._replace(
+                path="/silent-callback", query="", fragment=""
+            ).geturl()
+            redirect_uris.append(silent_callback_uri)
 
     post_logout_redirect_uris = ["http://localhost:5173/logout"]
     configured_post_logout_redirect_uri = os.environ.get("OIDC_POST_LOGOUT_REDIRECT_URI")
@@ -328,7 +337,11 @@ def ensure_user(token: str, username: str, name: str, email: str, password: str)
 
 def remove_legacy_access_token_customizer(token: str) -> None:
     """Remove customizer legado que injetava roles no access token, se existir."""
-    api("DELETE", "/configs/jwt-customizer/access-token", token)
+    try:
+        api("DELETE", "/configs/jwt-customizer/access-token", token)
+    except RuntimeError as exc:
+        if "entity.not_exists" not in str(exc):
+            raise
     print("  JWT customizer de access token removido ou ausente")
 
 

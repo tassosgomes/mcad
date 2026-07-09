@@ -119,7 +119,9 @@
       "identificacao:default:upload:importar",
       "identificacao:default:pendente:listar",
       "identificacao:default:pendente:visualizar-impacto",
-      "identificacao:default:pendente:resolver"
+      "identificacao:default:pendente:resolver",
+      "cadastro:default:obra:criar",
+      "cadastro:default:fonograma:criar"
     ]
   },
   {

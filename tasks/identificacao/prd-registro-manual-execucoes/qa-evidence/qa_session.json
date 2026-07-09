@@ -1,0 +1,85 @@
+{
+  "session": {
+    "created_at": "2026-06-19T00:00:00Z",
+    "prd_path": "tasks/identificacao/prd-registro-manual-execucoes/prd.md",
+    "techspec_path": "tasks/identificacao/prd-registro-manual-execucoes/techspec.md",
+    "techspec_frontend_path": "tasks/identificacao/prd-registro-manual-execucoes/techspec-frontend.md",
+    "orchestrator_version": "1.0"
+  },
+  "scope": {
+    "user_stories_in_scope": [
+      { "task_id": "qa_task_01", "slug": "busca_cadastro", "description": "RF-01 — Buscar obra/fonograma no Cadastro via GET /api/v1/busca + UI autocomplete" },
+      { "task_id": "qa_task_02", "slug": "listar_execucoes", "description": "RF-04 — Listar execuções da captação via GET /captacoes/{id}/execucoes + tabela paginada + empty state" },
+      { "task_id": "qa_task_03", "slug": "crud_execucao", "description": "RF-02,05,06,07,08 — CRUD completo: criar (c/ campos condicionais e duração auto), editar, excluir com validações" },
+      { "task_id": "qa_task_04", "slug": "criar_pendente_inline", "description": "RF-03 — Criar obra/fonograma pendente inline via Cadastro API e UI modal" }
+    ],
+    "excluded": [
+      { "id": "consultor-identificacao", "reason": "Usuário solicitou testar apenas perfil analista-identificacao" },
+      { "id": "db-validation", "reason": "Usuário não quer inspecionar banco diretamente" },
+      { "id": "F03-F04-F05", "reason": "Fora do escopo do PRD" }
+    ]
+  },
+  "environment": {
+    "base_url": "https://mcad.tasso.dev.br",
+    "identificacao_api_url": "https://mcad-identificacao.tasso.dev.br/api/v1",
+    "cadastro_api_url": "https://mcad-cadastro.tasso.dev.br/api/v1",
+    "auth": {
+      "enabled": true,
+      "type": "bearer",
+      "token_endpoint": "https://9lcinu.logto.app/oidc/token",
+      "credentials_env": {
+        "username_var": "QA_USERNAME",
+        "password_var": "QA_PASSWORD"
+      }
+    }
+  },
+  "database": {
+    "enabled": false,
+    "type": "none"
+  },
+  "report": {
+    "formats": ["markdown"],
+    "output_dir": "tasks/identificacao/prd-registro-manual-execucoes/qa-evidence"
+  },
+  "execution": {
+    "tasks": [
+      {
+        "id": "qa_task_01",
+        "slug": "busca_cadastro",
+        "description": "RF-01 — Buscar obra/fonograma no Cadastro",
+        "type": ["ui", "api"],
+        "depends_on": [],
+        "can_run_parallel_with": ["qa_task_02"]
+      },
+      {
+        "id": "qa_task_02",
+        "slug": "listar_execucoes",
+        "description": "RF-04 — Listar execuções da captação",
+        "type": ["ui", "api"],
+        "depends_on": [],
+        "can_run_parallel_with": ["qa_task_01"]
+      },
+      {
+        "id": "qa_task_03",
+        "slug": "crud_execucao",
+        "description": "RF-02,05,06,07,08 — CRUD completo de execuções",
+        "type": ["ui", "api"],
+        "depends_on": ["qa_task_01"],
+        "can_run_parallel_with": []
+      },
+      {
+        "id": "qa_task_04",
+        "slug": "criar_pendente_inline",
+        "description": "RF-03 — Criar obra/fonograma pendente inline",
+        "type": ["ui", "api"],
+        "depends_on": ["qa_task_01", "qa_task_03"],
+        "can_run_parallel_with": []
+      }
+    ],
+    "phases": [
+      { "phase": 1, "mode": "parallel", "tasks": ["qa_task_01", "qa_task_02"] },
+      { "phase": 2, "mode": "sequential", "tasks": ["qa_task_03"] },
+      { "phase": 3, "mode": "sequential", "tasks": ["qa_task_04"] }
+    ]
+  }
+}

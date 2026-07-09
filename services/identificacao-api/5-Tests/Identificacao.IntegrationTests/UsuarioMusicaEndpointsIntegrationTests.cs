@@ -25,6 +25,9 @@ public class UsuarioMusicaEndpointsIntegrationTests : IClassFixture<Identificaca
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<IdentificacaoDbContext>();
 
+        db.UsuariosMusicaSnapshot.RemoveRange(db.UsuariosMusicaSnapshot);
+        await db.SaveChangesAsync();
+
         db.UsuariosMusicaSnapshot.AddRange(
             UsuarioMusicaSnapshot.Criar(Guid.NewGuid(), "Radio Globo SP", "11111111000111", "ATIVO", DateTime.UtcNow),
             UsuarioMusicaSnapshot.Criar(Guid.NewGuid(), "Radio Jovem Pan", "22222222000122", "ATIVO", DateTime.UtcNow),

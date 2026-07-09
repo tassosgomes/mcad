@@ -1,0 +1,11 @@
+isrc;iswc;inicio;fim;tipo_utilizacao;titulo_programa
+BR-GLD-26-00001;;08:00:00;08:03:30;TA;Programa da Manhã
+BR-GLD-26-00001;;08:30:00;08:33:00;TA;Programa da Manhã
+BR-GLD-26-00001;;09:15:00;09:18:45;BK;Programa da Manhã
+BR-GLD-26-00002;;10:00:00;10:04:10;TA;Jornal do Meio-Dia
+BR-GLD-26-00002;;10:30:00;10:33:20;TA;Jornal do Meio-Dia
+BR-GLD-26-00002;;11:00:00;11:02:30;BK;Jornal do Meio-Dia
+BR-GLD-26-00001;;14:00:00;14:04:00;TA;Tarde Total
+BR-GLD-26-00001;;14:30:00;14:32:15;TA;Tarde Total
+BR-GLD-26-00002;;15:00:00;15:03:45;TA;Tarde Total
+BR-GLD-26-00002;;15:30:00;15:33:00;BK;Tarde Total

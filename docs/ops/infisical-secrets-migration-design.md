@@ -1,21 +1,21 @@
 # Migração de Segredos para Infisical Gerenciado — Documento de Design
 
-> Status: **Em execução** — Fases 0 e 1 concluídas; **Fase 2 em andamento**; **Fase 3 iniciada (1ª stack: `auditoria` cut over no VPS 30)** · Autor: devsecops · Criado 2026-06-16 · Atualizado 2026-06-27
+> Status: **Em execução** — Fases 0, 1 e 2 concluídas; **Fase 3 concluída para stacks principais; Fase 4 concluída para `mecad`/`mcad-data`/`mcad-authz`/`storage`/`observability`/`iswc`/`pg-backup`** · Autor: devsecops · Criado 2026-06-16 · Atualizado 2026-06-28
 > Decisões fixadas: injeção via **Infisical Agent → docker secrets**; escopo **todas as stacks**; Agent como **serviço Swarm com `/var/run/docker.sock`**.
 > Ambiente alvo agora: **`dev` (e `staging`)**; **`prod` fica para o futuro**.
 > Projeto Infisical já criado: `mcad-platform` (id `299d00ce-55d3-4c39-87b4-faafcbc44965`, slug `mcad-platform-hx-dc`), envs `dev`/`staging`/`prod`. Estrutura **multipastas** confirmada. Acesso via `INFISICAL_TOKEN` (Bearer JWT) no `.env`.
 >
 > **Nota sobre "rotação":** o versionamento de secret por hash + `service update --secret-add/--secret-rm` é apenas a mecânica de **cutover** (virar do valor atual para o gerido pelo Infisical) e de troca quando o valor é editado manualmente. **Não é rotação automática** — rotação por TTL / dynamic secrets é item de futuro.
 
-## 0. Onde estamos (2026-06-17)
+## 0. Onde estamos (2026-06-28)
 
 | Fase | Estado | Resumo |
 |---|---|---|
 | 0 — Setup Infisical | ✅ **Concluída** | Projeto `mcad-platform` + 7 pastas (env `dev`); **34 segredos** semeados; Machine Identity read-only (`INFISICAL_RO_ID/SECRET` no `.env`) validada. |
 | 1 — Agent em dry-run | ✅ **Concluída** | Stack `infisical-agent` rodando no `mcad-server` (1 réplica manager); materializa os **34 docker secrets** versionados (`label=mcad.infisical.managed=true`) **sem repointar serviços** (`APPLY=0`). |
 | 2 — Refactor `*_FILE` | ✅ **Concluída** (2026-06-28) | Entrypoints `_FILE` nos serviços; **Dockerfiles .NET/Java agora cabeiam o entrypoint** (gap corrigido — ver §12); cobertura de segredos fechada; `materialize-secrets.sh` `CONSUMERS` preenchido. ⚠️ A fiação de stack YAML foi feita contra o repo, mas o cutover usa os composes **deployados no Portainer** (topologia `shared-postgres`, ≠ repo) — ver §12. |
-| 3 — Cutover | 🔄 **Iniciada / mecad BLOQUEADO em build** | `auditoria` cut over + durável no VPS 30 (2026-06-27). **mecad/authz: cutover bloqueado** — as imagens de prod não têm o entrypoint `_FILE` (Dockerfile não cabeado); exige **rebuild+push** antes. Detalhes/validação em §12. |
-| 4 — Limpeza | 🔄 **Iniciada** | **`auditoria` concluída** (2026-06-27): env Portainer durável + estático/órfãos removidos. Demais stacks: remover env plano, podar órfãos, aposentar `vault`. |
+| 3 — Cutover | ✅ **Concluída para stacks principais** (2026-06-28) | `mecad`, `mcad-data` e `mcad-authz` estão em `_FILE`/docker secrets no VPS 30. `frontend` e `bff` ficaram em `:131` sem migração de segredo. Detalhes em §12. |
+| 4 — Limpeza | 🔄 **Quase concluída** (2026-06-28) | Env plaintext redundante removido do Portainer para stacks principais + `storage-service`, `mcad-observability`, `mcad-iswc`, `pg-backup`; secrets estáticos órfãos podados; `vault` removido. Resíduo: `ECAD_AUTHZ_REDIS_URL` ainda plaintext por depender de cutover próprio. |
 
 **Feito na Fase 2:** cada serviço do `mecad` ganhou `services/<svc>/docker/entrypoint.sh` (padrão `load_secret_file VAR` espelhando o `audit-service`) + ajuste no Dockerfile (`COPY`+`chmod`+`ENTRYPOINT`). Sem mudança de código de app. Decisão de RabbitMQ: **só a senha é segredo** (URL composta em runtime; `identificacao` compõe `RABBITMQ_URL` no entrypoint pois publisher/consumers só leem a URL).
 
@@ -271,9 +271,9 @@ Status por serviço (env vars de segredo confirmadas via inventário do código)
 |---|---|---|
 | 0 | ✅ **Concluída** — projeto + 7 pastas, 34 segredos em `dev`, Machine Identity read-only validada | Nenhum |
 | 1 | ✅ **Concluída** — `infisical-agent` em dry-run no servidor; 34 docker secrets versionados materializados; nenhum serviço repointado | Nenhum (secrets criados, não consumidos) |
-| 2 | 🔄 **Em andamento** — entrypoints `_FILE` dos 6 serviços do mecad prontos. Falta: authz, postgres, fiação `docker-stack.yml` + mapa `CONSUMERS` | Nenhum (só código/config, em branch) |
-| 3 | Cutover stack a stack (menos crítica → crítica), validando healthchecks; rollback por `service update --rollback` | Rolling update controlado |
-| 4 | Limpeza: remover segredos do `.env_linux`/Portainer env; podar `grafana-token` órfãos; aposentar stack `vault`. **Troca dos segredos que estavam em texto plano** (tratar como comprometidos) — opcional em dev/staging, **obrigatória alinhada ao cutover de prod** | Rotação pontual programada |
+| 2 | ✅ **Concluída** — entrypoints `_FILE`, Dockerfiles cabeados, stacks fiadas e `CONSUMERS` preenchido | Nenhum (só código/config, em branch) |
+| 3 | ✅ **Concluída para `mecad`/`mcad-data`/`mcad-authz`** — cutover via Portainer no VPS 30, validando healthchecks; rollback por stack update/Swarm | Rolling update controlado |
+| 4 | 🔄 **Quase concluída** — remover segredos redundantes do Portainer Env; podar órfãos seguros; aposentar stack `vault`. **Troca dos segredos que estavam em texto plano** (tratar como comprometidos) — opcional em dev/staging, **obrigatória alinhada ao cutover de prod** | Rolling update leve / rotação pontual |
 
 ## 9. Riscos & mitigação
 
@@ -369,5 +369,31 @@ As imagens de prod **não tinham o entrypoint `_FILE`**: `cadastro:88`→`dotnet
 2. ✅ **Build + push** das imagens via CI/CD (push p/ `main`, run 28329723986) → tag **`:133`** (`github.run_number`). Todas com `_FILE` (verificado em `cadastro:133`). Imagens retrocompatíveis (no-op sem `*_FILE`). **mcad** pronto; **authz** (repo `ecad-authz`) ainda precisa de push p/ main p/ rebuildar.
 3. **Cutover por stack**, editando o compose **deployado** (Portainer `PUT`): trocar plaintext/literais por `*_FILE` + `secrets:` (indireção `${X_SECRET}` no Env da stack), apontando p/ as versões materializadas. Rollback nativo via `update_config: failure_action: rollback` (`start-first`).
    - ✅ **Piloto `identity-sync` cut over (2026-06-28, stack `mecad` id 18):** `PUT` editando **só** o bloco do serviço (image→`:133`, `RABBITMQ_PASSWORD`/`LOGTO_WEBHOOK_SYNC_KEY`/`IDENTITY_SYNC_ADMIN_TOKEN`/`LOGTO_M2M_CLIENT_SECRET`→`*_FILE`, `RABBITMQ_URL` removida) + top-level `secrets:` + 4 envs `*_SECRET` no Env da stack. Convergiu `1/1` via `start-first`; os outros 6 serviços **não** reiniciaram (spec inalterado). Validado nos logs: `identity_sync_completed fetched:19 published:19 error:null` (Logto M2M + RabbitMQ OK). `LOGTO_M2M_CLIENT_SECRET` aponta p/ o secret compartilhado `authz_logto_m2m_client_secret`.
-   - **Pendentes:** `cadastro`/`identificacao`/`arrecadacao`/`distribuicao` (image→`:133` + `*_FILE`); `mcad-data` (`POSTGRES_PASSWORD`); `mcad-authz` (image→`sha-7f86152` + `ECAD_AUTHZ_DB_PASSWORD`/`RABBITMQ_PASSWORD`). `bff`/`frontend` não têm segredo a migrar em prod.
+   - ✅ **Cutover final do `mecad` (2026-06-28):** `cadastro`, `identificacao`, `arrecadacao`, `distribuicao` e `identity-sync` em `:133` com `_FILE`; `frontend` e `bff` mantidos em `:131` sem segredo a migrar. `identificacao` passou a montar DB, RabbitMQ, storage-logto e `CADASTRO_LOGTO_CLIENT_SECRET`; `MINIO_SECRET_KEY` removido.
+   - ✅ **Cutover do `mcad-data` (2026-06-28):** `postgres:16-alpine` com `POSTGRES_PASSWORD_FILE=/run/secrets/postgres_password`, apontando para `postgres_password_8bf1ba00`.
+   - ✅ **Cutover do `mcad-authz` (2026-06-28):** imagem `tassosgomes/mcad-authz:sha-7f86152`; `ECAD_AUTHZ_DB_PASSWORD_FILE` e `RABBITMQ_PASSWORD_FILE` via docker secrets.
 4. Remover `MINIO_SECRET_KEY` (morto) do compose do identificacao.
+
+### 12.5 Fase 4 — limpeza do Portainer Env e poda segura (2026-06-28)
+
+Executado via `PUT /api/stacks/{id}` mantendo o mesmo `StackFileContent` e removendo do **Env array** apenas chaves plaintext que já não eram referenciadas pelo compose durável:
+
+- `mcad-authz` (id 17): removidos `POSTGRES_PASSWORD` e `RABBITMQ_PASSWORD`. Mantidos `AUTHZ_DB_PASSWORD_SECRET` e `RABBITMQ_PASSWORD_SECRET`.
+- `mecad` (id 18): removidos `POSTGRES_PASSWORD`, `CADASTRO_DB_PASSWORD`, `IDENTIFICACAO_DB_PASSWORD`, `ARRECADACAO_DB_PASSWORD`, `DB_PASSWORD_DISTRIBUICAO`, `RABBITMQ_PASSWORD`, `MINIO_ROOT_PASSWORD`, `LOGTO_WEBHOOK_SYNC_KEY`, `IDENTITY_SYNC_ADMIN_TOKEN` e `LOGTO_M2M_CLIENT_SECRET`. Mantidos os `*_SECRET` que alimentam a indireção `name: ${...}` dos docker secrets externos.
+- `mcad-data` (id 19): removido `POSTGRES_PASSWORD`. Mantido `POSTGRES_PASSWORD_SECRET`.
+- `mcad-observability` (id 5): `MCAD_OBSERVABILITY_GRAFANA_TOKEN_SECRET` repontado para `observability_grafana_token_058f58fb`; secret estático `grafana-token` removido após confirmar zero referências.
+- `storage-service` (id 15): secrets estáticos `storage_mongodb_uri`, `storage_s3_access_key_id`, `storage_s3_secret_access_key` repontados para versões Infisical mantendo os targets antigos. Primeiro repoint falhou e fez rollback porque `STORAGE_MONGODB_URI` no Infisical tinha `@` não escapado no userinfo (`mongo connect: error parsing uri: unescaped @ sign`). Corrigido alinhando `/storage` no Infisical com os valores vivos dos docker secrets estáticos; agent materializou `storage_storage_mongodb_uri_cd78ab6d`, `storage_storage_s3_access_key_id_b50ce896`, `storage_storage_s3_secret_access_key_05cc065f`; segundo repoint convergiu. Secrets estáticos e versões antigas substituídas removidos.
+- `mcad-iswc` (id 16): `DB_ADMIN_PASSWORD` removido do Env array/compose; serviço passou a montar `iswc_db_admin_password_iswc_6012a92b` e usa wrapper de `command:` para exportar `DB_ADMIN_PASSWORD` de `/run/secrets/iswc_db_admin_password_iswc` antes de `node db/init.js && node src/server.js`.
+- `pg-backup` (id 13): `POSTGRES_PASSWORD` removido do Env array; `S3_ACCESS_KEY_ID` e `S3_SECRET_ACCESS_KEY` removidos do compose. `S3_ACCESS_KEY_ID`/`S3_SECRET_ACCESS_KEY` foram semeados em `/pg-backup` no Infisical a partir dos valores vivos; após restart do `infisical-agent`, foram materializados `pg-backup_s3_access_key_id_f66436bc` e `pg-backup_s3_secret_access_key_62a910e6`. Os três serviços de backup passaram a montar `pg-backup_pg_backup_postgres_password_74c59498`, `pg-backup_s3_access_key_id_f66436bc`, `pg-backup_s3_secret_access_key_62a910e6` e usam wrapper de `command:` para exportar envs antes de `sh run.sh`.
+- `vault` (id 3): stack parada `0/0` removida do Portainer/Swarm (`DELETE /api/stacks/3?endpointId=1`, HTTP 204).
+
+Validação após a limpeza:
+
+- Swarm: `mecad`, `mcad-authz`, `mcad-data`, `storage-service`, `mcad-observability`, `mcad-iswc` e `pg-backup` em `1/1`; `vault` não aparece mais em `docker stack ls`.
+- Health externo: 200 para `https://mcad.tasso.dev.br`, `mcad-cadastro` `/health`, `mcad-identificacao` `/health`, `mcad-arrecadacao` `/actuator/health`, `mcad-distribuicao` `/actuator/health`, `mcad-authz` `/v1/health`, `storage` `/health/live` e `iswc` `/api/health`.
+- Poda: removidos `grafana-token`, `storage_mongodb_uri`, `storage_s3_access_key_id`, `storage_s3_secret_access_key`, `storage_storage_mongodb_uri_e444be85`, `storage_storage_s3_access_key_id_63c43015`, `storage_storage_s3_secret_access_key_07108df0`. Não havia versões antigas da auditoria (`audit_db_password`, `*_45ae8a30`, `*_b2c5985d`) para remover. Secrets Infisical ainda sem consumo direto (ex.: client IDs storage-logto) foram mantidos porque o agent pode recriá-los e/ou são valores de configuração não sensíveis.
+
+Resíduo explícito:
+
+- `mcad-authz` ainda mantém `ECAD_AUTHZ_REDIS_URL` em plaintext no Env array e no spec do serviço. O compose ainda referencia `ECAD_AUTHZ_REDIS_URL`, enquanto o entrypoint atual só carrega `ECAD_AUTHZ_DB_PASSWORD`, `RABBITMQ_PASSWORD` e `ECAD_AUTHZ_REDIS_PASSWORD` via `_FILE`; portanto não foi seguro trocar para `authz_ecad_authz_redis_url_58800865` sem novo ajuste de imagem/compose. Próximo passo: migrar Redis para campos separados ou adicionar suporte a `ECAD_AUTHZ_REDIS_URL_FILE`, então remover `ECAD_AUTHZ_REDIS_URL` do Portainer.
+- `mcad-observability`, `mecad` e `mcad-data` ainda mantêm `*_SECRET` no Env array por design: são nomes de docker secrets versionados usados pela interpolação `name: ${...}` do compose, não valores de segredo.

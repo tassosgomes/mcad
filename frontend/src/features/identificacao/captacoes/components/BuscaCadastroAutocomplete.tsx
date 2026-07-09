@@ -27,6 +27,7 @@ export function BuscaCadastroAutocomplete({
   const [showFonoModal, setShowFonoModal] = useState(false);
 
   const { data: resultados, isLoading } = useBuscaCadastro(termo);
+  const semResultados = !isLoading && resultados?.length === 0;
 
   // Close dropdown when typing completely empty or clicking outside
   useEffect(() => {
@@ -62,23 +63,33 @@ export function BuscaCadastroAutocomplete({
   return (
     <div className={styles.container} ref={containerRef}>
       {value ? (
-        <div
-          className={`${styles.selectedCard} ${error ? styles.error : ''}`}
-        >
+        <div className={`${styles.selectedCard} ${error ? styles.error : ''}`}>
           <div className={styles.selectedInfo}>
             <span className={styles.selectedType}>
               {value.fonogramaId ? '🎵 Fonograma' : '📝 Obra'}
             </span>
             <span className={styles.selectedTitle}>{value.titulo}</span>
           </div>
-          <button
-            type="button"
-            className={styles.clearBtn}
-            onClick={handleClear}
-            aria-label="Limpar seleção"
-          >
-            <X size={16} />
-          </button>
+          <div className={styles.selectedActions}>
+            {!value.fonogramaId && (
+              <button
+                type="button"
+                className={styles.actionBtn}
+                onClick={() => setShowFonoModal(true)}
+              >
+                <Plus size={12} aria-hidden="true" />
+                Criar Fonograma
+              </button>
+            )}
+            <button
+              type="button"
+              className={styles.clearBtn}
+              onClick={handleClear}
+              aria-label="Limpar seleção"
+            >
+              <X size={16} />
+            </button>
+          </div>
         </div>
       ) : (
         <>
@@ -145,31 +156,33 @@ export function BuscaCadastroAutocomplete({
                 ))
               )}
 
-              <div className={styles.footer}>
-                <span className={styles.footerText}>Não encontrou o que procurava?</span>
-                <div className={styles.footerActions}>
-                  <button
-                    type="button"
-                    className={styles.actionBtn}
-                    onClick={() => {
-                      setIsOpen(false);
-                      setShowObraModal(true);
-                    }}
-                  >
-                    <Plus size={12} style={{ marginRight: 4, display: 'inline-block' }} />
-                    Criar Obra
-                  </button>
-                  <button
-                    type="button"
-                    className={styles.actionBtn}
-                    title="Crie uma obra pendente primeiro para depois vincular o fonograma."
-                    disabled
-                  >
-                    <Plus size={12} style={{ marginRight: 4, display: 'inline-block' }} />
-                    Criar Fonograma
-                  </button>
+              {semResultados && (
+                <div className={styles.footer}>
+                  <span className={styles.footerText}>Não encontrou o que procurava?</span>
+                  <div className={styles.footerActions}>
+                    <button
+                      type="button"
+                      className={styles.actionBtn}
+                      onClick={() => {
+                        setIsOpen(false);
+                        setShowObraModal(true);
+                      }}
+                    >
+                      <Plus size={12} aria-hidden="true" />
+                      Criar Obra
+                    </button>
+                    <button
+                      type="button"
+                      className={styles.actionBtn}
+                      title="Crie uma obra pendente primeiro para depois vincular o fonograma."
+                      disabled
+                    >
+                      <Plus size={12} aria-hidden="true" />
+                      Criar Fonograma
+                    </button>
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
           )}
         </>
@@ -184,7 +197,6 @@ export function BuscaCadastroAutocomplete({
             onChange(obraData);
             setTermo('');
             setShowObraModal(false);
-            setShowFonoModal(true);
           }}
         />
       )}
