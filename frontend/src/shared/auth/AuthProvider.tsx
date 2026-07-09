@@ -56,7 +56,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     };
 
     const handleSilentRenewError = () => {
-      setUser(null);
+      console.warn('[Auth] Silent token renewal failed — current token may still be valid.');
     };
 
     const loadUser = async () => {
