@@ -7,6 +7,7 @@
 # Logs and runtime artifacts
 *.log
 *.pid
+*.tmp
 build.log
 .tmp/
 .playwright-cli/
@@ -14,6 +15,7 @@ build.log
 
 # Node / Vite / TypeScript
 **/node_modules/
+**/node_modules
 **/dist/
 **/coverage/
 **/*.tsbuildinfo
