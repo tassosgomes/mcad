@@ -218,50 +218,6 @@
         },
         "type": "object"
       },
-      "CadastroRepertorioResponse": {
-        "type": "object",
-        "additionalProperties": false,
-        "properties": {
-          "obraId": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "obraTitulo": {
-            "type": "string"
-          },
-          "statusObra": {
-            "type": "string"
-          },
-          "iswc": {
-            "type": "string",
-            "nullable": true
-          },
-          "fonogramas": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/FonogramaRepertorioResponse"
-            }
-          },
-          "titularesCriados": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/TitularCriadoResponse"
-            }
-          },
-          "iswcObtido": {
-            "type": "boolean"
-          },
-          "obraLink": {
-            "type": "string"
-          },
-          "fonogramaLinks": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          }
-        }
-      },
       "CancelarOcorrenciaRequest": {
         "additionalProperties": false,
         "properties": {
@@ -271,6 +227,23 @@
           }
         },
         "type": "object"
+      },
+      "CategoriaAutoral": {
+        "enum": [
+          0,
+          1
+        ],
+        "format": "int32",
+        "type": "integer"
+      },
+      "CategoriaConexo": {
+        "enum": [
+          0,
+          1,
+          2
+        ],
+        "format": "int32",
+        "type": "integer"
       },
       "CriarFonogramaCommand": {
         "additionalProperties": false,
@@ -409,29 +382,25 @@
         "type": "object"
       },
       "DadosObraRepertorio": {
-        "type": "object",
         "additionalProperties": false,
         "properties": {
-          "titulo": {
+          "genero": {
+            "nullable": true,
             "type": "string"
           },
           "subtitulo": {
-            "type": "string",
-            "nullable": true
+            "nullable": true,
+            "type": "string"
           },
           "tipo": {
-            "enum": [
-              "Musical",
-              "Literaria",
-              "MusicoLiteraria",
-              "LigadaAPraMusical"
-            ]
+            "$ref": "#/components/schemas/TipoObra"
           },
-          "genero": {
-            "type": "string",
-            "nullable": true
+          "titulo": {
+            "nullable": true,
+            "type": "string"
           }
-        }
+        },
+        "type": "object"
       },
       "DefinirUrlAudioCommand": {
         "additionalProperties": false,
@@ -538,55 +507,39 @@
         "type": "object"
       },
       "FonogramaRepertorioInput": {
-        "type": "object",
         "additionalProperties": false,
         "properties": {
+          "dataGravacao": {
+            "format": "date",
+            "nullable": true,
+            "type": "string"
+          },
+          "dataLancamento": {
+            "format": "date",
+            "nullable": true,
+            "type": "string"
+          },
           "isrc": {
+            "nullable": true,
             "type": "string"
           },
           "pais": {
+            "nullable": true,
             "type": "string"
-          },
-          "dataGravacao": {
-            "type": "string",
-            "format": "date",
-            "nullable": true
-          },
-          "dataLancamento": {
-            "type": "string",
-            "format": "date",
-            "nullable": true
-          },
-          "urlAudio": {
-            "type": "string",
-            "nullable": true
           },
           "participacoes": {
-            "type": "array",
             "items": {
               "$ref": "#/components/schemas/ParticipacaoRepertorioInput"
-            }
-          }
-        }
-      },
-      "FonogramaRepertorioResponse": {
-        "type": "object",
-        "additionalProperties": false,
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid"
+            },
+            "nullable": true,
+            "type": "array"
           },
-          "isrc": {
-            "type": "string"
-          },
-          "status": {
-            "type": "string"
-          },
-          "link": {
+          "urlAudio": {
+            "nullable": true,
             "type": "string"
           }
-        }
+        },
+        "type": "object"
       },
       "LoginTitularRequest": {
         "additionalProperties": false,
@@ -603,33 +556,33 @@
         "type": "object"
       },
       "NovoTitularRepertorioInput": {
-        "type": "object",
         "additionalProperties": false,
         "properties": {
-          "nome": {
+          "associacaoId": {
+            "format": "uuid",
             "type": "string"
           },
-          "tipoPessoa": {
-            "enum": [
-              "PF",
-              "PJ"
-            ]
+          "caeIpi": {
+            "nullable": true,
+            "type": "string"
           },
           "documento": {
+            "nullable": true,
             "type": "string"
           },
           "nacionalidade": {
+            "nullable": true,
             "type": "string"
           },
-          "associacaoId": {
-            "type": "string",
-            "format": "uuid"
+          "nome": {
+            "nullable": true,
+            "type": "string"
           },
-          "caeIpi": {
-            "type": "string",
-            "nullable": true
+          "tipoPessoa": {
+            "$ref": "#/components/schemas/TipoTitular"
           }
-        }
+        },
+        "type": "object"
       },
       "OwnershipSnapshotRequest": {
         "additionalProperties": false,
@@ -654,47 +607,47 @@
         "type": "object"
       },
       "ParticipacaoRepertorioInput": {
-        "type": "object",
         "additionalProperties": false,
         "properties": {
-          "titularLocalKey": {
-            "type": "string"
-          },
           "papel": {
-            "enum": [
-              "Interprete",
-              "ProdutorFonografico",
-              "MusicoExecutante"
-            ]
+            "$ref": "#/components/schemas/CategoriaConexo"
+          },
+          "titularLocalKey": {
+            "nullable": true,
+            "type": "string"
           }
-        }
+        },
+        "type": "object"
       },
       "RegistrarRepertorioRequest": {
-        "type": "object",
         "additionalProperties": false,
         "properties": {
+          "fonogramas": {
+            "items": {
+              "$ref": "#/components/schemas/FonogramaRepertorioInput"
+            },
+            "nullable": true,
+            "type": "array"
+          },
           "obra": {
             "$ref": "#/components/schemas/DadosObraRepertorio"
           },
           "titulares": {
-            "type": "array",
             "items": {
               "$ref": "#/components/schemas/TitularRepertorioInput"
-            }
+            },
+            "nullable": true,
+            "type": "array"
           },
           "titularidades": {
-            "type": "array",
             "items": {
               "$ref": "#/components/schemas/TitularidadeRepertorioInput"
-            }
-          },
-          "fonogramas": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/FonogramaRepertorioInput"
-            }
+            },
+            "nullable": true,
+            "type": "array"
           }
-        }
+        },
+        "type": "object"
       },
       "RejeitarSolicitacaoRequest": {
         "additionalProperties": false,
@@ -730,82 +683,54 @@
         },
         "type": "object"
       },
-      "TitularCriadoResponse": {
-        "type": "object",
-        "additionalProperties": false,
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "nome": {
-            "type": "string"
-          },
-          "tipo": {
-            "type": "string"
-          },
-          "documentoFormatado": {
-            "type": "string"
-          },
-          "associacao": {
-            "type": "string"
-          }
-        }
+      "TipoObra": {
+        "enum": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "format": "int32",
+        "type": "integer"
+      },
+      "TipoTitular": {
+        "enum": [
+          0,
+          1
+        ],
+        "format": "int32",
+        "type": "integer"
       },
       "TitularRepertorioInput": {
-        "type": "object",
         "additionalProperties": false,
         "properties": {
-          "titularId": {
-            "type": "string",
-            "format": "uuid",
-            "nullable": true
-          },
           "novoTitular": {
             "$ref": "#/components/schemas/NovoTitularRepertorioInput"
-          }
-        }
-      },
-      "TitularResumoResponse": {
-        "type": "object",
-        "additionalProperties": false,
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid"
           },
-          "nome": {
-            "type": "string"
-          },
-          "tipo": {
-            "type": "string"
-          },
-          "documentoFormatado": {
-            "type": "string"
-          },
-          "associacao": {
+          "titularId": {
+            "format": "uuid",
+            "nullable": true,
             "type": "string"
           }
-        }
+        },
+        "type": "object"
       },
       "TitularidadeRepertorioInput": {
-        "type": "object",
         "additionalProperties": false,
         "properties": {
-          "titularLocalKey": {
-            "type": "string"
-          },
           "categoria": {
-            "enum": [
-              "Autor",
-              "Editor"
-            ]
+            "$ref": "#/components/schemas/CategoriaAutoral"
           },
           "percentual": {
-            "type": "number",
-            "format": "double"
+            "format": "double",
+            "type": "number"
+          },
+          "titularLocalKey": {
+            "nullable": true,
+            "type": "string"
           }
-        }
+        },
+        "type": "object"
       }
     },
     "securitySchemes": {
@@ -2860,9 +2785,6 @@
     },
     "/api/v1/repertorios": {
       "post": {
-        "tags": [
-          "Repertorios"
-        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -2870,35 +2792,21 @@
                 "$ref": "#/components/schemas/RegistrarRepertorioRequest"
               }
             }
-          }
+          },
+          "required": true
         },
         "responses": {
-          "201": {
-            "description": "Created"
-          },
-          "400": {
-            "description": "Bad Request"
-          },
-          "403": {
-            "description": "Forbidden"
-          },
-          "409": {
-            "description": "Conflict"
-          },
-          "422": {
-            "description": "Unprocessable Entity"
-          },
-          "502": {
-            "description": "Bad Gateway"
+          "200": {
+            "description": "OK"
           }
-        }
+        },
+        "tags": [
+          "Repertorios"
+        ]
       }
     },
     "/api/v1/repertorios/pendentes": {
       "post": {
-        "tags": [
-          "Repertorios"
-        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -2906,37 +2814,25 @@
                 "$ref": "#/components/schemas/RegistrarRepertorioRequest"
               }
             }
-          }
+          },
+          "required": true
         },
         "responses": {
-          "201": {
-            "description": "Created"
-          },
-          "400": {
-            "description": "Bad Request"
-          },
-          "403": {
-            "description": "Forbidden"
-          },
-          "409": {
-            "description": "Conflict"
-          },
-          "422": {
-            "description": "Unprocessable Entity"
+          "200": {
+            "description": "OK"
           }
-        }
+        },
+        "tags": [
+          "Repertorios"
+        ]
       }
     },
     "/api/v1/repertorios/titulares": {
       "get": {
-        "tags": [
-          "Repertorios"
-        ],
         "parameters": [
           {
-            "name": "documento",
             "in": "query",
-            "required": true,
+            "name": "documento",
             "schema": {
               "type": "string"
             }
@@ -2945,11 +2841,11 @@
         "responses": {
           "200": {
             "description": "OK"
-          },
-          "400": {
-            "description": "Bad Request"
           }
-        }
+        },
+        "tags": [
+          "Repertorios"
+        ]
       }
     },
     "/api/v1/solicitacoes-alteracao": {
