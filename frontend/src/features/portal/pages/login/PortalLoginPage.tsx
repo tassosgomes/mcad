@@ -40,8 +40,7 @@ function LoginForm({
       await login(documento, senha);
       navigate('/portal', { replace: true });
     } catch (err: unknown) {
-      const problem = err as { detail?: string };
-      setError(problem.detail ?? 'Credenciais inválidas');
+      setError(err instanceof Error ? err.message : 'Credenciais inválidas');
     } finally {
       setIsSubmitting(false);
     }

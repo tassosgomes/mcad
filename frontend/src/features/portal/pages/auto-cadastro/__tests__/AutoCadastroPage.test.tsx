@@ -2,6 +2,7 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { AutoCadastroPage } from '../AutoCadastroPage';
+import { PortalApiError } from '../../../shared/auth/PortalAuthProvider';
 
 const navigateMock = vi.hoisted(() => vi.fn());
 const signupMock = vi.hoisted(() => vi.fn());
@@ -128,7 +129,7 @@ describe('AutoCadastroPage', () => {
   });
 
   it('shows error toast on signup failure with 409', async () => {
-    signupMock.mockRejectedValue({ status: 409, detail: 'Já existe uma conta para este CPF/CNPJ' });
+    signupMock.mockRejectedValue(new PortalApiError(409, 'Já existe uma conta para este CPF/CNPJ'));
     renderPage();
 
     fireEvent.change(getDocumentoInput(), { target: { value: '123.456.789-00' } });

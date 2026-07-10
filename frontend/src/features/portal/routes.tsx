@@ -1,5 +1,5 @@
 import { lazy, Suspense } from 'react';
-import { type RouteObject } from 'react-router-dom';
+import { Outlet, type RouteObject } from 'react-router-dom';
 import { Loading } from '@components/ui/loading';
 import { runtimeConfig } from '@/shared/config/runtimeConfig';
 import { PortalAuthProvider } from './shared/auth/PortalAuthProvider';
@@ -40,6 +40,11 @@ function SuspenseFallback() {
 
 export const portalRoutes: RouteObject = {
   path: '/portal',
+  element: (
+    <PortalAuthProvider portalApiBaseUrl={runtimeConfig.portalApiBaseUrl}>
+      <Outlet />
+    </PortalAuthProvider>
+  ),
   children: [
     {
       path: 'login',
@@ -59,11 +64,9 @@ export const portalRoutes: RouteObject = {
     },
     {
       element: (
-        <PortalAuthProvider portalApiBaseUrl={runtimeConfig.portalApiBaseUrl}>
-          <PortalProtectedRoute>
-            <PortalLayout />
-          </PortalProtectedRoute>
-        </PortalAuthProvider>
+        <PortalProtectedRoute>
+          <PortalLayout />
+        </PortalProtectedRoute>
       ),
       children: [
         {

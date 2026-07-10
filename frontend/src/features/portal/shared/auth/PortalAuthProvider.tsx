@@ -21,6 +21,23 @@ interface PortalAuthProviderProps {
   portalApiBaseUrl: string;
 }
 
+export class PortalApiError extends Error {
+  constructor(
+    readonly status: number,
+    detail: string,
+  ) {
+    super(detail);
+    this.name = 'PortalApiError';
+  }
+}
+
+async function createPortalApiError(response: Response, fallbackDetail: string): Promise<PortalApiError> {
+  const error = await response.json().catch(() => ({ detail: fallbackDetail }));
+  const detail = typeof error.detail === 'string' ? error.detail : fallbackDetail;
+
+  return new PortalApiError(response.status, detail);
+}
+
 export function PortalAuthProvider({ children, portalApiBaseUrl }: PortalAuthProviderProps) {
   const [titular, setTitular] = useState<TitularInfo | null>(null);
   const [token, setToken] = useState<string | null>(null);
@@ -51,8 +68,7 @@ export function PortalAuthProvider({ children, portalApiBaseUrl }: PortalAuthPro
       });
 
       if (!response.ok) {
-        const error = await response.json().catch(() => ({ detail: 'Credenciais inválidas' }));
-        throw new Error(error.detail ?? 'Credenciais inválidas');
+        throw await createPortalApiError(response, 'Credenciais inválidas');
       }
 
       const data = (await response.json()) as LoginResponse;
@@ -77,8 +93,7 @@ export function PortalAuthProvider({ children, portalApiBaseUrl }: PortalAuthPro
       });
 
       if (!response.ok) {
-        const error = await response.json().catch(() => ({ detail: 'Erro ao criar conta' }));
-        throw new Error(error.detail ?? 'Erro ao criar conta');
+        throw await createPortalApiError(response, 'Erro ao criar conta');
       }
     },
     [portalApiBaseUrl],
