@@ -226,12 +226,49 @@ Arquivo de configuração: `services/bff/src/config.ts`
 
 ## 5. APIs REST por Serviço
 
+### Cadastro Unificado de Repertório
+
+A feature **Cadastro Unificado de Repertório** expõe uma jornada composta de cadastro como um recurso transitório de API (`repertorios`). Não há entidade persistente Repertório; Obra, Titular e Fonograma continuam sendo a fonte de verdade. A atomicidade é local via `ICadastroUnitOfWork`; o ISWC é solicitado antes da transação e não participa dela.
+
+#### Endpoints
+
+| Método | Caminho | Auth | Descrição |
+|---|---|---|---|
+| GET | `/api/v1/repertorios/titulares?documento=` | `cadastro:default:repertorio:criar` | Busca titular por CPF/CNPJ (resumo mascarado) |
+| POST | `/api/v1/repertorios` | `cadastro:default:repertorio:criar` | Cadastra repertório completo com ISWC |
+| POST | `/api/v1/repertorios/pendentes` | `cadastro:default:repertorio:criar` | Cadastra repertório sem ISWC (Obra PENDENTE) |
+
+#### Respostas
+
+| Código | Descrição |
+|--------|-----------|
+| 200 | Lookup de titular encontrado (zero ou um resultado mascarado) |
+| 201 | Cadastro concluído (`Location: /api/v1/obras/{obraId}`) |
+| 400 | Dados inválidos (documento, estrutura do payload) |
+| 403 | Sem permissão `cadastro:default:repertorio:criar` |
+| 409 | Conflito (documento/ISRC/vínculo duplicado no payload ou banco) |
+| 422 | Regras de negócio não atendidas (soma autoral != 100%, Editor PF, etc.) |
+| 502 | ISWC indisponível (`code: ISWC_INDISPONIVEL`) — sem persistência local |
+
+#### Decisões Técnicas
+
+- **Atomicidade local** via `ICadastroUnitOfWork`: todas as entidades (Titular, Obra, Titularidade, Fonograma, Participação) são persistidas em uma única transação PostgreSQL.
+- **ISWC chamado antes da transação**: limita a transação a recursos locais. Em falha, o Analista decide entre retry (nova tentativa, sem persistência) ou salvar pendente (`POST /pendentes`, Obra PENDENTE).
+- **Sem retry automático de ISWC**: o retry é uma nova solicitação explícita da UI com o mesmo estado em memória.
+- **Não há entidade persistente Repertório**: as entidades Obra, Titular, Fonograma são a fonte de verdade. `repertorios` é um recurso transitório de API que representa a jornada de cadastro.
+- **Sem rascunhos**: o estado do wizard existe apenas em memória no frontend. Fechar/atualizar a aba descarta a jornada.
+- **URL de áudio obrigatória** no wizard: pré-requisito para liberar Fonogramas automaticamente quando o ISWC é obtido.
+- **Consultor sem acesso**: a permissão `cadastro:default:repertorio:criar` é atribuída apenas ao role `cadastro.default.analista`.
+
 ### 5.1 cadastro-api (:5001)
 
 Base URL: `http://localhost:5001/api/v1`
 
 | Endpoint | Métodos | Permissão exigida | Descrição |
 |----------|---------|-------------------|-----------|
+| `/repertorios/titulares` | GET | `cadastro:default:repertorio:criar` | Busca titular por CPF/CNPJ no wizard |
+| `/repertorios` | POST | `cadastro:default:repertorio:criar` | Cadastro unificado com ISWC |
+| `/repertorios/pendentes` | POST | `cadastro:default:repertorio:criar` | Cadastro unificado sem ISWC (pendente) |
 | `/associacoes` | GET | `cadastro:default:associacao:listar` | Lista associações |
 | `/associacoes/{id}` | GET | `cadastro:default:associacao:visualizar` | Detalhe de associação |
 | `/titulares` | GET, POST | `cadastro:default:titular:listar/criar` | CRUD de titulares |
@@ -1077,5 +1114,5 @@ SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI=https://9lcinu.logto.app/oi
 
 ---
 
-*Última atualização: 2026-06-13*
+*Última atualização: 2026-07-09*
 *Gerado a partir da análise dos repositórios: mcad, ecad-authz, ecad-auditoria*

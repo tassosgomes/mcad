@@ -2,6 +2,38 @@
 
 ---
 
+## 2026-07-09 | PRD: prd-cadastro-unificado-repertorio | Task: 7.0
+
+Modelo utilizado: deepseek-v4-pro (via AI Flow Validator)
+
+### Problemas Identificados
+
+Zero Defects Identified (1 pendência documentada de infra + 1 gap de observabilidade non-blocking)
+
+### Resumo da Tarefa
+
+Total de Problemas: 0 (2 pendências non-blocking)
+Categoria Técnica mais frequente: N/A
+Origem mais frequente: N/A
+Indício de fragilidade estrutural? Não — gate final concluído com sucesso. 46/46 testes .NET pass, 198/198 frontend pass, build 0 erros. Documentação service-communication.md atualizada com 3 endpoints, permissão, 7 status HTTP, 7 decisões técnicas e 5 fluxos de aceitação. Contract Gate requer infraestrutura remota (documented limitation). Métricas customizadas de repertório especificadas na techspec não implementadas (auto-instrumentation OTel cobre HTTP-level; métricas de domínio são enhancement futuro).
+Sugestão de melhoria no:
+- PRD: Nenhuma — todos RF-01 a RF-23 cobertos e verificáveis nos 5 fluxos de aceitação.
+- TechSpec: As métricas customizadas (§Monitoramento e Observabilidade) não foram implementadas em nenhuma task. Recomendação: extrair em task futura de hardening ou clarificar que auto-instrumentation OTel é suficiente para o MVP, com métricas de negócio como "should have".
+- Template de Task: O critério de sucesso "`./dev.sh start && scripts/export-contracts.sh --check && ./dev.sh stop` passa com infraestrutura disponível" é condicional — o gate só pode ser totalmente fechado com infra remota. Recomendação: adicionar nota explícita de que a validação de contratos requer infra disponível e que a ausência não bloqueia o merge se todos os outros critérios passarem.
+
+Evidências da validação:
+- Testes .NET (Repertorio): PASS — 46/46 (`dotnet test --filter 'FullyQualifiedName~Repertorio'`).
+- Testes Frontend: PASS — 198/198 (`npx vitest run`).
+- Build .NET: PASS — 7 projetos, 0 erros, 1 warning NU1902 (pré-existente).
+- Build Frontend: PASS — 0 erros TS, 0 erros build.
+- Documentação: `docs/architecture/service-communication.md` atualizado com seção "Cadastro Unificado de Repertório" (3 endpoints, permissão, 7 status HTTP, 7 decisões técnicas, 5 fluxos).
+- Contract Gate: NÃO executado — infra remota indisponível (PostgreSQL/RabbitMQ requerem VPN/túnel). `contracts/cadastro/openapi.json` exportado antes das tasks de repertório (commit `e4f7c19`), sem os 3 endpoints novos. Arquivo NÃO editado manualmente.
+- Observabilidade: OpenTelemetry + Prometheus auto-instrumentation ativos. Métricas customizadas de repertório (contador + histograma) especificadas na techspec mas não implementadas.
+- Autorização: Permissão `cadastro:default:repertorio:criar` em seeds, restrita ao analista, excluída do consultor.
+- Dívida técnica remanescente: 3 componentes frontend >300 linhas (reportado na task 6.0); métricas customizadas pendentes.
+
+---
+
 ## 2026-07-09 | PRD: prd-cadastro-unificado-repertorio | Task: 6.0
 
 Modelo utilizado: deepseek-v4-pro (via AI Flow Validator)
