@@ -285,6 +285,7 @@ app.MapOcorrenciaEndpoints();
 app.MapPortalAuthEndpoints();
 app.MapPortalEndpoints();
 app.MapSolicitacaoAlteracaoEndpoints();
+app.MapRepertorioEndpoints();
 
 // ─── AsyncAPI (documentação de eventos — pública) ─────────────────────
 app.MapAsyncApiDocs();
