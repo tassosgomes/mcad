@@ -281,6 +281,7 @@ services:
       DISTRIBUICAO_API_BASE_URL: ${DISTRIBUICAO_API_BASE_URL:-https://mcad-distribuicao.tasso.dev.br/api/v1}
       AUDITORIA_API_BASE_URL: ${AUDITORIA_API_BASE_URL:-https://mcad-bff.tasso.dev.br/api/auditoria/v1}
       AUTHZ_API_BASE_URL: ${AUTHZ_API_BASE_URL:-https://mcad-bff.tasso.dev.br/api/authz/v1}
+      PORTAL_API_BASE_URL: ${PORTAL_API_BASE_URL:-https://mcad-bff.tasso.dev.br/api/cadastro/v1/portal}
       OIDC_AUTHORITY: ${OIDC_AUTHORITY:?OIDC_AUTHORITY is required for frontend}
       OIDC_CLIENT_ID: ${FRONTEND_OIDC_CLIENT_ID:?FRONTEND_OIDC_CLIENT_ID is required}
       OIDC_AUDIENCE: ${FRONTEND_OIDC_AUDIENCE:-mcad-frontend}

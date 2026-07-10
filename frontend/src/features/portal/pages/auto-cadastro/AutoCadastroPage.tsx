@@ -5,6 +5,7 @@ import { TextInput } from '@components/ui/text-input';
 import { Button } from '@components/ui/button';
 import { PageHeader } from '@components/ui/page-header';
 import { useToast } from '@components/ui/toast';
+import { PortalApiError } from '../../shared/auth/PortalAuthProvider';
 import { usePortalAuth } from '../../shared/auth/usePortalAuth';
 import styles from './AutoCadastroPage.module.css';
 
@@ -41,11 +42,10 @@ export function AutoCadastroPage() {
       showToast('Conta criada com sucesso! Faça login para continuar.', 'success');
       navigate('/portal/login', { replace: true });
     } catch (err: unknown) {
-      const problem = err as { detail?: string; status?: number };
-      if (problem.status === 409) {
-        showToast(problem.detail || 'Já existe uma conta para este CPF/CNPJ', 'error');
+      if (err instanceof PortalApiError && err.status === 409) {
+        showToast(err.message || 'Já existe uma conta para este CPF/CNPJ', 'error');
       } else {
-        showToast(problem.detail || 'Erro ao criar conta. Verifique os dados informados.', 'error');
+        showToast('Erro ao criar conta. Verifique os dados informados.', 'error');
       }
     } finally {
       setIsSubmitting(false);
