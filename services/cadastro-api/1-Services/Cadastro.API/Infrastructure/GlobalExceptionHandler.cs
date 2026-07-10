@@ -1,4 +1,5 @@
 using Cadastro.Application.Common.Exceptions;
+using Cadastro.Application.Repertorios;
 using Cadastro.Domain.Exceptions;
 using Ecad.Authz.Sdk;
 using Microsoft.AspNetCore.Diagnostics;
@@ -16,6 +17,8 @@ namespace Cadastro.API.Infrastructure;
 /// - StatusConflictException (Domain) → 409
 /// - ValidationException → 400
 /// - DomainException → 422
+/// - RepertorioIswcIndisponivelException → 502 (code: "ISWC_INDISPONIVEL")
+/// - ExternalServiceException → 502
 /// - Exception → 500
 /// </summary>
 public class GlobalExceptionHandler : IExceptionHandler
@@ -50,6 +53,7 @@ public class GlobalExceptionHandler : IExceptionHandler
             ExternalServiceException => (StatusCodes.Status502BadGateway, "Bad Gateway"),
             DepuracaoNecessariaException => (StatusCodes.Status409Conflict, "Depuração Necessária"),
             PreRequisitosException => (StatusCodes.Status422UnprocessableEntity, "Pré-requisitos não atendidos"),
+            RepertorioIswcIndisponivelException => (StatusCodes.Status502BadGateway, "Serviço ISWC indisponível"),
             _ => (StatusCodes.Status500InternalServerError, "Internal Server Error")
         };
         var problemDetails = new ProblemDetails
@@ -83,6 +87,12 @@ public class GlobalExceptionHandler : IExceptionHandler
         if (exception is DepuracaoNecessariaException depException)
         {
             problemDetails.Extensions["code"] = depException.Code;
+        }
+
+        if (exception is RepertorioIswcIndisponivelException iswcException)
+        {
+            problemDetails.Extensions["code"] = iswcException.ErrorCode;
+            problemDetails.Detail = "Serviço ISWC indisponível no momento. Tente novamente ou salve como pendente.";
         }
 
         if (exception is PreRequisitosException preReqException)

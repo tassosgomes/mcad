@@ -1,0 +1,211 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.title {
+  margin: 0;
+  font-size: var(--text-xl);
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  background: var(--color-bg-secondary);
+  border-radius: var(--radius-md);
+}
+
+.sectionTitle {
+  margin: 0;
+  font-size: var(--text-base);
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.emptyHint {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--color-text-tertiary);
+}
+
+.pendingBanner {
+  padding: var(--space-3) var(--space-4);
+  background: var(--color-warning-bg, #fef9c3);
+  border: 1px solid var(--color-warning, #ca8a04);
+  border-radius: var(--radius-md);
+}
+
+.pendingBannerTitle {
+  margin: 0 0 var(--space-2);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--color-warning, #854d0e);
+}
+
+.pendingList {
+  margin: 0;
+  padding-left: var(--space-4);
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+}
+
+.pendingList li {
+  margin-bottom: var(--space-1);
+}
+
+.readyBanner {
+  padding: var(--space-3) var(--space-4);
+  background: var(--color-success-bg, #dcfce7);
+  border: 1px solid var(--color-success);
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--color-success);
+}
+
+.detailGrid {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.detailItem {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.detailLabel {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  min-width: 100px;
+}
+
+.detailValue {
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--color-text-primary);
+}
+
+.revisaoRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-2) 0;
+}
+
+.revisaoRow + .revisaoRow {
+  border-top: 1px solid var(--color-border);
+}
+
+.revisaoRowInfo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.revisaoRowName {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.revisaoRowMeta {
+  font-size: var(--text-xs);
+  color: var(--color-text-tertiary);
+}
+
+.revisaoRowData {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.percentual {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  font-family: monospace;
+  color: var(--color-text-primary);
+}
+
+.missingData {
+  font-size: var(--text-xs);
+  color: var(--color-warning, #ca8a04);
+}
+
+.fonogramaRev {
+  padding: var(--space-3);
+  background: var(--color-bg-primary);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+}
+
+.fonogramaRev + .fonogramaRev {
+  margin-top: var(--space-3);
+}
+
+.fonogramaRevHeader {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: var(--space-2);
+}
+
+.fonogramaRevIsrc {
+  font-weight: 600;
+  font-family: monospace;
+  color: var(--color-text-primary);
+}
+
+.fonogramaRevPais {
+  font-size: var(--text-xs);
+  color: var(--color-text-secondary);
+}
+
+.fonogramaRevUrl {
+  font-size: var(--text-xs);
+  color: var(--color-text-secondary);
+  word-break: break-all;
+  margin-bottom: var(--space-2);
+}
+
+.fonogramaRevParticipacoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+}
+
+.partTag {
+  font-size: var(--text-xs);
+  padding: var(--space-0) var(--space-2);
+  background: var(--color-bg-secondary);
+  border-radius: var(--radius-sm);
+  color: var(--color-text-secondary);
+}
+
+.confirmSection {
+  display: flex;
+  justify-content: center;
+  padding-top: var(--space-4);
+}
+
+.errorList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-3);
+  background: var(--color-error-bg, #fee2e2);
+  border: 1px solid var(--color-error);
+  border-radius: var(--radius-md);
+}
+
+.errorItem {
+  color: var(--color-error);
+  font-size: var(--text-sm);
+  font-weight: 500;
+}

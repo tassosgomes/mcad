@@ -71,7 +71,8 @@
       "cadastro:default:status:desbloquear-obra",
       "cadastro:default:status:liberar-fonograma",
       "cadastro:default:status:bloquear-fonograma",
-      "cadastro:default:status:desbloquear-fonograma"
+      "cadastro:default:status:desbloquear-fonograma",
+      "cadastro:default:repertorio:criar"
     ]
   },
   {
