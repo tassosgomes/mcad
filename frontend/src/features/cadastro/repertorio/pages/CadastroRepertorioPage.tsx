@@ -1,3 +1,4 @@
+import { RepertorioWizard } from '../components/RepertorioWizard';
 import styles from './CadastroRepertorioPage.module.css';
 
 export function CadastroRepertorioPage() {
@@ -7,6 +8,7 @@ export function CadastroRepertorioPage() {
       <p className={styles.subtitle}>
         Cadastro unificado de repertório — obra, titulares, fonogramas e participações.
       </p>
+      <RepertorioWizard />
     </div>
   );
 }

@@ -2,6 +2,80 @@
 
 ---
 
+## 2026-07-09 | PRD: prd-cadastro-unificado-repertorio | Task: 6.0
+
+Modelo utilizado: deepseek-v4-pro (via AI Flow Validator)
+
+### Problemas Identificados
+
+1. Categoria Tecnica: Erro de compilacao (build-blocker)
+   Severidade: Alta (production-blocking — `npm run build` falha)
+   Fase Detectada: Revisao (build validation)
+   Origem Provavel: Implementacao (descumprimento de `noUnusedLocals`/`noUnusedParameters`)
+   Necessitou Reimplementacao Significativa? Nao (remocao pontual de imports/variaveis nao usadas)
+   Descricao: `tsc -b && vite build` falha com 14 erros TypeScript. Oito sao `noUnusedLocals`/`noUnusedParameters` em 4 arquivos de componente (imports `Loading`, `Badge`, tipos `TitularRepertorioInput`/`TitularidadeRepertorioInput`/`FonogramaRepertorioInput`, funcao `goToStep`, variavel `titulares`, constante `PAPEL_OPCOES`). Seis estao no arquivo de teste: `mockTitularesRepertorio` nao usado + 5 erros de tipo em `getByLabelText` retornando `HTMLElement` em vez de `HTMLSelectElement` (sem `.options`).
+
+2. Categoria Tecnica: Violacao de padrao de qualidade (tamanho de componente)
+   Severidade: Media (divida tecnica — nao quebra build nem runtime)
+   Fase Detectada: Revisao (code review)
+   Origem Provavel: Implementacao
+   Necessitou Reimplementacao Significativa? Nao (extracao de subcomponentes)
+   Descricao: Tres componentes excedem o limite de ~300 linhas da skill `react-code-quality` (CS-02): `RepertorioWizard.tsx` (523 linhas), `TitularRepertorioSelector.tsx` (372 linhas), `FonogramasRepertorioStep.tsx` (325 linhas). Sugestao: extrair `ObraStep` para arquivo proprio, `TitularSearchSection` + `NovoTitularForm` do selector, e `FonogramaCard` do step.
+
+### Resumo da Tarefa
+
+Total de Problemas: 2 (1 alta, 1 media)
+Categoria Tecnica mais frequente: Erro de compilacao
+Origem mais frequente: Implementacao
+Indicio de fragilidade estrutural? Nao — 15/15 testes passam; cobertura funcional completa dos 7 subtarefas; fluxo ISWC (sucesso, falha, retry, pendente) correto; busca de titular por CPF/CNPJ funcional; validacao por etapa cross-step; MSW handlers bem estruturados. Build quebra exclusivamente por unused locals (remocao pontual) + cast de tipo no teste.
+Sugestao de melhoria no:
+- PRD: Nenhuma — RF-01 a RF-19 cobertos pelos testes e implementacao.
+- TechSpec: Nenhuma — inventario de artefatos frontend implementado fielmente.
+- Template de Task: Nenhuma — 7 subtarefas com criterios verificaveis e rastreaveis.
+- Skill: `react-code-quality` — `noUnusedLocals` e `noUnusedParameters` fazem parte do `strict: true` do projeto; o build captura isso. Sugestao: adicionar item no checklist de PR da skill sobre "zero unused imports/variables" para prevenir recorrencia.
+
+Evidencias da validacao:
+- Build: FAIL — `tsc -b && vite build` (14 erros TS em 4 arquivos: RepertorioWizard.tsx, TitularRepertorioSelector.tsx, FonogramasRepertorioStep.tsx, CadastroRepertorioPage.test.tsx).
+- Testes: PASS — 15/15 (`npx vitest run src/features/cadastro/repertorio/__tests__/CadastroRepertorioPage.test.tsx`).
+- MSW handlers: 4 novos (GET titulares, POST repertorios, POST repertorios/pendentes) + 3 mock responses.
+- Zero `any`: Confirmado — 0 ocorrencias nos arquivos de producao da feature.
+- Files: 5 new components + 1 page + 1 CSS module + 1 test; MSW handlers estendidos.
+- Step indicator: 4 etapas visiveis com status current/complete/pending.
+- ISWC failure: iswcFailureBanner com apenas "Tentar novamente" e "Salvar como pendente".
+- Navegacao: handleNext/handleBack puramente locais, sem chamadas remotas.
+
+---
+
+## 2026-07-09 | PRD: prd-cadastro-unificado-repertorio | Task: 6.0 | Revalidação (Iter 2)
+
+Modelo utilizado: deepseek-v4-pro (via AI Flow Validator)
+Iterações até estabilização: 2
+
+### Problemas Identificados
+
+Zero Defects Identified (iter 2)
+
+Todos os 14 erros TypeScript da iter 1 foram corrigidos:
+- 8 erros `noUnusedLocals`/`noUnusedParameters` em 4 arquivos de componente removidos
+- 6 erros de tipo/import no teste corrigidos (`mockTitularesRepertorio` removido, `getByLabelText` com cast `as HTMLSelectElement`)
+
+### Resumo da Tarefa (Iter 2)
+
+Total de Problemas: 0 (todos os 14 erros da iter 1 resolvidos)
+Categoria Técnica mais frequente: N/A (iter 1: erro de compilação)
+Origem mais frequente: Implementação (iter 1)
+Indício de fragilidade estrutural? Não — build passa limpo (0 erros), 15/15 testes passam, zero `any`.
+Dívida técnica remanescente (non-blocking): 3 componentes excedem ~300 linhas (CS-02).
+
+Evidências da revalidação:
+- Build (`vite build`): PASS — 2353 modules, 0 errors.
+- TypeScript (`tsc --noEmit`): PASS — 0 errors.
+- Testes: PASS — 15/15.
+- Zero `any`: 0 ocorrências em produção + testes.
+- noUnusedLocals/noUnusedParameters: 0 erros.
+
+---
+
 ## 2026-07-09 | PRD: prd-cadastro-unificado-repertorio | Task: 5.0
 
 Modelo utilizado: deepseek-v4-pro (via AI Flow Validator)

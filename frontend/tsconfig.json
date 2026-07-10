@@ -21,6 +21,9 @@
     "noFallthroughCasesInSwitch": true,
     "noUncheckedSideEffectImports": true,
 
+    /* Suppress TS6 deprecations (baseUrl) */
+    "ignoreDeprecations": "6.0",
+
     /* Path aliases */
     "baseUrl": ".",
     "paths": {
