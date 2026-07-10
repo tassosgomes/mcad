@@ -5,6 +5,7 @@ import { ObrasPage, ObraCreatePage, ObraDetailPage } from './obras';
 import { FonogramasPage, FonogramaCreatePage, FonogramaDetailPage } from './fonogramas';
 import { OcorrenciasPage, OcorrenciaDetailPage } from './ocorrencias';
 import { SolicitacoesPage } from './solicitacoes';
+import { CadastroRepertorioPage } from './repertorio';
 
 export default function CadastroRoutes() {
   return (
@@ -22,6 +23,7 @@ export default function CadastroRoutes() {
       <Route path="ocorrencias" element={<OcorrenciasPage />} />
       <Route path="ocorrencias/:id" element={<OcorrenciaDetailPage />} />
       <Route path="solicitacoes" element={<SolicitacoesPage />} />
+      <Route path="repertorios/novo" element={<CadastroRepertorioPage />} />
     </Routes>
   );
 }

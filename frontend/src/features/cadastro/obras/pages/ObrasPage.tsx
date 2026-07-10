@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Plus } from 'lucide-react';
+import { Plus, FilePlus } from 'lucide-react';
 import { PageHeader } from '@components/ui/page-header';
 import { Loading } from '@components/ui/loading';
 import { ErrorState } from '@components/ui/error-state';
@@ -22,6 +22,7 @@ export function ObrasPage() {
   const { showToast } = useToast();
   const { can } = usePermissions();
   const canCreate = can('cadastro:default:obra:criar');
+  const canCreateRepertorio = can('cadastro:default:repertorio:criar');
   const canEdit = can('cadastro:default:obra:editar');
   const canDelete = can('cadastro:default:obra:excluir');
   const createdObraTitle =
@@ -55,15 +56,29 @@ export function ObrasPage() {
       <PageHeader
         title="Obras Musicais"
         description="Gestão de obras musicais, metadados e códigos ISWC."
-        action={canCreate ? (
-          <Button
-            variant="primary"
-            onClick={() => navigate('/cadastro/obras/nova')}
-            id="btn-nova-obra"
-            type="button"
-          >
-            <Plus size={16} /> Nova Obra
-          </Button>
+        action={(canCreateRepertorio || canCreate) ? (
+          <>
+            {canCreateRepertorio && (
+              <Button
+                variant="primary"
+                onClick={() => navigate('/cadastro/repertorios/novo')}
+                id="btn-novo-repertorio"
+                type="button"
+              >
+                <FilePlus size={16} /> Novo Repertório
+              </Button>
+            )}
+            {canCreate && (
+              <Button
+                variant="primary"
+                onClick={() => navigate('/cadastro/obras/nova')}
+                id="btn-nova-obra"
+                type="button"
+              >
+                <Plus size={16} /> Nova Obra
+              </Button>
+            )}
+          </>
         ) : undefined}
       />
 

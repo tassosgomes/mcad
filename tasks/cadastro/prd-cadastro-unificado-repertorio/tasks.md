@@ -40,7 +40,7 @@ Tarefa 7.0 consolida documentação, Contract Gate e a evidência dos fluxos cr�
 - [x] 2.0 Criar contratos, busca de titular e validação do caso de uso
 - [x] 3.0 Implementar o handler atômico de registro e os testes unitários
 - [x] 4.0 Expor endpoints compostos, erros HTTP e testes de integração
-- [ ] 5.0 Criar a base da feature React e a ação de entrada da jornada
+- [x] 5.0 Criar a base da feature React e a ação de entrada da jornada
 - [ ] 6.0 Implementar o wizard de repertório e seus testes de componente
 - [ ] 7.0 Executar o gate de contratos, documentar e validar o fluxo fim a fim
 
