@@ -5,8 +5,7 @@ name: Teste · Plataforma de CI
 # dispara apenas em push nas branches teste/plataforma-*, enquanto ci-cd.yml,
 # ci-cd-v2.yml e security-scan.yml disparam em main e em PR para main.
 #
-# Aponta para a branch da plataforma porque a tag v1 ainda não foi publicada.
-# Depois do release, isto vira `@v1` e o input platform-ref some.
+# Consome a plataforma pela tag major móvel `@v1`: correções chegam sem PR aqui.
 
 on:
   push:
@@ -20,12 +19,11 @@ jobs:
   # ═══════════════ casos que esperamos ver passar ═══════════════
   java-arrecadacao:
     name: java · arrecadacao-api
-    uses: tassosgomes/template-pipeline/.github/workflows/ci-java.yml@plataforma/fase-1-biblioteca-de-ci
+    uses: tassosgomes/template-pipeline/.github/workflows/ci-java.yml@v1
     permissions: { contents: read, security-events: write }
     with:
       working-directory: services/arrecadacao-api
       version: '21'
-      platform-ref: plataforma/fase-1-biblioteca-de-ci
       security-mode: observe
       # Desligado de propósito: este é um teste da plataforma em repositório de
       # produção; não queremos encher a aba Security de achado de experimento.
@@ -33,34 +31,31 @@ jobs:
 
   dotnet-cadastro:
     name: dotnet · cadastro-api
-    uses: tassosgomes/template-pipeline/.github/workflows/ci-dotnet.yml@plataforma/fase-1-biblioteca-de-ci
+    uses: tassosgomes/template-pipeline/.github/workflows/ci-dotnet.yml@v1
     permissions: { contents: read, security-events: write }
     with:
       working-directory: services/cadastro-api
       version: '8.0.x'
-      platform-ref: plataforma/fase-1-biblioteca-de-ci
       security-mode: observe
       publish-findings: false
 
   node-bff:
     name: node · bff
-    uses: tassosgomes/template-pipeline/.github/workflows/ci-node.yml@plataforma/fase-1-biblioteca-de-ci
+    uses: tassosgomes/template-pipeline/.github/workflows/ci-node.yml@v1
     permissions: { contents: read, security-events: write }
     with:
       working-directory: services/bff
       version: '22'
-      platform-ref: plataforma/fase-1-biblioteca-de-ci
       security-mode: observe
       publish-findings: false
 
   react-frontend:
     name: react-ts · frontend
-    uses: tassosgomes/template-pipeline/.github/workflows/ci-react-ts.yml@plataforma/fase-1-biblioteca-de-ci
+    uses: tassosgomes/template-pipeline/.github/workflows/ci-react-ts.yml@v1
     permissions: { contents: read, security-events: write }
     with:
       working-directory: frontend
       version: '22'
-      platform-ref: plataforma/fase-1-biblioteca-de-ci
       security-mode: observe
       publish-findings: false
 
@@ -72,12 +67,11 @@ jobs:
   # Esperado: detect-stack devolve 'unknown' e o dotnet restore não acha projeto.
   dotnet-identificacao:
     name: 'dotnet · identificacao-api (esperado falhar: sem .sln)'
-    uses: tassosgomes/template-pipeline/.github/workflows/ci-dotnet.yml@plataforma/fase-1-biblioteca-de-ci
+    uses: tassosgomes/template-pipeline/.github/workflows/ci-dotnet.yml@v1
     permissions: { contents: read, security-events: write }
     with:
       working-directory: services/identificacao-api
       version: '8.0.x'
-      platform-ref: plataforma/fase-1-biblioteca-de-ci
       security-mode: observe
       publish-findings: false
 
@@ -86,11 +80,10 @@ jobs:
   # Esperado: os testes falham por não encontrar dist/.
   node-ai-orchestrator:
     name: 'node · ai-orchestrator (esperado falhar: testa dist/)'
-    uses: tassosgomes/template-pipeline/.github/workflows/ci-node.yml@plataforma/fase-1-biblioteca-de-ci
+    uses: tassosgomes/template-pipeline/.github/workflows/ci-node.yml@v1
     permissions: { contents: read, security-events: write }
     with:
       working-directory: services/ai-orchestrator
       version: '22'
-      platform-ref: plataforma/fase-1-biblioteca-de-ci
       security-mode: observe
       publish-findings: false
