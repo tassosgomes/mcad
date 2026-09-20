@@ -1,0 +1,21 @@
+name: Teste mínimo
+on:
+  push:
+    branches: ['teste/plataforma-*']
+permissions:
+  contents: read
+jobs:
+  com-packages:
+    uses: tassosgomes/template-pipeline/.github/workflows/ci-node.yml@v1
+    permissions:
+      contents: read
+      packages: write
+      security-events: write
+    with:
+      working-directory: services/bff
+      run-tests: false
+      run-lint: false
+      run-sast: false
+      run-secret-scan: false
+      run-dependency-scan: false
+      publish-findings: false
